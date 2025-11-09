@@ -1326,7 +1326,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
   try {
     // Get payment and agreement
     const payment = db.prepare(`
-      SELECT p.*, a.lender_user_id, a.borrower_user_id, a.amount_cents, a.status as agreement_status,
+      SELECT p.*, a.lender_user_id, a.borrower_user_id, a.amount_cents as agreement_amount_cents, a.status as agreement_status,
         u_lender.full_name as lender_full_name,
         u_borrower.full_name as borrower_full_name,
         a.friend_first_name
@@ -1394,7 +1394,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
 
     // Recompute totals
     const totals = getPaymentTotals(payment.agreement_id);
-    const outstanding = payment.amount_cents - totals.total_paid_cents;
+    const outstanding = payment.agreement_amount_cents - totals.total_paid_cents;
 
     // Auto-settle if fully paid
     if (outstanding <= 0 && payment.agreement_status === 'active') {
