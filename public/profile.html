@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayFriends — My Profile</title>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:600px;margin:0 auto;padding:32px 16px;}
+    .header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .header-left h1{margin:0 0 4px 0;font-size:28px}
+    .header-right{display:flex; gap:16px; align-items:center}
+    .back-link{color:var(--accent); text-decoration:none; font-weight:500; font-size:14px}
+    .back-link:hover{text-decoration:underline}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin:16px 0}
+    .row{margin:20px 0}
+    .row label{display:block; margin-bottom:8px; color:var(--muted); font-size:14px; font-weight:500}
+    .row input{width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-size:15px}
+    .row input:disabled{opacity:0.6; cursor:not-allowed}
+    button{width:100%; padding:12px;border-radius:10px;border:0;background:var(--accent);color:#0d130f;font-weight:700; cursor:pointer; font-size:15px; margin-top:8px}
+    button:hover{filter:brightness(1.06)}
+    .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px; text-align:center}
+    .error{color:#ff6b6b}
+    .success{color:var(--accent)}
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div class="header-left">
+        <h1>My Profile</h1>
+      </div>
+      <div class="header-right">
+        <a href="/app" class="back-link">← Back to Dashboard</a>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2 style="margin-top:0; margin-bottom:24px">Profile Information</h2>
+      <form id="profile-form">
+        <div class="row">
+          <label>Full legal name (as on passport)</label>
+          <input id="full-name" type="text" placeholder="Jane Smith" required />
+        </div>
+        <div class="row">
+          <label>Email</label>
+          <input id="email" type="email" disabled />
+        </div>
+        <button type="submit">Save Changes</button>
+        <p id="profile-status" class="status"></p>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    let currentUser = null;
+
+    // Load user profile
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/user');
+        if (!res.ok) {
+          window.location.href = '/';
+          return;
+        }
+        const data = await res.json();
+        currentUser = data.user;
+
+        document.getElementById('full-name').value = currentUser.full_name || '';
+        document.getElementById('email').value = currentUser.email;
+      } catch (err) {
+        console.error('Error loading profile:', err);
+        window.location.href = '/';
+      }
+    }
+
+    // Save profile changes
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fullName = document.getElementById('full-name').value.trim();
+      const status = document.getElementById('profile-status');
+
+      if (!fullName) {
+        status.textContent = 'Full name is required';
+        status.className = 'status error';
+        return;
+      }
+
+      status.textContent = 'Saving...';
+      status.className = 'status';
+
+      try {
+        const res = await fetch('/api/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to update profile');
+        }
+
+        status.textContent = '✓ Profile updated successfully';
+        status.className = 'status success';
+
+        setTimeout(() => {
+          status.textContent = '';
+        }, 3000);
+      } catch (err) {
+        status.textContent = err.message;
+        status.className = 'status error';
+      }
+    });
+
+    // Initialize
+    loadProfile();
+  </script>
+</body>
+</html>

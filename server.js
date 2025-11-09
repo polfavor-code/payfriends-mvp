@@ -270,12 +270,36 @@ app.get('/api/user', requireAuth, (req, res) => {
   res.json({ user: req.user });
 });
 
+// Update user profile
+app.post('/api/profile', requireAuth, (req, res) => {
+  const { fullName } = req.body || {};
+
+  if (!fullName || !fullName.trim()) {
+    return res.status(400).json({ error: 'Full name is required' });
+  }
+
+  try {
+    db.prepare('UPDATE users SET full_name = ? WHERE id = ?').run(fullName.trim(), req.user.id);
+    res.json({ success: true, full_name: fullName.trim() });
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    res.status(500).json({ error: 'Server error updating profile' });
+  }
+});
+
 // --- API ROUTES ---
 
 // List agreements for logged-in user (both as lender and borrower)
 app.get('/api/agreements', requireAuth, (req, res) => {
   const rows = db.prepare(`
-    SELECT * FROM agreements
+    SELECT a.*,
+      u_lender.full_name as lender_full_name,
+      u_lender.email as lender_email,
+      u_borrower.full_name as borrower_full_name,
+      u_borrower.email as borrower_email
+    FROM agreements a
+    LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+    LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
     WHERE lender_user_id = ? OR borrower_user_id = ?
     ORDER BY created_at DESC
   `).all(req.user.id, req.user.id);
@@ -334,6 +358,19 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     `);
 
     inviteStmt.run(agreementId, borrowerEmail, inviteToken, createdAt);
+
+    // Create activity message for lender
+    const borrowerDisplay = friendFirstName || borrowerEmail;
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      agreementId,
+      'Agreement sent',
+      `Agreement sent to ${borrowerEmail} (pending review by ${borrowerDisplay})`,
+      createdAt
+    );
 
     // Build invite URL
     const inviteUrl = `http://localhost:${PORT}/review?token=${inviteToken}`;
@@ -495,7 +532,7 @@ app.post('/api/invites/:token/accept', requireAuth, (req, res) => {
       WHERE id = ?
     `).run(now, invite.invite_id);
 
-    // Create inbox messages for both parties
+    // Create activity messages for both parties
     const borrowerName = req.user.full_name || invite.friend_first_name || req.user.email;
     const lenderName = invite.lender_name;
 
@@ -507,7 +544,7 @@ app.post('/api/invites/:token/accept', requireAuth, (req, res) => {
       invite.lender_user_id,
       invite.agreement_id,
       'Agreement accepted',
-      `${borrowerName} accepted your agreement.`,
+      `Agreement accepted by ${borrowerName}`,
       now
     );
 
@@ -519,7 +556,7 @@ app.post('/api/invites/:token/accept', requireAuth, (req, res) => {
       req.user.id,
       invite.agreement_id,
       'Agreement accepted',
-      `You accepted an agreement from ${lenderName}.`,
+      `Agreement accepted from ${lenderName}`,
       now
     );
 
@@ -578,7 +615,7 @@ app.post('/api/invites/:token/decline', requireAuth, (req, res) => {
       invite.lender_user_id,
       invite.agreement_id,
       'Agreement declined',
-      `${borrowerName} declined your agreement.`,
+      `Agreement declined by ${borrowerName}`,
       now
     );
 
@@ -590,7 +627,7 @@ app.post('/api/invites/:token/decline', requireAuth, (req, res) => {
       req.user.id,
       invite.agreement_id,
       'Agreement declined',
-      `You declined an agreement from ${lenderName}.`,
+      `Agreement declined from ${lenderName}`,
       now
     );
 
@@ -616,6 +653,15 @@ app.get('/', (req, res) => {
 app.get('/app', (req, res) => {
   if (req.user) {
     res.sendFile(path.join(__dirname, 'public', 'app.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Profile: serve profile page if authenticated, else redirect to /
+app.get('/profile', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'profile.html'));
   } else {
     res.redirect('/');
   }

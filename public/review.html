@@ -48,7 +48,7 @@
 
       <div id="signup-form">
         <div class="row">
-          <label>Full name</label>
+          <label>Full legal name (as on passport)</label>
           <input id="full-name" type="text" placeholder="Your full name" required />
         </div>
         <div class="row">
@@ -117,6 +117,12 @@
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
 
+    // Format amount in cents to euros with thousand separators, no decimals
+    function formatAmount(cents) {
+      const euros = Math.round(cents / 100);
+      return new Intl.NumberFormat('de-DE').format(euros);
+    }
+
     async function loadInviteData() {
       try {
         const res = await fetch(`/api/invites/${token}`);
@@ -178,9 +184,12 @@
       document.getElementById('loading-text').parentElement.classList.add('hidden');
       document.getElementById('review-section').classList.remove('hidden');
 
-      const amount = (inviteData.agreement.amount_cents / 100).toFixed(2);
-      document.getElementById('amount-display').textContent = `€${amount}`;
-      document.getElementById('lender-name').textContent = inviteData.agreement.lender_name;
+      const amount = formatAmount(inviteData.agreement.amount_cents);
+      document.getElementById('amount-display').textContent = `€ ${amount}`;
+
+      // Use lender's full_name if available, fallback to lender_name
+      const lenderName = (inviteData.lender && inviteData.lender.full_name) || inviteData.agreement.lender_name;
+      document.getElementById('lender-name').textContent = lenderName;
 
       const borrowerName = currentUser.full_name || inviteData.agreement.friend_first_name || inviteData.invite.email;
       document.getElementById('borrower-name').textContent = borrowerName;

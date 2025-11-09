@@ -63,6 +63,10 @@
       <h2>Sign Up</h2>
       <form id="signup-form">
         <div class="row">
+          <label>Full legal name (as on passport)</label>
+          <input id="signup-fullname" type="text" placeholder="Jane Smith" required />
+        </div>
+        <div class="row">
           <label>Email</label>
           <input id="signup-email" type="email" placeholder="your@email.com" required />
         </div>
@@ -127,9 +131,16 @@
     // Signup form
     document.getElementById('signup-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const fullName = document.getElementById('signup-fullname').value.trim();
       const email = document.getElementById('signup-email').value.trim();
       const password = document.getElementById('signup-password').value;
       const status = document.getElementById('signup-status');
+
+      if (!fullName) {
+        status.textContent = 'Full name is required';
+        status.className = 'status error';
+        return;
+      }
 
       status.textContent = 'Creating account...';
       status.className = 'status';
@@ -138,7 +149,7 @@
         const res = await fetch('/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password, fullName })
         });
         const data = await res.json();
 
