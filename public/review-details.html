@@ -39,6 +39,26 @@
     .status-badge.settled{background:#3ddc97; color:#0d130f}
     .status-badge.declined{background:#ff6b6b; color:#fff}
     .status-badge.cancelled{background:#6c757d; color:#fff}
+    .alert-box{background:rgba(255,165,0,0.1); border:1px solid rgba(255,165,0,0.3); border-radius:8px; padding:12px; color:var(--text); font-size:14px; margin:16px 0}
+    .form-group{margin:20px 0}
+    .form-label{display:block; color:var(--text); font-weight:600; margin-bottom:8px; font-size:14px}
+    .form-radio{display:block; margin:8px 0; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer; transition:background 0.2s}
+    .form-radio:hover{background:rgba(255,255,255,0.03)}
+    .form-radio input{margin-right:8px}
+    .form-radio label{cursor:pointer; color:var(--text); font-size:14px}
+    .form-checkbox{display:block; margin:8px 0; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer; transition:background 0.2s}
+    .form-checkbox:hover{background:rgba(255,255,255,0.03)}
+    .form-checkbox input{margin-right:8px}
+    .form-checkbox label{cursor:pointer; color:var(--text); font-size:14px}
+    textarea{width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px; resize:vertical; min-height:80px}
+    textarea::placeholder{color:var(--muted)}
+    input[type="number"]{width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px}
+    input[type="number"]::placeholder{color:var(--muted)}
+    .summary-box{background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.2); border-radius:8px; padding:16px; margin:16px 0}
+    .summary-item{margin:8px 0; color:var(--text); font-size:14px}
+    .summary-label{color:var(--muted); font-weight:600}
+    button.warning{background:#ff9800; color:#0d130f}
+    button.warning:hover{filter:brightness(1.1)}
   </style>
 </head>
 <body>
@@ -106,7 +126,134 @@
         </p>
       </div>
 
+      <!-- Hardship indicator for lender -->
+      <div id="hardship-indicator" class="hidden">
+        <div class="alert-box">
+          <strong>Needs attention:</strong> Borrower has requested help with this payment. Check Activity for details.
+        </div>
+      </div>
+
+      <!-- Having trouble paying button for borrower -->
+      <div id="hardship-button" class="hidden">
+        <button class="warning" onclick="showHardshipForm()">Having trouble paying?</button>
+      </div>
+
       <p class="status" id="action-status"></p>
+    </div>
+
+    <!-- Hardship request form -->
+    <div id="hardship-form" class="card hidden">
+      <h2>Request Payment Assistance</h2>
+      <p style="color:var(--muted); margin-bottom:20px">
+        Let us know what's making this payment difficult. We'll share your situation with your friend to work out a new plan together.
+      </p>
+
+      <!-- Step 1: Reason -->
+      <div class="form-group">
+        <label class="form-label">What's making it hard to pay on time?</label>
+
+        <div class="form-radio">
+          <input type="radio" name="reason" id="reason-unexpected" value="unexpected_expense">
+          <label for="reason-unexpected">Unexpected expense (medical, car, etc.)</label>
+        </div>
+
+        <div class="form-radio">
+          <input type="radio" name="reason" id="reason-income" value="income_lower">
+          <label for="reason-income">Income temporarily lower</label>
+        </div>
+
+        <div class="form-radio">
+          <input type="radio" name="reason" id="reason-job" value="job_loss">
+          <label for="reason-job">Lost my job / work changed</label>
+        </div>
+
+        <div class="form-radio">
+          <input type="radio" name="reason" id="reason-miscalc" value="miscalculated">
+          <label for="reason-miscalc">I miscalculated what I could afford</label>
+        </div>
+
+        <div class="form-radio">
+          <input type="radio" name="reason" id="reason-other" value="other">
+          <label for="reason-other">Something else</label>
+        </div>
+
+        <div style="margin-top:16px">
+          <label class="form-label" for="reason-text">Explain in your own words (optional but recommended)</label>
+          <textarea id="reason-text" placeholder="Tell your friend more about your situation..."></textarea>
+        </div>
+      </div>
+
+      <!-- Step 2: Can pay now -->
+      <div class="form-group">
+        <label class="form-label">Can you pay something now? Even a small payment helps.</label>
+
+        <div class="form-radio">
+          <input type="radio" name="can-pay" id="can-pay-yes" value="yes" onchange="togglePaymentAmount()">
+          <label for="can-pay-yes">Yes, I can pay some of it now</label>
+        </div>
+
+        <div class="form-radio">
+          <input type="radio" name="can-pay" id="can-pay-no" value="no" onchange="togglePaymentAmount()">
+          <label for="can-pay-no">No, I can't pay anything right now</label>
+        </div>
+
+        <div id="payment-amount-input" class="hidden" style="margin-top:16px">
+          <label class="form-label" for="payment-amount">Amount I can pay now (EUR)</label>
+          <input type="number" id="payment-amount" placeholder="e.g. 50" min="0" step="1">
+        </div>
+      </div>
+
+      <!-- Step 3: Preferred adjustments -->
+      <div class="form-group">
+        <label class="form-label">What kind of new plan would feel most realistic for you? (Check all that apply)</label>
+
+        <div class="form-checkbox">
+          <input type="checkbox" id="adj-smaller" value="smaller_payments_longer_period">
+          <label for="adj-smaller">Pay a smaller amount each month over a longer period</label>
+        </div>
+
+        <div class="form-checkbox">
+          <input type="checkbox" id="adj-skip" value="skip_or_reduce_next">
+          <label for="adj-skip">Skip or reduce the next payment and catch up later</label>
+        </div>
+
+        <div class="form-checkbox">
+          <input type="checkbox" id="adj-partial" value="partial_now_rest_later">
+          <label for="adj-partial">Pay part now and move the rest to a later date</label>
+        </div>
+
+        <div class="form-checkbox">
+          <input type="checkbox" id="adj-lower" value="lower_monthly_higher_interest">
+          <label for="adj-lower">Lower the monthly amount, even if total interest becomes a bit higher</label>
+        </div>
+
+        <div class="form-checkbox">
+          <input type="checkbox" id="adj-unsure" value="not_sure_please_suggest">
+          <label for="adj-unsure">I'm not sure – please suggest something for us</label>
+        </div>
+      </div>
+
+      <!-- Step 4: Summary -->
+      <div class="form-group">
+        <label class="form-label">Summary</label>
+        <div class="summary-box">
+          <p style="margin:0 0 12px 0; color:var(--text)">This is what will be shared with your friend:</p>
+          <div class="summary-item">
+            <span class="summary-label">Reason:</span> <span id="summary-reason">-</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Can pay now:</span> <span id="summary-pay">-</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Preferred options:</span> <span id="summary-adjustments">-</span>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="submitHardshipRequest()">Send request</button>
+      <button class="secondary" onclick="cancelHardshipForm()">Cancel</button>
+
+      <p class="status" id="hardship-status"></p>
     </div>
 
     <!-- Error state -->
@@ -189,7 +336,7 @@
       }
     }
 
-    function showViewSection() {
+    async function showViewSection() {
       document.getElementById('loading-text').parentElement.classList.add('hidden');
       document.getElementById('details-section').classList.remove('hidden');
       document.getElementById('page-title').textContent = 'Agreement Details';
@@ -199,8 +346,10 @@
       // Hide borrower actions
       document.getElementById('borrower-actions').classList.add('hidden');
 
-      // Check if this is a lender viewing a pending agreement
       const isLender = agreement.lender_user_id === currentUser.id;
+      const isBorrower = agreement.borrower_user_id === currentUser.id;
+
+      // Check if this is a lender viewing a pending agreement
       if (isLender && agreement.status === 'pending') {
         // Show lender actions (cancel button)
         document.getElementById('lender-actions').classList.remove('hidden');
@@ -210,6 +359,19 @@
         document.getElementById('lender-actions').classList.add('hidden');
         document.getElementById('view-only').classList.remove('hidden');
         document.getElementById('status-text').textContent = agreement.status;
+      }
+
+      // Check for hardship requests
+      const hasHardshipRequests = await checkHardshipRequests();
+
+      // Show hardship indicator for lender if there are requests
+      if (isLender && hasHardshipRequests && agreement.status === 'active') {
+        document.getElementById('hardship-indicator').classList.remove('hidden');
+      }
+
+      // Show "Having trouble paying?" button for borrower on active agreements
+      if (isBorrower && agreement.status === 'active') {
+        document.getElementById('hardship-button').classList.remove('hidden');
       }
     }
 
@@ -368,6 +530,152 @@
         status.textContent = 'Error: ' + err.message;
         status.className = 'status error';
       }
+    }
+
+    // Hardship form functions
+    function showHardshipForm() {
+      document.getElementById('details-section').classList.add('hidden');
+      document.getElementById('hardship-form').classList.remove('hidden');
+
+      // Add event listeners for live summary updates
+      document.querySelectorAll('input[name="reason"]').forEach(input => {
+        input.addEventListener('change', updateSummary);
+      });
+      document.querySelectorAll('input[name="can-pay"]').forEach(input => {
+        input.addEventListener('change', updateSummary);
+      });
+      document.getElementById('payment-amount').addEventListener('input', updateSummary);
+      document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+        input.addEventListener('change', updateSummary);
+      });
+    }
+
+    function cancelHardshipForm() {
+      document.getElementById('hardship-form').classList.add('hidden');
+      document.getElementById('details-section').classList.remove('hidden');
+    }
+
+    function togglePaymentAmount() {
+      const canPayYes = document.getElementById('can-pay-yes').checked;
+      const amountInput = document.getElementById('payment-amount-input');
+
+      if (canPayYes) {
+        amountInput.classList.remove('hidden');
+      } else {
+        amountInput.classList.add('hidden');
+        document.getElementById('payment-amount').value = '';
+      }
+    }
+
+    function updateSummary() {
+      // Update reason
+      const reasonInput = document.querySelector('input[name="reason"]:checked');
+      const reasonText = reasonInput ? reasonInput.nextElementSibling.textContent : '-';
+      document.getElementById('summary-reason').textContent = reasonText;
+
+      // Update can pay now
+      const canPayYes = document.getElementById('can-pay-yes').checked;
+      const canPayNo = document.getElementById('can-pay-no').checked;
+      const paymentAmount = document.getElementById('payment-amount').value;
+
+      let payText = '-';
+      if (canPayYes && paymentAmount) {
+        payText = `€${paymentAmount}`;
+      } else if (canPayYes) {
+        payText = 'Yes (amount not specified)';
+      } else if (canPayNo) {
+        payText = 'Cannot pay right now';
+      }
+      document.getElementById('summary-pay').textContent = payText;
+
+      // Update preferred adjustments
+      const adjustments = [];
+      document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+        adjustments.push(cb.nextElementSibling.textContent);
+      });
+      const adjustText = adjustments.length > 0 ? adjustments.join('; ') : '-';
+      document.getElementById('summary-adjustments').textContent = adjustText;
+    }
+
+    async function submitHardshipRequest() {
+      const status = document.getElementById('hardship-status');
+
+      // Validate form
+      const reasonInput = document.querySelector('input[name="reason"]:checked');
+      if (!reasonInput) {
+        status.textContent = 'Please select a reason';
+        status.className = 'status error';
+        return;
+      }
+
+      const adjustmentCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+      if (adjustmentCheckboxes.length === 0) {
+        status.textContent = 'Please select at least one preferred adjustment option';
+        status.className = 'status error';
+        return;
+      }
+
+      // Gather form data
+      const reasonCategory = reasonInput.value;
+      const reasonText = document.getElementById('reason-text').value.trim() || null;
+
+      const canPayYes = document.getElementById('can-pay-yes').checked;
+      let canPayNowCents = null;
+      if (canPayYes) {
+        const paymentAmount = parseFloat(document.getElementById('payment-amount').value);
+        if (paymentAmount && paymentAmount > 0) {
+          canPayNowCents = Math.round(paymentAmount * 100);
+        }
+      }
+
+      const preferredAdjustments = Array.from(adjustmentCheckboxes).map(cb => cb.value);
+
+      status.textContent = 'Sending request...';
+      status.className = 'status';
+
+      try {
+        const res = await fetch(`/api/agreements/${agreementId}/hardship-request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reasonCategory,
+            reasonText,
+            canPayNowCents,
+            preferredAdjustments
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          status.textContent = data.error || 'Failed to send request';
+          status.className = 'status error';
+          return;
+        }
+
+        status.textContent = 'Request sent! We\'ve shared your situation and preferences with your friend. Redirecting...';
+        status.className = 'status success';
+
+        setTimeout(() => {
+          window.location.href = '/app';
+        }, 2000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    async function checkHardshipRequests() {
+      try {
+        const res = await fetch(`/api/agreements/${agreementId}/hardship-requests`);
+        if (res.ok) {
+          const requests = await res.json();
+          return requests.length > 0;
+        }
+      } catch (err) {
+        console.error('Error checking hardship requests:', err);
+      }
+      return false;
     }
 
     // Initialize
