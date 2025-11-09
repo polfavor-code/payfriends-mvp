@@ -540,6 +540,8 @@ app.get('/api/messages', requireAuth, (req, res) => {
     SELECT m.*,
       a.status as agreement_status,
       a.borrower_email,
+      a.borrower_user_id,
+      a.lender_user_id,
       u_borrower.full_name as borrower_full_name,
       a.friend_first_name
     FROM messages m
@@ -1309,7 +1311,7 @@ app.get('/api/agreements/:id/payments', requireAuth, (req, res) => {
       FROM payments p
       LEFT JOIN users u ON p.recorded_by_user_id = u.id
       WHERE p.agreement_id = ?
-      ORDER BY p.created_at ASC
+      ORDER BY p.created_at DESC
     `).all(id);
 
     res.json(payments);

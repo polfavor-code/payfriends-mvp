@@ -188,7 +188,7 @@
 
     <!-- Record payment form (for active agreements) -->
     <div id="record-payment-section" class="card hidden">
-      <h2>Record a Payment</h2>
+      <h2 id="payment-form-header">Record a Payment</h2>
       <p style="color:var(--muted); font-size:14px; margin-bottom:16px">
         Record a payment that has been made for this agreement.
       </p>
@@ -214,7 +214,7 @@
         <textarea id="payment-note" placeholder="Add any details about this payment..."></textarea>
       </div>
 
-      <button onclick="submitPayment()">Record Payment</button>
+      <button id="payment-submit-btn" onclick="submitPayment()">Record Payment</button>
       <button class="secondary" onclick="cancelPaymentForm()">Cancel</button>
 
       <p class="status" id="payment-status"></p>
@@ -812,33 +812,46 @@
       paymentsList.innerHTML = payments.map(payment => {
         const amount = formatAmount(payment.amount_cents);
         const date = new Date(payment.created_at).toLocaleString();
-        const recordedBy = payment.recorded_by_name || payment.recorded_by_email;
         const method = payment.method ? `<div class="payment-method">Method: ${payment.method}</div>` : '';
         const note = payment.note ? `<div class="payment-note">Note: ${payment.note}</div>` : '';
 
-        // Status badge
-        let statusBadge = '';
+        // Determine who recorded the payment
+        const recordedByBorrower = payment.recorded_by_user_id === agreement.borrower_user_id;
+        const recordedByLender = payment.recorded_by_user_id === agreement.lender_user_id;
+        const borrowerName = agreement.borrower_full_name || agreement.borrower_email;
+        const lenderName = agreement.lender_full_name || agreement.lender_name;
+
+        // Build status text based on who recorded and payment status
         let statusText = '';
-        if (payment.status === 'pending') {
-          if (isBorrower) {
-            const lenderFirstName = agreement.lender_full_name ? agreement.lender_full_name.split(' ')[0] : agreement.lender_name;
-            statusText = `<div class="payment-recorded-by" style="color:#ff9800">Pending approval by ${lenderFirstName}</div>`;
-          } else {
-            statusBadge = '<span class="payment-status-badge pending">Pending approval</span>';
+        let statusBadge = '';
+
+        if (recordedByBorrower) {
+          // Payment reported by borrower
+          statusText = `<div class="payment-recorded-by">Reported by ${borrowerName}</div>`;
+
+          if (payment.status === 'pending') {
+            statusText += `<div class="payment-recorded-by" style="color:#ff9800">Waiting for confirmation from ${lenderName}</div>`;
+            if (isLender) {
+              statusBadge = '<span class="payment-status-badge pending">Pending approval</span>';
+            }
+          } else if (payment.status === 'approved') {
+            statusText += `<div class="payment-recorded-by" style="color:#3ddc97">Confirmed by ${lenderName}</div>`;
+          } else if (payment.status === 'declined') {
+            statusText += `<div class="payment-recorded-by" style="color:#f44336">Not confirmed by ${lenderName}</div>`;
+            statusBadge = '<span class="payment-status-badge declined">Declined</span>';
           }
-        } else if (payment.status === 'declined') {
-          statusBadge = '<span class="payment-status-badge declined">Declined</span>';
-        } else if (payment.status === 'approved') {
-          // Only show approved badge if there are pending/declined payments in the list
-          const hasPendingOrDeclined = payments.some(p => p.status === 'pending' || p.status === 'declined');
-          if (hasPendingOrDeclined) {
-            statusBadge = '<span class="payment-status-badge approved">Approved</span>';
-          }
+        } else if (recordedByLender) {
+          // Payment added by lender
+          statusText = `<div class="payment-recorded-by">Added by ${lenderName}</div>`;
+        } else {
+          // Fallback for other cases
+          const recordedBy = payment.recorded_by_name || payment.recorded_by_email;
+          statusText = `<div class="payment-recorded-by">Recorded by ${recordedBy}</div>`;
         }
 
         // Approval buttons (lender only, for pending payments reported by borrower)
         let approvalButtons = '';
-        if (isLender && payment.status === 'pending' && payment.recorded_by_user_id === agreement.borrower_user_id) {
+        if (isLender && payment.status === 'pending' && recordedByBorrower) {
           approvalButtons = `
             <div class="payment-approval-buttons">
               <button onclick="approvePayment(${payment.id})" style="background:#3ddc97">Approve</button>
@@ -858,7 +871,7 @@
             </div>
             ${method}
             ${note}
-            ${statusText || `<div class="payment-recorded-by">Recorded by ${recordedBy}</div>`}
+            ${statusText}
             ${approvalButtons}
           </div>
         `;
@@ -892,6 +905,24 @@
     }
 
     function showRecordPaymentForm() {
+      const isBorrower = agreement.borrower_user_id === currentUser.id;
+      const isLender = agreement.lender_user_id === currentUser.id;
+
+      // Update form header and button text based on user role
+      const formHeader = document.getElementById('payment-form-header');
+      const submitBtn = document.getElementById('payment-submit-btn');
+
+      if (isBorrower) {
+        formHeader.textContent = 'Report a Payment';
+        submitBtn.textContent = 'Report Payment';
+      } else if (isLender) {
+        formHeader.textContent = 'Add Received Payment';
+        submitBtn.textContent = 'Add Payment';
+      } else {
+        formHeader.textContent = 'Record a Payment';
+        submitBtn.textContent = 'Record Payment';
+      }
+
       document.getElementById('details-section').classList.add('hidden');
       document.getElementById('payment-summary').classList.add('hidden');
       document.getElementById('payment-history').classList.add('hidden');
