@@ -62,9 +62,9 @@
     .payment-item{background:#10151d; border-radius:8px; padding:12px; margin:12px 0; border:1px solid rgba(255,255,255,0.08)}
     .payment-date{color:var(--muted); font-size:12px}
     .payment-amount{font-weight:700; color:var(--accent); font-size:16px}
-    .payment-method{color:var(--muted); font-size:13px; font-style:italic}
-    .payment-note{color:var(--text); font-size:13px; margin-top:4px}
-    .payment-recorded-by{color:var(--muted); font-size:12px; margin-top:4px}
+    .payment-method{color:var(--muted); font-style:italic}
+    .payment-note{color:var(--text); margin-top:4px}
+    .payment-recorded-by{color:var(--muted); margin-top:4px}
     .record-payment-btn{background:#3d7bdc; margin-top:16px}
     .record-payment-btn:hover{filter:brightness(1.1)}
     select{appearance:none; background-image:url('data:image/svg+xml;utf8,<svg fill="%23a7b0bd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat:no-repeat; background-position:right 8px center}
@@ -77,6 +77,7 @@
     .hardship-button-spacing{margin-top:20px}
     .form-section{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:24px}
     .form-section-title{font-size:16px; font-weight:600; color:var(--text); margin-bottom:12px}
+    #proof-modal-download:hover{background:#3a3a3a; border-color:rgba(255,255,255,0.25)}
   </style>
 </head>
 <body>
@@ -820,8 +821,8 @@
       paymentsList.innerHTML = payments.map(payment => {
         const amount = formatAmount(payment.amount_cents);
         const date = new Date(payment.created_at).toLocaleString();
-        const method = payment.method ? `<div class="payment-method" style="font-size:13px; color:var(--muted); margin-top:4px">Method: ${payment.method}</div>` : '';
-        const note = payment.note ? `<div class="payment-note" style="font-size:13px; color:var(--muted); margin-top:4px">Note: ${payment.note}</div>` : '';
+        const method = payment.method ? `<div class="payment-method" style="color:var(--muted); margin-top:4px">Method: ${payment.method}</div>` : '';
+        const note = payment.note ? `<div class="payment-note" style="color:var(--muted); margin-top:4px">Note: ${payment.note}</div>` : '';
 
         // Determine who recorded the payment
         const recordedByBorrower = payment.recorded_by_user_id === agreement.borrower_user_id;
@@ -891,7 +892,7 @@
             </div>
             ${method}
             ${note}
-            <div style="margin-top:8px; font-size:12px; color:var(--muted)">
+            <div style="margin-top:8px; color:var(--muted)">
               ${metaText}
             </div>
             ${proofButton}
@@ -1142,10 +1143,12 @@
       <!-- Content container (will hold image or iframe) -->
       <div id="proof-modal-content" style="margin-bottom:15px; max-height:80vh; overflow:auto"></div>
 
-      <!-- Caption and download -->
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
-        <div id="proof-modal-caption" style="color:#ccc; font-size:14px; flex:1"></div>
-        <a id="proof-modal-download" href="#" download class="secondary" style="font-size:13px; padding:8px 16px; text-decoration:none; white-space:nowrap">Download</a>
+      <!-- Caption -->
+      <div id="proof-modal-caption" style="color:#ccc; font-size:14px; margin-bottom:15px"></div>
+
+      <!-- Footer with download button -->
+      <div style="display:flex; justify-content:flex-end; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1)">
+        <a id="proof-modal-download" href="#" download style="display:inline-block; padding:10px 20px; background:#2a2a2a; color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:8px; text-decoration:none; font-weight:500; font-size:14px; cursor:pointer; transition:all 0.2s ease">Download</a>
       </div>
     </div>
   </div>
