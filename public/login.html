@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayFriends — Login</title>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:500px;margin:0 auto;padding:64px 16px;}
+    .header{margin-bottom:32px; text-align:center}
+    h1{margin:0 0 8px 0;font-size:32px}
+    .tagline{color:var(--muted)}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin:24px 0}
+    .row{margin:16px 0}
+    .row label{display:block; margin-bottom:6px; color:var(--muted); font-size:14px}
+    .row input{width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-size:15px}
+    button{width:100%; padding:12px;border-radius:10px;border:0;background:var(--accent);color:#0d130f;font-weight:700; cursor:pointer; font-size:15px; margin-top:8px}
+    button:hover{filter:brightness(1.06)}
+    .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px;}
+    .error{color:#ff6b6b}
+    .tabs{display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:0}
+    .tab{padding:12px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
+    .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
+    .tab:hover{color:var(--text)}
+    .form-section{display:none}
+    .form-section.active{display:block}
+    .footer{margin-top:32px; text-align:center; color:var(--muted); font-size:12px;}
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <h1>PayFriends</h1>
+      <p class="tagline">Create simple agreements between friends.</p>
+    </header>
+
+    <div class="tabs">
+      <div class="tab active" onclick="showTab('login')">Login</div>
+      <div class="tab" onclick="showTab('signup')">Sign Up</div>
+    </div>
+
+    <section class="card form-section active" id="login-section">
+      <h2>Login</h2>
+      <form id="login-form">
+        <div class="row">
+          <label>Email</label>
+          <input id="login-email" type="email" placeholder="your@email.com" required />
+        </div>
+        <div class="row">
+          <label>Password</label>
+          <input id="login-password" type="password" placeholder="••••••••" required />
+        </div>
+        <button type="submit">Login</button>
+        <p id="login-status" class="status"></p>
+      </form>
+    </section>
+
+    <section class="card form-section" id="signup-section">
+      <h2>Sign Up</h2>
+      <form id="signup-form">
+        <div class="row">
+          <label>Email</label>
+          <input id="signup-email" type="email" placeholder="your@email.com" required />
+        </div>
+        <div class="row">
+          <label>Password</label>
+          <input id="signup-password" type="password" placeholder="••••••••" required />
+        </div>
+        <p style="color:var(--muted); font-size:13px; margin:0 0 8px 0">Minimum 6 characters</p>
+        <button type="submit">Create Account</button>
+        <p id="signup-status" class="status"></p>
+      </form>
+    </section>
+
+    <footer class="footer">
+      New user accounts and agreements dashboard.
+    </footer>
+  </main>
+
+  <script>
+    function showTab(tab) {
+      // Update tabs
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Update sections
+      document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+      document.getElementById(tab + '-section').classList.add('active');
+    }
+
+    // Login form
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const status = document.getElementById('login-status');
+
+      status.textContent = 'Logging in...';
+      status.className = 'status';
+
+      try {
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Login failed');
+        }
+
+        status.textContent = 'Success! Redirecting...';
+        setTimeout(() => {
+          window.location.href = '/app';
+        }, 500);
+      } catch (err) {
+        status.textContent = err.message;
+        status.className = 'status error';
+      }
+    });
+
+    // Signup form
+    document.getElementById('signup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+      const status = document.getElementById('signup-status');
+
+      status.textContent = 'Creating account...';
+      status.className = 'status';
+
+      try {
+        const res = await fetch('/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Signup failed');
+        }
+
+        status.textContent = 'Account created! Redirecting...';
+        setTimeout(() => {
+          window.location.href = '/app';
+        }, 500);
+      } catch (err) {
+        status.textContent = err.message;
+        status.className = 'status error';
+      }
+    });
+  </script>
+</body>
+</html>

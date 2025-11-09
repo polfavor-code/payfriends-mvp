@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayFriends — My Agreements</title>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:1200px;margin:0 auto;padding:32px 16px;}
+    .header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .header-left h1{margin:0 0 4px 0;font-size:28px}
+    .header-left .user-email{color:var(--muted); font-size:14px}
+    .header-right{display:flex; gap:16px; align-items:center}
+    .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
+    .logout-btn:hover{background:rgba(255,255,255,0.05)}
+    .inbox-widget{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 16px; cursor:pointer}
+    .inbox-widget:hover{background:#1a2028}
+    .inbox-count{color:var(--accent); font-weight:700}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;margin:16px 0}
+    .row{display:flex; gap:12px; align-items:center; margin:10px 0}
+    .row label{width:160px; color:var(--muted)}
+    .row input{flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)}
+    button{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#0d130f;font-weight:700; cursor:pointer}
+    button:hover{filter:brightness(1.06)}
+    .tabs{display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .tab{padding:10px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
+    .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
+    .tab:hover{color:var(--text)}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left}
+    th{color:var(--muted); font-weight:600; font-size:13px}
+    .status{color:var(--muted); margin-top:8px; min-height:1.2em;}
+    .status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600}
+    .status-badge.pending{background:#4a4a4a; color:#fff}
+    .status-badge.active{background:#3d7bdc; color:#fff}
+    .status-badge.settled{background:#3ddc97; color:#0d130f}
+    .messages-list{margin-top:12px}
+    .message-item{padding:10px; background:#10151d; border-radius:8px; margin:8px 0; font-size:14px}
+    .message-subject{font-weight:600; margin-bottom:4px}
+    .message-date{color:var(--muted); font-size:12px}
+    .empty-state{text-align:center; color:var(--muted); padding:32px; font-size:14px}
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div class="header-left">
+        <h1>My Agreements</h1>
+        <p class="user-email" id="user-email">Loading...</p>
+      </div>
+      <div class="header-right">
+        <div class="inbox-widget" onclick="toggleInbox()">
+          Inbox (<span class="inbox-count" id="inbox-count">0</span>)
+        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <!-- Inbox section (initially hidden) -->
+    <section class="card" id="inbox-section" style="display:none">
+      <h2>Inbox</h2>
+      <div class="messages-list" id="messages-list">
+        <p class="empty-state">No messages yet</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>New agreement</h2>
+      <form id="form">
+        <div class="row">
+          <label>Lender name</label>
+          <input id="lender" placeholder="Alice" required />
+        </div>
+        <div class="row">
+          <label>Borrower email</label>
+          <input id="borrower" type="email" placeholder="bob@example.com" required />
+        </div>
+        <div class="row">
+          <label>Amount (EUR)</label>
+          <input id="amount" type="number" step="0.01" min="0.01" placeholder="50.00" required />
+        </div>
+        <div class="row">
+          <label>Due date</label>
+          <input id="due" type="date" required />
+        </div>
+        <button type="submit">Create agreement</button>
+        <p id="status" class="status"></p>
+      </form>
+    </section>
+
+    <section class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+        <h2 style="margin:0">Agreements</h2>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-filter="all" onclick="filterByStatus('all')">All</div>
+        <div class="tab" data-filter="pending" onclick="filterByStatus('pending')">Pending</div>
+        <div class="tab" data-filter="active" onclick="filterByStatus('active')">Active</div>
+        <div class="tab" data-filter="settled" onclick="filterByStatus('settled')">Settled</div>
+      </div>
+
+      <table id="list">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Lender</th>
+            <th>Borrower</th>
+            <th>Amount</th>
+            <th>Due</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="empty-state" class="empty-state" style="display:none">
+        No agreements found for this filter.
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let allAgreements = [];
+    let currentFilter = 'all';
+    let currentUser = null;
+
+    // Fetch current user
+    async function loadUser() {
+      try {
+        const res = await fetch('/api/user');
+        if (!res.ok) {
+          window.location.href = '/';
+          return;
+        }
+        const data = await res.json();
+        currentUser = data.user;
+        document.getElementById('user-email').textContent = currentUser.email;
+      } catch (err) {
+        console.error('Error loading user:', err);
+        window.location.href = '/';
+      }
+    }
+
+    // Logout
+    async function logout() {
+      try {
+        await fetch('/auth/logout', { method: 'POST' });
+        window.location.href = '/';
+      } catch (err) {
+        console.error('Logout error:', err);
+        window.location.href = '/';
+      }
+    }
+
+    // Toggle inbox visibility
+    function toggleInbox() {
+      const inbox = document.getElementById('inbox-section');
+      inbox.style.display = inbox.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Load messages
+    async function loadMessages() {
+      try {
+        const res = await fetch('/api/messages');
+        const messages = await res.json();
+
+        document.getElementById('inbox-count').textContent = messages.length;
+
+        const messagesList = document.getElementById('messages-list');
+        if (messages.length === 0) {
+          messagesList.innerHTML = '<p class="empty-state">No messages yet</p>';
+        } else {
+          messagesList.innerHTML = messages.map(msg => `
+            <div class="message-item">
+              <div class="message-subject">${msg.subject}</div>
+              <div class="message-date">${new Date(msg.created_at).toLocaleString()}</div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Error loading messages:', err);
+      }
+    }
+
+    // Mark as paid (which sets status to "settled")
+    async function markAsPaid(id) {
+      try {
+        const res = await fetch(`/api/agreements/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'paid' })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+
+        // Refresh agreements
+        await refresh();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // Filter agreements by status
+    function filterByStatus(status) {
+      currentFilter = status;
+
+      // Update active tab
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.getAttribute('data-filter') === status) {
+          tab.classList.add('active');
+        }
+      });
+
+      renderAgreements();
+    }
+
+    // Render agreements based on current filter
+    function renderAgreements() {
+      const tbody = document.querySelector('#list tbody');
+      const emptyState = document.getElementById('empty-state');
+
+      let filtered = allAgreements;
+      if (currentFilter !== 'all') {
+        filtered = allAgreements.filter(a => a.status === currentFilter);
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        document.getElementById('list').style.display = 'none';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      document.getElementById('list').style.display = 'table';
+      tbody.innerHTML = '';
+
+      for (const a of filtered) {
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-id', a.id);
+        const amount = (a.amount_cents / 100).toFixed(2);
+        const statusText = a.status || 'pending';
+        const statusBadge = `<span class="status-badge ${statusText}">${statusText}</span>`;
+
+        const actionBtn = (statusText === 'active' || statusText === 'pending')
+          ? `<button onclick="markAsPaid(${a.id})">Mark as Paid</button>`
+          : '—';
+
+        tr.innerHTML = `
+          <td>${a.id}</td>
+          <td>${a.lender_name}</td>
+          <td>${a.borrower_email}</td>
+          <td>€ ${amount}</td>
+          <td>${a.due_date}</td>
+          <td>${new Date(a.created_at).toLocaleString()}</td>
+          <td>${statusBadge}</td>
+          <td>${actionBtn}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Refresh agreements
+    async function refresh() {
+      try {
+        const res = await fetch('/api/agreements');
+        allAgreements = await res.json();
+        renderAgreements();
+      } catch (err) {
+        console.error('Error loading agreements:', err);
+      }
+    }
+
+    // Create agreement form
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const lenderName = document.getElementById('lender').value.trim();
+      const borrowerEmail = document.getElementById('borrower').value.trim();
+      const amount = document.getElementById('amount').value;
+      const dueDate = document.getElementById('due').value;
+      const status = document.getElementById('status');
+
+      status.textContent = 'Creating...';
+
+      try {
+        const res = await fetch('/api/agreements', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lenderName, borrowerEmail, amount, dueDate })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        status.textContent = '✅ Agreement created';
+        e.target.reset();
+        refresh();
+      } catch (err) {
+        status.textContent = '❌ ' + err.message;
+      }
+    });
+
+    // Initialize
+    loadUser();
+    refresh();
+    loadMessages();
+  </script>
+</body>
+</html>
