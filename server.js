@@ -741,9 +741,10 @@ app.post('/api/invites/:token/review-later', requireAuth, (req, res) => {
       `).run(req.user.id, invite.agreement_id);
     }
 
-    // Don't change the status, just create an activity entry
+    // Don't change the status, just create activity entries for both borrower and lender
     const now = new Date().toISOString();
 
+    // Create activity entry for borrower (the person clicking "Review later")
     db.prepare(`
       INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
       VALUES (?, ?, ?, ?, ?, ?)
@@ -752,6 +753,20 @@ app.post('/api/invites/:token/review-later', requireAuth, (req, res) => {
       invite.agreement_id,
       'Agreement review postponed',
       'You chose to review this agreement later.',
+      now,
+      'AGREEMENT_REVIEW_LATER'
+    );
+
+    // Create activity entry for lender so they know borrower has seen it
+    const borrowerName = req.user.full_name || invite.friend_first_name || req.user.email;
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      invite.lender_user_id,
+      invite.agreement_id,
+      'Agreement review postponed',
+      `${borrowerName} chose to review your agreement later.`,
       now,
       'AGREEMENT_REVIEW_LATER'
     );
