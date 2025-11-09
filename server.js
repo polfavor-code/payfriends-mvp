@@ -24,7 +24,8 @@ db.exec(`
     borrower_email TEXT NOT NULL,
     amount_cents INTEGER NOT NULL,
     due_date TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending'
   );
 `);
 
@@ -82,6 +83,29 @@ app.post('/api/agreements', (req, res) => {
     dueDate,
     createdAt
   });
+});
+
+// update agreement status
+app.patch('/api/agreements/:id/status', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body || {};
+
+  if (!status) {
+    return res.status(400).json({ error: 'Status is required.' });
+  }
+
+  if (status !== 'pending' && status !== 'paid') {
+    return res.status(400).json({ error: 'Status must be "pending" or "paid".' });
+  }
+
+  const stmt = db.prepare('UPDATE agreements SET status = ? WHERE id = ?');
+  const info = stmt.run(status, id);
+
+  if (info.changes === 0) {
+    return res.status(404).json({ error: 'Agreement not found.' });
+  }
+
+  res.json({ success: true, id: Number(id), status });
 });
 
 // health check

@@ -69,6 +69,8 @@
             <th>Amount</th>
             <th>Due</th>
             <th>Created</th>
+            <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -81,6 +83,29 @@
   </main>
 
   <script>
+    async function markAsPaid(id) {
+      try {
+        const res = await fetch(`/api/agreements/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'paid' })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+
+        // Update the row visually without reloading
+        const row = document.querySelector(`tr[data-id="${id}"]`);
+        if (row) {
+          const statusCell = row.querySelector('.status-cell');
+          const actionCell = row.querySelector('.action-cell');
+          if (statusCell) statusCell.textContent = 'paid';
+          if (actionCell) actionCell.innerHTML = '—';
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
     async function refresh() {
       const res = await fetch('/api/agreements');
       const rows = await res.json();
@@ -88,7 +113,12 @@
       tbody.innerHTML = '';
       for (const a of rows) {
         const tr = document.createElement('tr');
+        tr.setAttribute('data-id', a.id);
         const amount = (a.amount_cents / 100).toFixed(2);
+        const statusText = a.status || 'pending';
+        const actionBtn = statusText === 'pending'
+          ? `<button onclick="markAsPaid(${a.id})">Mark as Paid</button>`
+          : '—';
         tr.innerHTML = `
           <td>${a.id}</td>
           <td>${a.lender_name}</td>
@@ -96,6 +126,8 @@
           <td>€ ${amount}</td>
           <td>${a.due_date}</td>
           <td>${new Date(a.created_at).toLocaleString()}</td>
+          <td class="status-cell">${statusText}</td>
+          <td class="action-cell">${actionBtn}</td>
         `;
         tbody.appendChild(tr);
       }
