@@ -76,6 +76,7 @@ db.exec(`
     body TEXT NOT NULL,
     created_at TEXT NOT NULL,
     read_at TEXT,
+    event_type TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (agreement_id) REFERENCES agreements(id)
   );
@@ -320,6 +321,16 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Amount must be a positive number.' });
   }
 
+  // Validate due date is not in the past
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dueDateObj = new Date(dueDate);
+  dueDateObj.setHours(0, 0, 0, 0);
+
+  if (dueDateObj < today) {
+    return res.status(400).json({ error: 'Due date cannot be in the past.' });
+  }
+
   const createdAt = new Date().toISOString();
 
   // Use user's full_name as lender_name if available, otherwise use provided lenderName
@@ -362,14 +373,15 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     // Create activity message for lender
     const borrowerDisplay = friendFirstName || borrowerEmail;
     db.prepare(`
-      INSERT INTO messages (user_id, agreement_id, subject, body, created_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       agreementId,
       'Agreement sent',
-      `Agreement sent to ${borrowerEmail} (pending review by ${borrowerDisplay})`,
-      createdAt
+      `Agreement sent to ${borrowerEmail}`,
+      createdAt,
+      'AGREEMENT_SENT'
     );
 
     // Build invite URL
@@ -425,9 +437,16 @@ app.patch('/api/agreements/:id/status', requireAuth, (req, res) => {
 // Get messages for logged-in user
 app.get('/api/messages', requireAuth, (req, res) => {
   const rows = db.prepare(`
-    SELECT * FROM messages
-    WHERE user_id = ?
-    ORDER BY created_at DESC
+    SELECT m.*,
+      a.status as agreement_status,
+      a.borrower_email,
+      u_borrower.full_name as borrower_full_name,
+      a.friend_first_name
+    FROM messages m
+    LEFT JOIN agreements a ON m.agreement_id = a.id
+    LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+    WHERE m.user_id = ?
+    ORDER BY m.created_at DESC
   `).all(req.user.id);
 
   res.json(rows);
@@ -538,26 +557,28 @@ app.post('/api/invites/:token/accept', requireAuth, (req, res) => {
 
     // Message for lender
     db.prepare(`
-      INSERT INTO messages (user_id, agreement_id, subject, body, created_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
     `).run(
       invite.lender_user_id,
       invite.agreement_id,
       'Agreement accepted',
       `Agreement accepted by ${borrowerName}`,
-      now
+      now,
+      'AGREEMENT_ACCEPTED'
     );
 
     // Message for borrower
     db.prepare(`
-      INSERT INTO messages (user_id, agreement_id, subject, body, created_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       invite.agreement_id,
       'Agreement accepted',
       `Agreement accepted from ${lenderName}`,
-      now
+      now,
+      'AGREEMENT_ACCEPTED'
     );
 
     res.json({ success: true, agreementId: invite.agreement_id });
@@ -609,26 +630,28 @@ app.post('/api/invites/:token/decline', requireAuth, (req, res) => {
 
     // Message for lender
     db.prepare(`
-      INSERT INTO messages (user_id, agreement_id, subject, body, created_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
     `).run(
       invite.lender_user_id,
       invite.agreement_id,
       'Agreement declined',
       `Agreement declined by ${borrowerName}`,
-      now
+      now,
+      'AGREEMENT_DECLINED'
     );
 
     // Message for borrower
     db.prepare(`
-      INSERT INTO messages (user_id, agreement_id, subject, body, created_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       invite.agreement_id,
       'Agreement declined',
       `Agreement declined from ${lenderName}`,
-      now
+      now,
+      'AGREEMENT_DECLINED'
     );
 
     res.json({ success: true, agreementId: invite.agreement_id });
