@@ -29,7 +29,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    full_name TEXT
   );
 
   CREATE TABLE IF NOT EXISTS sessions (
@@ -45,11 +46,26 @@ db.exec(`
     lender_user_id INTEGER,
     lender_name TEXT NOT NULL,
     borrower_email TEXT NOT NULL,
+    borrower_user_id INTEGER,
+    friend_first_name TEXT,
+    direction TEXT NOT NULL DEFAULT 'lend',
+    repayment_type TEXT NOT NULL DEFAULT 'one_time',
     amount_cents INTEGER NOT NULL,
     due_date TEXT NOT NULL,
     created_at TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'active',
-    FOREIGN KEY (lender_user_id) REFERENCES users(id)
+    status TEXT NOT NULL DEFAULT 'pending',
+    FOREIGN KEY (lender_user_id) REFERENCES users(id),
+    FOREIGN KEY (borrower_user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS agreement_invites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agreement_id INTEGER NOT NULL,
+    email TEXT NOT NULL,
+    token TEXT UNIQUE NOT NULL,
+    created_at TEXT NOT NULL,
+    accepted_at TEXT,
+    FOREIGN KEY (agreement_id) REFERENCES agreements(id)
   );
 
   CREATE TABLE IF NOT EXISTS messages (
@@ -81,7 +97,7 @@ app.use((req, res, next) => {
 
   try {
     const session = db.prepare(`
-      SELECT s.*, u.email, u.id as user_id
+      SELECT s.*, u.email, u.id as user_id, u.full_name
       FROM sessions s
       JOIN users u ON s.user_id = u.id
       WHERE s.id = ? AND s.expires_at > datetime('now')
@@ -90,7 +106,8 @@ app.use((req, res, next) => {
     if (session) {
       req.user = {
         id: session.user_id,
-        email: session.email
+        email: session.email,
+        full_name: session.full_name
       };
     }
   } catch (err) {
@@ -140,7 +157,7 @@ function isValidEmail(email) {
 
 // Signup
 app.post('/auth/signup', async (req, res) => {
-  const { email, password } = req.body || {};
+  const { email, password, fullName } = req.body || {};
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
@@ -167,9 +184,9 @@ app.post('/auth/signup', async (req, res) => {
 
     // Create user
     const result = db.prepare(`
-      INSERT INTO users (email, password_hash, created_at)
-      VALUES (?, ?, ?)
-    `).run(email, passwordHash, createdAt);
+      INSERT INTO users (email, password_hash, created_at, full_name)
+      VALUES (?, ?, ?, ?)
+    `).run(email, passwordHash, createdAt, fullName || null);
 
     const userId = result.lastInsertRowid;
 
@@ -185,7 +202,7 @@ app.post('/auth/signup', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      user: { id: userId, email }
+      user: { id: userId, email, full_name: fullName || null }
     });
   } catch (err) {
     console.error('Signup error:', err);
@@ -255,22 +272,22 @@ app.get('/api/user', requireAuth, (req, res) => {
 
 // --- API ROUTES ---
 
-// List agreements for logged-in user
+// List agreements for logged-in user (both as lender and borrower)
 app.get('/api/agreements', requireAuth, (req, res) => {
   const rows = db.prepare(`
     SELECT * FROM agreements
-    WHERE lender_user_id = ?
+    WHERE lender_user_id = ? OR borrower_user_id = ?
     ORDER BY created_at DESC
-  `).all(req.user.id);
+  `).all(req.user.id, req.user.id);
 
   res.json(rows);
 });
 
-// Create new agreement
+// Create new agreement with invite (two-sided flow)
 app.post('/api/agreements', requireAuth, (req, res) => {
-  const { lenderName, borrowerEmail, amount, dueDate } = req.body || {};
+  const { lenderName, borrowerEmail, friendFirstName, amount, dueDate, direction, repaymentType } = req.body || {};
 
-  if (!lenderName || !borrowerEmail || !amount || !dueDate) {
+  if (!borrowerEmail || !amount || !dueDate) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
 
@@ -281,23 +298,64 @@ app.post('/api/agreements', requireAuth, (req, res) => {
 
   const createdAt = new Date().toISOString();
 
-  const stmt = db.prepare(`
-    INSERT INTO agreements (lender_user_id, lender_name, borrower_email, amount_cents, due_date, created_at, status)
-    VALUES (?, ?, ?, ?, ?, ?, 'active')
-  `);
+  // Use user's full_name as lender_name if available, otherwise use provided lenderName
+  const finalLenderName = req.user.full_name || lenderName || req.user.email;
 
-  const info = stmt.run(req.user.id, lenderName, borrowerEmail, amountCents, dueDate, createdAt);
+  try {
+    // Create agreement
+    const agreementStmt = db.prepare(`
+      INSERT INTO agreements (
+        lender_user_id, lender_name, borrower_email, friend_first_name,
+        direction, repayment_type, amount_cents, due_date, created_at, status
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+    `);
 
-  res.status(201).json({
-    id: info.lastInsertRowid,
-    lender_user_id: req.user.id,
-    lenderName,
-    borrowerEmail,
-    amountCents,
-    dueDate,
-    createdAt,
-    status: 'active'
-  });
+    const agreementInfo = agreementStmt.run(
+      req.user.id,
+      finalLenderName,
+      borrowerEmail,
+      friendFirstName || null,
+      direction || 'lend',
+      repaymentType || 'one_time',
+      amountCents,
+      dueDate,
+      createdAt
+    );
+
+    const agreementId = agreementInfo.lastInsertRowid;
+
+    // Create invite token
+    const inviteToken = crypto.randomBytes(32).toString('hex');
+
+    const inviteStmt = db.prepare(`
+      INSERT INTO agreement_invites (agreement_id, email, token, created_at)
+      VALUES (?, ?, ?, ?)
+    `);
+
+    inviteStmt.run(agreementId, borrowerEmail, inviteToken, createdAt);
+
+    // Build invite URL
+    const inviteUrl = `http://localhost:${PORT}/review?token=${inviteToken}`;
+
+    res.status(201).json({
+      id: agreementId,
+      lender_user_id: req.user.id,
+      lenderName: finalLenderName,
+      borrowerEmail,
+      friendFirstName,
+      direction: direction || 'lend',
+      repaymentType: repaymentType || 'one_time',
+      amountCents,
+      dueDate,
+      createdAt,
+      status: 'pending',
+      inviteUrl
+    });
+  } catch (err) {
+    console.error('Error creating agreement:', err);
+    res.status(500).json({ error: 'Server error creating agreement' });
+  }
 });
 
 // Update agreement status (mark as paid → settled)
@@ -343,6 +401,206 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true });
 });
 
+// Get invite details by token (public)
+app.get('/api/invites/:token', (req, res) => {
+  const { token } = req.params;
+
+  try {
+    const invite = db.prepare(`
+      SELECT i.*, a.*,
+        i.id as invite_id,
+        a.id as agreement_id
+      FROM agreement_invites i
+      JOIN agreements a ON i.agreement_id = a.id
+      WHERE i.token = ?
+    `).get(token);
+
+    if (!invite) {
+      return res.status(404).json({ error: 'Invite not found' });
+    }
+
+    // Get lender user info
+    const lender = db.prepare('SELECT id, email, full_name FROM users WHERE id = ?').get(invite.lender_user_id);
+
+    res.json({
+      invite: {
+        id: invite.invite_id,
+        token: invite.token,
+        email: invite.email,
+        created_at: invite.created_at,
+        accepted_at: invite.accepted_at
+      },
+      agreement: {
+        id: invite.agreement_id,
+        lender_user_id: invite.lender_user_id,
+        lender_name: invite.lender_name,
+        borrower_email: invite.borrower_email,
+        borrower_user_id: invite.borrower_user_id,
+        friend_first_name: invite.friend_first_name,
+        direction: invite.direction,
+        repayment_type: invite.repayment_type,
+        amount_cents: invite.amount_cents,
+        due_date: invite.due_date,
+        status: invite.status
+      },
+      lender: lender || null
+    });
+  } catch (err) {
+    console.error('Error fetching invite:', err);
+    res.status(500).json({ error: 'Server error fetching invite' });
+  }
+});
+
+// Accept agreement
+app.post('/api/invites/:token/accept', requireAuth, (req, res) => {
+  const { token } = req.params;
+
+  try {
+    // Get invite and agreement
+    const invite = db.prepare(`
+      SELECT i.*, a.*,
+        i.id as invite_id,
+        a.id as agreement_id
+      FROM agreement_invites i
+      JOIN agreements a ON i.agreement_id = a.id
+      WHERE i.token = ?
+    `).get(token);
+
+    if (!invite) {
+      return res.status(404).json({ error: 'Invite not found' });
+    }
+
+    // Verify the logged-in user's email matches the invite email
+    if (req.user.email !== invite.email) {
+      return res.status(403).json({ error: 'This invite was sent to a different email address' });
+    }
+
+    if (invite.accepted_at) {
+      return res.status(400).json({ error: 'Invite already accepted' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Update agreement status and borrower_user_id
+    db.prepare(`
+      UPDATE agreements
+      SET status = 'active', borrower_user_id = ?
+      WHERE id = ?
+    `).run(req.user.id, invite.agreement_id);
+
+    // Mark invite as accepted
+    db.prepare(`
+      UPDATE agreement_invites
+      SET accepted_at = ?
+      WHERE id = ?
+    `).run(now, invite.invite_id);
+
+    // Create inbox messages for both parties
+    const borrowerName = req.user.full_name || invite.friend_first_name || req.user.email;
+    const lenderName = invite.lender_name;
+
+    // Message for lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      invite.lender_user_id,
+      invite.agreement_id,
+      'Agreement accepted',
+      `${borrowerName} accepted your agreement.`,
+      now
+    );
+
+    // Message for borrower
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      invite.agreement_id,
+      'Agreement accepted',
+      `You accepted an agreement from ${lenderName}.`,
+      now
+    );
+
+    res.json({ success: true, agreementId: invite.agreement_id });
+  } catch (err) {
+    console.error('Error accepting invite:', err);
+    res.status(500).json({ error: 'Server error accepting invite' });
+  }
+});
+
+// Decline agreement
+app.post('/api/invites/:token/decline', requireAuth, (req, res) => {
+  const { token } = req.params;
+
+  try {
+    // Get invite and agreement
+    const invite = db.prepare(`
+      SELECT i.*, a.*,
+        i.id as invite_id,
+        a.id as agreement_id
+      FROM agreement_invites i
+      JOIN agreements a ON i.agreement_id = a.id
+      WHERE i.token = ?
+    `).get(token);
+
+    if (!invite) {
+      return res.status(404).json({ error: 'Invite not found' });
+    }
+
+    // Verify the logged-in user's email matches the invite email
+    if (req.user.email !== invite.email) {
+      return res.status(403).json({ error: 'This invite was sent to a different email address' });
+    }
+
+    if (invite.accepted_at) {
+      return res.status(400).json({ error: 'Invite already accepted, cannot decline' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Update agreement status and borrower_user_id
+    db.prepare(`
+      UPDATE agreements
+      SET status = 'declined', borrower_user_id = ?
+      WHERE id = ?
+    `).run(req.user.id, invite.agreement_id);
+
+    const borrowerName = req.user.full_name || invite.friend_first_name || req.user.email;
+    const lenderName = invite.lender_name;
+
+    // Message for lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      invite.lender_user_id,
+      invite.agreement_id,
+      'Agreement declined',
+      `${borrowerName} declined your agreement.`,
+      now
+    );
+
+    // Message for borrower
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      invite.agreement_id,
+      'Agreement declined',
+      `You declined an agreement from ${lenderName}.`,
+      now
+    );
+
+    res.json({ success: true, agreementId: invite.agreement_id });
+  } catch (err) {
+    console.error('Error declining invite:', err);
+    res.status(500).json({ error: 'Server error declining invite' });
+  }
+});
+
 // --- PAGE ROUTES ---
 
 // Root: serve login page if not authenticated, else redirect to /app
@@ -361,6 +619,26 @@ app.get('/app', (req, res) => {
   } else {
     res.redirect('/');
   }
+});
+
+// Review: serve review page for agreement invites
+app.get('/review', (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return res.sendFile(path.join(__dirname, 'public', 'review-invalid.html'));
+  }
+
+  // Verify token exists
+  const invite = db.prepare(`
+    SELECT id FROM agreement_invites WHERE token = ?
+  `).get(token);
+
+  if (!invite) {
+    return res.sendFile(path.join(__dirname, 'public', 'review-invalid.html'));
+  }
+
+  res.sendFile(path.join(__dirname, 'public', 'review.html'));
 });
 
 // Serve other static files from "public" folder

@@ -26,6 +26,8 @@
     .row input{flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)}
     button{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#0d130f;font-weight:700; cursor:pointer}
     button:hover{filter:brightness(1.06)}
+    button.secondary{background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-left:8px}
+    button.secondary:hover{background:rgba(255,255,255,0.05)}
     .tabs{display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
     .tab{padding:10px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
     .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
@@ -38,11 +40,26 @@
     .status-badge.pending{background:#4a4a4a; color:#fff}
     .status-badge.active{background:#3d7bdc; color:#fff}
     .status-badge.settled{background:#3ddc97; color:#0d130f}
+    .status-badge.declined{background:#ff6b6b; color:#fff}
     .messages-list{margin-top:12px}
     .message-item{padding:10px; background:#10151d; border-radius:8px; margin:8px 0; font-size:14px}
     .message-subject{font-weight:600; margin-bottom:4px}
     .message-date{color:var(--muted); font-size:12px}
     .empty-state{text-align:center; color:var(--muted); padding:32px; font-size:14px}
+    .wizard-steps{display:flex; gap:16px; margin-bottom:24px; align-items:center}
+    .wizard-step{flex:1; padding:8px 16px; background:#10151d; border-radius:8px; text-align:center; font-size:14px; border:2px solid transparent}
+    .wizard-step.active{border-color:var(--accent); color:var(--accent); font-weight:600}
+    .wizard-step.completed{color:var(--accent)}
+    .wizard-content{min-height:200px}
+    .hidden{display:none}
+    .role-badge{display:inline-block; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; background:#2a2a2a; color:#fff}
+    .role-badge.lend{background:#3d7bdc; color:#fff}
+    .role-badge.borrow{background:#e67e22; color:#fff}
+    .invite-url-box{background:#10151d; padding:12px; border-radius:8px; margin:16px 0; font-family:monospace; font-size:13px; word-break:break-all; border:1px solid rgba(255,255,255,0.08)}
+    .summary-row{display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .summary-row:last-child{border-bottom:none}
+    .summary-label{color:var(--muted)}
+    .summary-value{font-weight:600}
   </style>
 </head>
 <body>
@@ -68,16 +85,38 @@
       </div>
     </section>
 
+    <!-- Wizard for creating agreements -->
     <section class="card">
-      <h2>New agreement</h2>
-      <form id="form">
+      <h2>New Agreement</h2>
+
+      <!-- Wizard Steps -->
+      <div class="wizard-steps">
+        <div class="wizard-step" id="step-indicator-1">1. Role</div>
+        <div class="wizard-step" id="step-indicator-2">2. Details</div>
+        <div class="wizard-step" id="step-indicator-3">3. Summary</div>
+      </div>
+
+      <!-- Step 1: Role Selection -->
+      <div id="wizard-step-1" class="wizard-content">
+        <h3 style="margin-top:0">I want to...</h3>
+        <div style="display:flex; gap:16px; flex-wrap:wrap">
+          <button onclick="selectRole('lend')" style="flex:1; min-width:200px">Lend money to a friend</button>
+          <!-- Future: uncomment for borrow flow
+          <button onclick="selectRole('borrow')" style="flex:1; min-width:200px" disabled>Borrow money from a friend (Coming soon)</button>
+          -->
+        </div>
+      </div>
+
+      <!-- Step 2: Friend & Basic Details -->
+      <div id="wizard-step-2" class="wizard-content hidden">
+        <h3 style="margin-top:0">Friend & Agreement Details</h3>
         <div class="row">
-          <label>Lender name</label>
-          <input id="lender" placeholder="Alice" required />
+          <label>Friend's first name</label>
+          <input id="friend-first-name" placeholder="Alex" required />
         </div>
         <div class="row">
-          <label>Borrower email</label>
-          <input id="borrower" type="email" placeholder="bob@example.com" required />
+          <label>Friend's email</label>
+          <input id="friend-email" type="email" placeholder="alex@example.com" required />
         </div>
         <div class="row">
           <label>Amount (EUR)</label>
@@ -85,11 +124,58 @@
         </div>
         <div class="row">
           <label>Due date</label>
-          <input id="due" type="date" required />
+          <input id="due-date" type="date" required />
         </div>
-        <button type="submit">Create agreement</button>
-        <p id="status" class="status"></p>
-      </form>
+        <div style="margin-top:16px">
+          <button onclick="goToSummary()">Continue to Summary</button>
+          <button class="secondary" onclick="goToStep(1)">Back</button>
+        </div>
+        <p id="step2-status" class="status"></p>
+      </div>
+
+      <!-- Step 3: Summary & Send -->
+      <div id="wizard-step-3" class="wizard-content hidden">
+        <h3 style="margin-top:0">Summary</h3>
+        <div style="background:#10151d; padding:16px; border-radius:8px; margin:16px 0">
+          <div class="summary-row">
+            <span class="summary-label">You are</span>
+            <span class="summary-value">Lending</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Amount</span>
+            <span class="summary-value" id="summary-amount">€0.00</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">To</span>
+            <span class="summary-value" id="summary-friend"></span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Friend email</span>
+            <span class="summary-value" id="summary-email"></span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Repayment</span>
+            <span class="summary-value">One payment on <span id="summary-due"></span></span>
+          </div>
+        </div>
+
+        <div id="invite-not-sent">
+          <button onclick="sendInvite()">Send to <span id="send-friend-name"></span> for review</button>
+          <button class="secondary" onclick="goToStep(2)">Back</button>
+        </div>
+
+        <div id="invite-sent" class="hidden">
+          <div style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.2); border-radius:8px; padding:12px; margin:16px 0">
+            <p style="margin:0; color:var(--accent); font-weight:600">Invite sent!</p>
+          </div>
+          <p style="color:var(--muted); font-size:14px">Share this invite link with your friend:</p>
+          <div class="invite-url-box" id="invite-url"></div>
+          <button onclick="copyInviteUrl()">Copy invite link</button>
+          <button class="secondary" onclick="resetWizard()">Create another agreement</button>
+        </div>
+
+        <p id="step3-status" class="status"></p>
+      </div>
     </section>
 
     <section class="card">
@@ -108,11 +194,11 @@
         <thead>
           <tr>
             <th>ID</th>
+            <th>Role</th>
             <th>Lender</th>
             <th>Borrower</th>
             <th>Amount</th>
             <th>Due</th>
-            <th>Created</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -129,6 +215,135 @@
     let allAgreements = [];
     let currentFilter = 'all';
     let currentUser = null;
+    let wizardData = {
+      role: null,
+      friendFirstName: '',
+      friendEmail: '',
+      amount: '',
+      dueDate: '',
+      inviteUrl: ''
+    };
+
+    // Wizard functions
+    function goToStep(step) {
+      // Hide all steps
+      for (let i = 1; i <= 3; i++) {
+        document.getElementById(`wizard-step-${i}`).classList.add('hidden');
+        document.getElementById(`step-indicator-${i}`).classList.remove('active');
+      }
+
+      // Show current step
+      document.getElementById(`wizard-step-${step}`).classList.remove('hidden');
+      document.getElementById(`step-indicator-${step}`).classList.add('active');
+
+      // Mark previous steps as completed
+      for (let i = 1; i < step; i++) {
+        document.getElementById(`step-indicator-${i}`).classList.add('completed');
+      }
+    }
+
+    function selectRole(role) {
+      wizardData.role = role;
+      goToStep(2);
+    }
+
+    function goToSummary() {
+      const friendFirstName = document.getElementById('friend-first-name').value.trim();
+      const friendEmail = document.getElementById('friend-email').value.trim();
+      const amount = document.getElementById('amount').value;
+      const dueDate = document.getElementById('due-date').value;
+      const status = document.getElementById('step2-status');
+
+      if (!friendFirstName || !friendEmail || !amount || !dueDate) {
+        status.textContent = 'Please fill in all fields';
+        return;
+      }
+
+      wizardData.friendFirstName = friendFirstName;
+      wizardData.friendEmail = friendEmail;
+      wizardData.amount = amount;
+      wizardData.dueDate = dueDate;
+
+      // Update summary
+      document.getElementById('summary-amount').textContent = `€${parseFloat(amount).toFixed(2)}`;
+      document.getElementById('summary-friend').textContent = friendFirstName;
+      document.getElementById('summary-email').textContent = friendEmail;
+      document.getElementById('summary-due').textContent = new Date(dueDate).toLocaleDateString();
+      document.getElementById('send-friend-name').textContent = friendFirstName;
+
+      goToStep(3);
+    }
+
+    async function sendInvite() {
+      const status = document.getElementById('step3-status');
+      status.textContent = 'Creating agreement...';
+
+      try {
+        const res = await fetch('/api/agreements', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            friendFirstName: wizardData.friendFirstName,
+            borrowerEmail: wizardData.friendEmail,
+            amount: wizardData.amount,
+            dueDate: wizardData.dueDate,
+            direction: wizardData.role,
+            repaymentType: 'one_time'
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+
+        wizardData.inviteUrl = data.inviteUrl;
+        document.getElementById('invite-url').textContent = data.inviteUrl;
+
+        // Hide send button, show invite URL
+        document.getElementById('invite-not-sent').classList.add('hidden');
+        document.getElementById('invite-sent').classList.remove('hidden');
+
+        status.textContent = '';
+        refresh();
+        loadMessages();
+      } catch (err) {
+        status.textContent = '❌ ' + err.message;
+      }
+    }
+
+    function copyInviteUrl() {
+      const url = wizardData.inviteUrl;
+      navigator.clipboard.writeText(url).then(() => {
+        document.getElementById('step3-status').textContent = '✅ Copied to clipboard!';
+        setTimeout(() => {
+          document.getElementById('step3-status').textContent = '';
+        }, 2000);
+      }).catch(() => {
+        document.getElementById('step3-status').textContent = '❌ Failed to copy';
+      });
+    }
+
+    function resetWizard() {
+      wizardData = {
+        role: null,
+        friendFirstName: '',
+        friendEmail: '',
+        amount: '',
+        dueDate: '',
+        inviteUrl: ''
+      };
+
+      document.getElementById('friend-first-name').value = '';
+      document.getElementById('friend-email').value = '';
+      document.getElementById('amount').value = '';
+      document.getElementById('due-date').value = '';
+      document.getElementById('step2-status').textContent = '';
+      document.getElementById('step3-status').textContent = '';
+
+      document.getElementById('invite-not-sent').classList.remove('hidden');
+      document.getElementById('invite-sent').classList.add('hidden');
+
+      goToStep(1);
+    }
 
     // Fetch current user
     async function loadUser() {
@@ -249,17 +464,25 @@
         const statusText = a.status || 'pending';
         const statusBadge = `<span class="status-badge ${statusText}">${statusText}</span>`;
 
-        const actionBtn = (statusText === 'active' || statusText === 'pending')
+        // Determine role
+        const isLender = a.lender_user_id === currentUser.id;
+        const role = isLender ? 'You lent' : 'You borrowed';
+        const roleBadge = `<span class="role-badge ${isLender ? 'lend' : 'borrow'}">${role}</span>`;
+
+        // Determine borrower name
+        const borrowerName = a.friend_first_name || a.borrower_email;
+
+        const actionBtn = (statusText === 'active' && isLender)
           ? `<button onclick="markAsPaid(${a.id})">Mark as Paid</button>`
           : '—';
 
         tr.innerHTML = `
           <td>${a.id}</td>
+          <td>${roleBadge}</td>
           <td>${a.lender_name}</td>
-          <td>${a.borrower_email}</td>
+          <td>${borrowerName}</td>
           <td>€ ${amount}</td>
           <td>${a.due_date}</td>
-          <td>${new Date(a.created_at).toLocaleString()}</td>
           <td>${statusBadge}</td>
           <td>${actionBtn}</td>
         `;
@@ -278,37 +501,11 @@
       }
     }
 
-    // Create agreement form
-    document.getElementById('form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const lenderName = document.getElementById('lender').value.trim();
-      const borrowerEmail = document.getElementById('borrower').value.trim();
-      const amount = document.getElementById('amount').value;
-      const dueDate = document.getElementById('due').value;
-      const status = document.getElementById('status');
-
-      status.textContent = 'Creating...';
-
-      try {
-        const res = await fetch('/api/agreements', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lenderName, borrowerEmail, amount, dueDate })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed');
-        status.textContent = '✅ Agreement created';
-        e.target.reset();
-        refresh();
-      } catch (err) {
-        status.textContent = '❌ ' + err.message;
-      }
-    });
-
     // Initialize
     loadUser();
     refresh();
     loadMessages();
+    goToStep(1);
   </script>
 </body>
 </html>
