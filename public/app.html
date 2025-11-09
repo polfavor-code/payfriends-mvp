@@ -525,8 +525,8 @@
             // Determine the link URL based on agreement_id and event_type
             let linkUrl = '';
             if (msg.agreement_id) {
-              // For events that should go to review page if still pending
-              if (msg.event_type === 'AGREEMENT_SENT' && msg.agreement_status === 'pending') {
+              // For pending agreements where the current user is the borrower, go to review page
+              if (msg.agreement_status === 'pending' && msg.borrower_user_id === currentUser.id) {
                 linkUrl = `/agreements/${msg.agreement_id}/review`;
               } else {
                 // Default to view page for all other agreement-related events
