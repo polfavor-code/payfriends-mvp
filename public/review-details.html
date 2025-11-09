@@ -38,6 +38,7 @@
     .status-badge.active{background:#3d7bdc; color:#fff}
     .status-badge.settled{background:#3ddc97; color:#0d130f}
     .status-badge.declined{background:#ff6b6b; color:#fff}
+    .status-badge.cancelled{background:#6c757d; color:#fff}
   </style>
 </head>
 <body>
@@ -87,6 +88,15 @@
         <button onclick="handleAccept()">Accept Agreement</button>
         <button class="secondary" onclick="handleDecline()">Decline</button>
         <button class="tertiary" onclick="handleReviewLater()">Review Later</button>
+      </div>
+
+      <!-- Lender actions (only for pending agreements) -->
+      <div id="lender-actions" class="hidden">
+        <div class="note" style="background:rgba(255,107,107,0.1); border:1px solid rgba(255,107,107,0.2)">
+          <p style="margin:0; font-size:14px">This will withdraw the agreement so your friend can no longer accept it.</p>
+        </div>
+
+        <button class="secondary" onclick="handleCancel()" style="width:100%; margin-top:8px">Cancel request</button>
       </div>
 
       <!-- View-only mode (no actions) -->
@@ -164,9 +174,19 @@
 
       populateDetails();
 
-      // Show borrower actions
-      document.getElementById('borrower-actions').classList.remove('hidden');
-      document.getElementById('view-only').classList.add('hidden');
+      // Check if agreement is cancelled
+      if (agreement.status === 'cancelled') {
+        // Show cancelled message, hide all action buttons
+        document.getElementById('borrower-actions').classList.add('hidden');
+        document.getElementById('lender-actions').classList.add('hidden');
+        document.getElementById('view-only').classList.remove('hidden');
+        document.getElementById('status-text').textContent = 'no longer available. The lender cancelled the request';
+      } else {
+        // Show borrower actions
+        document.getElementById('borrower-actions').classList.remove('hidden');
+        document.getElementById('view-only').classList.add('hidden');
+        document.getElementById('lender-actions').classList.add('hidden');
+      }
     }
 
     function showViewSection() {
@@ -176,10 +196,21 @@
 
       populateDetails();
 
-      // Show view-only mode
+      // Hide borrower actions
       document.getElementById('borrower-actions').classList.add('hidden');
-      document.getElementById('view-only').classList.remove('hidden');
-      document.getElementById('status-text').textContent = agreement.status;
+
+      // Check if this is a lender viewing a pending agreement
+      const isLender = agreement.lender_user_id === currentUser.id;
+      if (isLender && agreement.status === 'pending') {
+        // Show lender actions (cancel button)
+        document.getElementById('lender-actions').classList.remove('hidden');
+        document.getElementById('view-only').classList.add('hidden');
+      } else {
+        // Show view-only mode
+        document.getElementById('lender-actions').classList.add('hidden');
+        document.getElementById('view-only').classList.remove('hidden');
+        document.getElementById('status-text').textContent = agreement.status;
+      }
     }
 
     function populateDetails() {
@@ -293,6 +324,41 @@
         }
 
         status.textContent = 'Saved! Redirecting to dashboard...';
+        status.className = 'status success';
+
+        setTimeout(() => {
+          window.location.href = '/app';
+        }, 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    async function handleCancel() {
+      if (!confirm('Are you sure you want to cancel this agreement request? Your friend will no longer be able to accept it.')) {
+        return;
+      }
+
+      const status = document.getElementById('action-status');
+      status.textContent = 'Cancelling...';
+      status.className = 'status';
+
+      try {
+        const res = await fetch(`/api/agreements/${agreementId}/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          status.textContent = data.error || 'Failed to cancel';
+          status.className = 'status error';
+          return;
+        }
+
+        status.textContent = 'Agreement cancelled. Redirecting...';
         status.className = 'status success';
 
         setTimeout(() => {

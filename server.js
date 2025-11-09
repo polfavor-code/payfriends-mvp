@@ -667,6 +667,76 @@ app.post('/api/agreements/:id/decline', requireAuth, (req, res) => {
   }
 });
 
+// Cancel agreement (lender only, pending agreements)
+app.post('/api/agreements/:id/cancel', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get agreement
+    const agreement = db.prepare(`
+      SELECT * FROM agreements WHERE id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    // Verify user is the lender
+    if (agreement.lender_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'You are not authorized to cancel this agreement' });
+    }
+
+    // Verify status is pending
+    if (agreement.status !== 'pending') {
+      return res.status(400).json({ error: 'Only pending agreements can be cancelled' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Update agreement status
+    db.prepare(`
+      UPDATE agreements
+      SET status = 'cancelled'
+      WHERE id = ?
+    `).run(id);
+
+    const lenderName = req.user.full_name || agreement.lender_name;
+
+    // Message for lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      id,
+      'Agreement cancelled',
+      'You cancelled this agreement request.',
+      now,
+      'AGREEMENT_CANCELLED_LENDER'
+    );
+
+    // If borrower is linked, notify them too
+    if (agreement.borrower_user_id) {
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.borrower_user_id,
+        id,
+        'Agreement cancelled',
+        `${lenderName} cancelled this agreement request.`,
+        now,
+        'AGREEMENT_CANCELLED_BORROWER'
+      );
+    }
+
+    res.json({ success: true, agreementId: Number(id) });
+  } catch (err) {
+    console.error('Error cancelling agreement:', err);
+    res.status(500).json({ error: 'Server error cancelling agreement' });
+  }
+});
+
 // Review later (logged-in or token-based)
 app.post('/api/agreements/:id/review-later', requireAuth, (req, res) => {
   const { id } = req.params;
