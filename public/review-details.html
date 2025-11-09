@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayFriends — Agreement Details</title>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); padding:32px 16px;}
+    .container{max-width:600px; margin:0 auto;}
+    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
+    h1{margin:0 0 8px 0; font-size:24px}
+    h2{margin:0 0 16px 0; font-size:20px}
+    p{color:var(--muted); line-height:1.6; margin:8px 0}
+    .detail-row{display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .detail-row:last-child{border-bottom:none}
+    .detail-label{color:var(--muted); font-weight:500}
+    .detail-value{color:var(--text); font-weight:600}
+    button{padding:12px 20px; border-radius:10px; border:0; background:var(--accent); color:#0d130f; font-weight:700; cursor:pointer; font-size:14px; width:100%}
+    button:hover{filter:brightness(1.06)}
+    button.secondary{background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-top:8px}
+    button.secondary:hover{background:rgba(255,255,255,0.05)}
+    button.tertiary{background:transparent; border:1px solid rgba(255,255,255,0.10); color:var(--muted); margin-top:8px}
+    button.tertiary:hover{background:rgba(255,255,255,0.03)}
+    .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px}
+    .hidden{display:none}
+    .error{color:#ff6b6b}
+    .success{color:var(--accent)}
+    .amount{font-size:32px; font-weight:700; color:var(--accent); text-align:center; margin:16px 0}
+    .note{background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.2); border-radius:8px; padding:12px; color:var(--text); font-size:14px; margin:16px 0}
+    .back-link{display:inline-block; margin-bottom:16px; color:var(--accent); text-decoration:none; font-size:14px}
+    .back-link:hover{text-decoration:underline}
+    .status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600}
+    .status-badge.pending{background:#4a4a4a; color:#fff}
+    .status-badge.active{background:#3d7bdc; color:#fff}
+    .status-badge.settled{background:#3ddc97; color:#0d130f}
+    .status-badge.declined{background:#ff6b6b; color:#fff}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/app" class="back-link">← Back to Dashboard</a>
+
+    <div class="card">
+      <h1 id="page-title">Agreement Details</h1>
+      <p id="loading-text">Loading agreement details...</p>
+    </div>
+
+    <!-- Agreement details -->
+    <div id="details-section" class="card hidden">
+      <h2>Agreement Details</h2>
+
+      <div class="amount" id="amount-display"></div>
+
+      <div style="margin:16px 0">
+        <div class="detail-row">
+          <span class="detail-label">From (Lender)</span>
+          <span class="detail-value" id="lender-name"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">To (Borrower)</span>
+          <span class="detail-value" id="borrower-name"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Due date</span>
+          <span class="detail-value" id="due-date"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Repayment type</span>
+          <span class="detail-value" id="repayment-type"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Status</span>
+          <span class="detail-value" id="status-display"></span>
+        </div>
+      </div>
+
+      <!-- Borrower review actions (only for pending agreements) -->
+      <div id="borrower-actions" class="hidden">
+        <div class="note">
+          By accepting this agreement, you confirm the terms and agree to repay the amount by the due date.
+        </div>
+
+        <button onclick="handleAccept()">Accept Agreement</button>
+        <button class="secondary" onclick="handleDecline()">Decline</button>
+        <button class="tertiary" onclick="handleReviewLater()">Review Later</button>
+      </div>
+
+      <!-- View-only mode (no actions) -->
+      <div id="view-only" class="hidden">
+        <p style="text-align:center; color:var(--muted); font-size:14px; margin-top:16px">
+          This agreement is currently <span id="status-text"></span>.
+        </p>
+      </div>
+
+      <p class="status" id="action-status"></p>
+    </div>
+
+    <!-- Error state -->
+    <div id="error-section" class="card hidden">
+      <h2>Error</h2>
+      <p id="error-message">Unable to load agreement details.</p>
+      <a href="/app" style="display:inline-block; margin-top:16px; padding:10px 20px; background:var(--accent); color:#0d130f; border-radius:10px; text-decoration:none; font-weight:600">Go to Dashboard</a>
+    </div>
+  </div>
+
+  <script>
+    let agreement = null;
+    let currentUser = null;
+    let mode = 'view'; // 'review' or 'view'
+    const pathParts = window.location.pathname.split('/');
+    const agreementId = pathParts[2];
+    const action = pathParts[3]; // 'review' or 'view'
+
+    // Format amount in cents to euros with thousand separators, no decimals
+    function formatAmount(cents) {
+      const euros = Math.round(cents / 100);
+      return new Intl.NumberFormat('de-DE').format(euros);
+    }
+
+    async function loadAgreementData() {
+      try {
+        // Fetch current user
+        const userRes = await fetch('/api/user');
+        if (!userRes.ok) {
+          window.location.href = '/';
+          return;
+        }
+        const userData = await userRes.json();
+        currentUser = userData.user;
+
+        // Fetch agreement
+        const res = await fetch(`/api/agreements/${agreementId}`);
+        if (!res.ok) {
+          showError('Agreement not found or you do not have access to it.');
+          return;
+        }
+        agreement = await res.json();
+
+        // Determine mode based on URL and user role
+        const isLender = agreement.lender_user_id === currentUser.id;
+        const isBorrower = agreement.borrower_user_id === currentUser.id;
+
+        if (action === 'review' && isBorrower && agreement.status === 'pending') {
+          mode = 'review';
+          showReviewSection();
+        } else {
+          mode = 'view';
+          showViewSection();
+        }
+      } catch (err) {
+        console.error('Error loading agreement:', err);
+        showError('An error occurred while loading the agreement.');
+      }
+    }
+
+    function showReviewSection() {
+      document.getElementById('loading-text').parentElement.classList.add('hidden');
+      document.getElementById('details-section').classList.remove('hidden');
+      document.getElementById('page-title').textContent = 'Review Agreement';
+
+      populateDetails();
+
+      // Show borrower actions
+      document.getElementById('borrower-actions').classList.remove('hidden');
+      document.getElementById('view-only').classList.add('hidden');
+    }
+
+    function showViewSection() {
+      document.getElementById('loading-text').parentElement.classList.add('hidden');
+      document.getElementById('details-section').classList.remove('hidden');
+      document.getElementById('page-title').textContent = 'Agreement Details';
+
+      populateDetails();
+
+      // Show view-only mode
+      document.getElementById('borrower-actions').classList.add('hidden');
+      document.getElementById('view-only').classList.remove('hidden');
+      document.getElementById('status-text').textContent = agreement.status;
+    }
+
+    function populateDetails() {
+      const amount = formatAmount(agreement.amount_cents);
+      document.getElementById('amount-display').textContent = `€ ${amount}`;
+
+      const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
+      document.getElementById('lender-name').textContent = lenderName;
+
+      const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+      document.getElementById('borrower-name').textContent = borrowerName;
+
+      document.getElementById('due-date').textContent = new Date(agreement.due_date).toLocaleDateString();
+
+      const repaymentType = agreement.repayment_type === 'one_time' ? 'One-time payment' : agreement.repayment_type;
+      document.getElementById('repayment-type').textContent = repaymentType;
+
+      const statusText = agreement.status || 'pending';
+      document.getElementById('status-display').innerHTML = `<span class="status-badge ${statusText}">${statusText}</span>`;
+    }
+
+    function showError(message) {
+      document.getElementById('loading-text').parentElement.classList.add('hidden');
+      document.getElementById('error-section').classList.remove('hidden');
+      document.getElementById('error-message').textContent = message;
+    }
+
+    async function handleAccept() {
+      const status = document.getElementById('action-status');
+      status.textContent = 'Accepting...';
+      status.className = 'status';
+
+      try {
+        const res = await fetch(`/api/agreements/${agreementId}/accept`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          status.textContent = data.error || 'Failed to accept';
+          status.className = 'status error';
+          return;
+        }
+
+        status.textContent = 'Agreement accepted! Redirecting...';
+        status.className = 'status success';
+
+        setTimeout(() => {
+          window.location.href = '/app';
+        }, 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    async function handleDecline() {
+      if (!confirm('Are you sure you want to decline this agreement?')) {
+        return;
+      }
+
+      const status = document.getElementById('action-status');
+      status.textContent = 'Declining...';
+      status.className = 'status';
+
+      try {
+        const res = await fetch(`/api/agreements/${agreementId}/decline`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          status.textContent = data.error || 'Failed to decline';
+          status.className = 'status error';
+          return;
+        }
+
+        status.textContent = 'Agreement declined. Redirecting...';
+        status.className = 'status success';
+
+        setTimeout(() => {
+          window.location.href = '/app';
+        }, 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    async function handleReviewLater() {
+      const status = document.getElementById('action-status');
+      status.textContent = 'Saving...';
+      status.className = 'status';
+
+      try {
+        const res = await fetch(`/api/agreements/${agreementId}/review-later`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          status.textContent = data.error || 'Failed to save';
+          status.className = 'status error';
+          return;
+        }
+
+        status.textContent = 'Saved! Redirecting to dashboard...';
+        status.className = 'status success';
+
+        setTimeout(() => {
+          window.location.href = '/app';
+        }, 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    // Initialize
+    if (!agreementId) {
+      showError('Invalid agreement ID.');
+    } else {
+      loadAgreementData();
+    }
+  </script>
+</body>
+</html>
