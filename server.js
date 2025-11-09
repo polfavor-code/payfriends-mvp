@@ -549,7 +549,62 @@ app.get('/api/messages', requireAuth, (req, res) => {
     ORDER BY m.created_at DESC
   `).all(req.user.id);
 
-  res.json(rows);
+  // Get unread count
+  const unreadCount = db.prepare(`
+    SELECT COUNT(*) as count
+    FROM messages
+    WHERE user_id = ? AND read_at IS NULL
+  `).get(req.user.id).count;
+
+  res.json({
+    messages: rows,
+    unread_count: unreadCount
+  });
+});
+
+// Mark all messages as read for current user
+app.post('/api/activity/mark-all-read', requireAuth, (req, res) => {
+  try {
+    const now = new Date().toISOString();
+    db.prepare(`
+      UPDATE messages
+      SET read_at = ?
+      WHERE user_id = ? AND read_at IS NULL
+    `).run(now, req.user.id);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error marking all messages as read:', err);
+    res.status(500).json({ error: 'Server error marking messages as read' });
+  }
+});
+
+// Mark a single message as read
+app.post('/api/activity/:id/mark-read', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Verify message belongs to current user
+    const message = db.prepare(`
+      SELECT id FROM messages WHERE id = ? AND user_id = ?
+    `).get(id, req.user.id);
+
+    if (!message) {
+      return res.status(404).json({ error: 'Message not found' });
+    }
+
+    const now = new Date().toISOString();
+    db.prepare(`
+      UPDATE messages
+      SET read_at = ?
+      WHERE id = ? AND read_at IS NULL
+    `).run(now, id);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error marking message as read:', err);
+    res.status(500).json({ error: 'Server error marking message as read' });
+  }
 });
 
 // Get single agreement by ID (for logged-in users)
@@ -1127,7 +1182,37 @@ app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
     } else if (isLender) {
       // Lender added a received payment - approved immediately
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+      const lenderName = agreement.lender_full_name || agreement.lender_name;
       const amountEuros = Math.round(amountCents / 100);
+
+      // Create activity messages for both parties
+      // Activity for lender
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        req.user.id,
+        id,
+        'Payment recorded',
+        `You recorded a payment of €${amountEuros} from ${borrowerName}.`,
+        now,
+        'PAYMENT_RECORDED_LENDER'
+      );
+
+      // Activity for borrower
+      if (agreement.borrower_user_id) {
+        db.prepare(`
+          INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          agreement.borrower_user_id,
+          id,
+          'Payment confirmed',
+          `${lenderName.split(' ')[0] || lenderName} confirmed a payment of €${amountEuros}.`,
+          now,
+          'PAYMENT_RECORDED_BORROWER'
+        );
+      }
 
       // Get payment totals (only approved payments)
       const totals = getPaymentTotals(id);
