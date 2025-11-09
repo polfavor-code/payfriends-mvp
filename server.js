@@ -170,8 +170,9 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Proof of payment files are now served via the secure /api/payments/:id/proof endpoint
+// which requires authentication and authorization (lender or borrower only)
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Session middleware - loads user from session cookie
 app.use((req, res, next) => {
@@ -1595,6 +1596,51 @@ app.post('/api/payments/:id/decline', requireAuth, (req, res) => {
   } catch (err) {
     console.error('Error declining payment:', err);
     res.status(500).json({ error: 'Server error declining payment' });
+  }
+});
+
+// Get proof of payment file (secure, authenticated)
+app.get('/api/payments/:id/proof', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get payment and its agreement to check authorization
+    const payment = db.prepare(`
+      SELECT p.proof_file_path, p.proof_mime_type, p.proof_original_name,
+        a.lender_user_id, a.borrower_user_id
+      FROM payments p
+      JOIN agreements a ON p.agreement_id = a.id
+      WHERE p.id = ?
+    `).get(id);
+
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    // Check if proof file exists
+    if (!payment.proof_file_path) {
+      return res.status(404).json({ error: 'No proof of payment for this payment' });
+    }
+
+    // Authorization: only lender or borrower can access
+    if (req.user.id !== payment.lender_user_id && req.user.id !== payment.borrower_user_id) {
+      return res.status(403).json({ error: 'You are not authorized to access this file' });
+    }
+
+    // Construct file path (proof_file_path is stored as /uploads/payments/filename)
+    const filePath = path.join(__dirname, payment.proof_file_path);
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Proof file not found on server' });
+    }
+
+    // Set content type and send file
+    res.type(payment.proof_mime_type || 'application/octet-stream');
+    res.sendFile(path.resolve(filePath));
+  } catch (err) {
+    console.error('Error serving proof of payment:', err);
+    res.status(500).json({ error: 'Server error serving proof file' });
   }
 });
 

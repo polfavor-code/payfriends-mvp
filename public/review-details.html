@@ -820,8 +820,8 @@
       paymentsList.innerHTML = payments.map(payment => {
         const amount = formatAmount(payment.amount_cents);
         const date = new Date(payment.created_at).toLocaleString();
-        const method = payment.method ? `<div class="payment-method">Method: ${payment.method}</div>` : '';
-        const note = payment.note ? `<div class="payment-note">Note: ${payment.note}</div>` : '';
+        const method = payment.method ? `<div class="payment-method" style="font-size:13px; color:var(--muted); margin-top:4px">Method: ${payment.method}</div>` : '';
+        const note = payment.note ? `<div class="payment-note" style="font-size:13px; color:var(--muted); margin-top:4px">Note: ${payment.note}</div>` : '';
 
         // Determine who recorded the payment
         const recordedByBorrower = payment.recorded_by_user_id === agreement.borrower_user_id;
@@ -829,62 +829,61 @@
         const borrowerName = agreement.borrower_full_name || agreement.borrower_email;
         const lenderName = agreement.lender_full_name || agreement.lender_name;
 
-        // Build status text based on who recorded and payment status
-        let statusText = '';
+        // Build status badge and meta text based on who recorded and payment status
         let statusBadge = '';
+        let metaText = '';
 
         if (recordedByBorrower) {
           // Payment reported by borrower
-          statusText = `<div class="payment-recorded-by">Reported by ${borrowerName}</div>`;
+          metaText = `<div class="payment-meta-line">Reported by ${borrowerName}</div>`;
 
           if (payment.status === 'pending') {
-            statusText += `<div class="payment-recorded-by" style="color:#ff9800">Waiting for confirmation from ${lenderName}</div>`;
-            if (isLender) {
-              statusBadge = '<span class="payment-status-badge pending">Pending confirmation</span>';
-            }
+            statusBadge = '<span class="payment-status-badge pending">Pending confirmation</span>';
+            metaText += `<div class="payment-meta-line" style="color:#ff9800">Waiting for confirmation from ${lenderName}</div>`;
           } else if (payment.status === 'approved') {
-            statusText += `<div class="payment-recorded-by" style="color:#3ddc97">Confirmed by ${lenderName}</div>`;
+            statusBadge = '<span class="payment-status-badge approved">Approved</span>';
+            metaText += `<div class="payment-meta-line" style="color:#3ddc97">Confirmed by ${lenderName}</div>`;
           } else if (payment.status === 'declined') {
-            statusText += `<div class="payment-recorded-by" style="color:#f44336">Not confirmed by ${lenderName}</div>`;
             statusBadge = '<span class="payment-status-badge declined">Declined</span>';
+            metaText += `<div class="payment-meta-line" style="color:#f44336">Not confirmed by ${lenderName}</div>`;
           }
         } else if (recordedByLender) {
-          // Payment added by lender
-          statusText = `<div class="payment-recorded-by">Added by ${lenderName}</div>`;
+          // Payment added by lender - auto-approved
+          statusBadge = '<span class="payment-status-badge approved">Approved</span>';
+          metaText = `<div class="payment-meta-line">Added by ${lenderName}</div>`;
         } else {
           // Fallback for other cases
           const recordedBy = payment.recorded_by_name || payment.recorded_by_email;
-          statusText = `<div class="payment-recorded-by">Recorded by ${recordedBy}</div>`;
+          metaText = `<div class="payment-meta-line">Recorded by ${recordedBy}</div>`;
         }
 
-        // Approval buttons (lender only, for pending payments reported by borrower)
-        let approvalButtons = '';
-        if (isLender && payment.status === 'pending' && recordedByBorrower) {
-          approvalButtons = `
-            <div class="payment-approval-buttons">
-              <button onclick="approvePayment(${payment.id})" style="background:#3ddc97">Confirm payment</button>
-              <button onclick="declinePayment(${payment.id})" class="secondary">Decline</button>
-            </div>
-          `;
-        }
-
-        // Proof of payment viewer
+        // Proof of payment viewer (above action buttons)
         let proofButton = '';
         if (payment.proof_file_path) {
-          const isImage = payment.proof_mime_type && payment.proof_mime_type.startsWith('image/');
           proofButton = `
             <div style="margin-top:12px">
-              <button onclick="viewProofOfPayment('${payment.proof_file_path}', '${payment.proof_mime_type}', '${payment.proof_original_name || 'Proof of payment'}')" class="secondary" style="font-size:13px; padding:8px 12px">
+              <button onclick="viewProofOfPayment(${payment.id}, '${payment.proof_mime_type}', '${(payment.proof_original_name || 'Proof of payment').replace(/'/g, "\\'")}')" class="secondary" style="font-size:13px; padding:8px 12px; width:100%; text-align:left">
                 📎 View proof of payment
               </button>
             </div>
           `;
         }
 
+        // Approval buttons (lender only, for pending payments reported by borrower)
+        let approvalButtons = '';
+        if (isLender && payment.status === 'pending' && recordedByBorrower) {
+          approvalButtons = `
+            <div class="payment-approval-buttons" style="margin-top:12px">
+              <button onclick="approvePayment(${payment.id})" style="background:#3ddc97">Confirm payment</button>
+              <button onclick="declinePayment(${payment.id})" class="secondary">Decline</button>
+            </div>
+          `;
+        }
+
         return `
           <div class="payment-item">
-            <div style="display:flex; justify-content:space-between; align-items:center">
-              <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+              <div style="display:flex; align-items:center; gap:8px">
                 <span class="payment-amount">€ ${amount}</span>
                 ${statusBadge}
               </div>
@@ -892,9 +891,11 @@
             </div>
             ${method}
             ${note}
-            ${statusText}
-            ${approvalButtons}
+            <div style="margin-top:8px; font-size:12px; color:var(--muted)">
+              ${metaText}
+            </div>
             ${proofButton}
+            ${approvalButtons}
           </div>
         `;
       }).join('');
@@ -1091,22 +1092,29 @@
     }
 
     // View proof of payment
-    function viewProofOfPayment(filePath, mimeType, fileName) {
+    function viewProofOfPayment(paymentId, mimeType, fileName) {
       const isPdf = mimeType && mimeType === 'application/pdf';
+      const secureUrl = `/api/payments/${paymentId}/proof`;
+
+      const modal = document.getElementById('proof-modal');
+      const modalContent = document.getElementById('proof-modal-content');
+      const modalCaption = document.getElementById('proof-modal-caption');
+      const modalDownload = document.getElementById('proof-modal-download');
+
+      // Set caption and download link
+      modalCaption.textContent = fileName || 'Proof of payment';
+      modalDownload.href = secureUrl;
+      modalDownload.download = fileName || 'proof-of-payment';
 
       if (isPdf) {
-        // Open PDF in new tab
-        window.open(filePath, '_blank');
+        // Show PDF in iframe/embed
+        modalContent.innerHTML = `<iframe src="${secureUrl}" style="width:100%; height:80vh; border:none; background:#fff"></iframe>`;
       } else {
-        // Show image in modal
-        const modal = document.getElementById('proof-modal');
-        const modalImg = document.getElementById('proof-modal-img');
-        const modalCaption = document.getElementById('proof-modal-caption');
-
-        modal.style.display = 'flex';
-        modalImg.src = filePath;
-        modalCaption.textContent = fileName || 'Proof of payment';
+        // Show image
+        modalContent.innerHTML = `<img src="${secureUrl}" style="max-width:100%; max-height:80vh; display:block; margin:auto">`;
       }
+
+      modal.style.display = 'flex';
     }
 
     function closeProofModal() {
@@ -1123,11 +1131,22 @@
   </script>
 
   <!-- Proof of payment modal -->
-  <div id="proof-modal" onclick="closeProofModal()" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); align-items:center; justify-content:center; cursor:pointer">
-    <div style="max-width:90%; max-height:90%; position:relative">
-      <span onclick="closeProofModal()" style="position:absolute; top:-40px; right:0; color:#fff; font-size:35px; font-weight:bold; cursor:pointer">&times;</span>
-      <img id="proof-modal-img" style="max-width:100%; max-height:90vh; display:block; margin:auto">
-      <div id="proof-modal-caption" style="color:#ccc; text-align:center; padding:10px 0; font-size:14px"></div>
+  <div id="proof-modal" onclick="closeProofModal()" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); align-items:center; justify-content:center;">
+    <div onclick="event.stopPropagation()" style="max-width:90%; max-height:90%; width:90%; position:relative; background:#1a1f26; padding:20px; border-radius:8px; cursor:default">
+      <!-- Close button -->
+      <span onclick="closeProofModal()" style="position:absolute; top:10px; right:15px; color:#fff; font-size:35px; font-weight:bold; cursor:pointer; z-index:1001">&times;</span>
+
+      <!-- Title -->
+      <h3 style="color:#fff; margin:0 0 15px 0; padding-right:40px">Proof of payment</h3>
+
+      <!-- Content container (will hold image or iframe) -->
+      <div id="proof-modal-content" style="margin-bottom:15px; max-height:80vh; overflow:auto"></div>
+
+      <!-- Caption and download -->
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+        <div id="proof-modal-caption" style="color:#ccc; font-size:14px; flex:1"></div>
+        <a id="proof-modal-download" href="#" download class="secondary" style="font-size:13px; padding:8px 16px; text-decoration:none; white-space:nowrap">Download</a>
+      </div>
     </div>
   </div>
 
