@@ -121,7 +121,7 @@
         </div>
         <div class="row">
           <label>Amount (EUR)</label>
-          <input id="amount" type="number" step="0.01" min="0.01" placeholder="50.00" required />
+          <input id="amount" type="text" placeholder="50.00" required onblur="formatAmountInput()" onfocus="unformatAmountInput()" />
         </div>
         <div class="row">
           <label>Due date</label>
@@ -231,6 +231,35 @@
       return new Intl.NumberFormat('de-DE').format(euros);
     }
 
+    // Format the amount input field on blur
+    function formatAmountInput() {
+      const input = document.getElementById('amount');
+      const value = input.value.trim();
+      if (!value) return;
+
+      // Remove any existing formatting (dots, commas)
+      const cleanValue = value.replace(/[.,]/g, '');
+      const num = parseFloat(cleanValue);
+
+      if (!isNaN(num) && num > 0) {
+        // Format with thousand separators (German style: 6.000)
+        input.value = new Intl.NumberFormat('de-DE').format(num);
+      }
+    }
+
+    // Remove formatting from amount input on focus for easier editing
+    function unformatAmountInput() {
+      const input = document.getElementById('amount');
+      const value = input.value.trim();
+      if (!value) return;
+
+      // Remove thousand separators
+      const cleanValue = value.replace(/\./g, '').replace(/,/g, '');
+      if (!isNaN(cleanValue) && cleanValue !== '') {
+        input.value = cleanValue;
+      }
+    }
+
     // Calculate time ago from a timestamp
     function timeAgo(timestamp) {
       const now = new Date();
@@ -288,6 +317,15 @@
         return;
       }
 
+      // Parse amount - remove thousand separators before parsing
+      const cleanAmount = amount.replace(/[.,]/g, '');
+      const amountNum = parseFloat(cleanAmount);
+
+      if (isNaN(amountNum) || amountNum <= 0) {
+        status.textContent = 'Please enter a valid amount';
+        return;
+      }
+
       // Validate due date is not in the past
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -302,11 +340,11 @@
       status.textContent = '';
       wizardData.friendFirstName = friendFirstName;
       wizardData.friendEmail = friendEmail;
-      wizardData.amount = amount;
+      wizardData.amount = amountNum; // Store the numeric value
       wizardData.dueDate = dueDate;
 
-      // Update summary
-      const amountCents = Math.round(parseFloat(amount) * 100);
+      // Update summary - convert to cents and format
+      const amountCents = Math.round(amountNum * 100);
       document.getElementById('summary-amount').textContent = `€ ${formatAmount(amountCents)}`;
       document.getElementById('summary-friend').textContent = friendFirstName;
       document.getElementById('summary-email').textContent = friendEmail;
