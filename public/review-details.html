@@ -214,6 +214,14 @@
         <textarea id="payment-note" placeholder="Add any details about this payment..."></textarea>
       </div>
 
+      <div id="payment-proof-section" class="form-group" style="display:none">
+        <label class="form-label" for="payment-proof">Proof of payment (optional)</label>
+        <p style="color:var(--muted); font-size:12px; margin-bottom:8px">
+          Upload a screenshot, photo, or PDF of your payment if you have it.
+        </p>
+        <input type="file" id="payment-proof" accept="image/*,.pdf" style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+      </div>
+
       <button id="payment-submit-btn" onclick="submitPayment()">Record Payment</button>
       <button class="secondary" onclick="cancelPaymentForm()">Cancel</button>
 
@@ -832,7 +840,7 @@
           if (payment.status === 'pending') {
             statusText += `<div class="payment-recorded-by" style="color:#ff9800">Waiting for confirmation from ${lenderName}</div>`;
             if (isLender) {
-              statusBadge = '<span class="payment-status-badge pending">Pending approval</span>';
+              statusBadge = '<span class="payment-status-badge pending">Pending confirmation</span>';
             }
           } else if (payment.status === 'approved') {
             statusText += `<div class="payment-recorded-by" style="color:#3ddc97">Confirmed by ${lenderName}</div>`;
@@ -854,8 +862,21 @@
         if (isLender && payment.status === 'pending' && recordedByBorrower) {
           approvalButtons = `
             <div class="payment-approval-buttons">
-              <button onclick="approvePayment(${payment.id})" style="background:#3ddc97">Approve</button>
+              <button onclick="approvePayment(${payment.id})" style="background:#3ddc97">Confirm payment</button>
               <button onclick="declinePayment(${payment.id})" class="secondary">Decline</button>
+            </div>
+          `;
+        }
+
+        // Proof of payment viewer
+        let proofButton = '';
+        if (payment.proof_file_path) {
+          const isImage = payment.proof_mime_type && payment.proof_mime_type.startsWith('image/');
+          proofButton = `
+            <div style="margin-top:12px">
+              <button onclick="viewProofOfPayment('${payment.proof_file_path}', '${payment.proof_mime_type}', '${payment.proof_original_name || 'Proof of payment'}')" class="secondary" style="font-size:13px; padding:8px 12px">
+                📎 View proof of payment
+              </button>
             </div>
           `;
         }
@@ -873,6 +894,7 @@
             ${note}
             ${statusText}
             ${approvalButtons}
+            ${proofButton}
           </div>
         `;
       }).join('');
@@ -911,16 +933,23 @@
       // Update form header and button text based on user role
       const formHeader = document.getElementById('payment-form-header');
       const submitBtn = document.getElementById('payment-submit-btn');
+      const proofSection = document.getElementById('payment-proof-section');
 
       if (isBorrower) {
         formHeader.textContent = 'Report a Payment';
         submitBtn.textContent = 'Report Payment';
+        // Show proof upload for borrowers
+        proofSection.style.display = 'block';
       } else if (isLender) {
         formHeader.textContent = 'Add Received Payment';
         submitBtn.textContent = 'Add Payment';
+        // Hide proof upload for lenders
+        proofSection.style.display = 'none';
       } else {
         formHeader.textContent = 'Record a Payment';
         submitBtn.textContent = 'Record Payment';
+        // Hide proof upload by default
+        proofSection.style.display = 'none';
       }
 
       document.getElementById('details-section').classList.add('hidden');
@@ -939,6 +968,7 @@
       document.getElementById('payment-amount-field').value = '';
       document.getElementById('payment-method').value = '';
       document.getElementById('payment-note').value = '';
+      document.getElementById('payment-proof').value = '';
       document.getElementById('payment-status').textContent = '';
     }
 
@@ -947,6 +977,8 @@
       const amount = parseFloat(document.getElementById('payment-amount-field').value);
       const method = document.getElementById('payment-method').value || null;
       const note = document.getElementById('payment-note').value.trim() || null;
+      const proofInput = document.getElementById('payment-proof');
+      const proofFile = proofInput?.files[0];
 
       // Validate amount
       if (!amount || amount <= 0) {
@@ -955,14 +987,28 @@
         return;
       }
 
+      // Validate file size if present
+      if (proofFile && proofFile.size > 10 * 1024 * 1024) {
+        status.textContent = 'File size must be less than 10MB';
+        status.className = 'status error';
+        return;
+      }
+
       status.textContent = 'Recording payment...';
       status.className = 'status';
 
       try {
+        // Use FormData to support file upload
+        const formData = new FormData();
+        formData.append('amount', amount);
+        if (method) formData.append('method', method);
+        if (note) formData.append('note', note);
+        if (proofFile) formData.append('proof', proofFile);
+
         const res = await fetch(`/api/agreements/${agreementId}/payments`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount, method, note })
+          body: formData
+          // Don't set Content-Type header - browser will set it with boundary
         });
 
         const data = await res.json();
@@ -1044,6 +1090,30 @@
       }
     }
 
+    // View proof of payment
+    function viewProofOfPayment(filePath, mimeType, fileName) {
+      const isPdf = mimeType && mimeType === 'application/pdf';
+
+      if (isPdf) {
+        // Open PDF in new tab
+        window.open(filePath, '_blank');
+      } else {
+        // Show image in modal
+        const modal = document.getElementById('proof-modal');
+        const modalImg = document.getElementById('proof-modal-img');
+        const modalCaption = document.getElementById('proof-modal-caption');
+
+        modal.style.display = 'flex';
+        modalImg.src = filePath;
+        modalCaption.textContent = fileName || 'Proof of payment';
+      }
+    }
+
+    function closeProofModal() {
+      const modal = document.getElementById('proof-modal');
+      modal.style.display = 'none';
+    }
+
     // Initialize
     if (!agreementId) {
       showError('Invalid agreement ID.');
@@ -1051,5 +1121,15 @@
       loadAgreementData();
     }
   </script>
+
+  <!-- Proof of payment modal -->
+  <div id="proof-modal" onclick="closeProofModal()" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); align-items:center; justify-content:center; cursor:pointer">
+    <div style="max-width:90%; max-height:90%; position:relative">
+      <span onclick="closeProofModal()" style="position:absolute; top:-40px; right:0; color:#fff; font-size:35px; font-weight:bold; cursor:pointer">&times;</span>
+      <img id="proof-modal-img" style="max-width:100%; max-height:90vh; display:block; margin:auto">
+      <div id="proof-modal-caption" style="color:#ccc; text-align:center; padding:10px 0; font-size:14px"></div>
+    </div>
+  </div>
+
 </body>
 </html>
