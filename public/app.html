@@ -43,7 +43,11 @@
     .status-badge.declined{background:#ff6b6b; color:#fff}
     .status-badge.cancelled{background:#6c757d; color:#fff}
     .messages-list{margin-top:12px}
-    .message-item{padding:10px; background:#10151d; border-radius:8px; margin:8px 0; font-size:14px}
+    .message-item{padding:10px; background:#10151d; border-radius:8px; margin:8px 0; font-size:14px; transition:all 0.2s ease}
+    .message-item.message-clickable{cursor:pointer; border:1px solid transparent}
+    .message-item.message-clickable:hover{background:#1a2028; border-color:rgba(61,220,151,0.3); transform:translateX(2px)}
+    .message-item.message-unread{font-weight:600; background:#151a21; border-left:3px solid var(--accent)}
+    .unread-indicator{color:var(--accent); font-size:16px; margin-left:8px}
     .message-subject{font-weight:600; margin-bottom:4px}
     .message-date{color:var(--muted); font-size:12px}
     .empty-state{text-align:center; color:var(--muted); padding:32px; font-size:14px}
@@ -81,7 +85,10 @@
 
     <!-- Activity section (initially hidden) -->
     <section class="card" id="activity-section" style="display:none">
-      <h2>Activity</h2>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+        <h2 style="margin:0">Activity</h2>
+        <button id="mark-all-read-btn" onclick="markAllAsRead()" style="padding:6px 12px; font-size:13px">Mark all as read</button>
+      </div>
       <div class="messages-list" id="activity-list">
         <p class="empty-state">No activity yet</p>
       </div>
@@ -470,9 +477,13 @@
     async function loadMessages() {
       try {
         const res = await fetch('/api/messages');
-        const messages = await res.json();
+        const data = await res.json();
 
-        document.getElementById('activity-count').textContent = messages.length;
+        const messages = data.messages || [];
+        const unreadCount = data.unread_count || 0;
+
+        // Update header with unread count
+        document.getElementById('activity-count').textContent = unreadCount;
 
         const activityList = document.getElementById('activity-list');
         if (messages.length === 0) {
@@ -481,6 +492,7 @@
           activityList.innerHTML = messages.map(msg => {
             const timestamp = new Date(msg.created_at).toLocaleString();
             const relativeTime = timeAgo(msg.created_at);
+            const isUnread = !msg.read_at;
 
             // Determine activity text based on event_type
             let activityText = msg.body; // Fallback to original body
@@ -510,9 +522,28 @@
               activityText = msg.body;
             }
 
+            // Determine the link URL based on agreement_id and event_type
+            let linkUrl = '';
+            if (msg.agreement_id) {
+              // For events that should go to review page if still pending
+              if (msg.event_type === 'AGREEMENT_SENT' && msg.agreement_status === 'pending') {
+                linkUrl = `/agreements/${msg.agreement_id}/review`;
+              } else {
+                // Default to view page for all other agreement-related events
+                linkUrl = `/agreements/${msg.agreement_id}/view`;
+              }
+            }
+
+            const unreadClass = isUnread ? 'message-unread' : '';
+            const clickableClass = linkUrl ? 'message-clickable' : '';
+            const onclickAttr = linkUrl ? `onclick="handleActivityClick(${msg.id}, '${linkUrl}')"` : '';
+
             return `
-              <div class="message-item">
-                <div class="message-date">${timestamp} (${relativeTime})</div>
+              <div class="message-item ${unreadClass} ${clickableClass}" ${onclickAttr}>
+                <div style="display:flex; justify-content:space-between; align-items:center">
+                  <div class="message-date">${timestamp} (${relativeTime})</div>
+                  ${isUnread ? '<span class="unread-indicator">●</span>' : ''}
+                </div>
                 <div style="margin-top:4px">${activityText}</div>
               </div>
             `;
@@ -520,6 +551,41 @@
         }
       } catch (err) {
         console.error('Error loading activity:', err);
+      }
+    }
+
+    // Handle activity item click - mark as read and navigate
+    async function handleActivityClick(messageId, url) {
+      try {
+        // Mark as read
+        await fetch(`/api/activity/${messageId}/mark-read`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        // Navigate to the URL
+        window.location.href = url;
+      } catch (err) {
+        console.error('Error marking message as read:', err);
+        // Still navigate even if marking fails
+        window.location.href = url;
+      }
+    }
+
+    // Mark all messages as read
+    async function markAllAsRead() {
+      try {
+        const res = await fetch('/api/activity/mark-all-read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (res.ok) {
+          // Reload messages to update UI
+          await loadMessages();
+        }
+      } catch (err) {
+        console.error('Error marking all as read:', err);
       }
     }
 
