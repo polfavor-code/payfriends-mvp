@@ -93,6 +93,18 @@ db.exec(`
     FOREIGN KEY (agreement_id) REFERENCES agreements(id),
     FOREIGN KEY (borrower_user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agreement_id INTEGER NOT NULL,
+    recorded_by_user_id INTEGER NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    method TEXT,
+    note TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (agreement_id) REFERENCES agreements(id),
+    FOREIGN KEY (recorded_by_user_id) REFERENCES users(id)
+  );
 `);
 
 // --- middleware ---
@@ -146,6 +158,19 @@ function toCents(amountStr) {
   const n = Number(amountStr);
   if (!Number.isFinite(n) || n <= 0) return null;
   return Math.round(n * 100);
+}
+
+// compute payment totals for an agreement
+function getPaymentTotals(agreementId) {
+  const result = db.prepare(`
+    SELECT COALESCE(SUM(amount_cents), 0) as total_paid_cents
+    FROM payments
+    WHERE agreement_id = ?
+  `).get(agreementId);
+
+  return {
+    total_paid_cents: result.total_paid_cents
+  };
 }
 
 // create a new session for a user
@@ -369,7 +394,17 @@ app.get('/api/agreements', requireAuth, (req, res) => {
     ORDER BY created_at DESC
   `).all(req.user.id, req.user.id);
 
-  res.json(rows);
+  // Add payment totals to each agreement
+  const agreementsWithTotals = rows.map(agreement => {
+    const totals = getPaymentTotals(agreement.id);
+    return {
+      ...agreement,
+      total_paid_cents: totals.total_paid_cents,
+      outstanding_cents: agreement.amount_cents - totals.total_paid_cents
+    };
+  });
+
+  res.json(agreementsWithTotals);
 });
 
 // Create new agreement with invite (two-sided flow)
@@ -537,7 +572,15 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'Agreement not found' });
     }
 
-    res.json(agreement);
+    // Add payment totals
+    const totals = getPaymentTotals(id);
+    const agreementWithTotals = {
+      ...agreement,
+      total_paid_cents: totals.total_paid_cents,
+      outstanding_cents: agreement.amount_cents - totals.total_paid_cents
+    };
+
+    res.json(agreementWithTotals);
   } catch (err) {
     console.error('Error fetching agreement:', err);
     res.status(500).json({ error: 'Server error fetching agreement' });
@@ -991,6 +1034,153 @@ app.get('/api/agreements/:id/hardship-requests', requireAuth, (req, res) => {
   } catch (err) {
     console.error('Error fetching hardship requests:', err);
     res.status(500).json({ error: 'Server error fetching hardship requests' });
+  }
+});
+
+// Create a payment for an agreement
+app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { amount, method, note } = req.body || {};
+
+  if (!amount || amount <= 0) {
+    return res.status(400).json({ error: 'Valid amount is required' });
+  }
+
+  const amountCents = toCents(amount);
+  if (amountCents === null) {
+    return res.status(400).json({ error: 'Amount must be a positive number' });
+  }
+
+  try {
+    // Get agreement and verify user has access
+    const agreement = db.prepare(`
+      SELECT * FROM agreements
+      WHERE id = ? AND (lender_user_id = ? OR borrower_user_id = ?)
+    `).get(id, req.user.id, req.user.id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    // Verify agreement is active
+    if (agreement.status !== 'active') {
+      return res.status(400).json({ error: 'Can only record payments for active agreements' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Insert payment
+    const result = db.prepare(`
+      INSERT INTO payments (agreement_id, recorded_by_user_id, amount_cents, method, note, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id, req.user.id, amountCents, method || null, note || null, now);
+
+    // Get payment totals
+    const totals = getPaymentTotals(id);
+    const outstanding = agreement.amount_cents - totals.total_paid_cents;
+
+    // Auto-settle if fully paid
+    if (outstanding <= 0 && agreement.status === 'active') {
+      db.prepare(`
+        UPDATE agreements
+        SET status = 'settled'
+        WHERE id = ?
+      `).run(id);
+
+      // Create activity messages for both parties
+      const lenderName = agreement.lender_name;
+      const borrowerEmail = agreement.borrower_email;
+
+      // Message for lender
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.lender_user_id,
+        id,
+        'Agreement settled',
+        'Agreement has been fully paid and is now settled.',
+        now,
+        'AGREEMENT_SETTLED'
+      );
+
+      // Message for borrower (if linked)
+      if (agreement.borrower_user_id) {
+        db.prepare(`
+          INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          agreement.borrower_user_id,
+          id,
+          'Agreement settled',
+          'Agreement has been fully paid and is now settled.',
+          now,
+          'AGREEMENT_SETTLED'
+        );
+      }
+    }
+
+    // Get updated agreement with totals
+    const updatedAgreement = db.prepare(`
+      SELECT a.*,
+        u_lender.full_name as lender_full_name,
+        u_lender.email as lender_email,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email
+      FROM agreements a
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      WHERE a.id = ?
+    `).get(id);
+
+    const updatedTotals = getPaymentTotals(id);
+
+    res.status(201).json({
+      success: true,
+      paymentId: result.lastInsertRowid,
+      agreement: {
+        ...updatedAgreement,
+        total_paid_cents: updatedTotals.total_paid_cents,
+        outstanding_cents: updatedAgreement.amount_cents - updatedTotals.total_paid_cents
+      }
+    });
+  } catch (err) {
+    console.error('Error creating payment:', err);
+    res.status(500).json({ error: 'Server error creating payment' });
+  }
+});
+
+// Get payments for an agreement
+app.get('/api/agreements/:id/payments', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Verify user has access to this agreement
+    const agreement = db.prepare(`
+      SELECT id, lender_user_id, borrower_user_id
+      FROM agreements
+      WHERE id = ? AND (lender_user_id = ? OR borrower_user_id = ?)
+    `).get(id, req.user.id, req.user.id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    // Get all payments for this agreement with user info
+    const payments = db.prepare(`
+      SELECT p.*,
+        u.full_name as recorded_by_name,
+        u.email as recorded_by_email
+      FROM payments p
+      LEFT JOIN users u ON p.recorded_by_user_id = u.id
+      WHERE p.agreement_id = ?
+      ORDER BY p.created_at ASC
+    `).all(id);
+
+    res.json(payments);
+  } catch (err) {
+    console.error('Error fetching payments:', err);
+    res.status(500).json({ error: 'Server error fetching payments' });
   }
 });
 
