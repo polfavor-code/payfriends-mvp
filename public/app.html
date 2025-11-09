@@ -66,22 +66,23 @@
   <main class="container">
     <header class="header">
       <div class="header-left">
-        <h1>My Agreements</h1>
+        <h1><a href="/app" style="color:var(--text); text-decoration:none; cursor:pointer">My Agreements</a></h1>
         <p class="user-email" id="user-email">Loading...</p>
       </div>
       <div class="header-right">
-        <div class="inbox-widget" onclick="toggleInbox()">
-          Inbox (<span class="inbox-count" id="inbox-count">0</span>)
+        <div class="inbox-widget" onclick="toggleActivity()">
+          Activity (<span class="inbox-count" id="activity-count">0</span>)
         </div>
+        <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
         <button class="logout-btn" onclick="logout()">Logout</button>
       </div>
     </header>
 
-    <!-- Inbox section (initially hidden) -->
-    <section class="card" id="inbox-section" style="display:none">
-      <h2>Inbox</h2>
-      <div class="messages-list" id="messages-list">
-        <p class="empty-state">No messages yet</p>
+    <!-- Activity section (initially hidden) -->
+    <section class="card" id="activity-section" style="display:none">
+      <h2>Activity</h2>
+      <div class="messages-list" id="activity-list">
+        <p class="empty-state">No activity yet</p>
       </div>
     </section>
 
@@ -224,6 +225,12 @@
       inviteUrl: ''
     };
 
+    // Format amount in cents to euros with thousand separators, no decimals
+    function formatAmount(cents) {
+      const euros = Math.round(cents / 100);
+      return new Intl.NumberFormat('de-DE').format(euros);
+    }
+
     // Wizard functions
     function goToStep(step) {
       // Hide all steps
@@ -265,7 +272,8 @@
       wizardData.dueDate = dueDate;
 
       // Update summary
-      document.getElementById('summary-amount').textContent = `€${parseFloat(amount).toFixed(2)}`;
+      const amountCents = Math.round(parseFloat(amount) * 100);
+      document.getElementById('summary-amount').textContent = `€ ${formatAmount(amountCents)}`;
       document.getElementById('summary-friend').textContent = friendFirstName;
       document.getElementById('summary-email').textContent = friendEmail;
       document.getElementById('summary-due').textContent = new Date(dueDate).toLocaleDateString();
@@ -373,33 +381,36 @@
       }
     }
 
-    // Toggle inbox visibility
-    function toggleInbox() {
-      const inbox = document.getElementById('inbox-section');
-      inbox.style.display = inbox.style.display === 'none' ? 'block' : 'none';
+    // Toggle activity visibility
+    function toggleActivity() {
+      const activity = document.getElementById('activity-section');
+      activity.style.display = activity.style.display === 'none' ? 'block' : 'none';
     }
 
-    // Load messages
+    // Load activity
     async function loadMessages() {
       try {
         const res = await fetch('/api/messages');
         const messages = await res.json();
 
-        document.getElementById('inbox-count').textContent = messages.length;
+        document.getElementById('activity-count').textContent = messages.length;
 
-        const messagesList = document.getElementById('messages-list');
+        const activityList = document.getElementById('activity-list');
         if (messages.length === 0) {
-          messagesList.innerHTML = '<p class="empty-state">No messages yet</p>';
+          activityList.innerHTML = '<p class="empty-state">No activity yet</p>';
         } else {
-          messagesList.innerHTML = messages.map(msg => `
-            <div class="message-item">
-              <div class="message-subject">${msg.subject}</div>
-              <div class="message-date">${new Date(msg.created_at).toLocaleString()}</div>
-            </div>
-          `).join('');
+          activityList.innerHTML = messages.map(msg => {
+            const timestamp = new Date(msg.created_at).toLocaleString();
+            return `
+              <div class="message-item">
+                <div class="message-date">${timestamp}</div>
+                <div style="margin-top:4px">${msg.body}</div>
+              </div>
+            `;
+          }).join('');
         }
       } catch (err) {
-        console.error('Error loading messages:', err);
+        console.error('Error loading activity:', err);
       }
     }
 
@@ -460,17 +471,20 @@
       for (const a of filtered) {
         const tr = document.createElement('tr');
         tr.setAttribute('data-id', a.id);
-        const amount = (a.amount_cents / 100).toFixed(2);
+        const amount = formatAmount(a.amount_cents);
         const statusText = a.status || 'pending';
         const statusBadge = `<span class="status-badge ${statusText}">${statusText}</span>`;
 
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
-        const role = isLender ? 'You lent' : 'You borrowed';
+        const role = isLender ? 'Your role: Lender' : 'Your role: Borrower';
         const roleBadge = `<span class="role-badge ${isLender ? 'lend' : 'borrow'}">${role}</span>`;
 
-        // Determine borrower name
-        const borrowerName = a.friend_first_name || a.borrower_email;
+        // Determine lender name (use full_name if available, fallback to lender_name or email)
+        const lenderName = a.lender_full_name || a.lender_name || a.lender_email;
+
+        // Determine borrower name (use full_name if available, fallback to friend_first_name or email)
+        const borrowerName = a.borrower_full_name || a.friend_first_name || a.borrower_email;
 
         const actionBtn = (statusText === 'active' && isLender)
           ? `<button onclick="markAsPaid(${a.id})">Mark as Paid</button>`
@@ -479,7 +493,7 @@
         tr.innerHTML = `
           <td>${a.id}</td>
           <td>${roleBadge}</td>
-          <td>${a.lender_name}</td>
+          <td>${lenderName}</td>
           <td>${borrowerName}</td>
           <td>€ ${amount}</td>
           <td>${a.due_date}</td>
