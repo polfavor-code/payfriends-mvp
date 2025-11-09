@@ -80,6 +80,19 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (agreement_id) REFERENCES agreements(id)
   );
+
+  CREATE TABLE IF NOT EXISTS hardship_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agreement_id INTEGER NOT NULL,
+    borrower_user_id INTEGER NOT NULL,
+    reason_category TEXT NOT NULL,
+    reason_text TEXT,
+    can_pay_now_cents INTEGER,
+    preferred_adjustments TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (agreement_id) REFERENCES agreements(id),
+    FOREIGN KEY (borrower_user_id) REFERENCES users(id)
+  );
 `);
 
 // --- middleware ---
@@ -845,6 +858,136 @@ app.post('/api/invites/:token/review-later', requireAuth, (req, res) => {
   } catch (err) {
     console.error('Error handling review later:', err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Create hardship request (borrower only)
+app.post('/api/agreements/:id/hardship-request', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { reasonCategory, reasonText, canPayNowCents, preferredAdjustments } = req.body || {};
+
+  if (!reasonCategory || !preferredAdjustments) {
+    return res.status(400).json({ error: 'Reason category and preferred adjustments are required' });
+  }
+
+  try {
+    // Get agreement and verify it's active and user is borrower
+    const agreement = db.prepare(`
+      SELECT a.*,
+        u_lender.full_name as lender_full_name,
+        u_lender.email as lender_email,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email
+      FROM agreements a
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      WHERE a.id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    if (agreement.borrower_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the borrower can request hardship assistance' });
+    }
+
+    if (agreement.status !== 'active') {
+      return res.status(400).json({ error: 'Can only request hardship assistance for active agreements' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Convert preferredAdjustments array to comma-separated string
+    const adjustmentsStr = Array.isArray(preferredAdjustments)
+      ? preferredAdjustments.join(',')
+      : preferredAdjustments;
+
+    // Create hardship request
+    const result = db.prepare(`
+      INSERT INTO hardship_requests (
+        agreement_id, borrower_user_id, reason_category, reason_text,
+        can_pay_now_cents, preferred_adjustments, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      req.user.id,
+      reasonCategory,
+      reasonText || null,
+      canPayNowCents || null,
+      adjustmentsStr,
+      now
+    );
+
+    // Create activity event for borrower
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      id,
+      'Payment assistance requested',
+      'You asked for a new payment plan and explained why this payment is difficult.',
+      now,
+      'HARDSHIP_REQUEST_BORROWER'
+    );
+
+    // Create activity event for lender with more details
+    const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+    const canPayText = canPayNowCents
+      ? ` They can pay €${Math.round(canPayNowCents / 100)} now.`
+      : ' They cannot pay anything right now.';
+
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.lender_user_id,
+      id,
+      'Payment assistance requested',
+      `${borrowerName} reported difficulty making payments and requested a new plan.${canPayText}`,
+      now,
+      'HARDSHIP_REQUEST_LENDER'
+    );
+
+    res.status(201).json({
+      success: true,
+      hardshipRequestId: result.lastInsertRowid
+    });
+  } catch (err) {
+    console.error('Error creating hardship request:', err);
+    res.status(500).json({ error: 'Server error creating hardship request' });
+  }
+});
+
+// Get hardship requests for an agreement
+app.get('/api/agreements/:id/hardship-requests', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Verify user has access to this agreement
+    const agreement = db.prepare(`
+      SELECT id, lender_user_id, borrower_user_id
+      FROM agreements
+      WHERE id = ? AND (lender_user_id = ? OR borrower_user_id = ?)
+    `).get(id, req.user.id, req.user.id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    // Get all hardship requests for this agreement
+    const requests = db.prepare(`
+      SELECT * FROM hardship_requests
+      WHERE agreement_id = ?
+      ORDER BY created_at DESC
+    `).all(id);
+
+    res.json(requests);
+  } catch (err) {
+    console.error('Error fetching hardship requests:', err);
+    res.status(500).json({ error: 'Server error fetching hardship requests' });
   }
 });
 
