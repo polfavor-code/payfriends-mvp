@@ -41,6 +41,7 @@
     .status-badge.active{background:#3d7bdc; color:#fff}
     .status-badge.settled{background:#3ddc97; color:#0d130f}
     .status-badge.declined{background:#ff6b6b; color:#fff}
+    .status-badge.cancelled{background:#6c757d; color:#fff}
     .messages-list{margin-top:12px}
     .message-item{padding:10px; background:#10151d; border-radius:8px; margin:8px 0; font-size:14px}
     .message-subject{font-weight:600; margin-bottom:4px}
@@ -502,6 +503,10 @@
               activityText = msg.body;
             } else if (msg.event_type === 'AGREEMENT_REVIEW_LATER') {
               activityText = msg.body;
+            } else if (msg.event_type === 'AGREEMENT_CANCELLED_LENDER') {
+              activityText = msg.body;
+            } else if (msg.event_type === 'AGREEMENT_CANCELLED_BORROWER') {
+              activityText = msg.body;
             }
 
             return `
@@ -567,7 +572,12 @@
 
       let filtered = allAgreements;
       if (currentFilter !== 'all') {
-        filtered = allAgreements.filter(a => a.status === currentFilter);
+        // For Pending tab, exclude cancelled agreements
+        if (currentFilter === 'pending') {
+          filtered = allAgreements.filter(a => a.status === 'pending');
+        } else {
+          filtered = allAgreements.filter(a => a.status === currentFilter);
+        }
       }
 
       if (filtered.length === 0) {
@@ -601,11 +611,14 @@
 
         // Determine action button based on status and role
         let actionBtn = '—';
-        if (statusText === 'pending' && !isLender) {
+        if (statusText === 'cancelled') {
+          // No actions for cancelled agreements
+          actionBtn = '—';
+        } else if (statusText === 'pending' && !isLender) {
           // Borrower can review pending agreements
           actionBtn = `<button onclick="reviewAgreement(${a.id})">Review</button>`;
         } else if (statusText === 'pending' && isLender) {
-          // Lender can view pending agreements
+          // Lender can view pending agreements (and cancel)
           actionBtn = `<button onclick="viewAgreement(${a.id})">View</button>`;
         } else if (statusText === 'active' && isLender) {
           // Lender can mark active agreements as paid
