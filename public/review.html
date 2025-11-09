@@ -26,6 +26,8 @@
     button:hover{filter:brightness(1.06)}
     button.secondary{background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-top:8px}
     button.secondary:hover{background:rgba(255,255,255,0.05)}
+    button.tertiary{background:transparent; border:1px solid rgba(255,255,255,0.10); color:var(--muted); margin-top:8px}
+    button.tertiary:hover{background:rgba(255,255,255,0.03)}
     .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px}
     .hidden{display:none}
     .error{color:#ff6b6b}
@@ -100,6 +102,7 @@
 
       <button onclick="handleAccept()">Accept Agreement</button>
       <button class="secondary" onclick="handleDecline()">Decline</button>
+      <button class="tertiary" onclick="handleReviewLater()">Review Later</button>
       <p class="status" id="review-status"></p>
     </div>
 
@@ -305,6 +308,37 @@
         }
 
         status.textContent = 'Agreement declined. Redirecting...';
+        status.className = 'status success';
+
+        setTimeout(() => {
+          window.location.href = '/app';
+        }, 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    async function handleReviewLater() {
+      const status = document.getElementById('review-status');
+      status.textContent = 'Saving...';
+      status.className = 'status';
+
+      try {
+        const res = await fetch(`/api/invites/${token}/review-later`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          status.textContent = data.error || 'Failed to save';
+          status.className = 'status error';
+          return;
+        }
+
+        status.textContent = 'Saved! Redirecting to dashboard...';
         status.className = 'status success';
 
         setTimeout(() => {

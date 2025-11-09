@@ -459,6 +459,11 @@
             } else if (msg.event_type === 'AGREEMENT_DECLINED') {
               const borrowerName = msg.borrower_full_name || msg.friend_first_name || msg.borrower_email;
               activityText = `Agreement declined by ${borrowerName}`;
+            } else if (msg.event_type === 'AGREEMENT_ASSIGNED_TO_BORROWER') {
+              // Use the body text as-is for this event
+              activityText = msg.body;
+            } else if (msg.event_type === 'AGREEMENT_REVIEW_LATER') {
+              activityText = msg.body;
             }
 
             return `
@@ -472,6 +477,16 @@
       } catch (err) {
         console.error('Error loading activity:', err);
       }
+    }
+
+    // Navigate to review page for borrowers
+    function reviewAgreement(id) {
+      window.location.href = `/agreements/${id}/review`;
+    }
+
+    // Navigate to view page for lenders
+    function viewAgreement(id) {
+      window.location.href = `/agreements/${id}/view`;
     }
 
     // Mark as paid (which sets status to "settled")
@@ -546,9 +561,18 @@
         // Determine borrower name (use full_name if available, fallback to friend_first_name or email)
         const borrowerName = a.borrower_full_name || a.friend_first_name || a.borrower_email;
 
-        const actionBtn = (statusText === 'active' && isLender)
-          ? `<button onclick="markAsPaid(${a.id})">Mark as Paid</button>`
-          : '—';
+        // Determine action button based on status and role
+        let actionBtn = '—';
+        if (statusText === 'pending' && !isLender) {
+          // Borrower can review pending agreements
+          actionBtn = `<button onclick="reviewAgreement(${a.id})">Review</button>`;
+        } else if (statusText === 'pending' && isLender) {
+          // Lender can view pending agreements
+          actionBtn = `<button onclick="viewAgreement(${a.id})">View</button>`;
+        } else if (statusText === 'active' && isLender) {
+          // Lender can mark active agreements as paid
+          actionBtn = `<button onclick="markAsPaid(${a.id})">Mark as Paid</button>`;
+        }
 
         tr.innerHTML = `
           <td>${a.id}</td>

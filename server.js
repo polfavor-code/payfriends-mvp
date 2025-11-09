@@ -154,6 +154,48 @@ function isValidEmail(email) {
   return email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// Auto-link pending agreements to borrower when they log in/signup
+function autoLinkPendingAgreements(userId, userEmail, userFullName) {
+  try {
+    // Find all pending agreements where borrower_email matches and borrower_user_id is NULL
+    const pendingAgreements = db.prepare(`
+      SELECT id, lender_user_id, lender_name, amount_cents
+      FROM agreements
+      WHERE borrower_email = ? AND borrower_user_id IS NULL AND status = 'pending'
+    `).all(userEmail);
+
+    const now = new Date().toISOString();
+
+    for (const agreement of pendingAgreements) {
+      // Update agreement to link borrower_user_id
+      db.prepare(`
+        UPDATE agreements
+        SET borrower_user_id = ?
+        WHERE id = ?
+      `).run(userId, agreement.id);
+
+      // Create activity entry for borrower
+      const lenderName = agreement.lender_name;
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        userId,
+        agreement.id,
+        'New agreement waiting for review',
+        `New agreement from ${lenderName} waiting for your review.`,
+        now,
+        'AGREEMENT_ASSIGNED_TO_BORROWER'
+      );
+    }
+
+    return pendingAgreements.length;
+  } catch (err) {
+    console.error('Error auto-linking pending agreements:', err);
+    return 0;
+  }
+}
+
 // --- AUTH ROUTES ---
 
 // Signup
@@ -201,6 +243,9 @@ app.post('/auth/signup', async (req, res) => {
       sameSite: 'lax'
     });
 
+    // Auto-link any pending agreements
+    autoLinkPendingAgreements(userId, email, fullName || null);
+
     res.status(201).json({
       success: true,
       user: { id: userId, email, full_name: fullName || null }
@@ -241,6 +286,9 @@ app.post('/auth/login', async (req, res) => {
       maxAge: SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
       sameSite: 'lax'
     });
+
+    // Auto-link any pending agreements
+    autoLinkPendingAgreements(user.id, user.email, user.full_name);
 
     res.json({
       success: true,
@@ -450,6 +498,269 @@ app.get('/api/messages', requireAuth, (req, res) => {
   `).all(req.user.id);
 
   res.json(rows);
+});
+
+// Get single agreement by ID (for logged-in users)
+app.get('/api/agreements/:id', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const agreement = db.prepare(`
+      SELECT a.*,
+        u_lender.full_name as lender_full_name,
+        u_lender.email as lender_email,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email
+      FROM agreements a
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      WHERE a.id = ? AND (a.lender_user_id = ? OR a.borrower_user_id = ?)
+    `).get(id, req.user.id, req.user.id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    res.json(agreement);
+  } catch (err) {
+    console.error('Error fetching agreement:', err);
+    res.status(500).json({ error: 'Server error fetching agreement' });
+  }
+});
+
+// Accept agreement (logged-in, without token)
+app.post('/api/agreements/:id/accept', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get agreement
+    const agreement = db.prepare(`
+      SELECT * FROM agreements WHERE id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    // Verify user is the borrower
+    if (agreement.borrower_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'You are not authorized to accept this agreement' });
+    }
+
+    // Verify status is pending
+    if (agreement.status !== 'pending') {
+      return res.status(400).json({ error: 'Agreement is not pending' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Update agreement status
+    db.prepare(`
+      UPDATE agreements
+      SET status = 'active'
+      WHERE id = ?
+    `).run(id);
+
+    // Create activity messages for both parties
+    const borrowerName = req.user.full_name || agreement.friend_first_name || req.user.email;
+    const lenderName = agreement.lender_name;
+
+    // Message for lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.lender_user_id,
+      id,
+      'Agreement accepted',
+      `Agreement accepted by ${borrowerName}`,
+      now,
+      'AGREEMENT_ACCEPTED'
+    );
+
+    // Message for borrower
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      id,
+      'Agreement accepted',
+      `Agreement accepted from ${lenderName}`,
+      now,
+      'AGREEMENT_ACCEPTED'
+    );
+
+    res.json({ success: true, agreementId: Number(id) });
+  } catch (err) {
+    console.error('Error accepting agreement:', err);
+    res.status(500).json({ error: 'Server error accepting agreement' });
+  }
+});
+
+// Decline agreement (logged-in, without token)
+app.post('/api/agreements/:id/decline', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get agreement
+    const agreement = db.prepare(`
+      SELECT * FROM agreements WHERE id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    // Verify user is the borrower
+    if (agreement.borrower_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'You are not authorized to decline this agreement' });
+    }
+
+    // Verify status is pending
+    if (agreement.status !== 'pending') {
+      return res.status(400).json({ error: 'Agreement is not pending' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Update agreement status
+    db.prepare(`
+      UPDATE agreements
+      SET status = 'declined'
+      WHERE id = ?
+    `).run(id);
+
+    const borrowerName = req.user.full_name || agreement.friend_first_name || req.user.email;
+    const lenderName = agreement.lender_name;
+
+    // Message for lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.lender_user_id,
+      id,
+      'Agreement declined',
+      `Agreement declined by ${borrowerName}`,
+      now,
+      'AGREEMENT_DECLINED'
+    );
+
+    // Message for borrower
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      id,
+      'Agreement declined',
+      `Agreement declined from ${lenderName}`,
+      now,
+      'AGREEMENT_DECLINED'
+    );
+
+    res.json({ success: true, agreementId: Number(id) });
+  } catch (err) {
+    console.error('Error declining agreement:', err);
+    res.status(500).json({ error: 'Server error declining agreement' });
+  }
+});
+
+// Review later (logged-in or token-based)
+app.post('/api/agreements/:id/review-later', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get agreement
+    const agreement = db.prepare(`
+      SELECT * FROM agreements WHERE id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    // Verify user is the borrower
+    if (agreement.borrower_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'You are not authorized to access this agreement' });
+    }
+
+    // Don't change the status, just create an activity entry
+    const now = new Date().toISOString();
+
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      id,
+      'Agreement review postponed',
+      'You chose to review this agreement later.',
+      now,
+      'AGREEMENT_REVIEW_LATER'
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error handling review later:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Review later for token-based flow
+app.post('/api/invites/:token/review-later', requireAuth, (req, res) => {
+  const { token } = req.params;
+
+  try {
+    // Get invite and agreement
+    const invite = db.prepare(`
+      SELECT i.*, a.*,
+        i.id as invite_id,
+        a.id as agreement_id
+      FROM agreement_invites i
+      JOIN agreements a ON i.agreement_id = a.id
+      WHERE i.token = ?
+    `).get(token);
+
+    if (!invite) {
+      return res.status(404).json({ error: 'Invite not found' });
+    }
+
+    // Verify the logged-in user's email matches the invite email
+    if (req.user.email !== invite.email) {
+      return res.status(403).json({ error: 'This invite was sent to a different email address' });
+    }
+
+    // If borrower_user_id is still NULL, set it now
+    if (!invite.borrower_user_id) {
+      db.prepare(`
+        UPDATE agreements
+        SET borrower_user_id = ?
+        WHERE id = ?
+      `).run(req.user.id, invite.agreement_id);
+    }
+
+    // Don't change the status, just create an activity entry
+    const now = new Date().toISOString();
+
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      invite.agreement_id,
+      'Agreement review postponed',
+      'You chose to review this agreement later.',
+      now,
+      'AGREEMENT_REVIEW_LATER'
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error handling review later:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // Health check
@@ -708,6 +1019,22 @@ app.get('/review', (req, res) => {
   }
 
   res.sendFile(path.join(__dirname, 'public', 'review.html'));
+});
+
+// Review agreement (logged-in borrower)
+app.get('/agreements/:id/review', (req, res) => {
+  if (!req.user) {
+    return res.redirect('/');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'review-details.html'));
+});
+
+// View agreement (logged-in lender or borrower)
+app.get('/agreements/:id/view', (req, res) => {
+  if (!req.user) {
+    return res.redirect('/');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'review-details.html'));
 });
 
 // Serve other static files from "public" folder
