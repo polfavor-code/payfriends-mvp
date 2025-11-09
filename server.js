@@ -353,6 +353,9 @@ app.post('/api/profile', requireAuth, (req, res) => {
 
 // List agreements for logged-in user (both as lender and borrower)
 app.get('/api/agreements', requireAuth, (req, res) => {
+  // Auto-link any pending agreements for this user
+  autoLinkPendingAgreements(req.user.id, req.user.email, req.user.full_name);
+
   const rows = db.prepare(`
     SELECT a.*,
       u_lender.full_name as lender_full_name,

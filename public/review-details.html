@@ -112,11 +112,11 @@
 
       <!-- Lender actions (only for pending agreements) -->
       <div id="lender-actions" class="hidden">
-        <div class="note" style="background:rgba(255,107,107,0.1); border:1px solid rgba(255,107,107,0.2)">
+        <button class="secondary" onclick="handleCancel()" style="width:100%">Cancel request</button>
+
+        <div class="note" style="background:rgba(255,107,107,0.1); border:1px solid rgba(255,107,107,0.2); margin-top:8px">
           <p style="margin:0; font-size:14px">This will withdraw the agreement so your friend can no longer accept it.</p>
         </div>
-
-        <button class="secondary" onclick="handleCancel()" style="width:100%; margin-top:8px">Cancel request</button>
       </div>
 
       <!-- View-only mode (no actions) -->
