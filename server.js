@@ -7,6 +7,7 @@ const Database = require('better-sqlite3');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const fs = require('fs');
+const multer = require('multer');
 
 // --- basic setup ---
 const app = express();
@@ -17,6 +18,14 @@ const SESSION_EXPIRY_DAYS = 30;
 // make sure data folder exists
 if (!fs.existsSync('./data')) {
   fs.mkdirSync('./data');
+}
+
+// make sure uploads folder exists
+if (!fs.existsSync('./uploads')) {
+  fs.mkdirSync('./uploads');
+}
+if (!fs.existsSync('./uploads/payments')) {
+  fs.mkdirSync('./uploads/payments', { recursive: true });
 }
 
 // --- database setup ---
@@ -103,15 +112,66 @@ db.exec(`
     note TEXT,
     created_at TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'approved',
+    proof_file_path TEXT,
+    proof_original_name TEXT,
+    proof_mime_type TEXT,
     FOREIGN KEY (agreement_id) REFERENCES agreements(id),
     FOREIGN KEY (recorded_by_user_id) REFERENCES users(id)
   );
 `);
 
+// Add proof of payment columns if they don't exist (for existing databases)
+try {
+  db.exec(`ALTER TABLE payments ADD COLUMN proof_file_path TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE payments ADD COLUMN proof_original_name TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE payments ADD COLUMN proof_mime_type TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// --- multer setup for file uploads ---
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, './uploads/payments/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'payment-proof-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept images and PDFs only
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images (JPEG, PNG, GIF, WebP) and PDF files are allowed'));
+    }
+  }
+});
+
 // --- middleware ---
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(cookieParser());
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Session middleware - loads user from session cookie
 app.use((req, res, next) => {
@@ -159,6 +219,12 @@ function toCents(amountStr) {
   const n = Number(amountStr);
   if (!Number.isFinite(n) || n <= 0) return null;
   return Math.round(n * 100);
+}
+
+// format amount in cents to euros with thousand separators (e.g. "1.234")
+function formatAmount(cents) {
+  const euros = Math.round(cents / 100);
+  return new Intl.NumberFormat('de-DE').format(euros);
 }
 
 // compute payment totals for an agreement (only approved payments)
@@ -1096,7 +1162,7 @@ app.get('/api/agreements/:id/hardship-requests', requireAuth, (req, res) => {
 });
 
 // Create a payment for an agreement
-app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
+app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (req, res) => {
   const { id } = req.params;
   const { amount, method, note } = req.body || {};
 
@@ -1141,11 +1207,22 @@ app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
     // Set status based on who is recording
     const paymentStatus = isBorrower ? 'pending' : 'approved';
 
-    // Insert payment
+    // Handle proof of payment file if uploaded
+    let proofFilePath = null;
+    let proofOriginalName = null;
+    let proofMimeType = null;
+
+    if (req.file) {
+      proofFilePath = '/uploads/payments/' + path.basename(req.file.path);
+      proofOriginalName = req.file.originalname;
+      proofMimeType = req.file.mimetype;
+    }
+
+    // Insert payment with proof fields
     const result = db.prepare(`
-      INSERT INTO payments (agreement_id, recorded_by_user_id, amount_cents, method, note, created_at, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(id, req.user.id, amountCents, method || null, note || null, now, paymentStatus);
+      INSERT INTO payments (agreement_id, recorded_by_user_id, amount_cents, method, note, created_at, status, proof_file_path, proof_original_name, proof_mime_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, req.user.id, amountCents, method || null, note || null, now, paymentStatus, proofFilePath, proofOriginalName, proofMimeType);
 
     const paymentId = result.lastInsertRowid;
 
@@ -1154,7 +1231,7 @@ app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
       // Borrower reported a payment - pending approval
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
       const lenderName = agreement.lender_full_name || agreement.lender_name;
-      const amountEuros = Math.round(amountCents / 100);
+      const amountFormatted = formatAmount(amountCents);
 
       // Activity for borrower
       db.prepare(`
@@ -1164,7 +1241,7 @@ app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
         req.user.id,
         id,
         'Payment reported',
-        `You reported a payment of €${amountEuros} — waiting for ${lenderName.split(' ')[0] || lenderName}'s confirmation.`,
+        `You reported a payment of € ${amountFormatted} — waiting for ${lenderName.split(' ')[0] || lenderName}'s confirmation.`,
         now,
         'PAYMENT_REPORTED_BORROWER'
       );
@@ -1177,7 +1254,7 @@ app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
         agreement.lender_user_id,
         id,
         'Payment reported by borrower',
-        `${borrowerName} reported a payment of €${amountEuros} — please review.`,
+        `${borrowerName} reported a payment of € ${amountFormatted} — please review.`,
         now,
         'PAYMENT_REPORTED_LENDER'
       );
@@ -1185,7 +1262,7 @@ app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
       // Lender added a received payment - approved immediately
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
       const lenderName = agreement.lender_full_name || agreement.lender_name;
-      const amountEuros = Math.round(amountCents / 100);
+      const amountFormatted = formatAmount(amountCents);
 
       // Create activity messages for both parties
       // Activity for lender
@@ -1196,7 +1273,7 @@ app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
         req.user.id,
         id,
         'Payment recorded',
-        `You recorded a payment of €${amountEuros} from ${borrowerName}.`,
+        `You recorded a payment of € ${amountFormatted} from ${borrowerName}.`,
         now,
         'PAYMENT_RECORDED_LENDER'
       );
@@ -1210,7 +1287,7 @@ app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
           agreement.borrower_user_id,
           id,
           'Payment confirmed',
-          `${lenderName.split(' ')[0] || lenderName} confirmed a payment of €${amountEuros}.`,
+          `${lenderName.split(' ')[0] || lenderName} confirmed a payment of € ${amountFormatted}.`,
           now,
           'PAYMENT_RECORDED_BORROWER'
         );
@@ -1362,7 +1439,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
       WHERE id = ?
     `).run(id);
 
-    const amountEuros = Math.round(payment.amount_cents / 100);
+    const amountFormatted = formatAmount(payment.amount_cents);
     const lenderName = payment.lender_full_name || req.user.full_name;
     const borrowerName = payment.borrower_full_name || payment.friend_first_name;
 
@@ -1374,7 +1451,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
       req.user.id,
       payment.agreement_id,
       'Payment confirmed',
-      `You confirmed a payment of €${amountEuros} from ${borrowerName}.`,
+      `You confirmed a payment of € ${amountFormatted} from ${borrowerName}.`,
       now,
       'PAYMENT_APPROVED_LENDER'
     );
@@ -1388,7 +1465,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
         payment.borrower_user_id,
         payment.agreement_id,
         'Payment confirmed',
-        `${lenderName.split(' ')[0] || lenderName} confirmed your payment of €${amountEuros}.`,
+        `${lenderName.split(' ')[0] || lenderName} confirmed your payment of € ${amountFormatted}.`,
         now,
         'PAYMENT_APPROVED_BORROWER'
       );
@@ -1482,7 +1559,7 @@ app.post('/api/payments/:id/decline', requireAuth, (req, res) => {
       WHERE id = ?
     `).run(id);
 
-    const amountEuros = Math.round(payment.amount_cents / 100);
+    const amountFormatted = formatAmount(payment.amount_cents);
     const lenderName = payment.lender_full_name || req.user.full_name;
     const borrowerName = payment.borrower_full_name || payment.friend_first_name;
 
@@ -1494,7 +1571,7 @@ app.post('/api/payments/:id/decline', requireAuth, (req, res) => {
       req.user.id,
       payment.agreement_id,
       'Payment declined',
-      `You declined the reported payment of €${amountEuros} from ${borrowerName}.`,
+      `You declined the reported payment of € ${amountFormatted} from ${borrowerName}.`,
       now,
       'PAYMENT_DECLINED_LENDER'
     );
@@ -1508,7 +1585,7 @@ app.post('/api/payments/:id/decline', requireAuth, (req, res) => {
         payment.borrower_user_id,
         payment.agreement_id,
         'Payment not confirmed',
-        `${lenderName.split(' ')[0] || lenderName} did not confirm your reported payment of €${amountEuros}.`,
+        `${lenderName.split(' ')[0] || lenderName} did not confirm your reported payment of € ${amountFormatted}.`,
         now,
         'PAYMENT_DECLINED_BORROWER'
       );
