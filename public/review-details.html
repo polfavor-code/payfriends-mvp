@@ -68,6 +68,15 @@
     .record-payment-btn{background:#3d7bdc; margin-top:16px}
     .record-payment-btn:hover{filter:brightness(1.1)}
     select{appearance:none; background-image:url('data:image/svg+xml;utf8,<svg fill="%23a7b0bd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat:no-repeat; background-position:right 8px center}
+    .payment-status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; margin-left:8px}
+    .payment-status-badge.approved{background:#3ddc97; color:#0d130f}
+    .payment-status-badge.pending{background:#ff9800; color:#0d130f}
+    .payment-status-badge.declined{background:#ff6b6b; color:#fff}
+    .payment-approval-buttons{margin-top:8px; display:flex; gap:8px}
+    .payment-approval-buttons button{width:auto; padding:8px 16px; font-size:13px}
+    .hardship-button-spacing{margin-top:20px}
+    .form-section{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:24px}
+    .form-section-title{font-size:16px; font-weight:600; color:var(--text); margin-bottom:12px}
   </style>
 </head>
 <body>
@@ -143,7 +152,7 @@
       </div>
 
       <!-- Having trouble paying button for borrower -->
-      <div id="hardship-button" class="hidden">
+      <div id="hardship-button" class="hidden hardship-button-spacing">
         <button class="warning" onclick="showHardshipForm()">Having trouble paying?</button>
       </div>
 
@@ -219,8 +228,8 @@
       </p>
 
       <!-- Step 1: Reason -->
-      <div class="form-group">
-        <label class="form-label">What's making it hard to pay on time?</label>
+      <div class="form-section">
+        <div class="form-section-title">What's making it hard to pay on time?</div>
 
         <div class="form-radio">
           <input type="radio" name="reason" id="reason-unexpected" value="unexpected_expense">
@@ -246,16 +255,19 @@
           <input type="radio" name="reason" id="reason-other" value="other">
           <label for="reason-other">Something else</label>
         </div>
+      </div>
 
-        <div style="margin-top:16px">
-          <label class="form-label" for="reason-text">Explain in your own words (optional but recommended)</label>
-          <textarea id="reason-text" placeholder="Tell your friend more about your situation..."></textarea>
-        </div>
+      <div class="form-section">
+        <div class="form-section-title">Explain in your own words (optional but recommended)</div>
+        <textarea id="reason-text" placeholder="Tell your friend more about your situation..."></textarea>
       </div>
 
       <!-- Step 2: Can pay now -->
-      <div class="form-group">
-        <label class="form-label">Can you pay something now? Even a small payment helps.</label>
+      <div class="form-section">
+        <div class="form-section-title">Can you pay something now?</div>
+        <p style="color:var(--muted); font-size:14px; margin-top:4px; margin-bottom:12px">
+          Even a small payment will show your commitment to <span id="lender-first-name-text"></span>.
+        </p>
 
         <div class="form-radio">
           <input type="radio" name="can-pay" id="can-pay-yes" value="yes" onchange="togglePaymentAmount()">
@@ -274,8 +286,8 @@
       </div>
 
       <!-- Step 3: Preferred adjustments -->
-      <div class="form-group">
-        <label class="form-label">What kind of new plan would feel most realistic for you? (Check all that apply)</label>
+      <div class="form-section">
+        <div class="form-section-title">What kind of new plan would feel most realistic for you? (Check all that apply)</div>
 
         <div class="form-checkbox">
           <input type="checkbox" id="adj-smaller" value="smaller_payments_longer_period">
@@ -284,7 +296,7 @@
 
         <div class="form-checkbox">
           <input type="checkbox" id="adj-skip" value="skip_or_reduce_next">
-          <label for="adj-skip">Skip or reduce the next payment and catch up later</label>
+          <label for="adj-skip">Skip or reduce this upcoming payment, and increase the later payments to catch up.</label>
         </div>
 
         <div class="form-checkbox">
@@ -294,7 +306,7 @@
 
         <div class="form-checkbox">
           <input type="checkbox" id="adj-lower" value="lower_monthly_higher_interest">
-          <label for="adj-lower">Lower the monthly amount, even if total interest becomes a bit higher</label>
+          <label for="adj-lower">Lower the monthly amount, even if the total interest becomes higher and the loan runs longer.</label>
         </div>
 
         <div class="form-checkbox">
@@ -612,6 +624,11 @@
       document.getElementById('details-section').classList.add('hidden');
       document.getElementById('hardship-form').classList.remove('hidden');
 
+      // Set lender's first name
+      const lenderName = agreement.lender_full_name || agreement.lender_name;
+      const lenderFirstName = lenderName ? lenderName.split(' ')[0] : lenderName;
+      document.getElementById('lender-first-name-text').textContent = lenderFirstName || 'your friend';
+
       // Add event listeners for live summary updates
       document.querySelectorAll('input[name="reason"]').forEach(input => {
         input.addEventListener('change', updateSummary);
@@ -789,6 +806,9 @@
         return;
       }
 
+      const isLender = agreement.lender_user_id === currentUser.id;
+      const isBorrower = agreement.borrower_user_id === currentUser.id;
+
       paymentsList.innerHTML = payments.map(payment => {
         const amount = formatAmount(payment.amount_cents);
         const date = new Date(payment.created_at).toLocaleString();
@@ -796,15 +816,50 @@
         const method = payment.method ? `<div class="payment-method">Method: ${payment.method}</div>` : '';
         const note = payment.note ? `<div class="payment-note">Note: ${payment.note}</div>` : '';
 
+        // Status badge
+        let statusBadge = '';
+        let statusText = '';
+        if (payment.status === 'pending') {
+          if (isBorrower) {
+            const lenderFirstName = agreement.lender_full_name ? agreement.lender_full_name.split(' ')[0] : agreement.lender_name;
+            statusText = `<div class="payment-recorded-by" style="color:#ff9800">Pending approval by ${lenderFirstName}</div>`;
+          } else {
+            statusBadge = '<span class="payment-status-badge pending">Pending approval</span>';
+          }
+        } else if (payment.status === 'declined') {
+          statusBadge = '<span class="payment-status-badge declined">Declined</span>';
+        } else if (payment.status === 'approved') {
+          // Only show approved badge if there are pending/declined payments in the list
+          const hasPendingOrDeclined = payments.some(p => p.status === 'pending' || p.status === 'declined');
+          if (hasPendingOrDeclined) {
+            statusBadge = '<span class="payment-status-badge approved">Approved</span>';
+          }
+        }
+
+        // Approval buttons (lender only, for pending payments reported by borrower)
+        let approvalButtons = '';
+        if (isLender && payment.status === 'pending' && payment.recorded_by_user_id === agreement.borrower_user_id) {
+          approvalButtons = `
+            <div class="payment-approval-buttons">
+              <button onclick="approvePayment(${payment.id})" style="background:#3ddc97">Approve</button>
+              <button onclick="declinePayment(${payment.id})" class="secondary">Decline</button>
+            </div>
+          `;
+        }
+
         return `
           <div class="payment-item">
             <div style="display:flex; justify-content:space-between; align-items:center">
-              <div class="payment-amount">€ ${amount}</div>
+              <div>
+                <span class="payment-amount">€ ${amount}</span>
+                ${statusBadge}
+              </div>
               <div class="payment-date">${date}</div>
             </div>
             ${method}
             ${note}
-            <div class="payment-recorded-by">Recorded by ${recordedBy}</div>
+            ${statusText || `<div class="payment-recorded-by">Recorded by ${recordedBy}</div>`}
+            ${approvalButtons}
           </div>
         `;
       }).join('');
@@ -818,7 +873,19 @@
         const recordBtn = document.createElement('button');
         recordBtn.id = 'record-payment-btn';
         recordBtn.className = 'record-payment-btn';
-        recordBtn.textContent = 'Record a Payment';
+
+        // Set button text based on user role
+        const isBorrower = agreement.borrower_user_id === currentUser.id;
+        const isLender = agreement.lender_user_id === currentUser.id;
+
+        if (isBorrower) {
+          recordBtn.textContent = 'I\'ve Made a Payment';
+        } else if (isLender) {
+          recordBtn.textContent = 'Add Received Payment';
+        } else {
+          recordBtn.textContent = 'Record a Payment';
+        }
+
         recordBtn.onclick = showRecordPaymentForm;
         viewOnly.appendChild(recordBtn);
       }
@@ -893,6 +960,56 @@
       } catch (err) {
         status.textContent = 'Error: ' + err.message;
         status.className = 'status error';
+      }
+    }
+
+    // Approve payment
+    async function approvePayment(paymentId) {
+      try {
+        const res = await fetch(`/api/payments/${paymentId}/approve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert(data.error || 'Failed to approve payment');
+          return;
+        }
+
+        // Reload payment data and agreement
+        await loadAgreementData();
+      } catch (err) {
+        console.error('Error approving payment:', err);
+        alert('Error approving payment');
+      }
+    }
+
+    // Decline payment
+    async function declinePayment(paymentId) {
+      if (!confirm('Are you sure you want to decline this payment?')) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/payments/${paymentId}/decline`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert(data.error || 'Failed to decline payment');
+          return;
+        }
+
+        // Reload payment data and agreement
+        await loadAgreementData();
+      } catch (err) {
+        console.error('Error declining payment:', err);
+        alert('Error declining payment');
       }
     }
 

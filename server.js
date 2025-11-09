@@ -102,6 +102,7 @@ db.exec(`
     method TEXT,
     note TEXT,
     created_at TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'approved',
     FOREIGN KEY (agreement_id) REFERENCES agreements(id),
     FOREIGN KEY (recorded_by_user_id) REFERENCES users(id)
   );
@@ -160,12 +161,12 @@ function toCents(amountStr) {
   return Math.round(n * 100);
 }
 
-// compute payment totals for an agreement
+// compute payment totals for an agreement (only approved payments)
 function getPaymentTotals(agreementId) {
   const result = db.prepare(`
     SELECT COALESCE(SUM(amount_cents), 0) as total_paid_cents
     FROM payments
-    WHERE agreement_id = ?
+    WHERE agreement_id = ? AND status = 'approved'
   `).get(agreementId);
 
   return {
@@ -1054,8 +1055,15 @@ app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
   try {
     // Get agreement and verify user has access
     const agreement = db.prepare(`
-      SELECT * FROM agreements
-      WHERE id = ? AND (lender_user_id = ? OR borrower_user_id = ?)
+      SELECT a.*,
+        u_lender.full_name as lender_full_name,
+        u_lender.email as lender_email,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email
+      FROM agreements a
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      WHERE a.id = ? AND (a.lender_user_id = ? OR a.borrower_user_id = ?)
     `).get(id, req.user.id, req.user.id);
 
     if (!agreement) {
@@ -1069,54 +1077,96 @@ app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
 
     const now = new Date().toISOString();
 
+    // Determine if user is borrower or lender
+    const isBorrower = agreement.borrower_user_id === req.user.id;
+    const isLender = agreement.lender_user_id === req.user.id;
+
+    // Set status based on who is recording
+    const paymentStatus = isBorrower ? 'pending' : 'approved';
+
     // Insert payment
     const result = db.prepare(`
-      INSERT INTO payments (agreement_id, recorded_by_user_id, amount_cents, method, note, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, req.user.id, amountCents, method || null, note || null, now);
+      INSERT INTO payments (agreement_id, recorded_by_user_id, amount_cents, method, note, created_at, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(id, req.user.id, amountCents, method || null, note || null, now, paymentStatus);
 
-    // Get payment totals
-    const totals = getPaymentTotals(id);
-    const outstanding = agreement.amount_cents - totals.total_paid_cents;
+    const paymentId = result.lastInsertRowid;
 
-    // Auto-settle if fully paid
-    if (outstanding <= 0 && agreement.status === 'active') {
+    // Create activity events based on who recorded the payment
+    if (isBorrower) {
+      // Borrower reported a payment - pending approval
+      const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+      const lenderName = agreement.lender_full_name || agreement.lender_name;
+      const amountEuros = Math.round(amountCents / 100);
+
+      // Activity for borrower
       db.prepare(`
-        UPDATE agreements
-        SET status = 'settled'
-        WHERE id = ?
-      `).run(id);
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        req.user.id,
+        id,
+        'Payment reported',
+        `You reported a payment of €${amountEuros} — waiting for ${lenderName.split(' ')[0] || lenderName}'s confirmation.`,
+        now,
+        'PAYMENT_REPORTED_BORROWER'
+      );
 
-      // Create activity messages for both parties
-      const lenderName = agreement.lender_name;
-      const borrowerEmail = agreement.borrower_email;
-
-      // Message for lender
+      // Activity for lender
       db.prepare(`
         INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
         VALUES (?, ?, ?, ?, ?, ?)
       `).run(
         agreement.lender_user_id,
         id,
-        'Agreement settled',
-        'Agreement has been fully paid and is now settled.',
+        'Payment reported by borrower',
+        `${borrowerName} reported a payment of €${amountEuros} — please review.`,
         now,
-        'AGREEMENT_SETTLED'
+        'PAYMENT_REPORTED_LENDER'
       );
+    } else if (isLender) {
+      // Lender added a received payment - approved immediately
+      const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+      const amountEuros = Math.round(amountCents / 100);
 
-      // Message for borrower (if linked)
-      if (agreement.borrower_user_id) {
+      // Get payment totals (only approved payments)
+      const totals = getPaymentTotals(id);
+      const outstanding = agreement.amount_cents - totals.total_paid_cents;
+
+      // Auto-settle if fully paid
+      if (outstanding <= 0 && agreement.status === 'active') {
+        db.prepare(`
+          UPDATE agreements
+          SET status = 'settled'
+          WHERE id = ?
+        `).run(id);
+
+        // Create activity messages for both parties
         db.prepare(`
           INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
           VALUES (?, ?, ?, ?, ?, ?)
         `).run(
-          agreement.borrower_user_id,
+          agreement.lender_user_id,
           id,
           'Agreement settled',
           'Agreement has been fully paid and is now settled.',
           now,
           'AGREEMENT_SETTLED'
         );
+
+        if (agreement.borrower_user_id) {
+          db.prepare(`
+            INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `).run(
+            agreement.borrower_user_id,
+            id,
+            'Agreement settled',
+            'Agreement has been fully paid and is now settled.',
+            now,
+            'AGREEMENT_SETTLED'
+          );
+        }
       }
     }
 
@@ -1137,7 +1187,7 @@ app.post('/api/agreements/:id/payments', requireAuth, (req, res) => {
 
     res.status(201).json({
       success: true,
-      paymentId: result.lastInsertRowid,
+      paymentId: paymentId,
       agreement: {
         ...updatedAgreement,
         total_paid_cents: updatedTotals.total_paid_cents,
@@ -1181,6 +1231,206 @@ app.get('/api/agreements/:id/payments', requireAuth, (req, res) => {
   } catch (err) {
     console.error('Error fetching payments:', err);
     res.status(500).json({ error: 'Server error fetching payments' });
+  }
+});
+
+// Approve a pending payment (lender only)
+app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get payment and agreement
+    const payment = db.prepare(`
+      SELECT p.*, a.lender_user_id, a.borrower_user_id, a.amount_cents, a.status as agreement_status,
+        u_lender.full_name as lender_full_name,
+        u_borrower.full_name as borrower_full_name,
+        a.friend_first_name
+      FROM payments p
+      JOIN agreements a ON p.agreement_id = a.id
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      WHERE p.id = ?
+    `).get(id);
+
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    // Verify current user is the lender
+    if (payment.lender_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the lender can approve payments' });
+    }
+
+    // Verify payment is pending
+    if (payment.status !== 'pending') {
+      return res.status(400).json({ error: 'Only pending payments can be approved' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Update payment status to approved
+    db.prepare(`
+      UPDATE payments
+      SET status = 'approved'
+      WHERE id = ?
+    `).run(id);
+
+    const amountEuros = Math.round(payment.amount_cents / 100);
+    const lenderName = payment.lender_full_name || req.user.full_name;
+    const borrowerName = payment.borrower_full_name || payment.friend_first_name;
+
+    // Create activity for lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      payment.agreement_id,
+      'Payment confirmed',
+      `You confirmed a payment of €${amountEuros} from ${borrowerName}.`,
+      now,
+      'PAYMENT_APPROVED_LENDER'
+    );
+
+    // Create activity for borrower
+    if (payment.borrower_user_id) {
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        payment.borrower_user_id,
+        payment.agreement_id,
+        'Payment confirmed',
+        `${lenderName.split(' ')[0] || lenderName} confirmed your payment of €${amountEuros}.`,
+        now,
+        'PAYMENT_APPROVED_BORROWER'
+      );
+    }
+
+    // Recompute totals
+    const totals = getPaymentTotals(payment.agreement_id);
+    const outstanding = payment.amount_cents - totals.total_paid_cents;
+
+    // Auto-settle if fully paid
+    if (outstanding <= 0 && payment.agreement_status === 'active') {
+      db.prepare(`
+        UPDATE agreements
+        SET status = 'settled'
+        WHERE id = ?
+      `).run(payment.agreement_id);
+
+      // Create activity messages for both parties
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        payment.lender_user_id,
+        payment.agreement_id,
+        'Agreement settled',
+        'Agreement has been fully paid and is now settled.',
+        now,
+        'AGREEMENT_SETTLED'
+      );
+
+      if (payment.borrower_user_id) {
+        db.prepare(`
+          INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          payment.borrower_user_id,
+          payment.agreement_id,
+          'Agreement settled',
+          'Agreement has been fully paid and is now settled.',
+          now,
+          'AGREEMENT_SETTLED'
+        );
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error approving payment:', err);
+    res.status(500).json({ error: 'Server error approving payment' });
+  }
+});
+
+// Decline a pending payment (lender only)
+app.post('/api/payments/:id/decline', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get payment and agreement
+    const payment = db.prepare(`
+      SELECT p.*, a.lender_user_id, a.borrower_user_id,
+        u_lender.full_name as lender_full_name,
+        u_borrower.full_name as borrower_full_name,
+        a.friend_first_name
+      FROM payments p
+      JOIN agreements a ON p.agreement_id = a.id
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      WHERE p.id = ?
+    `).get(id);
+
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    // Verify current user is the lender
+    if (payment.lender_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the lender can decline payments' });
+    }
+
+    // Verify payment is pending
+    if (payment.status !== 'pending') {
+      return res.status(400).json({ error: 'Only pending payments can be declined' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Update payment status to declined
+    db.prepare(`
+      UPDATE payments
+      SET status = 'declined'
+      WHERE id = ?
+    `).run(id);
+
+    const amountEuros = Math.round(payment.amount_cents / 100);
+    const lenderName = payment.lender_full_name || req.user.full_name;
+    const borrowerName = payment.borrower_full_name || payment.friend_first_name;
+
+    // Create activity for lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      payment.agreement_id,
+      'Payment declined',
+      `You declined the reported payment of €${amountEuros} from ${borrowerName}.`,
+      now,
+      'PAYMENT_DECLINED_LENDER'
+    );
+
+    // Create activity for borrower
+    if (payment.borrower_user_id) {
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        payment.borrower_user_id,
+        payment.agreement_id,
+        'Payment not confirmed',
+        `${lenderName.split(' ')[0] || lenderName} did not confirm your reported payment of €${amountEuros}.`,
+        now,
+        'PAYMENT_DECLINED_BORROWER'
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error declining payment:', err);
+    res.status(500).json({ error: 'Server error declining payment' });
   }
 });
 
