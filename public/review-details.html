@@ -140,12 +140,28 @@
           <span class="detail-label">Amount</span>
           <span class="detail-value" id="amount-display"></span>
         </div>
+        <div class="detail-row" id="repayment-type-row">
+          <span class="detail-label">Repayment type</span>
+          <span class="detail-value" id="repayment-type-display"></span>
+        </div>
+        <div class="detail-row" id="installment-info-row" style="display:none">
+          <span class="detail-label">Installment plan</span>
+          <span class="detail-value" id="installment-info-display"></span>
+        </div>
         <div class="detail-row">
           <span class="detail-label">Due date</span>
           <span class="detail-value">
             <span id="due-date"></span>
             <span id="due-date-countdown" style="color:var(--muted); margin-left:8px"></span>
           </span>
+        </div>
+        <div class="detail-row" id="interest-row" style="display:none">
+          <span class="detail-label">Interest</span>
+          <span class="detail-value" id="interest-display"></span>
+        </div>
+        <div class="detail-row" id="total-repay-row" style="display:none">
+          <span class="detail-label">Total to repay</span>
+          <span class="detail-value" id="total-repay-display"></span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Status</span>
@@ -528,6 +544,10 @@
       const isLender = agreement.lender_user_id === currentUser.id;
       const isBorrower = agreement.borrower_user_id === currentUser.id;
 
+      // Determine repayment details
+      const repaymentType = agreement.repayment_type || 'one_time';
+      const hasInterest = agreement.interest_rate && agreement.interest_rate > 0;
+
       // Generate human-readable summary line 1
       let summaryLine1 = '';
       if (isLender) {
@@ -541,8 +561,22 @@
 
       // Generate human-readable summary line 2
       const outstanding = formatAmount(agreement.outstanding_cents || agreement.amount_cents);
-      const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-      const summaryLine2 = `€${outstanding} remains outstanding and is due by ${dueDate}.`;
+      let summaryLine2 = '';
+
+      if (repaymentType === 'installments' && agreement.installment_count) {
+        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        summaryLine2 = `${agreement.installment_count} monthly payments, from ${firstDate} to ${finalDate}. €${outstanding} remains outstanding.`;
+      } else {
+        const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        summaryLine2 = `€${outstanding} remains outstanding and is due by ${dueDate}.`;
+      }
+
+      if (hasInterest) {
+        const totalRepay = formatAmount(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
+        summaryLine2 += ` Total to repay: €${totalRepay} (incl. ${agreement.interest_rate}% interest).`;
+      }
+
       document.getElementById('agreement-summary-line2').textContent = summaryLine2;
 
       // Show profile picture in summary if available
@@ -563,10 +597,50 @@
       document.getElementById('amount-display').textContent = `€ ${amount}`;
       document.getElementById('lender-name').textContent = lenderName;
       document.getElementById('borrower-name').textContent = borrowerName;
+
+      // Repayment type
+      const repaymentTypeText = repaymentType === 'installments' ? 'Installments' : 'One-time payment';
+      document.getElementById('repayment-type-display').textContent = repaymentTypeText;
+
+      // Installment info (show only if installments)
+      if (repaymentType === 'installments' && agreement.installment_count) {
+        const installmentAmount = formatAmount(Math.round((agreement.installment_amount || 0) * 100));
+        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        document.getElementById('installment-info-display').textContent =
+          `${agreement.installment_count} monthly payments of €${installmentAmount}, from ${firstDate} to ${finalDate}`;
+        document.getElementById('installment-info-row').style.display = 'flex';
+      } else {
+        document.getElementById('installment-info-row').style.display = 'none';
+      }
+
+      // Due date (for one-time, this is the due date; for installments, this is the final due date)
+      const dueDate = repaymentType === 'installments' && agreement.final_due_date
+        ? new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        : new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
       document.getElementById('due-date').textContent = dueDate;
 
       // Add due date countdown
-      document.getElementById('due-date-countdown').textContent = getDueDateCountdown(agreement.due_date);
+      const dueDateForCountdown = repaymentType === 'installments' && agreement.final_due_date
+        ? agreement.final_due_date
+        : agreement.due_date;
+      document.getElementById('due-date-countdown').textContent = getDueDateCountdown(dueDateForCountdown);
+
+      // Interest info (show only if interest > 0)
+      if (hasInterest) {
+        const interestRate = agreement.interest_rate;
+        const totalInterest = formatAmount(Math.round((agreement.total_interest || 0) * 100));
+        document.getElementById('interest-display').textContent = `${interestRate}% p.a. (total interest: €${totalInterest})`;
+        document.getElementById('interest-row').style.display = 'flex';
+
+        // Total to repay
+        const totalRepay = formatAmount(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
+        document.getElementById('total-repay-display').textContent = `€${totalRepay}`;
+        document.getElementById('total-repay-row').style.display = 'flex';
+      } else {
+        document.getElementById('interest-row').style.display = 'none';
+        document.getElementById('total-repay-row').style.display = 'none';
+      }
 
       // Show description if available
       if (agreement.description) {

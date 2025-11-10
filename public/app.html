@@ -132,8 +132,9 @@
       <!-- Wizard Steps -->
       <div class="wizard-steps">
         <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)">1. Role</div>
-        <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)">2. Details</div>
-        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)">3. Summary</div>
+        <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)">2. Terms</div>
+        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)">3. Interest</div>
+        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)">4. Summary</div>
       </div>
 
       <!-- Step 1: Role Selection -->
@@ -147,9 +148,9 @@
         </div>
       </div>
 
-      <!-- Step 2: Friend & Basic Details -->
+      <!-- Step 2: Friend & Terms (+ Installments) -->
       <div id="wizard-step-2" class="wizard-content hidden">
-        <h3 style="margin-top:0">Friend & Agreement Details</h3>
+        <h3 style="margin-top:0">Friend & Terms</h3>
         <div class="row">
           <label>Friend's first name</label>
           <input id="friend-first-name" placeholder="Alex" required />
@@ -168,31 +169,119 @@
           <input id="amount" type="text" placeholder="50.00" required onblur="formatAmountInput()" onfocus="unformatAmountInput()" />
         </div>
         <div class="row">
-          <label>Due date</label>
-          <input id="due-date" type="date" required />
+          <label>Repayment type</label>
+          <select id="repayment-type" onchange="toggleInstallmentFields()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+            <option value="one_time">One-time payment</option>
+            <option value="installments">Installments</option>
+          </select>
+        </div>
+        <!-- One-time payment fields -->
+        <div id="one-time-fields">
+          <div class="row">
+            <label>Due date</label>
+            <input id="due-date" type="date" required onchange="updateDueDateHelper()" />
+          </div>
+          <p id="due-date-helper" style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px"></p>
+        </div>
+        <!-- Installment fields -->
+        <div id="installment-fields" class="hidden">
+          <div class="row">
+            <label>Plan length (months)</label>
+            <select id="installment-months" onchange="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+              <option value="3">3 months</option>
+              <option value="6" selected>6 months</option>
+              <option value="12">12 months</option>
+            </select>
+          </div>
+          <div class="row">
+            <label>First payment date</label>
+            <input id="first-payment-date" type="date" required onchange="calculateInstallments()" />
+          </div>
+          <p id="installment-summary" style="color:var(--accent); font-size:13px; margin:8px 0 12px 172px; font-weight:500"></p>
         </div>
         <div style="margin-top:16px">
-          <button onclick="goToSummary()">Continue to Summary</button>
+          <button onclick="goToInterest()">Continue</button>
           <button class="secondary" onclick="goToStep(1)">Back</button>
         </div>
         <p id="step2-status" class="status"></p>
       </div>
 
-      <!-- Step 3: Summary & Send -->
+      <!-- Step 3: Interest & Fairness -->
       <div id="wizard-step-3" class="wizard-content hidden">
-        <h3 style="margin-top:0">Summary</h3>
-        <div style="background:#10151d; padding:16px; border-radius:8px; margin:16px 0">
-          <div class="summary-row">
-            <span class="summary-label">You are</span>
-            <span class="summary-value">Lending</span>
+        <h3 style="margin-top:0">Interest & Fairness</h3>
+        <p style="color:var(--muted); font-size:14px; margin-bottom:16px">Would you like to add interest to this loan?</p>
+
+        <div style="margin:16px 0">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); margin-bottom:8px">
+            <input type="radio" name="interest-option" value="no" onchange="toggleInterestFields()" checked />
+            <span>No interest</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
+            <input type="radio" name="interest-option" value="yes" onchange="toggleInterestFields()" />
+            <span>Add interest</span>
+          </label>
+        </div>
+
+        <div id="no-interest-summary" style="background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.2); border-radius:8px; padding:12px; margin:16px 0">
+          <p style="margin:0; color:var(--text); font-size:14px">No interest added; total to repay remains <span id="no-interest-amount">€0</span>.</p>
+        </div>
+
+        <div id="interest-fields" class="hidden">
+          <div class="row">
+            <label>Interest rate (% p.a.)</label>
+            <input id="interest-rate" type="number" min="0" max="100" step="0.1" placeholder="4.0" oninput="calculateInterest()" />
           </div>
+          <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">Recommended: <span id="recommended-rate">4</span>%</p>
+
+          <div id="interest-summary" style="background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.2); border-radius:8px; padding:12px; margin:16px 0">
+            <p style="margin:0 0 8px 0; color:var(--text); font-size:14px">
+              <strong>Total interest:</strong> €<span id="total-interest-display">0</span>
+            </p>
+            <p style="margin:0 0 8px 0; color:var(--text); font-size:14px">
+              <strong>Total to repay:</strong> €<span id="total-repay-display">0</span>
+            </p>
+            <p id="installment-interest-note" style="margin:0; color:var(--muted); font-size:13px"></p>
+          </div>
+        </div>
+
+        <div style="margin-top:16px">
+          <button onclick="goToPaymentPreferences()">Continue</button>
+          <button class="secondary" onclick="goToStep(2)">Back</button>
+        </div>
+        <p id="step3-status" class="status"></p>
+      </div>
+
+      <!-- Step 4: Payment Preferences + Summary -->
+      <div id="wizard-step-4" class="wizard-content hidden">
+        <h3 style="margin-top:0">Payment Preferences & Summary</h3>
+
+        <!-- Payment preferences -->
+        <div style="margin-bottom:24px">
+          <h4 style="margin:0 0 12px 0">Payment Preferences</h4>
+          <div class="row">
+            <label>Preferred method</label>
+            <select id="payment-preference" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+              <option value="bank">Bank transfer</option>
+              <option value="cash">Cash</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div style="margin:12px 0">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer">
+              <input type="checkbox" id="reminder-enabled" checked />
+              <span style="font-size:14px">Send reminders 14, 7, and 1 day before due date</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <h4 style="margin:0 0 12px 0">Agreement Summary</h4>
+        <div style="background:#10151d; padding:16px; border-radius:8px; margin:16px 0">
+          <p id="full-summary-text" style="margin:0 0 16px 0; color:var(--text); font-size:15px; line-height:1.6"></p>
+
           <div class="summary-row">
             <span class="summary-label">Description</span>
             <span class="summary-value" id="summary-description"></span>
-          </div>
-          <div class="summary-row">
-            <span class="summary-label">Amount</span>
-            <span class="summary-value" id="summary-amount">€0.00</span>
           </div>
           <div class="summary-row">
             <span class="summary-label">To</span>
@@ -203,14 +292,26 @@
             <span class="summary-value" id="summary-email"></span>
           </div>
           <div class="summary-row">
+            <span class="summary-label">Amount</span>
+            <span class="summary-value" id="summary-amount">€0</span>
+          </div>
+          <div class="summary-row">
             <span class="summary-label">Repayment</span>
-            <span class="summary-value">One payment on <span id="summary-due"></span></span>
+            <span class="summary-value" id="summary-repayment">One payment</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Interest</span>
+            <span class="summary-value" id="summary-interest">0%</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Total to repay</span>
+            <span class="summary-value" id="summary-total-repay">€0</span>
           </div>
         </div>
 
         <div id="invite-not-sent">
           <button onclick="sendInvite()">Send to <span id="send-friend-name"></span> for review</button>
-          <button class="secondary" onclick="goToStep(2)">Back</button>
+          <button class="secondary" onclick="goToStep(3)">Back</button>
         </div>
 
         <div id="invite-sent" class="hidden">
@@ -223,7 +324,7 @@
           <button class="secondary" onclick="resetWizard()">Create another agreement</button>
         </div>
 
-        <p id="step3-status" class="status"></p>
+        <p id="step4-status" class="status"></p>
       </div>
     </section>
 
@@ -248,7 +349,7 @@
             <th>Outstanding</th>
             <th>Due</th>
             <th>Status</th>
-            <th style="text-align:right; padding-right:3rem">Actions</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -295,7 +396,22 @@
       friendEmail: '',
       description: '',
       amount: '',
+      repaymentType: 'one_time',
       dueDate: '',
+      // Installment fields
+      installmentMonths: 6,
+      firstPaymentDate: '',
+      installmentCount: null,
+      installmentAmount: null,
+      finalDueDate: '',
+      // Interest fields
+      hasInterest: false,
+      interestRate: 0,
+      totalInterest: 0,
+      totalRepayAmount: 0,
+      // Payment preferences
+      paymentPreferenceMethod: 'bank',
+      reminderEnabled: true,
       inviteUrl: ''
     };
 
@@ -368,7 +484,7 @@
     // Wizard functions
     function goToStep(step) {
       // Hide all steps
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 1; i <= 4; i++) {
         document.getElementById(`wizard-step-${i}`).classList.add('hidden');
         document.getElementById(`step-indicator-${i}`).classList.remove('active');
       }
@@ -387,7 +503,7 @@
     function clickStep(targetStep) {
       // Determine current step
       let currentStep = 1;
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 1; i <= 4; i++) {
         if (!document.getElementById(`wizard-step-${i}`).classList.contains('hidden')) {
           currentStep = i;
           break;
@@ -400,68 +516,32 @@
         return;
       }
 
-      // If clicking forward, validate current step
+      // If clicking forward, validate current step and navigate
       if (targetStep > currentStep) {
-        // Validate step 1: role must be selected
+        // Step 1 → 2: Role must be selected
         if (currentStep === 1 && targetStep >= 2) {
           if (!wizardData.role) {
             document.getElementById('step2-status').textContent = 'Please select a role first';
             return;
           }
+          if (targetStep === 2) {
+            goToStep(2);
+            return;
+          }
         }
 
-        // Validate step 2: all fields must be filled
-        if (currentStep <= 2 && targetStep === 3) {
-          const friendFirstName = document.getElementById('friend-first-name').value.trim();
-          const friendEmail = document.getElementById('friend-email').value.trim();
-          const description = document.getElementById('description').value.trim();
-          const amount = document.getElementById('amount').value;
-          const dueDate = document.getElementById('due-date').value;
-
-          if (!friendFirstName || !friendEmail || !description || !amount || !dueDate) {
-            const status = document.getElementById('step2-status');
-            status.textContent = 'Please fill in all fields';
+        // Step 2 → 3: Validate step 2 fields
+        if (currentStep === 2 && targetStep >= 3) {
+          if (!validateStep2()) return;
+          if (targetStep === 3) {
+            goToInterest();
             return;
           }
-
-          if (description.length > 30) {
-            const status = document.getElementById('step2-status');
-            status.textContent = 'Please keep it short — maximum 30 characters.';
-            return;
-          }
-
-          // Validate amount
-          const cleanAmount = amount.replace(/[.,]/g, '');
-          const amountNum = parseFloat(cleanAmount);
-          if (isNaN(amountNum) || amountNum <= 0) {
-            const status = document.getElementById('step2-status');
-            status.textContent = 'Please enter a valid amount';
-            return;
-          }
-
-          // Validate due date
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const dueDateObj = new Date(dueDate);
-          dueDateObj.setHours(0, 0, 0, 0);
-          if (dueDateObj < today) {
-            const status = document.getElementById('step2-status');
-            status.textContent = 'Due date cannot be in the past.';
-            return;
-          }
-
-          // If validation passes, call goToSummary to populate the summary
-          goToSummary();
-          return;
         }
 
-        // Navigate to step 2 if coming from step 1
-        if (currentStep === 1 && targetStep === 2) {
-          if (!wizardData.role) {
-            document.getElementById('step2-status').textContent = 'Please select a role first';
-            return;
-          }
-          goToStep(2);
+        // Step 3 → 4: Navigate to payment preferences
+        if (currentStep === 3 && targetStep === 4) {
+          goToPaymentPreferences();
           return;
         }
       }
@@ -477,86 +557,353 @@
       goToStep(2);
     }
 
-    function goToSummary() {
-      const friendFirstName = document.getElementById('friend-first-name').value.trim();
-      const friendEmail = document.getElementById('friend-email').value.trim();
-      let description = document.getElementById('description').value.trim();
+    // Toggle between one-time and installment fields
+    function toggleInstallmentFields() {
+      const repaymentType = document.getElementById('repayment-type').value;
+      const oneTimeFields = document.getElementById('one-time-fields');
+      const installmentFields = document.getElementById('installment-fields');
+
+      if (repaymentType === 'installments') {
+        oneTimeFields.classList.add('hidden');
+        installmentFields.classList.remove('hidden');
+        wizardData.repaymentType = 'installments';
+        calculateInstallments();
+      } else {
+        oneTimeFields.classList.remove('hidden');
+        installmentFields.classList.add('hidden');
+        wizardData.repaymentType = 'one_time';
+        updateDueDateHelper();
+      }
+    }
+
+    // Calculate installment details
+    function calculateInstallments() {
       const amount = document.getElementById('amount').value;
-      const dueDate = document.getElementById('due-date').value;
-      const status = document.getElementById('step2-status');
+      const months = parseInt(document.getElementById('installment-months').value);
+      const firstPaymentDate = document.getElementById('first-payment-date').value;
 
-      if (!friendFirstName || !friendEmail || !description || !amount || !dueDate) {
-        status.textContent = 'Please fill in all fields';
+      if (!amount || !firstPaymentDate) {
+        document.getElementById('installment-summary').textContent = '';
         return;
       }
 
-      if (description.length > 30) {
-        status.textContent = 'Please keep it short — maximum 30 characters.';
-        return;
-      }
-
-      // Capitalize first letter
-      if (description.length > 0) {
-        description = description.charAt(0).toUpperCase() + description.slice(1);
-        document.getElementById('description').value = description;
-      }
-
-      // Parse amount - remove thousand separators before parsing
+      // Parse amount
       const cleanAmount = amount.replace(/[.,]/g, '');
       const amountNum = parseFloat(cleanAmount);
 
       if (isNaN(amountNum) || amountNum <= 0) {
-        status.textContent = 'Please enter a valid amount';
+        document.getElementById('installment-summary').textContent = '';
         return;
       }
 
-      // Validate due date is not in the past
+      // Calculate installment amount
+      const installmentAmount = (amountNum / months).toFixed(2);
+
+      // Calculate final due date
+      const firstDate = new Date(firstPaymentDate);
+      const finalDate = new Date(firstDate);
+      finalDate.setMonth(finalDate.getMonth() + months - 1);
+
+      // Format dates
+      const firstFormatted = firstDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const finalFormatted = finalDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+      // Store in wizard data
+      wizardData.installmentMonths = months;
+      wizardData.installmentCount = months;
+      wizardData.installmentAmount = parseFloat(installmentAmount);
+      wizardData.firstPaymentDate = firstPaymentDate;
+      wizardData.finalDueDate = finalDate.toISOString().split('T')[0];
+
+      // Display summary
+      const amountFormatted = new Intl.NumberFormat('de-DE').format(Math.round(amountNum));
+      const installmentFormatted = new Intl.NumberFormat('de-DE').format(Math.round(installmentAmount));
+      document.getElementById('installment-summary').textContent =
+        `€${amountFormatted} in ${months} monthly payments of about €${installmentFormatted}, from ${firstFormatted} to ${finalFormatted}.`;
+    }
+
+    // Update due date helper text
+    function updateDueDateHelper() {
+      const dueDate = document.getElementById('due-date').value;
+      if (!dueDate) {
+        document.getElementById('due-date-helper').textContent = '';
+        return;
+      }
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const dueDateObj = new Date(dueDate);
       dueDateObj.setHours(0, 0, 0, 0);
 
-      if (dueDateObj < today) {
-        status.textContent = 'Due date cannot be in the past.';
-        return;
+      const diffMs = dueDateObj - today;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0) {
+        document.getElementById('due-date-helper').textContent = `Due in ${diffDays} day${diffDays === 1 ? '' : 's'}`;
+      } else if (diffDays === 0) {
+        document.getElementById('due-date-helper').textContent = 'Due today';
+      } else {
+        document.getElementById('due-date-helper').textContent = 'Due date cannot be in the past';
+      }
+    }
+
+    // Validate step 2
+    function validateStep2() {
+      const friendFirstName = document.getElementById('friend-first-name').value.trim();
+      const friendEmail = document.getElementById('friend-email').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const amount = document.getElementById('amount').value;
+      const repaymentType = document.getElementById('repayment-type').value;
+      const status = document.getElementById('step2-status');
+
+      if (!friendFirstName || !friendEmail || !description || !amount) {
+        status.textContent = 'Please fill in all required fields';
+        return false;
       }
 
-      status.textContent = '';
+      if (description.length > 30) {
+        status.textContent = 'Description must be 30 characters or less';
+        return false;
+      }
+
+      // Validate amount
+      const cleanAmount = amount.replace(/[.,]/g, '');
+      const amountNum = parseFloat(cleanAmount);
+      if (isNaN(amountNum) || amountNum <= 0) {
+        status.textContent = 'Please enter a valid amount';
+        return false;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (repaymentType === 'one_time') {
+        const dueDate = document.getElementById('due-date').value;
+        if (!dueDate) {
+          status.textContent = 'Please select a due date';
+          return false;
+        }
+
+        const dueDateObj = new Date(dueDate);
+        dueDateObj.setHours(0, 0, 0, 0);
+        if (dueDateObj < today) {
+          status.textContent = 'Due date cannot be in the past';
+          return false;
+        }
+
+        wizardData.dueDate = dueDate;
+        wizardData.finalDueDate = dueDate;
+      } else {
+        const firstPaymentDate = document.getElementById('first-payment-date').value;
+        if (!firstPaymentDate) {
+          status.textContent = 'Please select a first payment date';
+          return false;
+        }
+
+        const firstDateObj = new Date(firstPaymentDate);
+        firstDateObj.setHours(0, 0, 0, 0);
+        if (firstDateObj < today) {
+          status.textContent = 'First payment date cannot be in the past';
+          return false;
+        }
+
+        // For installments, set due_date to finalDueDate for database compatibility
+        wizardData.dueDate = wizardData.finalDueDate;
+      }
+
+      // Store validated data
       wizardData.friendFirstName = friendFirstName;
       wizardData.friendEmail = friendEmail;
-      wizardData.description = description;
-      wizardData.amount = amountNum; // Store the numeric value
-      wizardData.dueDate = dueDate;
+      wizardData.description = description.charAt(0).toUpperCase() + description.slice(1);
+      wizardData.amount = amountNum;
 
-      // Update summary - convert to cents and format
-      const amountCents = Math.round(amountNum * 100);
-      document.getElementById('summary-description').textContent = description;
-      document.getElementById('summary-amount').textContent = `€ ${formatAmount(amountCents)}`;
-      document.getElementById('summary-friend').textContent = friendFirstName;
-      document.getElementById('summary-email').textContent = friendEmail;
-      document.getElementById('summary-due').textContent = new Date(dueDate).toLocaleDateString();
-      document.getElementById('send-friend-name').textContent = friendFirstName;
+      status.textContent = '';
+      return true;
+    }
+
+    // Navigate to interest step
+    function goToInterest() {
+      if (!validateStep2()) return;
+
+      // Calculate recommended interest rate
+      const amount = wizardData.amount;
+      const months = wizardData.repaymentType === 'installments' ? wizardData.installmentMonths :
+        (Math.ceil((new Date(wizardData.dueDate) - new Date()) / (1000 * 60 * 60 * 24 * 30)));
+
+      let recommendedRate = 3;
+      if (amount <= 500) recommendedRate = 3;
+      else if (amount <= 2000) recommendedRate = 4;
+      else recommendedRate = 5;
+
+      if (months > 12) recommendedRate += 1;
+      if (recommendedRate > 8) recommendedRate = 8;
+
+      document.getElementById('recommended-rate').textContent = recommendedRate;
+      document.getElementById('interest-rate').value = recommendedRate;
+
+      // Update no-interest amount
+      const amountCents = Math.round(wizardData.amount * 100);
+      document.getElementById('no-interest-amount').textContent = `€${formatAmount(amountCents)}`;
 
       goToStep(3);
     }
 
+    // Toggle interest fields
+    function toggleInterestFields() {
+      const interestOption = document.querySelector('input[name="interest-option"]:checked').value;
+      const noInterestSummary = document.getElementById('no-interest-summary');
+      const interestFields = document.getElementById('interest-fields');
+
+      if (interestOption === 'yes') {
+        noInterestSummary.classList.add('hidden');
+        interestFields.classList.remove('hidden');
+        wizardData.hasInterest = true;
+        calculateInterest();
+      } else {
+        noInterestSummary.classList.remove('hidden');
+        interestFields.classList.add('hidden');
+        wizardData.hasInterest = false;
+        wizardData.interestRate = 0;
+        wizardData.totalInterest = 0;
+        wizardData.totalRepayAmount = wizardData.amount;
+      }
+    }
+
+    // Calculate interest
+    function calculateInterest() {
+      const interestRate = parseFloat(document.getElementById('interest-rate').value) || 0;
+      const principal = wizardData.amount;
+      const months = wizardData.repaymentType === 'installments' ? wizardData.installmentMonths :
+        (Math.ceil((new Date(wizardData.dueDate) - new Date()) / (1000 * 60 * 60 * 24 * 30)));
+
+      // Simple interest calculation
+      const totalInterest = principal * (interestRate / 100) * (months / 12);
+      const totalRepayAmount = principal + totalInterest;
+
+      wizardData.interestRate = interestRate;
+      wizardData.totalInterest = totalInterest;
+      wizardData.totalRepayAmount = totalRepayAmount;
+
+      // Display
+      document.getElementById('total-interest-display').textContent = new Intl.NumberFormat('de-DE').format(Math.round(totalInterest));
+      document.getElementById('total-repay-display').textContent = new Intl.NumberFormat('de-DE').format(Math.round(totalRepayAmount));
+
+      // Show installment note if applicable
+      if (wizardData.repaymentType === 'installments') {
+        const installmentWithInterest = totalRepayAmount / wizardData.installmentCount;
+        const installmentFormatted = new Intl.NumberFormat('de-DE').format(Math.round(installmentWithInterest));
+        document.getElementById('installment-interest-note').textContent =
+          `Each payment ≈ €${installmentFormatted} incl. interest.`;
+      } else {
+        document.getElementById('installment-interest-note').textContent = '';
+      }
+    }
+
+    // Navigate to payment preferences
+    function goToPaymentPreferences() {
+      // Update interest data if no interest selected
+      if (!wizardData.hasInterest) {
+        wizardData.interestRate = 0;
+        wizardData.totalInterest = 0;
+        wizardData.totalRepayAmount = wizardData.amount;
+      }
+
+      goToStep(4);
+      updateSummary();
+    }
+
+    // Update summary in step 4
+    function updateSummary() {
+      const lenderName = currentUser?.full_name || currentUser?.email || 'You';
+      const borrowerName = wizardData.friendFirstName;
+      const amountCents = Math.round(wizardData.amount * 100);
+      const amountFormatted = formatAmount(amountCents);
+      const description = wizardData.description;
+      const interestRate = wizardData.interestRate;
+      const totalRepayAmount = Math.round(wizardData.totalRepayAmount * 100);
+      const totalRepayFormatted = formatAmount(totalRepayAmount);
+
+      // Full summary text
+      let summaryText = `${lenderName} lends €${amountFormatted} to ${borrowerName} for '${description}'`;
+
+      if (wizardData.repaymentType === 'one_time') {
+        const dueDate = new Date(wizardData.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        summaryText += `, to be repaid in one payment by ${dueDate}`;
+      } else {
+        const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        const installmentWithInterest = wizardData.totalRepayAmount / wizardData.installmentCount;
+        const installmentFormatted = new Intl.NumberFormat('de-DE').format(Math.round(installmentWithInterest));
+        summaryText += `, to be repaid in ${wizardData.installmentCount} monthly payments of about €${installmentFormatted}, from ${firstDate} to ${finalDate}`;
+      }
+
+      if (interestRate > 0) {
+        const totalInterestFormatted = formatAmount(Math.round(wizardData.totalInterest * 100));
+        summaryText += ` (interest ${interestRate}% p.a., total €${totalRepayFormatted})`;
+      } else {
+        summaryText += `.`;
+      }
+
+      document.getElementById('full-summary-text').textContent = summaryText;
+
+      // Update summary fields
+      document.getElementById('summary-description').textContent = description;
+      document.getElementById('summary-friend').textContent = borrowerName;
+      document.getElementById('summary-email').textContent = wizardData.friendEmail;
+      document.getElementById('summary-amount').textContent = `€${amountFormatted}`;
+
+      // Repayment summary
+      if (wizardData.repaymentType === 'one_time') {
+        const dueDate = new Date(wizardData.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        document.getElementById('summary-repayment').textContent = `One payment on ${dueDate}`;
+      } else {
+        const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        document.getElementById('summary-repayment').textContent =
+          `${wizardData.installmentCount} monthly payments, ${firstDate} to ${finalDate}`;
+      }
+
+      document.getElementById('summary-interest').textContent = interestRate > 0 ? `${interestRate}% p.a.` : 'None';
+      document.getElementById('summary-total-repay').textContent = `€${totalRepayFormatted}`;
+      document.getElementById('send-friend-name').textContent = borrowerName;
+    }
+
     async function sendInvite() {
-      const status = document.getElementById('step3-status');
+      const status = document.getElementById('step4-status');
       status.textContent = 'Creating agreement...';
 
+      // Get payment preferences
+      wizardData.paymentPreferenceMethod = document.getElementById('payment-preference').value;
+      wizardData.reminderEnabled = document.getElementById('reminder-enabled').checked;
+
       try {
+        const payload = {
+          friendFirstName: wizardData.friendFirstName,
+          borrowerEmail: wizardData.friendEmail,
+          description: wizardData.description,
+          amount: wizardData.amount,
+          dueDate: wizardData.dueDate,
+          direction: wizardData.role,
+          repaymentType: wizardData.repaymentType,
+          interestRate: wizardData.interestRate,
+          totalInterest: wizardData.totalInterest,
+          totalRepayAmount: wizardData.totalRepayAmount,
+          paymentPreferenceMethod: wizardData.paymentPreferenceMethod,
+          reminderEnabled: wizardData.reminderEnabled
+        };
+
+        // Add installment-specific fields if applicable
+        if (wizardData.repaymentType === 'installments') {
+          payload.installmentCount = wizardData.installmentCount;
+          payload.installmentAmount = wizardData.installmentAmount;
+          payload.firstPaymentDate = wizardData.firstPaymentDate;
+          payload.finalDueDate = wizardData.finalDueDate;
+        }
+
         const res = await fetch('/api/agreements', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            friendFirstName: wizardData.friendFirstName,
-            borrowerEmail: wizardData.friendEmail,
-            description: wizardData.description,
-            amount: wizardData.amount,
-            dueDate: wizardData.dueDate,
-            direction: wizardData.role,
-            repaymentType: 'one_time'
-          })
+          body: JSON.stringify(payload)
         });
 
         const data = await res.json();
@@ -596,7 +943,19 @@
         friendEmail: '',
         description: '',
         amount: '',
+        repaymentType: 'one_time',
         dueDate: '',
+        installmentMonths: 6,
+        firstPaymentDate: '',
+        installmentCount: null,
+        installmentAmount: null,
+        finalDueDate: '',
+        hasInterest: false,
+        interestRate: 0,
+        totalInterest: 0,
+        totalRepayAmount: 0,
+        paymentPreferenceMethod: 'bank',
+        reminderEnabled: true,
         inviteUrl: ''
       };
 
@@ -604,12 +963,25 @@
       document.getElementById('friend-email').value = '';
       document.getElementById('description').value = '';
       document.getElementById('amount').value = '';
+      document.getElementById('repayment-type').value = 'one_time';
       document.getElementById('due-date').value = '';
+      document.getElementById('first-payment-date').value = '';
+      document.getElementById('installment-months').value = '6';
+      document.getElementById('interest-rate').value = '';
+      document.getElementById('payment-preference').value = 'bank';
+      document.getElementById('reminder-enabled').checked = true;
+      document.querySelector('input[name="interest-option"][value="no"]').checked = true;
+
       document.getElementById('step2-status').textContent = '';
       document.getElementById('step3-status').textContent = '';
+      document.getElementById('step4-status').textContent = '';
 
       document.getElementById('invite-not-sent').classList.remove('hidden');
       document.getElementById('invite-sent').classList.add('hidden');
+
+      // Reset field visibility
+      toggleInstallmentFields();
+      toggleInterestFields();
 
       goToStep(1);
       closeNewAgreement();
