@@ -33,7 +33,7 @@
     .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
     .tab:hover{color:var(--text)}
     table{width:100%;border-collapse:collapse;margin-top:8px}
-    th,td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left}
+    th,td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; vertical-align:top}
     th{color:var(--muted); font-weight:600; font-size:13px}
     .status{color:var(--muted); margin-top:8px; min-height:1.2em;}
     .status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600}
@@ -42,10 +42,11 @@
     .status-badge.settled{background:#3ddc97; color:#0d130f}
     .status-badge.declined{background:#ff6b6b; color:#fff}
     .status-badge.cancelled{background:#6c757d; color:#fff}
-    .alert-pill{display:inline-block; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:500; margin-top:4px}
-    .alert-pill.difficulty{background:#e67e22; color:#fff}
-    .alert-pill.confirm-payment{background:#f39c12; color:#fff}
-    .status-column{display:flex; flex-direction:column; gap:4px}
+    .actions-column{display:flex; flex-direction:column; gap:8px; align-items:flex-start}
+    .btn-confirm-payment{background:#f97316; color:#fff; border:0; padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer; width:100%}
+    .btn-confirm-payment:hover{background:#ea580c}
+    .btn-resolve-difficulty{background:#dc2626; color:#fff; border:0; padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer; width:100%}
+    .btn-resolve-difficulty:hover{background:#b91c1c}
     .messages-list{margin-top:12px}
     .message-item{padding:10px; background:#10151d; border-radius:8px; margin:8px 0; font-size:14px; transition:all 0.2s ease}
     .message-item.message-clickable{cursor:pointer; border:1px solid transparent}
@@ -70,6 +71,19 @@
     .summary-row:last-child{border-bottom:none}
     .summary-label{color:var(--muted)}
     .summary-value{font-weight:600}
+    .modal-overlay{position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:1000}
+    .modal-card{background:var(--card); border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:24px; max-width:600px; width:90%; max-height:90vh; overflow-y:auto}
+    .modal-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .modal-title{margin:0; font-size:20px; font-weight:600}
+    .modal-close{background:transparent; border:0; color:var(--muted); font-size:24px; cursor:pointer; padding:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:6px}
+    .modal-close:hover{background:rgba(255,255,255,0.05); color:var(--text)}
+    .modal-body{margin-bottom:20px}
+    .modal-footer{display:flex; gap:12px; justify-content:flex-end; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08)}
+    .modal-info-row{display:flex; justify-content:space-between; padding:12px; background:#10151d; border-radius:8px; margin:8px 0}
+    .modal-info-label{color:var(--muted); font-size:14px}
+    .modal-info-value{font-weight:600; font-size:14px}
+    .modal-note{background:#10151d; padding:12px; border-radius:8px; margin:12px 0; font-size:14px; color:var(--text)}
+    .modal-helper-text{color:var(--muted); font-size:13px; margin-bottom:16px; line-height:1.5}
   </style>
 </head>
 <body>
@@ -242,6 +256,32 @@
         No agreements found for this filter.
       </div>
     </section>
+
+    <!-- Payment Confirmation Modal -->
+    <div id="confirm-payment-modal" class="modal-overlay" style="display:none" onclick="closeModalOnOverlay(event, 'confirm-payment-modal')">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">Confirm payment</h2>
+          <button class="modal-close" onclick="closeConfirmPaymentModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="confirm-payment-modal-body">
+          <p style="text-align:center; color:var(--muted)">Loading...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Difficulty Modal -->
+    <div id="difficulty-modal" class="modal-overlay" style="display:none" onclick="closeModalOnOverlay(event, 'difficulty-modal')">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">Payment difficulty</h2>
+          <button class="modal-close" onclick="closeDifficultyModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="difficulty-modal-body">
+          <p style="text-align:center; color:var(--muted)">Loading...</p>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -823,22 +863,8 @@
         const statusText = a.status || 'pending';
         const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
 
-        // Build status column with main badge and optional alert pills
+        // Build status column with main badge only
         let statusBadge = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
-
-        // Add alert pills if conditions are met
-        let alertPills = '';
-        if (a.hasPendingPaymentToConfirm) {
-          alertPills += '<span class="alert-pill confirm-payment">Confirm payment</span>';
-        }
-        if (a.hasOpenDifficulty) {
-          alertPills += '<span class="alert-pill difficulty">Payment difficulty</span>';
-        }
-
-        // Wrap in status-column div if there are alerts
-        if (alertPills) {
-          statusBadge = `<div class="status-column">${statusBadge}${alertPills}</div>`;
-        }
 
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
@@ -853,23 +879,33 @@
         // Calculate outstanding amount
         const outstanding = formatAmount(a.outstanding_cents || a.amount_cents);
 
-        // Determine action button based on status and role
-        let actionBtn = '—';
+        // Build actions column with main button and conditional alert buttons
+        let actionsHtml = '';
         if (statusText === 'cancelled') {
           // No actions for cancelled agreements
-          actionBtn = '—';
+          actionsHtml = '—';
         } else if (statusText === 'pending' && !isLender) {
           // Borrower can review pending agreements
-          actionBtn = `<button onclick="reviewAgreement(${a.id})">Review</button>`;
-        } else if (statusText === 'pending' && isLender) {
-          // Lender can view pending agreements (and cancel)
-          actionBtn = `<button onclick="viewAgreement(${a.id})">Manage</button>`;
-        } else if (statusText === 'active') {
-          // Both lender and borrower can manage active agreements to record payments
-          actionBtn = `<button onclick="viewAgreement(${a.id})">Manage</button>`;
-        } else if (statusText === 'settled') {
-          // Both can view settled agreements
-          actionBtn = `<button onclick="viewAgreement(${a.id})">Manage</button>`;
+          actionsHtml = `<div class="actions-column">
+            <button onclick="reviewAgreement(${a.id})">Review</button>
+          </div>`;
+        } else {
+          // For lenders on any agreement, or borrowers on active/settled
+          let mainBtnLabel = (statusText === 'pending' || statusText === 'active' || statusText === 'settled') ? 'Manage' : 'View';
+
+          let buttons = `<button onclick="viewAgreement(${a.id})">${mainBtnLabel}</button>`;
+
+          // Add conditional action buttons for lenders
+          if (isLender) {
+            if (a.hasPendingPaymentToConfirm) {
+              buttons += `<button class="btn-confirm-payment" onclick="openConfirmPaymentModal(${a.id})">Confirm payment</button>`;
+            }
+            if (a.hasOpenDifficulty) {
+              buttons += `<button class="btn-resolve-difficulty" onclick="openDifficultyModal(${a.id})">Resolve difficulty</button>`;
+            }
+          }
+
+          actionsHtml = `<div class="actions-column">${buttons}</div>`;
         }
 
         tr.innerHTML = `
@@ -879,7 +915,7 @@
           <td>€ ${outstanding}</td>
           <td>${a.due_date}</td>
           <td>${statusBadge}</td>
-          <td>${actionBtn}</td>
+          <td>${actionsHtml}</td>
         `;
         tbody.appendChild(tr);
       }
@@ -894,6 +930,230 @@
       } catch (err) {
         console.error('Error loading agreements:', err);
       }
+    }
+
+    // Modal functions
+    function closeModalOnOverlay(event, modalId) {
+      if (event.target.classList.contains('modal-overlay')) {
+        document.getElementById(modalId).style.display = 'none';
+      }
+    }
+
+    // Close modal on ESC key
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeConfirmPaymentModal();
+        closeDifficultyModal();
+      }
+    });
+
+    // Payment Confirmation Modal
+    async function openConfirmPaymentModal(agreementId) {
+      const modal = document.getElementById('confirm-payment-modal');
+      const modalBody = document.getElementById('confirm-payment-modal-body');
+
+      modal.style.display = 'flex';
+      modalBody.innerHTML = '<p style="text-align:center; color:var(--muted)">Loading...</p>';
+
+      try {
+        // Fetch agreement details and payments
+        const [agreementRes, paymentsRes] = await Promise.all([
+          fetch(`/api/agreements/${agreementId}`),
+          fetch(`/api/agreements/${agreementId}/payments`)
+        ]);
+
+        if (!agreementRes.ok || !paymentsRes.ok) {
+          throw new Error('Failed to load payment details');
+        }
+
+        const agreement = await agreementRes.json();
+        const payments = await paymentsRes.json();
+
+        // Find the pending payment that needs confirmation
+        const pendingPayment = payments.find(p => p.status === 'pending');
+
+        if (!pendingPayment) {
+          modalBody.innerHTML = '<p style="color:var(--muted)">No pending payment found.</p>';
+          return;
+        }
+
+        // Build modal content
+        const amount = formatAmount(pendingPayment.amount_cents);
+        const borrowerName = pendingPayment.recorded_by_name || agreement.friend_first_name || agreement.borrower_email;
+
+        let proofOfPaymentHtml = '';
+        if (pendingPayment.proof_file_path) {
+          proofOfPaymentHtml = `
+            <div class="modal-info-row">
+              <span class="modal-info-label">Proof of payment</span>
+              <button class="secondary" onclick="viewProofOfPayment(${pendingPayment.id})" style="padding:6px 12px; font-size:13px">View proof</button>
+            </div>
+          `;
+        }
+
+        modalBody.innerHTML = `
+          <div class="modal-info-row">
+            <span class="modal-info-label">Amount</span>
+            <span class="modal-info-value">€ ${amount}</span>
+          </div>
+          <div class="modal-info-row">
+            <span class="modal-info-label">Method</span>
+            <span class="modal-info-value">${pendingPayment.method || '—'}</span>
+          </div>
+          ${pendingPayment.note ? `<div class="modal-note"><strong>Note:</strong> ${pendingPayment.note}</div>` : ''}
+          <div class="modal-info-row">
+            <span class="modal-info-label">Reported by</span>
+            <span class="modal-info-value">${borrowerName}</span>
+          </div>
+          ${proofOfPaymentHtml}
+          <div class="modal-footer">
+            <button onclick="declinePayment(${agreementId}, ${pendingPayment.id})" class="secondary">Decline</button>
+            <button onclick="confirmPayment(${agreementId}, ${pendingPayment.id})">Confirm payment</button>
+          </div>
+          <p class="modal-helper-text" style="margin-top:12px; text-align:center">This will update the payment history and outstanding amount.</p>
+        `;
+      } catch (err) {
+        console.error('Error loading payment details:', err);
+        modalBody.innerHTML = '<p style="color:#ff6b6b">Failed to load payment details</p>';
+      }
+    }
+
+    function closeConfirmPaymentModal() {
+      document.getElementById('confirm-payment-modal').style.display = 'none';
+    }
+
+    async function confirmPayment(agreementId, paymentId) {
+      try {
+        const res = await fetch(`/api/payments/${paymentId}/approve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to confirm payment');
+        }
+
+        closeConfirmPaymentModal();
+        refresh();
+        loadMessages();
+      } catch (err) {
+        console.error('Error confirming payment:', err);
+        alert('Failed to confirm payment: ' + err.message);
+      }
+    }
+
+    async function declinePayment(agreementId, paymentId) {
+      try {
+        const res = await fetch(`/api/payments/${paymentId}/decline`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to decline payment');
+        }
+
+        closeConfirmPaymentModal();
+        refresh();
+        loadMessages();
+      } catch (err) {
+        console.error('Error declining payment:', err);
+        alert('Failed to decline payment: ' + err.message);
+      }
+    }
+
+    function viewProofOfPayment(paymentId) {
+      // Open proof of payment in new tab
+      window.open(`/api/payments/${paymentId}/proof`, '_blank');
+    }
+
+    // Difficulty Modal
+    async function openDifficultyModal(agreementId) {
+      const modal = document.getElementById('difficulty-modal');
+      const modalBody = document.getElementById('difficulty-modal-body');
+
+      modal.style.display = 'flex';
+      modalBody.innerHTML = '<p style="text-align:center; color:var(--muted)">Loading...</p>';
+
+      try {
+        const res = await fetch(`/api/agreements/${agreementId}/hardship-requests`);
+        if (!res.ok) throw new Error('Failed to load difficulty details');
+
+        const hardshipRequests = await res.json();
+
+        // Find the most recent request (they're ordered by created_at DESC)
+        const openDifficulty = hardshipRequests[0];
+
+        if (!openDifficulty) {
+          modalBody.innerHTML = '<p style="color:var(--muted)">No difficulty request found.</p>';
+          return;
+        }
+
+        // Build preferred options list
+        let preferredOptionsHtml = '';
+        if (openDifficulty.preferred_adjustments) {
+          const optionLabels = {
+            'smaller_payments': 'Smaller monthly payments',
+            'postpone': 'Postponement',
+            'longer_term': 'Longer term',
+            'partial_forgiveness': 'Partial forgiveness'
+          };
+          const optionsArray = openDifficulty.preferred_adjustments.split(',');
+          const optionsList = optionsArray
+            .map(opt => optionLabels[opt.trim()] || opt)
+            .join('</li><li>');
+          preferredOptionsHtml = `
+            <div class="modal-info-row" style="flex-direction:column; align-items:flex-start">
+              <span class="modal-info-label">Preferred options:</span>
+              <ul style="margin:8px 0 0 20px; padding:0">
+                <li>${optionsList}</li>
+              </ul>
+            </div>
+          `;
+        }
+
+        // Format can_pay_now amount
+        let canPayNowText = '€ 0 (Cannot pay anything now)';
+        if (openDifficulty.can_pay_now_cents && openDifficulty.can_pay_now_cents > 0) {
+          canPayNowText = `€ ${formatAmount(openDifficulty.can_pay_now_cents)}`;
+        }
+
+        modalBody.innerHTML = `
+          <p class="modal-helper-text">Your friend has asked for help with this payment. Here's what they shared:</p>
+
+          ${openDifficulty.reason_category ? `
+            <div class="modal-info-row">
+              <span class="modal-info-label">Reason</span>
+              <span class="modal-info-value">${openDifficulty.reason_category}</span>
+            </div>
+          ` : ''}
+
+          ${openDifficulty.reason_text ? `
+            <div class="modal-note"><strong>Explanation:</strong><br>${openDifficulty.reason_text}</div>
+          ` : ''}
+
+          <div class="modal-info-row">
+            <span class="modal-info-label">Can pay now</span>
+            <span class="modal-info-value">${canPayNowText}</span>
+          </div>
+
+          ${preferredOptionsHtml}
+
+          <div class="modal-footer">
+            <button onclick="closeDifficultyModal()" class="secondary">Close</button>
+            <button onclick="window.location.href='/agreements/${agreementId}/view'">Open full agreement</button>
+          </div>
+        `;
+      } catch (err) {
+        console.error('Error loading difficulty details:', err);
+        modalBody.innerHTML = '<p style="color:#ff6b6b">Failed to load difficulty details</p>';
+      }
+    }
+
+    function closeDifficultyModal() {
+      document.getElementById('difficulty-modal').style.display = 'none';
     }
 
     // Initialize
