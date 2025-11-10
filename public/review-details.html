@@ -75,6 +75,9 @@
     .payment-status-badge.declined{background:#ff6b6b; color:#fff}
     .payment-approval-buttons{margin-top:8px; display:flex; gap:8px}
     .payment-approval-buttons button{width:auto; padding:8px 16px; font-size:13px}
+    .secondary-status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; margin-left:8px}
+    .secondary-status-badge.pending-confirmation{background:#f97316; color:#fff}
+    .secondary-status-badge.pending-resolution{background:#dc2626; color:#fff}
     .hardship-button-spacing{margin-top:20px}
     .form-section{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:24px}
     .form-section-title{font-size:16px; font-weight:600; color:var(--text); margin-bottom:12px}
@@ -573,10 +576,49 @@
         document.getElementById('description-row').style.display = 'none';
       }
 
-      // Status badge
+      // Status badge with secondary badges
       const statusText = agreement.status || 'pending';
       const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
-      document.getElementById('status-display').innerHTML = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
+      let statusHtml = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
+
+      // Check for pending payment confirmation (only for lenders on active agreements)
+      if (isLender && agreement.status === 'active') {
+        checkPendingPaymentConfirmation().then(hasPending => {
+          if (hasPending) {
+            const currentHtml = document.getElementById('status-display').innerHTML;
+            if (!currentHtml.includes('Pending payment confirmation')) {
+              document.getElementById('status-display').innerHTML = currentHtml + '<span class="secondary-status-badge pending-confirmation">Pending payment confirmation</span>';
+            }
+          }
+        });
+      }
+
+      // Check for open difficulty (for both lenders and borrowers on active agreements)
+      if (agreement.status === 'active') {
+        checkHardshipRequests().then(hasHardship => {
+          if (hasHardship) {
+            const currentHtml = document.getElementById('status-display').innerHTML;
+            if (!currentHtml.includes('Pending resolution')) {
+              document.getElementById('status-display').innerHTML = currentHtml + '<span class="secondary-status-badge pending-resolution">Pending resolution</span>';
+            }
+          }
+        });
+      }
+
+      document.getElementById('status-display').innerHTML = statusHtml;
+    }
+
+    async function checkPendingPaymentConfirmation() {
+      try {
+        const res = await fetch(`/api/agreements/${agreementId}/payments`);
+        if (res.ok) {
+          const payments = await res.json();
+          return payments.some(p => p.status === 'pending');
+        }
+      } catch (err) {
+        console.error('Error checking pending payments:', err);
+      }
+      return false;
     }
 
     function showError(message) {
