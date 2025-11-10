@@ -155,6 +155,53 @@ try {
   // Column already exists, ignore
 }
 
+// Add installment and interest fields to agreements if they don't exist (for existing databases)
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN installment_count INTEGER;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN installment_amount REAL;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN first_payment_date TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN final_due_date TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN interest_rate REAL DEFAULT 0;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN total_interest REAL DEFAULT 0;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN total_repay_amount REAL;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN payment_preference_method TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN reminder_enabled INTEGER DEFAULT 1;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // --- multer setup for file uploads ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -687,7 +734,12 @@ app.get('/api/agreements', requireAuth, (req, res) => {
 
 // Create new agreement with invite (two-sided flow)
 app.post('/api/agreements', requireAuth, (req, res) => {
-  let { lenderName, borrowerEmail, friendFirstName, amount, dueDate, direction, repaymentType, description } = req.body || {};
+  let {
+    lenderName, borrowerEmail, friendFirstName, amount, dueDate, direction, repaymentType, description,
+    installmentCount, installmentAmount, firstPaymentDate, finalDueDate,
+    interestRate, totalInterest, totalRepayAmount,
+    paymentPreferenceMethod, reminderEnabled
+  } = req.body || {};
 
   if (!borrowerEmail || !amount || !dueDate || !description) {
     return res.status(400).json({ error: 'Missing required fields.' });
@@ -719,6 +771,15 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Due date cannot be in the past.' });
   }
 
+  // For installments, validate first payment date
+  if (repaymentType === 'installments' && firstPaymentDate) {
+    const firstPaymentObj = new Date(firstPaymentDate);
+    firstPaymentObj.setHours(0, 0, 0, 0);
+    if (firstPaymentObj < today) {
+      return res.status(400).json({ error: 'First payment date cannot be in the past.' });
+    }
+  }
+
   const createdAt = new Date().toISOString();
 
   // Use user's full_name as lender_name if available, otherwise use provided lenderName
@@ -729,9 +790,12 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     const agreementStmt = db.prepare(`
       INSERT INTO agreements (
         lender_user_id, lender_name, borrower_email, friend_first_name,
-        direction, repayment_type, amount_cents, due_date, created_at, status, description
+        direction, repayment_type, amount_cents, due_date, created_at, status, description,
+        installment_count, installment_amount, first_payment_date, final_due_date,
+        interest_rate, total_interest, total_repay_amount,
+        payment_preference_method, reminder_enabled
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const agreementInfo = agreementStmt.run(
@@ -744,7 +808,16 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       amountCents,
       dueDate,
       createdAt,
-      description
+      description,
+      installmentCount || null,
+      installmentAmount || null,
+      firstPaymentDate || null,
+      finalDueDate || null,
+      interestRate || 0,
+      totalInterest || 0,
+      totalRepayAmount || null,
+      paymentPreferenceMethod || null,
+      reminderEnabled !== undefined ? (reminderEnabled ? 1 : 0) : 1
     );
 
     const agreementId = agreementInfo.lastInsertRowid;
