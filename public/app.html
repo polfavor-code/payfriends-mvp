@@ -140,9 +140,9 @@
         </div>
         <div class="row">
           <label>Short description*</label>
-          <input id="description" type="text" placeholder="Money for rent, Car repair, Holiday loan..." required maxlength="80" />
+          <input id="description" type="text" placeholder="Money for rent, Car repair..." required maxlength="30" />
         </div>
-        <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to help identify this agreement (max 80 characters)</p>
+        <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to help identify this agreement (max 30 characters)</p>
         <div class="row">
           <label>Amount (EUR)</label>
           <input id="amount" type="text" placeholder="50.00" required onblur="formatAmountInput()" onfocus="unformatAmountInput()" />
@@ -222,7 +222,7 @@
       <table id="list">
         <thead>
           <tr>
-            <th>Borrower / Lender</th>
+            <th>Counterparty</th>
             <th>Description</th>
             <th>Amount</th>
             <th>Outstanding</th>
@@ -346,8 +346,8 @@
         return;
       }
 
-      if (description.length > 80) {
-        status.textContent = 'Description must be 80 characters or less';
+      if (description.length > 30) {
+        status.textContent = 'Please keep it short — maximum 30 characters.';
         return;
       }
 
@@ -697,13 +697,11 @@
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
         const role = isLender ? 'Lender' : 'Borrower';
-        const roleBadge = `<span class="role-badge ${isLender ? 'lend' : 'borrow'}">${role}</span>`;
 
-        // Determine lender name (use full_name if available, fallback to lender_name or email)
-        const lenderName = a.lender_full_name || a.lender_name || a.lender_email;
-
-        // Determine borrower name (use full_name if available, fallback to friend_first_name or email)
-        const borrowerName = a.borrower_full_name || a.friend_first_name || a.borrower_email;
+        // Use counterparty name and role from backend
+        const counterpartyName = a.counterparty_name || '—';
+        const counterpartyRole = a.counterparty_role || (isLender ? 'Borrower' : 'Lender');
+        const counterpartyDisplay = `${counterpartyName} <span class="role-badge ${counterpartyRole.toLowerCase() === 'lender' ? 'lend' : 'borrow'}" style="font-size:11px">${counterpartyRole}</span>`;
 
         // Get description or show fallback
         const description = a.description || '<span style="color:var(--muted); font-style:italic">(No description)</span>';
@@ -731,7 +729,7 @@
         }
 
         tr.innerHTML = `
-          <td>${borrowerName}</td>
+          <td>${counterpartyDisplay}</td>
           <td>${description}</td>
           <td>€ ${amount}</td>
           <td>€ ${outstanding}</td>
