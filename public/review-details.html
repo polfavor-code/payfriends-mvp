@@ -79,9 +79,6 @@
     .form-section{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:24px}
     .form-section-title{font-size:16px; font-weight:600; color:var(--text); margin-bottom:12px}
     #proof-modal-download:hover{background:#3a3a3a; border-color:rgba(255,255,255,0.25)}
-    .modal{position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px}
-    .modal-content{background:var(--card); border:1px solid rgba(255,255,255,0.15); border-radius:16px; padding:24px; max-width:500px; width:100%; box-shadow:0 10px 40px rgba(0,0,0,0.5)}
-    .modal-content h2{margin-top:0}
   </style>
 </head>
 <body>
@@ -162,71 +159,6 @@
       </div>
 
       <p class="status" id="action-status"></p>
-    </div>
-
-    <!-- Repayment Difficulty Panel (for lenders) -->
-    <div id="difficulty-panel" class="card hidden">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px">
-        <h2 style="margin:0">Repayment difficulty</h2>
-        <span class="status-badge" style="background:rgba(255,152,0,0.15); color:#ff9800; border:1px solid rgba(255,152,0,0.3)">Needs attention</span>
-      </div>
-
-      <div style="margin:20px 0">
-        <div class="detail-row">
-          <span class="detail-label">Reason</span>
-          <span class="detail-value" id="difficulty-reason"></span>
-        </div>
-        <div id="difficulty-explanation-row" class="detail-row hidden">
-          <span class="detail-label">Explanation</span>
-          <span class="detail-value" id="difficulty-explanation"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Can pay now</span>
-          <span class="detail-value" id="difficulty-can-pay"></span>
-        </div>
-        <div class="detail-row" style="align-items:flex-start">
-          <span class="detail-label">Preferred options</span>
-          <div class="detail-value" style="text-align:right">
-            <ul id="difficulty-options" style="list-style:none; padding:0; margin:0; text-align:left"></ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- Lender's proposal (if status is plan_proposed) -->
-      <div id="lender-proposal-section" class="hidden" style="margin:20px 0; padding:16px; background:rgba(76,175,80,0.1); border-radius:8px; border:1px solid rgba(76,175,80,0.3)">
-        <strong style="color:#4caf50; font-size:14px">Your proposed plan:</strong>
-        <p id="lender-proposal-text" style="margin:8px 0 0 0; color:var(--text); font-size:14px"></p>
-      </div>
-
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:20px">
-        <button id="acknowledge-btn" onclick="acknowledgeDifficulty()" style="flex:1">Acknowledge (keep current plan)</button>
-        <button id="propose-btn" class="secondary" onclick="showProposePlanModal()" style="flex:1">Propose a new plan</button>
-        <button id="decline-btn" class="warning" onclick="declineDifficulty()" style="flex:1">Not acceptable</button>
-      </div>
-
-      <p class="status" id="difficulty-action-status"></p>
-    </div>
-
-    <!-- Propose Plan Modal -->
-    <div id="propose-plan-modal" class="modal hidden">
-      <div class="modal-content">
-        <h2>Propose a new payment plan</h2>
-        <p style="color:var(--muted); margin-bottom:16px">
-          Describe the new payment plan you'd like to propose. This will be shared with the borrower.
-        </p>
-
-        <div class="form-group">
-          <label class="form-label" for="proposal-text">Your proposal</label>
-          <textarea id="proposal-text" placeholder="e.g., Let's pay €200/month for 3 months, then we'll review." rows="4" style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px; resize:vertical"></textarea>
-        </div>
-
-        <div style="display:flex; gap:8px">
-          <button onclick="submitProposePlan()">Submit proposal</button>
-          <button class="secondary" onclick="closeProposePlanModal()">Cancel</button>
-        </div>
-
-        <p class="status" id="proposal-status"></p>
-      </div>
     </div>
 
     <!-- Payment summary (for active and settled agreements) -->
@@ -521,14 +453,12 @@
         document.getElementById('status-text').textContent = agreement.status;
       }
 
-      // Check for difficulty requests and display panel for lenders
-      if (isLender && agreement.status === 'active') {
-        const difficultyRequest = await loadDifficultyRequest();
-        if (difficultyRequest) {
-          displayDifficultyPanel(difficultyRequest);
-          // Also add badge next to status
-          addAttentionBadge();
-        }
+      // Check for hardship requests
+      const hasHardshipRequests = await checkHardshipRequests();
+
+      // Show hardship indicator for lender if there are requests
+      if (isLender && hasHardshipRequests && agreement.status === 'active') {
+        document.getElementById('hardship-indicator').classList.remove('hidden');
       }
 
       // Show "Having trouble paying?" button for borrower on active agreements
@@ -539,21 +469,6 @@
       // Show payment sections for active and settled agreements
       if (agreement.status === 'active' || agreement.status === 'settled') {
         await loadPaymentData();
-      }
-    }
-
-    // Add attention badge next to status
-    function addAttentionBadge() {
-      const statusDisplay = document.getElementById('status-display');
-      if (!statusDisplay.querySelector('.attention-badge')) {
-        const badge = document.createElement('span');
-        badge.className = 'status-badge attention-badge';
-        badge.style.background = 'rgba(255,152,0,0.15)';
-        badge.style.color = '#ff9800';
-        badge.style.border = '1px solid rgba(255,152,0,0.3)';
-        badge.style.marginLeft = '8px';
-        badge.textContent = 'Needs attention';
-        statusDisplay.appendChild(badge);
       }
     }
 
@@ -864,80 +779,6 @@
         console.error('Error checking hardship requests:', err);
       }
       return false;
-    }
-
-    // Fetch current open difficulty request
-    async function loadDifficultyRequest() {
-      try {
-        const res = await fetch(`/api/agreements/${agreementId}/difficulty`);
-        if (res.ok) {
-          const request = await res.json();
-          return request;
-        }
-      } catch (err) {
-        console.error('Error loading difficulty request:', err);
-      }
-      return null;
-    }
-
-    // Display difficulty panel for lenders
-    function displayDifficultyPanel(request) {
-      if (!request) return;
-
-      // Show the panel
-      document.getElementById('difficulty-panel').classList.remove('hidden');
-
-      // Display reason
-      const reasonLabels = {
-        'unexpected_expense': 'Unexpected expense',
-        'income_lower': 'Income temporarily lower',
-        'lost_job': 'Lost my job / work changed',
-        'miscalculated': 'I miscalculated what I could afford',
-        'something_else': 'Something else'
-      };
-      document.getElementById('difficulty-reason').textContent = reasonLabels[request.reason_category] || request.reason_category;
-
-      // Display explanation if provided
-      if (request.reason_text) {
-        document.getElementById('difficulty-explanation-row').classList.remove('hidden');
-        document.getElementById('difficulty-explanation').textContent = request.reason_text;
-      } else {
-        document.getElementById('difficulty-explanation-row').classList.add('hidden');
-      }
-
-      // Display can pay now
-      const canPayText = request.can_pay_now_cents
-        ? `Yes, €${Math.round(request.can_pay_now_cents / 100)}`
-        : 'No';
-      document.getElementById('difficulty-can-pay').textContent = canPayText;
-
-      // Display preferred options
-      const optionsLabels = {
-        'smaller_longer': 'Pay a smaller amount each month over a longer period',
-        'skip_reduce': 'Skip or reduce the upcoming payment and catch up later',
-        'partial_now': 'Pay part now and move the rest to a later date',
-        'lower_higher_interest': 'Lower the monthly amount with higher interest',
-        'unsure': "I'm not sure — please suggest something for us"
-      };
-
-      const options = request.preferred_adjustments.split(',');
-      const optionsList = document.getElementById('difficulty-options');
-      optionsList.innerHTML = '';
-      options.forEach(opt => {
-        const li = document.createElement('li');
-        li.style.marginBottom = '8px';
-        li.style.color = 'var(--text)';
-        li.textContent = '• ' + (optionsLabels[opt.trim()] || opt);
-        optionsList.appendChild(li);
-      });
-
-      // If status is plan_proposed, show the lender's proposal
-      if (request.status === 'plan_proposed' && request.lender_proposal_text) {
-        document.getElementById('lender-proposal-section').classList.remove('hidden');
-        document.getElementById('lender-proposal-text').textContent = request.lender_proposal_text;
-      } else {
-        document.getElementById('lender-proposal-section').classList.add('hidden');
-      }
     }
 
     // Payment functions
@@ -1283,136 +1124,6 @@
       const modal = document.getElementById('proof-modal');
       modal.style.display = 'none';
     }
-
-    // Lender action: Acknowledge difficulty request
-    async function acknowledgeDifficulty() {
-      const status = document.getElementById('difficulty-action-status');
-      status.textContent = 'Acknowledging...';
-      status.className = 'status';
-
-      try {
-        const res = await fetch(`/api/agreements/${agreementId}/difficulty/acknowledge`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          status.textContent = data.error || 'Failed to acknowledge';
-          status.className = 'status error';
-          return;
-        }
-
-        status.textContent = 'Acknowledged. Reloading...';
-        status.className = 'status success';
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } catch (err) {
-        status.textContent = 'Error: ' + err.message;
-        status.className = 'status error';
-      }
-    }
-
-    // Lender action: Decline difficulty request
-    async function declineDifficulty() {
-      if (!confirm('Are you sure you want to decline this payment difficulty request?')) {
-        return;
-      }
-
-      const status = document.getElementById('difficulty-action-status');
-      status.textContent = 'Declining...';
-      status.className = 'status';
-
-      try {
-        const res = await fetch(`/api/agreements/${agreementId}/difficulty/decline`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          status.textContent = data.error || 'Failed to decline';
-          status.className = 'status error';
-          return;
-        }
-
-        status.textContent = 'Declined. Reloading...';
-        status.className = 'status success';
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } catch (err) {
-        status.textContent = 'Error: ' + err.message;
-        status.className = 'status error';
-      }
-    }
-
-    // Show propose plan modal
-    function showProposePlanModal() {
-      document.getElementById('propose-plan-modal').classList.remove('hidden');
-      document.getElementById('proposal-text').value = '';
-      document.getElementById('proposal-status').textContent = '';
-      document.getElementById('proposal-text').focus();
-    }
-
-    // Close propose plan modal
-    function closeProposePlanModal() {
-      document.getElementById('propose-plan-modal').classList.add('hidden');
-    }
-
-    // Submit propose plan
-    async function submitProposePlan() {
-      const proposalText = document.getElementById('proposal-text').value.trim();
-      const status = document.getElementById('proposal-status');
-
-      if (!proposalText) {
-        status.textContent = 'Please enter a proposal';
-        status.className = 'status error';
-        return;
-      }
-
-      status.textContent = 'Submitting...';
-      status.className = 'status';
-
-      try {
-        const res = await fetch(`/api/agreements/${agreementId}/difficulty/propose-plan`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ proposalText })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          status.textContent = data.error || 'Failed to submit proposal';
-          status.className = 'status error';
-          return;
-        }
-
-        status.textContent = 'Proposal submitted! Reloading...';
-        status.className = 'status success';
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } catch (err) {
-        status.textContent = 'Error: ' + err.message;
-        status.className = 'status error';
-      }
-    }
-
-    // Close modal when clicking outside
-    document.addEventListener('click', (e) => {
-      const modal = document.getElementById('propose-plan-modal');
-      if (e.target === modal) {
-        closeProposePlanModal();
-      }
-    });
 
     // Initialize
     if (!agreementId) {
