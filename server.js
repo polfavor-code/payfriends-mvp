@@ -2135,12 +2135,17 @@ app.get('/agreements/:id/review', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'review-details.html'));
 });
 
-// View agreement (logged-in lender or borrower)
-app.get('/agreements/:id/view', (req, res) => {
+// Manage agreement (logged-in lender or borrower)
+app.get('/agreements/:id/manage', (req, res) => {
   if (!req.user) {
     return res.redirect('/');
   }
   res.sendFile(path.join(__dirname, 'public', 'review-details.html'));
+});
+
+// Legacy redirect: /view → /manage
+app.get('/agreements/:id/view', (req, res) => {
+  res.redirect(302, `/agreements/${req.params.id}/manage`);
 });
 
 // Serve other static files from "public" folder
