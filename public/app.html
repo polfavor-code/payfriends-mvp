@@ -85,7 +85,7 @@
     .modal-info-value{font-weight:600; font-size:14px}
     .modal-note{background:#10151d; padding:12px; border-radius:8px; margin:12px 0; font-size:14px; color:var(--text)}
     .modal-helper-text{color:var(--muted); font-size:13px; margin-bottom:16px; line-height:1.5}
-    .actions-header-text{display:inline-block; padding-left:40px}
+    .actions-header-text{display:inline-block; text-align:right; width:100%}
   </style>
 </head>
 <body>
@@ -179,10 +179,10 @@
             <input id="description" type="text" placeholder="e.g. Money for rent, Car repair, Holiday loan" required maxlength="30" oninput="autoCapitalizeDescription()" />
           </div>
           <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to identify this agreement.</p>
-        </div>
 
-        <div style="margin-top:24px">
-          <button onclick="goToTerms()">Continue to Terms</button>
+          <div style="margin-top:24px">
+            <button onclick="goToTerms()">Continue to Terms</button>
+          </div>
         </div>
         <p id="step1-status" class="status"></p>
       </div>
@@ -320,7 +320,7 @@
                 <th style="text-align:left; padding:8px 4px">#</th>
                 <th style="text-align:right; padding:8px 4px">Payment</th>
                 <th style="text-align:right; padding:8px 4px">Interest</th>
-                <th style="text-align:right; padding:8px 4px">Principal</th>
+                <th style="text-align:right; padding:8px 4px">Loan repayment</th>
                 <th style="text-align:right; padding:8px 4px">Remaining</th>
               </tr>
             </thead>
@@ -1526,7 +1526,7 @@
       const content = document.getElementById('interest-calc-content');
 
       if (wizardData.interestRate === 0 || !wizardData.hasInterest) {
-        content.innerHTML = `<p style="margin:0; font-size:14px">This is an interest-free loan. Borrower repays only the principal amount.</p>`;
+        content.innerHTML = `<p style="margin:0; font-size:14px">This is an interest-free loan. Borrower repays only the loan amount.</p>`;
       } else {
         const totalInterest = formatAmount(Math.round(wizardData.totalInterest * 100));
         const totalRepay = formatAmount(Math.round(wizardData.totalRepayAmount * 100));
@@ -1536,9 +1536,15 @@
 
         let html = `<p style="margin:0 0 12px 0; font-size:14px">At ${wizardData.interestRate}% interest per year over ${termText}, total interest is about €${totalInterest} and total to repay is €${totalRepay}.</p>`;
 
-        // Get the breakdown table HTML from step 3
-        const breakdownTbody = document.getElementById('breakdown-tbody').innerHTML;
-        if (breakdownTbody) {
+        // Build unified breakdown table with dates
+        const breakdownTbody = document.getElementById('breakdown-tbody');
+        const rows = breakdownTbody?.getElementsByTagName('tr') || [];
+
+        if (rows.length > 0 && wizardData.repaymentType === 'installments') {
+          const firstDate = new Date(wizardData.firstPaymentDate);
+          const installmentCount = wizardData.installmentCount;
+          const planUnit = wizardData.planUnit || 'months';
+
           html += `<div style="margin:16px 0"><button onclick="togglePaymentBreakdownInSummary()" class="secondary" style="padding:8px 16px; font-size:13px">
             <span id="summary-breakdown-toggle-text">Show payment breakdown</span>
           </button></div>`;
@@ -1546,11 +1552,50 @@
           html += `<table style="width:100%; font-size:12px">`;
           html += `<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">`;
           html += `<th style="text-align:left; padding:8px 4px">#</th>`;
+          html += `<th style="text-align:left; padding:8px 4px">Date</th>`;
           html += `<th style="text-align:right; padding:8px 4px">Payment</th>`;
+          html += `<th style="text-align:right; padding:8px 4px">Loan repayment</th>`;
           html += `<th style="text-align:right; padding:8px 4px">Interest</th>`;
-          html += `<th style="text-align:right; padding:8px 4px">Principal</th>`;
           html += `<th style="text-align:right; padding:8px 4px">Remaining</th>`;
-          html += `</tr></thead><tbody>${breakdownTbody}</tbody></table></div>`;
+          html += `</tr></thead><tbody>`;
+
+          for (let i = 0; i < installmentCount; i++) {
+            const installmentDate = new Date(firstDate);
+            if (planUnit === 'months') {
+              installmentDate.setMonth(installmentDate.getMonth() + i);
+            } else if (planUnit === 'weeks') {
+              installmentDate.setDate(installmentDate.getDate() + (i * 7));
+            } else if (planUnit === 'days') {
+              installmentDate.setDate(installmentDate.getDate() + i);
+            } else if (planUnit === 'years') {
+              installmentDate.setFullYear(installmentDate.getFullYear() + i);
+            }
+            const dateStr = installmentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+            // Get corresponding values from the breakdown table
+            let numVal = '', paymentVal = '', interestVal = '', principalVal = '', remainingVal = '';
+            if (rows[i]) {
+              const cells = rows[i].getElementsByTagName('td');
+              if (cells.length >= 5) {
+                numVal = cells[0].textContent;
+                paymentVal = cells[1].textContent;
+                interestVal = cells[2].textContent;
+                principalVal = cells[3].textContent;
+                remainingVal = cells[4].textContent;
+              }
+            }
+
+            html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">`;
+            html += `<td style="padding:8px 4px">${numVal}</td>`;
+            html += `<td style="padding:8px 4px">${dateStr}</td>`;
+            html += `<td style="text-align:right; padding:8px 4px">${paymentVal}</td>`;
+            html += `<td style="text-align:right; padding:8px 4px">${principalVal}</td>`;
+            html += `<td style="text-align:right; padding:8px 4px">${interestVal}</td>`;
+            html += `<td style="text-align:right; padding:8px 4px">${remainingVal}</td>`;
+            html += `</tr>`;
+          }
+
+          html += `</tbody></table></div>`;
         }
 
         content.innerHTML = html;
@@ -1571,7 +1616,7 @@
       }
     }
 
-    // Populate installment schedule with actual dates
+    // Populate installment schedule with actual dates (simplified)
     function populateInstallmentSchedule() {
       const wrapper = document.getElementById('installment-schedule-wrapper');
       const content = document.getElementById('installment-schedule-content');
@@ -1595,11 +1640,9 @@
       let html = '<div style="max-height:300px; overflow-y:auto">';
       html += '<table style="width:100%; font-size:13px">';
       html += '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">';
+      html += '<th style="text-align:left; padding:8px 4px">#</th>';
       html += '<th style="text-align:left; padding:8px 4px">Date</th>';
-      html += '<th style="text-align:right; padding:8px 4px">Payment</th>';
-      html += '<th style="text-align:right; padding:8px 4px">Interest</th>';
-      html += '<th style="text-align:right; padding:8px 4px">Principal</th>';
-      html += '<th style="text-align:right; padding:8px 4px">Remaining</th>';
+      html += '<th style="text-align:right; padding:8px 4px">≈Payment</th>';
       html += '</tr></thead><tbody>';
 
       for (let i = 0; i < installmentCount; i++) {
@@ -1618,23 +1661,19 @@
         const dateStr = installmentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
         // Get corresponding values from the breakdown table
-        let paymentVal = '', interestVal = '', principalVal = '', remainingVal = '';
+        let numVal = '', paymentVal = '';
         if (rows[i]) {
           const cells = rows[i].getElementsByTagName('td');
-          if (cells.length >= 5) {
+          if (cells.length >= 2) {
+            numVal = cells[0].textContent;
             paymentVal = cells[1].textContent;
-            interestVal = cells[2].textContent;
-            principalVal = cells[3].textContent;
-            remainingVal = cells[4].textContent;
           }
         }
 
         html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">`;
+        html += `<td style="padding:8px 4px">${numVal}</td>`;
         html += `<td style="padding:8px 4px">${dateStr}</td>`;
         html += `<td style="text-align:right; padding:8px 4px">${paymentVal}</td>`;
-        html += `<td style="text-align:right; padding:8px 4px">${interestVal}</td>`;
-        html += `<td style="text-align:right; padding:8px 4px">${principalVal}</td>`;
-        html += `<td style="text-align:right; padding:8px 4px">${remainingVal}</td>`;
         html += `</tr>`;
       }
 
