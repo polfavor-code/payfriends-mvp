@@ -145,6 +145,13 @@ try {
   // Column already exists, ignore
 }
 
+// Add profile_picture column to users if it doesn't exist (for existing databases)
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN profile_picture TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // --- multer setup for file uploads ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -173,6 +180,35 @@ const upload = multer({
   }
 });
 
+// Profile picture upload configuration
+const profilePictureStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, './uploads/profiles/');
+  },
+  filename: (req, file, cb) => {
+    const userId = req.user?.id || 'unknown';
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
+    cb(null, `profile-${userId}-${timestamp}${ext}`);
+  }
+});
+
+const uploadProfilePicture = multer({
+  storage: profilePictureStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit for profile pictures
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept only images
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images (JPEG, PNG, WebP) are allowed for profile pictures'));
+    }
+  }
+});
+
 // --- middleware ---
 app.use(morgan('dev'));
 app.use(bodyParser.json());
@@ -193,7 +229,7 @@ app.use((req, res, next) => {
 
   try {
     const session = db.prepare(`
-      SELECT s.*, u.email, u.id as user_id, u.full_name
+      SELECT s.*, u.email, u.id as user_id, u.full_name, u.profile_picture
       FROM sessions s
       JOIN users u ON s.user_id = u.id
       WHERE s.id = ? AND s.expires_at > datetime('now')
@@ -203,7 +239,8 @@ app.use((req, res, next) => {
       req.user = {
         id: session.user_id,
         email: session.email,
-        full_name: session.full_name
+        full_name: session.full_name,
+        profile_picture: session.profile_picture
       };
     }
   } catch (err) {
@@ -450,6 +487,86 @@ app.post('/api/profile', requireAuth, (req, res) => {
   }
 });
 
+// Upload profile picture
+app.post('/api/profile/picture', requireAuth, uploadProfilePicture.single('picture'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Delete old profile picture if it exists
+    const user = db.prepare('SELECT profile_picture FROM users WHERE id = ?').get(req.user.id);
+    if (user?.profile_picture) {
+      const oldPath = path.join(__dirname, user.profile_picture);
+      try {
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      } catch (err) {
+        console.error('Error deleting old profile picture:', err);
+      }
+    }
+
+    // Store relative path to the profile picture
+    const relativePath = `/uploads/profiles/${req.file.filename}`;
+    db.prepare('UPDATE users SET profile_picture = ? WHERE id = ?').run(relativePath, req.user.id);
+
+    res.json({
+      success: true,
+      profile_picture: relativePath
+    });
+  } catch (err) {
+    console.error('Error uploading profile picture:', err);
+    res.status(500).json({ error: 'Server error uploading profile picture' });
+  }
+});
+
+// Delete profile picture
+app.delete('/api/profile/picture', requireAuth, (req, res) => {
+  try {
+    const user = db.prepare('SELECT profile_picture FROM users WHERE id = ?').get(req.user.id);
+
+    if (user?.profile_picture) {
+      const filePath = path.join(__dirname, user.profile_picture);
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (err) {
+        console.error('Error deleting profile picture file:', err);
+      }
+    }
+
+    db.prepare('UPDATE users SET profile_picture = NULL WHERE id = ?').run(req.user.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting profile picture:', err);
+    res.status(500).json({ error: 'Server error deleting profile picture' });
+  }
+});
+
+// Serve profile picture (authenticated only)
+app.get('/api/profile/picture/:userId', requireAuth, (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const user = db.prepare('SELECT profile_picture FROM users WHERE id = ?').get(userId);
+
+    if (!user || !user.profile_picture) {
+      return res.status(404).json({ error: 'Profile picture not found' });
+    }
+
+    const filePath = path.join(__dirname, user.profile_picture);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Profile picture file not found' });
+    }
+
+    res.sendFile(filePath);
+  } catch (err) {
+    console.error('Error serving profile picture:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // --- API ROUTES ---
 
 // List agreements for logged-in user (both as lender and borrower)
@@ -461,8 +578,10 @@ app.get('/api/agreements', requireAuth, (req, res) => {
     SELECT a.*,
       u_lender.full_name as lender_full_name,
       u_lender.email as lender_email,
+      u_lender.profile_picture as lender_profile_picture,
       u_borrower.full_name as borrower_full_name,
-      u_borrower.email as borrower_email
+      u_borrower.email as borrower_email,
+      u_borrower.profile_picture as borrower_profile_picture
     FROM agreements a
     LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
     LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
@@ -700,8 +819,10 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
       SELECT a.*,
         u_lender.full_name as lender_full_name,
         u_lender.email as lender_email,
+        u_lender.profile_picture as lender_profile_picture,
         u_borrower.full_name as borrower_full_name,
-        u_borrower.email as borrower_email
+        u_borrower.email as borrower_email,
+        u_borrower.profile_picture as borrower_profile_picture
       FROM agreements a
       LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
       LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
