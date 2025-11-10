@@ -90,24 +90,27 @@
       <p id="loading-text">Loading agreement details...</p>
     </div>
 
+    <!-- Agreement summary block (above details card) -->
+    <div id="summary-section" class="card hidden" style="padding:20px">
+      <div style="display:flex; align-items:flex-start; gap:12px">
+        <div id="profile-picture-container" style="flex-shrink:0; display:none">
+          <div style="width:40px; height:40px; border-radius:50%; overflow:hidden; background:#10151d; border:2px solid rgba(255,255,255,0.1)">
+            <img id="profile-picture-img" style="width:100%; height:100%; object-fit:cover" />
+          </div>
+        </div>
+        <div style="flex:1">
+          <p id="agreement-summary-line1" style="margin:0 0 8px 0; font-size:16px; line-height:1.6; color:var(--text)"></p>
+          <p id="agreement-summary-line2" style="margin:0; font-size:16px; line-height:1.6; color:var(--text)"></p>
+        </div>
+      </div>
+    </div>
+
     <!-- Agreement details -->
     <div id="details-section" class="card hidden">
       <h2>Agreement Details</h2>
 
-      <!-- Human-readable summary -->
-      <div style="background:rgba(255,255,255,0.02); padding:20px; border-radius:12px; margin:16px 0">
-        <p id="agreement-summary-line1" style="margin:0 0 12px 0; font-size:16px; line-height:1.6"></p>
-        <p id="agreement-summary-line2" style="margin:0; font-size:16px; line-height:1.6"></p>
-        <div id="status-display" style="margin-top:16px"></div>
-      </div>
-
       <!-- Details section -->
-      <h3 style="margin:24px 0 12px 0; font-size:18px">Details</h3>
       <div style="margin:16px 0">
-        <div class="detail-row" id="description-row">
-          <span class="detail-label">Description</span>
-          <span class="detail-value" id="description-display"></span>
-        </div>
         <div class="detail-row">
           <span class="detail-label">Lender</span>
           <span class="detail-value" id="lender-name"></span>
@@ -116,13 +119,24 @@
           <span class="detail-label">Borrower</span>
           <span class="detail-value" id="borrower-name"></span>
         </div>
+        <div class="detail-row" id="description-row">
+          <span class="detail-label">Description</span>
+          <span class="detail-value" id="description-display"></span>
+        </div>
         <div class="detail-row">
           <span class="detail-label">Amount</span>
           <span class="detail-value" id="amount-display"></span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Due date</span>
-          <span class="detail-value" id="due-date"></span>
+          <span class="detail-value">
+            <span id="due-date"></span>
+            <span id="due-date-countdown" style="color:var(--muted); margin-left:8px"></span>
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Status</span>
+          <span class="detail-value" id="status-display"></span>
         </div>
       </div>
 
@@ -479,6 +493,23 @@
       }
     }
 
+    // Calculate time until/since due date
+    function getDueDateCountdown(dueDate) {
+      const now = new Date();
+      const due = new Date(dueDate);
+      const diffMs = due - now;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0) {
+        return `(in ${diffDays} day${diffDays === 1 ? '' : 's'})`;
+      } else if (diffDays === 0) {
+        return '(today)';
+      } else {
+        const overdueDays = Math.abs(diffDays);
+        return `(${overdueDays} day${overdueDays === 1 ? '' : 's'} overdue)`;
+      }
+    }
+
     function populateDetails() {
       const amount = formatAmount(agreement.amount_cents);
       const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
@@ -504,11 +535,28 @@
       const summaryLine2 = `€${outstanding} remains outstanding and is due by ${dueDate}.`;
       document.getElementById('agreement-summary-line2').textContent = summaryLine2;
 
+      // Show profile picture in summary if available
+      const otherPersonProfilePicture = isLender ? agreement.borrower_profile_picture : agreement.lender_profile_picture;
+      const otherPersonUserId = isLender ? agreement.borrower_user_id : agreement.lender_user_id;
+
+      if (otherPersonProfilePicture && otherPersonUserId) {
+        const profilePictureContainer = document.getElementById('profile-picture-container');
+        const profilePictureImg = document.getElementById('profile-picture-img');
+        profilePictureImg.src = `/api/profile/picture/${otherPersonUserId}`;
+        profilePictureContainer.style.display = 'block';
+      }
+
+      // Show summary section
+      document.getElementById('summary-section').classList.remove('hidden');
+
       // Populate details section
       document.getElementById('amount-display').textContent = `€ ${amount}`;
       document.getElementById('lender-name').textContent = lenderName;
       document.getElementById('borrower-name').textContent = borrowerName;
       document.getElementById('due-date').textContent = dueDate;
+
+      // Add due date countdown
+      document.getElementById('due-date-countdown').textContent = getDueDateCountdown(agreement.due_date);
 
       // Show description if available
       if (agreement.description) {
@@ -945,8 +993,19 @@
         recordBtn.id = 'record-payment-btn';
         recordBtn.className = 'record-payment-btn';
 
-        // Set button text - simplified label for all users
-        recordBtn.textContent = 'Report Payment';
+        // Set button text based on user role
+        const isLender = agreement.lender_user_id === currentUser.id;
+        const isBorrower = agreement.borrower_user_id === currentUser.id;
+
+        if (isBorrower) {
+          const lenderName = (agreement.lender_full_name || agreement.lender_name || agreement.lender_email).split(' ')[0];
+          recordBtn.textContent = `Report a payment to ${lenderName}`;
+        } else if (isLender) {
+          const borrowerName = (agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email).split(' ')[0];
+          recordBtn.textContent = `Report a payment from ${borrowerName}`;
+        } else {
+          recordBtn.textContent = 'Report Payment';
+        }
 
         recordBtn.onclick = showRecordPaymentForm;
         viewOnly.appendChild(recordBtn);

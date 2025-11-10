@@ -222,8 +222,8 @@
       <table id="list">
         <thead>
           <tr>
+            <th>Borrower / Lender</th>
             <th>Description</th>
-            <th>Borrower</th>
             <th>Amount</th>
             <th>Outstanding</th>
             <th>Due</th>
@@ -731,8 +731,8 @@
         }
 
         tr.innerHTML = `
-          <td>${description}</td>
           <td>${borrowerName}</td>
+          <td>${description}</td>
           <td>€ ${amount}</td>
           <td>€ ${outstanding}</td>
           <td>${a.due_date}</td>
