@@ -147,7 +147,7 @@
         <!-- Role selector cards -->
         <div style="margin:16px 0 24px 0">
           <label style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:16px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:12px; transition:all 0.2s" onclick="selectRoleCard('lend')" id="role-card-lend">
-            <input type="radio" name="role" value="lend" style="width:20px; height:20px" />
+            <input type="radio" name="role" value="lend" onchange="toggleBorrowerFields()" style="width:20px; height:20px" />
             <div style="flex:1">
               <div style="font-weight:600; font-size:15px">I want to lend money</div>
             </div>
@@ -161,23 +161,25 @@
           </label>
         </div>
 
-        <div class="row">
-          <label>Counterparty name*</label>
-          <input id="friend-first-name" placeholder="Alex" required oninput="autoCapitalizeName()" />
-        </div>
-        <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">Full name or first name.</p>
+        <div id="borrower-fields" class="hidden" style="transition:all 0.3s ease">
+          <div class="row">
+            <label>Borrower name*</label>
+            <input id="friend-first-name" placeholder="Alex" required oninput="autoCapitalizeName()" />
+          </div>
+          <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">Full name or first name.</p>
 
-        <div class="row">
-          <label>Counterparty email*</label>
-          <input id="friend-email" type="email" placeholder="alex@example.com" required />
-        </div>
-        <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">They'll receive a link to review the agreement.</p>
+          <div class="row">
+            <label>Borrower email*</label>
+            <input id="friend-email" type="email" placeholder="alex@example.com" required />
+          </div>
+          <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">They'll receive a link to review the agreement.</p>
 
-        <div class="row">
-          <label>What is this for?*</label>
-          <input id="description" type="text" placeholder="e.g. Money for rent, Car repair, Holiday loan" required maxlength="30" oninput="autoCapitalizeDescription()" />
+          <div class="row">
+            <label>Loan description*</label>
+            <input id="description" type="text" placeholder="e.g. Money for rent, Car repair, Holiday loan" required maxlength="30" oninput="autoCapitalizeDescription()" />
+          </div>
+          <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to identify this agreement.</p>
         </div>
-        <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to identify this agreement.</p>
 
         <div style="margin-top:24px">
           <button onclick="goToTerms()">Continue to Terms</button>
@@ -231,29 +233,19 @@
             </div>
           </div>
 
-          <div style="margin:16px 0 24px 0">
-            <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">First payment due*</label>
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); margin-bottom:8px">
-              <input type="radio" name="first-payment-option" value="1month" onchange="updateFirstPaymentOption()" checked />
-              <span>In 1 month</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); margin-bottom:8px">
-              <input type="radio" name="first-payment-option" value="2months" onchange="updateFirstPaymentOption()" />
-              <span>In 2 months</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); margin-bottom:8px">
-              <input type="radio" name="first-payment-option" value="3months" onchange="updateFirstPaymentOption()" />
-              <span>In 3 months</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
-              <input type="radio" name="first-payment-option" value="custom" onchange="updateFirstPaymentOption()" />
-              <span>Pick a date</span>
-            </label>
+          <div class="row">
+            <label>First payment due*</label>
+            <select id="first-payment-option" onchange="updateFirstPaymentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+              <option value="1month">In 1 month (recommended)</option>
+              <option value="2months">In 2 months</option>
+              <option value="3months">In 3 months</option>
+              <option value="custom">Pick a date…</option>
+            </select>
           </div>
 
           <div id="custom-first-payment-date" class="hidden" style="margin:16px 0">
             <div class="row">
-              <label>First payment date</label>
+              <label>Pick a date</label>
               <input id="first-payment-date" type="date" required onchange="calculateInstallments()" />
             </div>
           </div>
@@ -261,8 +253,6 @@
           <div id="final-payment-estimate" style="color:var(--accent); font-size:13px; margin:12px 0; font-weight:500"></div>
           <p id="installment-summary" style="color:var(--muted); font-size:13px; margin:8px 0 12px 0"></p>
         </div>
-
-        <p style="color:var(--muted); font-size:13px; margin:20px 0; line-height:1.5">These terms will define your repayment schedule and fair interest calculation.</p>
 
         <div style="margin-top:24px">
           <button onclick="goToInterest()">Continue to Interest</button>
@@ -273,15 +263,16 @@
 
       <!-- Step 3: Interest & Calculation -->
       <div id="wizard-step-3" class="wizard-content hidden">
-        <h3 style="margin-top:0">Add interest and review calculations.</h3>
+        <h3 style="margin-top:0">Interest & payment calculation</h3>
 
         <div class="row" style="margin-top:20px">
-          <label>Interest rate (% per year)</label>
+          <label>Interest rate</label>
           <div style="flex:1; display:flex; align-items:center; gap:12px">
-            <input id="interest-rate" type="number" min="0" max="100" step="0.1" placeholder="6.0" oninput="calculateInterest()" style="flex:1" />
+            <input id="interest-rate" type="number" min="0" max="100" step="0.1" placeholder="e.g. 5% per year" oninput="calculateInterest()" style="flex:1" />
             <span id="interest-rate-badge" style="display:inline-block; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; white-space:nowrap"></span>
           </div>
         </div>
+        <p id="interest-rate-helper" style="color:var(--muted); font-size:12px; margin:4px 0 12px 172px"></p>
 
         <div style="margin:12px 0 20px 172px">
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer">
@@ -317,12 +308,12 @@
 
         <div style="margin:20px 0">
           <button onclick="toggleBreakdown()" class="secondary" style="padding:8px 16px; font-size:14px">
-            <span id="breakdown-toggle-text">Show detailed calculation</span>
+            <span id="breakdown-toggle-text">Show payment breakdown</span>
           </button>
         </div>
 
         <div id="interest-breakdown" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin:20px 0; max-height:400px; overflow-y:auto">
-          <h5 style="margin:0 0 12px 0; font-size:14px">Amortization schedule</h5>
+          <h5 style="margin:0 0 12px 0; font-size:14px">Payment breakdown</h5>
           <table style="width:100%; font-size:13px">
             <thead>
               <tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
@@ -353,28 +344,34 @@
           <h4 style="margin:0 0 12px 0; font-size:16px">Payment methods</h4>
           <p style="color:var(--muted); font-size:13px; margin-bottom:12px">Select all that apply:</p>
 
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); margin-bottom:6px; background:rgba(255,255,255,0.02)">
-            <input type="checkbox" class="payment-method-checkbox" value="bank" checked />
-            <span style="font-size:14px">Bank transfer</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); margin-bottom:6px; background:rgba(255,255,255,0.02)">
-            <input type="checkbox" class="payment-method-checkbox" value="cash" />
-            <span style="font-size:14px">Cash in person</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); margin-bottom:6px; background:rgba(255,255,255,0.02)">
-            <input type="checkbox" class="payment-method-checkbox" value="crypto" />
-            <span style="font-size:14px">Crypto</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); margin-bottom:6px; background:rgba(255,255,255,0.02)">
-            <input type="checkbox" class="payment-method-checkbox" value="any" />
-            <span style="font-size:14px">Any method</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); margin-bottom:6px; background:rgba(255,255,255,0.02)">
-            <input type="checkbox" class="payment-method-checkbox" value="other" onchange="toggleOtherPaymentMethod()" />
-            <span style="font-size:14px">Other</span>
-          </label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
+              <input type="checkbox" class="payment-method-checkbox" value="bank" checked />
+              <span style="font-size:14px">Bank transfer</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
+              <input type="checkbox" class="payment-method-checkbox" value="cash" />
+              <span style="font-size:14px">Cash</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
+              <input type="checkbox" class="payment-method-checkbox" value="paypal" />
+              <span style="font-size:14px">PayPal / mobile payment</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
+              <input type="checkbox" class="payment-method-checkbox" value="crypto" />
+              <span style="font-size:14px">Crypto</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
+              <input type="checkbox" class="payment-method-checkbox" value="other" onchange="toggleOtherPaymentMethod()" />
+              <span style="font-size:14px">Other</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
+              <input type="checkbox" class="payment-method-checkbox" value="any" />
+              <span style="font-size:14px">Any method</span>
+            </label>
+          </div>
 
-          <div id="other-payment-method" class="hidden" style="margin:8px 0 12px 0">
+          <div id="other-payment-method" class="hidden" style="margin:12px 0">
             <input id="other-payment-description" type="text" placeholder="Describe the other payment method" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
           </div>
 
@@ -382,21 +379,22 @@
           <div style="margin:16px 0 0 0">
             <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer">
               <input type="checkbox" id="proof-required" style="margin-top:2px" />
-              <span style="font-size:14px; line-height:1.5">Borrower must upload proof when reporting a payment.</span>
+              <span style="font-size:14px; line-height:1.5">Require borrower to upload proof of payment</span>
             </label>
+            <p style="color:var(--muted); font-size:12px; margin:4px 0 0 28px">They'll be asked for proof whenever they report a payment.</p>
           </div>
         </div>
 
         <!-- Reminders -->
         <div style="margin:24px 0">
           <h4 style="margin:0 0 8px 0; font-size:16px">Reminders</h4>
-          <p style="color:var(--muted); font-size:13px; margin-bottom:12px">We only send reminders when no payment has been reported for that installment.</p>
+          <p style="color:var(--muted); font-size:13px; margin-bottom:12px">We only send reminders if no payment has been reported for that installment.</p>
 
           <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer; padding:16px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:12px; transition:all 0.2s" id="reminder-auto-card">
             <input type="radio" name="reminder-mode" value="auto" onchange="toggleReminderMode()" checked style="margin-top:2px" />
             <div style="flex:1">
               <div style="font-weight:600; margin-bottom:6px">Auto (recommended)</div>
-              <div style="color:var(--muted); font-size:13px; line-height:1.5">Borrower will receive reminders 7 days before, 1 day before, and on the due date. If still unpaid, follow-up reminders are sent 1 day after and every 3 days until payment or renegotiation.</div>
+              <div style="color:var(--muted); font-size:13px; line-height:1.5">We'll remind the borrower 7 days before, 1 day before and on the due date. If no payment is reported, we'll send follow-up reminders 1 day after, then every 3 days.</div>
             </div>
           </label>
           <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer; padding:16px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); transition:all 0.2s" id="reminder-custom-card">
@@ -413,13 +411,22 @@
                     <input type="checkbox" value="-7" class="custom-reminder-checkbox" /> 7 days before
                   </label>
                   <label style="display:flex; align-items:center; gap:6px; font-size:13px">
-                    <input type="checkbox" value="0" class="custom-reminder-checkbox" /> On due date
+                    <input type="checkbox" value="-3" class="custom-reminder-checkbox" /> 3 days before
+                  </label>
+                  <label style="display:flex; align-items:center; gap:6px; font-size:13px">
+                    <input type="checkbox" value="-1" class="custom-reminder-checkbox" /> 1 day before
+                  </label>
+                  <label style="display:flex; align-items:center; gap:6px; font-size:13px">
+                    <input type="checkbox" value="0" class="custom-reminder-checkbox" /> On the due date
                   </label>
                   <label style="display:flex; align-items:center; gap:6px; font-size:13px">
                     <input type="checkbox" value="1" class="custom-reminder-checkbox" /> 1 day after
                   </label>
                   <label style="display:flex; align-items:center; gap:6px; font-size:13px">
                     <input type="checkbox" value="3" class="custom-reminder-checkbox" /> Every 3 days after
+                  </label>
+                  <label style="display:flex; align-items:center; gap:6px; font-size:13px">
+                    <input type="checkbox" value="7" class="custom-reminder-checkbox" /> Every 7 days after
                   </label>
                 </div>
                 <p id="custom-reminder-error" style="color:#ff6b6b; font-size:12px; margin-top:8px; display:none">Please select at least one reminder</p>
@@ -430,14 +437,12 @@
 
         <!-- Worst-case scenario -->
         <div style="margin:24px 0">
-          <h4 style="margin:0 0 12px 0; font-size:16px">Worst-case scenario</h4>
-          <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding:16px; border-radius:10px; border:1px solid rgba(255,255,255,0.08)">
-            <input type="checkbox" id="debt-collection-clause" style="margin-top:2px" />
-            <div style="font-size:14px; line-height:1.6">
-              <strong>Include a worst-case scenario clause.</strong>
-              <div style="color:var(--muted); margin-top:6px">If the borrower fails to repay, does not initiate renegotiation, or no solution can be reached, both parties agree that the case may be transferred to an independent debt-collection partner registered under local law. Any collection fees are for the borrower's expense.</div>
-            </div>
-          </label>
+          <h4 style="margin:0 0 12px 0; font-size:16px">If things go wrong</h4>
+          <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px">
+            <p style="margin:0; color:var(--text); font-size:14px; line-height:1.6">
+              If the borrower repeatedly fails to repay, doesn't respond to reminders or can't agree a new plan with the lender, both parties agree that the case may be transferred to an independent debt-collection partner registered according to local law. Any collection fees are at the expense of the borrower.
+            </p>
+          </div>
         </div>
 
         <div style="margin-top:32px">
@@ -456,21 +461,18 @@
           <p id="full-summary-text" style="margin:0; color:var(--text); font-size:15px; line-height:1.8"></p>
         </div>
 
-        <!-- Expandable: Repayment schedule -->
+        <!-- General details table -->
         <div style="margin:16px 0">
-          <button onclick="toggleSection('repayment-schedule-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-            <span>Repayment schedule</span>
-            <span id="repayment-schedule-toggle">▼</span>
-          </button>
-          <div id="repayment-schedule-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
-            <div id="repayment-schedule-content"></div>
+          <h4 style="margin:0 0 12px 0; font-size:16px">Agreement Details</h4>
+          <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px">
+            <div id="general-details-content"></div>
           </div>
         </div>
 
-        <!-- Expandable: Interest calculation -->
+        <!-- Expandable: Interest & payment calculation -->
         <div style="margin:16px 0">
           <button onclick="toggleSection('interest-calc-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-            <span>Interest calculation</span>
+            <span>Interest & payment calculation</span>
             <span id="interest-calc-toggle">▼</span>
           </button>
           <div id="interest-calc-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
@@ -478,25 +480,25 @@
           </div>
         </div>
 
-        <!-- Expandable: Reminder plan -->
-        <div style="margin:16px 0">
-          <button onclick="toggleSection('reminder-plan-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-            <span>Reminder plan</span>
-            <span id="reminder-plan-toggle">▼</span>
+        <!-- Expandable: Installment schedule -->
+        <div style="margin:16px 0" id="installment-schedule-wrapper">
+          <button onclick="toggleSection('installment-schedule-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+            <span>Installment schedule</span>
+            <span id="installment-schedule-toggle">▼</span>
           </button>
-          <div id="reminder-plan-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
-            <div id="reminder-plan-content"></div>
+          <div id="installment-schedule-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+            <div id="installment-schedule-content"></div>
           </div>
         </div>
 
-        <!-- Expandable: Clauses & conditions -->
+        <!-- Expandable: Payments & Reminders -->
         <div style="margin:16px 0">
-          <button onclick="toggleSection('clauses-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-            <span>Clauses & conditions</span>
-            <span id="clauses-toggle">▼</span>
+          <button onclick="toggleSection('payments-reminders-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+            <span>Payments & reminders</span>
+            <span id="payments-reminders-toggle">▼</span>
           </button>
-          <div id="clauses-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
-            <div id="clauses-content"></div>
+          <div id="payments-reminders-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+            <div id="payments-reminders-content"></div>
           </div>
         </div>
 
@@ -693,6 +695,11 @@
       for (let i = 1; i < step; i++) {
         document.getElementById(`step-indicator-${i}`).classList.add('completed');
       }
+
+      // Special handling for step 1: ensure borrower fields visibility is correct
+      if (step === 1) {
+        toggleBorrowerFields();
+      }
     }
 
     // Handle step click with validation
@@ -760,6 +767,21 @@
 
       // Visual feedback
       document.getElementById('role-card-lend').style.borderColor = role === 'lend' ? 'var(--accent)' : 'rgba(255,255,255,0.08)';
+
+      // Show/hide borrower fields
+      toggleBorrowerFields();
+    }
+
+    // Toggle borrower fields visibility based on role selection
+    function toggleBorrowerFields() {
+      const role = document.querySelector('input[name="role"]:checked')?.value;
+      const borrowerFields = document.getElementById('borrower-fields');
+
+      if (role === 'lend') {
+        borrowerFields.classList.remove('hidden');
+      } else {
+        borrowerFields.classList.add('hidden');
+      }
     }
 
     // Auto-capitalize name input
@@ -794,22 +816,22 @@
       }
 
       if (!friendFirstName) {
-        status.textContent = 'Please enter counterparty name';
+        status.textContent = 'Please enter borrower name';
         return false;
       }
 
       if (!friendEmail) {
-        status.textContent = 'Please enter counterparty email';
+        status.textContent = 'Please enter borrower email';
         return false;
       }
 
       if (!description) {
-        status.textContent = 'Please enter what this is for';
+        status.textContent = 'Please enter loan description';
         return false;
       }
 
       if (description.length > 30) {
-        status.textContent = 'Description must be 30 characters or less';
+        status.textContent = 'Loan description must be 30 characters or less';
         return false;
       }
 
@@ -840,7 +862,7 @@
         installmentFields.classList.remove('hidden');
         wizardData.repaymentType = 'installments';
         // Set default first payment option
-        document.querySelector('input[name="first-payment-option"][value="1month"]').checked = true;
+        document.getElementById('first-payment-option').value = '1month';
         updateFirstPaymentOption();
       } else {
         oneTimeFields.classList.remove('hidden');
@@ -852,7 +874,7 @@
 
     // Update first payment date based on selected option
     function updateFirstPaymentOption() {
-      const option = document.querySelector('input[name="first-payment-option"]:checked').value;
+      const option = document.getElementById('first-payment-option').value;
       const customDateField = document.getElementById('custom-first-payment-date');
       const firstPaymentDateInput = document.getElementById('first-payment-date');
 
@@ -1151,10 +1173,10 @@
 
       if (breakdown.classList.contains('hidden')) {
         breakdown.classList.remove('hidden');
-        toggleText.textContent = 'Hide calculation';
+        toggleText.textContent = 'Hide payment breakdown';
       } else {
         breakdown.classList.add('hidden');
-        toggleText.textContent = 'Show calculation';
+        toggleText.textContent = 'Show payment breakdown';
       }
     }
 
@@ -1215,24 +1237,30 @@
         fairRangeMax = 10;
       }
 
-      // Update badge based on rate
+      // Update badge and helper text based on rate
       const badge = document.getElementById('interest-rate-badge');
+      const helper = document.getElementById('interest-rate-helper');
+
       if (document.getElementById('no-interest-checkbox').checked || interestRate === 0) {
         badge.style.display = 'none';
+        helper.textContent = '';
       } else {
         badge.style.display = 'inline-block';
         if (interestRate >= fairRangeMin && interestRate <= fairRangeMax) {
           badge.textContent = `🟢 Fair range (${fairRangeMin}–${fairRangeMax}%)`;
           badge.style.background = 'rgba(61,220,151,0.15)';
           badge.style.color = 'var(--accent)';
+          helper.textContent = `For this amount and term, a rate of ${fairRangeMin}–${fairRangeMax}% per year is considered fair.`;
         } else if (interestRate > fairRangeMax) {
           badge.textContent = `🟠 Above typical (>${fairRangeMax}%)`;
           badge.style.background = 'rgba(249,115,22,0.15)';
           badge.style.color = '#f97316';
+          helper.textContent = `For this amount and term, a rate of ${fairRangeMin}–${fairRangeMax}% per year is considered fair.`;
         } else {
           badge.textContent = `🔵 Generous (<${fairRangeMin}%)`;
           badge.style.background = 'rgba(59,130,246,0.15)';
           badge.style.color = '#3b82f6';
+          helper.textContent = `For this amount and term, a rate of ${fairRangeMin}–${fairRangeMax}% per year is considered fair.`;
         }
       }
 
@@ -1285,8 +1313,8 @@
         tr.innerHTML = `
           <td style="padding:8px 4px">${row.period}</td>
           <td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.payment))}</td>
-          <td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.principal))}</td>
           <td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.interest))}</td>
+          <td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.principal))}</td>
           <td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.remaining))}</td>
         `;
         tbody.appendChild(tr);
@@ -1393,51 +1421,98 @@
       const totalRepayAmount = Math.round(wizardData.totalRepayAmount * 100);
       const totalRepayFormatted = formatAmount(totalRepayAmount);
 
-      // Full summary text
+      // Full summary text (3 sentences)
       let summaryText = `${lenderName} lends €${amountFormatted} to ${borrowerName} for '${description}'. `;
 
       if (wizardData.repaymentType === 'one_time') {
         const dueDate = new Date(wizardData.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        summaryText += `Repayable in one payment by ${dueDate}`;
+        summaryText += `To be repaid in one payment by ${dueDate}. `;
       } else {
-        summaryText += `Repayable in ${wizardData.installmentCount} monthly installments`;
+        const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        summaryText += `To be repaid in ${wizardData.installmentCount} monthly payments from ${firstDate} to ${finalDate}. `;
       }
 
       if (interestRate > 0) {
-        summaryText += ` with ${interestRate} % annual interest. Total repayment €${totalRepayFormatted} (interest on outstanding balance only).`;
+        summaryText += `Total to repay: €${totalRepayFormatted} (including ${interestRate}% interest per year).`;
       } else {
-        summaryText += ` with no interest.`;
+        summaryText += `Total to repay: €${amountFormatted} (interest-free loan).`;
       }
 
       document.getElementById('full-summary-text').textContent = summaryText;
       document.getElementById('send-friend-name').textContent = borrowerName;
 
-      // Populate expandable sections
-      populateRepaymentSchedule();
+      // Populate all sections
+      populateGeneralDetails();
       populateInterestCalculation();
-      populateReminderPlan();
-      populateClauses();
+      populateInstallmentSchedule();
+      populatePaymentsAndReminders();
     }
 
-    // Populate repayment schedule section
-    function populateRepaymentSchedule() {
-      const content = document.getElementById('repayment-schedule-content');
+    // Populate general details section
+    function populateGeneralDetails() {
+      const content = document.getElementById('general-details-content');
+      const lenderName = currentUser?.full_name || currentUser?.email || 'You';
 
-      if (wizardData.repaymentType === 'one_time') {
-        const dueDate = new Date(wizardData.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        content.innerHTML = `<p style="margin:0; font-size:14px">One-time payment of €${formatAmount(Math.round(wizardData.totalRepayAmount * 100))} due on ${dueDate}.</p>`;
+      let html = '<div style="display:flex; flex-direction:column; gap:12px">';
+
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:var(--muted)">Description</span>
+        <span style="font-weight:600">${wizardData.description}</span>
+      </div>`;
+
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:var(--muted)">Lender</span>
+        <span style="font-weight:600">${lenderName}</span>
+      </div>`;
+
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:var(--muted)">Borrower</span>
+        <span style="font-weight:600">${wizardData.friendFirstName}</span>
+      </div>`;
+
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:var(--muted)">Borrower email</span>
+        <span style="font-weight:600">${wizardData.friendEmail}</span>
+      </div>`;
+
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:var(--muted)">Amount</span>
+        <span style="font-weight:600">€${formatAmount(Math.round(wizardData.amount * 100))}</span>
+      </div>`;
+
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:var(--muted)">Repayment type</span>
+        <span style="font-weight:600">${wizardData.repaymentType === 'one_time' ? 'One-time payment' : 'Installments'}</span>
+      </div>`;
+
+      if (wizardData.repaymentType === 'installments') {
+        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span style="color:var(--muted)">Plan length</span>
+          <span style="font-weight:600">${wizardData.installmentCount} installments</span>
+        </div>`;
+
+        const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span style="color:var(--muted)">First payment date</span>
+          <span style="font-weight:600">${firstDate}</span>
+        </div>`;
+
+        const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span style="color:var(--muted)">Final due date</span>
+          <span style="font-weight:600">${finalDate}</span>
+        </div>`;
       } else {
-        const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-
-        let html = `<p style="margin:0 0 12px 0; font-size:14px">${wizardData.installmentCount} installments from ${firstDate} to ${finalDate}:</p>`;
-        html += `<ul style="margin:0; padding-left:20px; font-size:13px; color:var(--muted)">`;
-        html += `<li>Principal per payment: €${formatAmount(Math.round((wizardData.amount / wizardData.installmentCount) * 100))}</li>`;
-        html += `<li>Interest calculated on remaining balance each period</li>`;
-        html += `<li>Total to repay: €${formatAmount(Math.round(wizardData.totalRepayAmount * 100))}</li>`;
-        html += `</ul>`;
-        content.innerHTML = html;
+        const dueDate = new Date(wizardData.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span style="color:var(--muted)">Due date</span>
+          <span style="font-weight:600">${dueDate}</span>
+        </div>`;
       }
+
+      html += '</div>';
+      content.innerHTML = html;
     }
 
     // Populate interest calculation section
@@ -1445,22 +1520,172 @@
       const content = document.getElementById('interest-calc-content');
 
       if (wizardData.interestRate === 0 || !wizardData.hasInterest) {
-        content.innerHTML = `<p style="margin:0; font-size:14px; color:var(--muted)">No interest applied. Borrower repays only the principal amount.</p>`;
+        content.innerHTML = `<p style="margin:0; font-size:14px">This is an interest-free loan. Borrower repays only the principal amount.</p>`;
       } else {
+        const totalInterest = formatAmount(Math.round(wizardData.totalInterest * 100));
+        const totalRepay = formatAmount(Math.round(wizardData.totalRepayAmount * 100));
+        const termText = wizardData.repaymentType === 'installments'
+          ? `${wizardData.installmentCount} months`
+          : 'one payment';
+
+        let html = `<p style="margin:0 0 12px 0; font-size:14px">At ${wizardData.interestRate}% interest per year over ${termText}, total interest is about €${totalInterest} and total to repay is €${totalRepay}.</p>`;
+
         // Get the breakdown table HTML from step 3
         const breakdownTbody = document.getElementById('breakdown-tbody').innerHTML;
-        let html = `<p style="margin:0 0 12px 0; font-size:14px">Interest at ${wizardData.interestRate}% per year, calculated on outstanding balance:</p>`;
-        html += `<div style="max-height:300px; overflow-y:auto">`;
-        html += `<table style="width:100%; font-size:12px">`;
-        html += `<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">`;
-        html += `<th style="text-align:left; padding:8px 4px">#</th>`;
-        html += `<th style="text-align:right; padding:8px 4px">Payment</th>`;
-        html += `<th style="text-align:right; padding:8px 4px">Interest</th>`;
-        html += `<th style="text-align:right; padding:8px 4px">Principal</th>`;
-        html += `<th style="text-align:right; padding:8px 4px">Remaining</th>`;
-        html += `</tr></thead><tbody>${breakdownTbody}</tbody></table></div>`;
+        if (breakdownTbody) {
+          html += `<div style="margin:16px 0"><button onclick="togglePaymentBreakdownInSummary()" class="secondary" style="padding:8px 16px; font-size:13px">
+            <span id="summary-breakdown-toggle-text">Show payment breakdown</span>
+          </button></div>`;
+          html += `<div id="summary-payment-breakdown" class="hidden" style="margin:12px 0; max-height:300px; overflow-y:auto">`;
+          html += `<table style="width:100%; font-size:12px">`;
+          html += `<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">`;
+          html += `<th style="text-align:left; padding:8px 4px">#</th>`;
+          html += `<th style="text-align:right; padding:8px 4px">Payment</th>`;
+          html += `<th style="text-align:right; padding:8px 4px">Interest</th>`;
+          html += `<th style="text-align:right; padding:8px 4px">Principal</th>`;
+          html += `<th style="text-align:right; padding:8px 4px">Remaining</th>`;
+          html += `</tr></thead><tbody>${breakdownTbody}</tbody></table></div>`;
+        }
+
         content.innerHTML = html;
       }
+    }
+
+    // Toggle payment breakdown in summary
+    function togglePaymentBreakdownInSummary() {
+      const breakdown = document.getElementById('summary-payment-breakdown');
+      const toggleText = document.getElementById('summary-breakdown-toggle-text');
+
+      if (breakdown && breakdown.classList.contains('hidden')) {
+        breakdown.classList.remove('hidden');
+        if (toggleText) toggleText.textContent = 'Hide payment breakdown';
+      } else if (breakdown) {
+        breakdown.classList.add('hidden');
+        if (toggleText) toggleText.textContent = 'Show payment breakdown';
+      }
+    }
+
+    // Populate installment schedule with actual dates
+    function populateInstallmentSchedule() {
+      const wrapper = document.getElementById('installment-schedule-wrapper');
+      const content = document.getElementById('installment-schedule-content');
+
+      if (wizardData.repaymentType !== 'installments') {
+        wrapper.style.display = 'none';
+        return;
+      }
+
+      wrapper.style.display = 'block';
+
+      // Calculate installment dates
+      const firstDate = new Date(wizardData.firstPaymentDate);
+      const installmentCount = wizardData.installmentCount;
+      const planUnit = wizardData.planUnit || 'months';
+
+      // Get breakdown from calculateInterest to have matching numbers
+      const breakdownTbody = document.getElementById('breakdown-tbody');
+      const rows = breakdownTbody?.getElementsByTagName('tr') || [];
+
+      let html = '<div style="max-height:300px; overflow-y:auto">';
+      html += '<table style="width:100%; font-size:13px">';
+      html += '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">';
+      html += '<th style="text-align:left; padding:8px 4px">Date</th>';
+      html += '<th style="text-align:right; padding:8px 4px">Payment</th>';
+      html += '<th style="text-align:right; padding:8px 4px">Interest</th>';
+      html += '<th style="text-align:right; padding:8px 4px">Principal</th>';
+      html += '<th style="text-align:right; padding:8px 4px">Remaining</th>';
+      html += '</tr></thead><tbody>';
+
+      for (let i = 0; i < installmentCount; i++) {
+        const installmentDate = new Date(firstDate);
+
+        if (planUnit === 'months') {
+          installmentDate.setMonth(installmentDate.getMonth() + i);
+        } else if (planUnit === 'weeks') {
+          installmentDate.setDate(installmentDate.getDate() + (i * 7));
+        } else if (planUnit === 'days') {
+          installmentDate.setDate(installmentDate.getDate() + i);
+        } else if (planUnit === 'years') {
+          installmentDate.setFullYear(installmentDate.getFullYear() + i);
+        }
+
+        const dateStr = installmentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        // Get corresponding values from the breakdown table
+        let paymentVal = '', interestVal = '', principalVal = '', remainingVal = '';
+        if (rows[i]) {
+          const cells = rows[i].getElementsByTagName('td');
+          if (cells.length >= 5) {
+            paymentVal = cells[1].textContent;
+            interestVal = cells[2].textContent;
+            principalVal = cells[3].textContent;
+            remainingVal = cells[4].textContent;
+          }
+        }
+
+        html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">`;
+        html += `<td style="padding:8px 4px">${dateStr}</td>`;
+        html += `<td style="text-align:right; padding:8px 4px">${paymentVal}</td>`;
+        html += `<td style="text-align:right; padding:8px 4px">${interestVal}</td>`;
+        html += `<td style="text-align:right; padding:8px 4px">${principalVal}</td>`;
+        html += `<td style="text-align:right; padding:8px 4px">${remainingVal}</td>`;
+        html += `</tr>`;
+      }
+
+      html += '</tbody></table></div>';
+      content.innerHTML = html;
+    }
+
+    // Populate payments and reminders section
+    function populatePaymentsAndReminders() {
+      const content = document.getElementById('payments-reminders-content');
+
+      let html = '<div style="display:flex; flex-direction:column; gap:16px">';
+
+      // Payment methods
+      const methods = wizardData.paymentMethods || [];
+      const methodsText = methods.length > 0 ? methods.join(', ') : 'Not specified';
+      html += `<div>
+        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Preferred payment methods:</div>
+        <div style="color:var(--muted); font-size:14px">${methodsText}</div>
+      </div>`;
+
+      // Proof required
+      const proofRequired = wizardData.proofRequired ? 'Yes' : 'No';
+      html += `<div>
+        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Proof of payment required:</div>
+        <div style="color:var(--muted); font-size:14px">${proofRequired}</div>
+      </div>`;
+
+      // Reminder mode
+      html += `<div>
+        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Reminder mode:</div>
+        <div style="color:var(--muted); font-size:14px">${wizardData.reminderMode === 'auto' ? 'Auto (recommended)' : 'Custom schedule'}</div>
+      </div>`;
+
+      // Reminder details
+      if (wizardData.reminderMode === 'auto') {
+        html += `<div>
+          <div style="font-weight:600; margin-bottom:6px; font-size:14px">Reminder schedule:</div>
+          <div style="color:var(--muted); font-size:14px; line-height:1.6">7 days before, 1 day before, on the due date. If unpaid: 1 day after, then every 3 days.</div>
+        </div>`;
+      } else if (wizardData.reminderOffsets && wizardData.reminderOffsets.length > 0) {
+        const reminders = wizardData.reminderOffsets.sort((a, b) => a - b).map(offset => {
+          if (offset < 0) return `${Math.abs(offset)} days before`;
+          if (offset === 0) return 'On the due date';
+          if (offset === 3) return 'Every 3 days after';
+          if (offset === 7) return 'Every 7 days after';
+          return `${offset} day${offset > 1 ? 's' : ''} after`;
+        }).join(', ');
+
+        html += `<div>
+          <div style="font-weight:600; margin-bottom:6px; font-size:14px">Reminder schedule:</div>
+          <div style="color:var(--muted); font-size:14px">${reminders}</div>
+        </div>`;
+      }
+
+      html += '</div>';
+      content.innerHTML = html;
     }
 
     // Populate reminder plan section
