@@ -656,12 +656,29 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       counterparty_name = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
     }
 
+    // Check for open hardship requests
+    const hasOpenDifficulty = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM hardship_requests
+      WHERE agreement_id = ?
+    `).get(agreement.id).count > 0;
+
+    // Check for pending payments that need lender confirmation
+    // Only set to true if current user is the lender
+    const hasPendingPaymentToConfirm = isLender && db.prepare(`
+      SELECT COUNT(*) as count
+      FROM payments
+      WHERE agreement_id = ? AND status = 'pending'
+    `).get(agreement.id).count > 0;
+
     return {
       ...agreement,
       total_paid_cents: totals.total_paid_cents,
       outstanding_cents: agreement.amount_cents - totals.total_paid_cents,
       counterparty_name,
-      counterparty_role
+      counterparty_role,
+      hasOpenDifficulty,
+      hasPendingPaymentToConfirm
     };
   });
 
