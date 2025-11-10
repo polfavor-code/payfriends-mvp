@@ -435,14 +435,20 @@
           </label>
         </div>
 
-        <!-- Worst-case scenario -->
+        <!-- Worst-case scenario (optional) -->
         <div style="margin:24px 0">
-          <h4 style="margin:0 0 12px 0; font-size:16px">If things go wrong</h4>
-          <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px">
-            <p style="margin:0; color:var(--text); font-size:14px; line-height:1.6">
-              If the borrower repeatedly fails to repay, doesn't respond to reminders or can't agree a new plan with the lender, both parties agree that the case may be transferred to an independent debt-collection partner registered according to local law. Any collection fees are at the expense of the borrower.
-            </p>
-          </div>
+          <h4 style="margin:0 0 12px 0; font-size:16px">Worst case scenario (optional)</h4>
+          <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer">
+            <input type="checkbox" id="debt-collection-clause" style="margin-top:2px" />
+            <div>
+              <div style="color:var(--text); font-size:14px; font-weight:500; margin-bottom:6px">
+                Allow debt-collection partner if we can't resolve this together.
+              </div>
+              <div style="color:var(--muted); font-size:13px; line-height:1.5">
+                If the borrower doesn't repay, doesn't respond to reminders, or you both can't agree on a new plan, you both agree the case may be transferred to an independent debt-collection partner registered under local law. Any collection fees are for the borrower to pay.
+              </div>
+            </div>
+          </label>
         </div>
 
         <div style="margin-top:32px">
@@ -1744,8 +1750,8 @@
       html += `</div>`;
 
       html += `<div>`;
-      html += `<div style="font-weight:600; font-size:14px; margin-bottom:4px">Worst-case scenario clause:</div>`;
-      html += `<div style="color:var(--muted); font-size:13px">${wizardData.debtCollectionClause ? 'Included - may be transferred to debt collection if no repayment or renegotiation' : 'Not included'}</div>`;
+      html += `<div style="font-weight:600; font-size:14px; margin-bottom:4px">Worst case scenario:</div>`;
+      html += `<div style="color:var(--muted); font-size:13px">${wizardData.debtCollectionClause ? 'Enabled — case may be transferred to an independent debt-collection partner if repayment fails.' : 'Disabled — debt-collection partner not enabled.'}</div>`;
       html += `</div>`;
 
       content.innerHTML = html;
