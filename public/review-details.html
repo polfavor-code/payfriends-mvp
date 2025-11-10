@@ -62,9 +62,10 @@
     .payment-item{background:#10151d; border-radius:8px; padding:12px; margin:12px 0; border:1px solid rgba(255,255,255,0.08)}
     .payment-date{color:var(--muted); font-size:12px}
     .payment-amount{font-weight:700; color:var(--accent); font-size:16px}
-    .payment-method{color:var(--muted); font-style:italic}
-    .payment-note{color:var(--text); margin-top:4px}
-    .payment-recorded-by{color:var(--muted); margin-top:4px}
+    .payment-method{color:var(--muted); font-style:italic; font-size:14px}
+    .payment-note{color:var(--text); margin-top:4px; font-size:14px}
+    .payment-recorded-by{color:var(--muted); margin-top:4px; font-size:14px}
+    .payment-meta-line{font-size:14px}
     .record-payment-btn{background:#3d7bdc; margin-top:16px}
     .record-payment-btn:hover{filter:brightness(1.1)}
     select{appearance:none; background-image:url('data:image/svg+xml;utf8,<svg fill="%23a7b0bd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat:no-repeat; background-position:right 8px center}
@@ -487,7 +488,8 @@
       document.getElementById('repayment-type').textContent = repaymentType;
 
       const statusText = agreement.status || 'pending';
-      document.getElementById('status-display').innerHTML = `<span class="status-badge ${statusText}">${statusText}</span>`;
+      const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+      document.getElementById('status-display').innerHTML = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
     }
 
     function showError(message) {

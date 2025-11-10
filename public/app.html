@@ -645,7 +645,8 @@
         tr.setAttribute('data-id', a.id);
         const amount = formatAmount(a.amount_cents);
         const statusText = a.status || 'pending';
-        const statusBadge = `<span class="status-badge ${statusText}">${statusText}</span>`;
+        const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+        const statusBadge = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
 
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
