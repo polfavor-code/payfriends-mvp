@@ -646,12 +646,7 @@
         const amount = formatAmount(a.amount_cents);
         const statusText = a.status || 'pending';
         const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
-        let statusBadge = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
-
-        // Add attention badge for agreements with open difficulty requests
-        if (a.has_open_difficulty) {
-          statusBadge += '<br><span class="status-badge" style="background:rgba(255,152,0,0.15); color:#ff9800; border:1px solid rgba(255,152,0,0.3); margin-top:4px; font-size:11px">Needs attention</span>';
-        }
+        const statusBadge = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
 
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
