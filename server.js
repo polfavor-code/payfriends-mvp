@@ -63,6 +63,7 @@ db.exec(`
     due_date TEXT NOT NULL,
     created_at TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
+    description TEXT,
     FOREIGN KEY (lender_user_id) REFERENCES users(id),
     FOREIGN KEY (borrower_user_id) REFERENCES users(id)
   );
@@ -133,6 +134,13 @@ try {
 }
 try {
   db.exec(`ALTER TABLE payments ADD COLUMN proof_mime_type TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add description column to agreements if it doesn't exist (for existing databases)
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN description TEXT;`);
 } catch (e) {
   // Column already exists, ignore
 }
@@ -477,10 +485,15 @@ app.get('/api/agreements', requireAuth, (req, res) => {
 
 // Create new agreement with invite (two-sided flow)
 app.post('/api/agreements', requireAuth, (req, res) => {
-  const { lenderName, borrowerEmail, friendFirstName, amount, dueDate, direction, repaymentType } = req.body || {};
+  const { lenderName, borrowerEmail, friendFirstName, amount, dueDate, direction, repaymentType, description } = req.body || {};
 
-  if (!borrowerEmail || !amount || !dueDate) {
+  if (!borrowerEmail || !amount || !dueDate || !description) {
     return res.status(400).json({ error: 'Missing required fields.' });
+  }
+
+  // Validate description length (max 80 characters)
+  if (description && description.length > 80) {
+    return res.status(400).json({ error: 'Description must be 80 characters or less.' });
   }
 
   const amountCents = toCents(amount);
@@ -508,9 +521,9 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     const agreementStmt = db.prepare(`
       INSERT INTO agreements (
         lender_user_id, lender_name, borrower_email, friend_first_name,
-        direction, repayment_type, amount_cents, due_date, created_at, status
+        direction, repayment_type, amount_cents, due_date, created_at, status, description
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
     `);
 
     const agreementInfo = agreementStmt.run(
@@ -522,7 +535,8 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       repaymentType || 'one_time',
       amountCents,
       dueDate,
-      createdAt
+      createdAt,
+      description
     );
 
     const agreementId = agreementInfo.lastInsertRowid;
@@ -566,6 +580,7 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       dueDate,
       createdAt,
       status: 'pending',
+      description,
       inviteUrl
     });
   } catch (err) {

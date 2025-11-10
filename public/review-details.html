@@ -94,28 +94,35 @@
     <div id="details-section" class="card hidden">
       <h2>Agreement Details</h2>
 
-      <div class="amount" id="amount-display"></div>
+      <!-- Human-readable summary -->
+      <div style="background:rgba(255,255,255,0.02); padding:20px; border-radius:12px; margin:16px 0">
+        <p id="agreement-summary-line1" style="margin:0 0 12px 0; font-size:16px; line-height:1.6"></p>
+        <p id="agreement-summary-line2" style="margin:0; font-size:16px; line-height:1.6"></p>
+        <div id="status-display" style="margin-top:16px"></div>
+      </div>
 
+      <!-- Details section -->
+      <h3 style="margin:24px 0 12px 0; font-size:18px">Details</h3>
       <div style="margin:16px 0">
+        <div class="detail-row" id="description-row">
+          <span class="detail-label">Description</span>
+          <span class="detail-value" id="description-display"></span>
+        </div>
         <div class="detail-row">
-          <span class="detail-label">From (Lender)</span>
+          <span class="detail-label">Lender</span>
           <span class="detail-value" id="lender-name"></span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">To (Borrower)</span>
+          <span class="detail-label">Borrower</span>
           <span class="detail-value" id="borrower-name"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Amount</span>
+          <span class="detail-value" id="amount-display"></span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Due date</span>
           <span class="detail-value" id="due-date"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Repayment type</span>
-          <span class="detail-value" id="repayment-type"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Status</span>
-          <span class="detail-value" id="status-display"></span>
         </div>
       </div>
 
@@ -155,7 +162,7 @@
 
       <!-- Having trouble paying button for borrower -->
       <div id="hardship-button" class="hidden hardship-button-spacing">
-        <button class="warning" onclick="showHardshipForm()">Having trouble paying?</button>
+        <button class="warning" onclick="showHardshipForm()">Having trouble paying? Let's work on a solution.</button>
       </div>
 
       <p class="status" id="action-status"></p>
@@ -191,7 +198,7 @@
     <!-- Record payment form (for active agreements) -->
     <div id="record-payment-section" class="card hidden">
       <h2 id="payment-form-header">Record a Payment</h2>
-      <p style="color:var(--muted); font-size:14px; margin-bottom:16px">
+      <p id="payment-form-subtitle" style="color:var(--muted); font-size:14px; margin-bottom:16px">
         Record a payment that has been made for this agreement.
       </p>
 
@@ -474,19 +481,44 @@
 
     function populateDetails() {
       const amount = formatAmount(agreement.amount_cents);
-      document.getElementById('amount-display').textContent = `€ ${amount}`;
-
       const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
-      document.getElementById('lender-name').textContent = lenderName;
-
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+
+      const isLender = agreement.lender_user_id === currentUser.id;
+      const isBorrower = agreement.borrower_user_id === currentUser.id;
+
+      // Generate human-readable summary line 1
+      let summaryLine1 = '';
+      if (isLender) {
+        summaryLine1 = `You lent €${amount} to ${borrowerName}.`;
+      } else if (isBorrower) {
+        summaryLine1 = `${lenderName} lent you €${amount}.`;
+      } else {
+        summaryLine1 = `${lenderName} lent €${amount} to ${borrowerName}.`;
+      }
+      document.getElementById('agreement-summary-line1').textContent = summaryLine1;
+
+      // Generate human-readable summary line 2
+      const outstanding = formatAmount(agreement.outstanding_cents || agreement.amount_cents);
+      const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      const summaryLine2 = `€${outstanding} remains outstanding and is due by ${dueDate}.`;
+      document.getElementById('agreement-summary-line2').textContent = summaryLine2;
+
+      // Populate details section
+      document.getElementById('amount-display').textContent = `€ ${amount}`;
+      document.getElementById('lender-name').textContent = lenderName;
       document.getElementById('borrower-name').textContent = borrowerName;
+      document.getElementById('due-date').textContent = dueDate;
 
-      document.getElementById('due-date').textContent = new Date(agreement.due_date).toLocaleDateString();
+      // Show description if available
+      if (agreement.description) {
+        document.getElementById('description-display').textContent = agreement.description;
+        document.getElementById('description-row').style.display = 'flex';
+      } else {
+        document.getElementById('description-row').style.display = 'none';
+      }
 
-      const repaymentType = agreement.repayment_type === 'one_time' ? 'One-time payment' : agreement.repayment_type;
-      document.getElementById('repayment-type').textContent = repaymentType;
-
+      // Status badge
       const statusText = agreement.status || 'pending';
       const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
       document.getElementById('status-display').innerHTML = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
@@ -913,17 +945,8 @@
         recordBtn.id = 'record-payment-btn';
         recordBtn.className = 'record-payment-btn';
 
-        // Set button text based on user role
-        const isBorrower = agreement.borrower_user_id === currentUser.id;
-        const isLender = agreement.lender_user_id === currentUser.id;
-
-        if (isBorrower) {
-          recordBtn.textContent = 'I\'ve Made a Payment';
-        } else if (isLender) {
-          recordBtn.textContent = 'Add Received Payment';
-        } else {
-          recordBtn.textContent = 'Record a Payment';
-        }
+        // Set button text - simplified label for all users
+        recordBtn.textContent = 'Report Payment';
 
         recordBtn.onclick = showRecordPaymentForm;
         viewOnly.appendChild(recordBtn);
@@ -936,22 +959,29 @@
 
       // Update form header and button text based on user role
       const formHeader = document.getElementById('payment-form-header');
+      const formSubtitle = document.getElementById('payment-form-subtitle');
       const submitBtn = document.getElementById('payment-submit-btn');
       const proofSection = document.getElementById('payment-proof-section');
 
+      const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
+      const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+
       if (isBorrower) {
-        formHeader.textContent = 'Report a Payment';
+        formHeader.textContent = 'Report a payment';
+        formSubtitle.textContent = `Confirm your payment to ${lenderName}.`;
         submitBtn.textContent = 'Report Payment';
         // Show proof upload for borrowers
         proofSection.style.display = 'block';
       } else if (isLender) {
         formHeader.textContent = 'Add Received Payment';
+        formSubtitle.textContent = `Confirm a payment from ${borrowerName}.`;
         submitBtn.textContent = 'Add Payment';
         // Hide proof upload for lenders
         proofSection.style.display = 'none';
       } else {
-        formHeader.textContent = 'Record a Payment';
-        submitBtn.textContent = 'Record Payment';
+        formHeader.textContent = 'Report a payment';
+        formSubtitle.textContent = 'Record a payment that has been made for this agreement.';
+        submitBtn.textContent = 'Report Payment';
         // Hide proof upload by default
         proofSection.style.display = 'none';
       }
