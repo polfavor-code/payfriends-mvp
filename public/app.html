@@ -42,6 +42,10 @@
     .status-badge.settled{background:#3ddc97; color:#0d130f}
     .status-badge.declined{background:#ff6b6b; color:#fff}
     .status-badge.cancelled{background:#6c757d; color:#fff}
+    .alert-pill{display:inline-block; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:500; margin-top:4px}
+    .alert-pill.difficulty{background:#e67e22; color:#fff}
+    .alert-pill.confirm-payment{background:#f39c12; color:#fff}
+    .status-column{display:flex; flex-direction:column; gap:4px}
     .messages-list{margin-top:12px}
     .message-item{padding:10px; background:#10151d; border-radius:8px; margin:8px 0; font-size:14px; transition:all 0.2s ease}
     .message-item.message-clickable{cursor:pointer; border:1px solid transparent}
@@ -818,7 +822,23 @@
         const amount = formatAmount(a.amount_cents);
         const statusText = a.status || 'pending';
         const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
-        const statusBadge = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
+
+        // Build status column with main badge and optional alert pills
+        let statusBadge = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
+
+        // Add alert pills if conditions are met
+        let alertPills = '';
+        if (a.hasPendingPaymentToConfirm) {
+          alertPills += '<span class="alert-pill confirm-payment">Confirm payment</span>';
+        }
+        if (a.hasOpenDifficulty) {
+          alertPills += '<span class="alert-pill difficulty">Payment difficulty</span>';
+        }
+
+        // Wrap in status-column div if there are alerts
+        if (alertPills) {
+          statusBadge = `<div class="status-column">${statusBadge}${alertPills}</div>`;
+        }
 
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
