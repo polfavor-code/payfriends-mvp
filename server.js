@@ -202,6 +202,43 @@ try {
   // Column already exists, ignore
 }
 
+// Add new fields for flexible installments and improved preferences
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN plan_length INTEGER;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN plan_unit TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN payment_other_description TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN reminder_mode TEXT DEFAULT 'auto';`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN reminder_offsets TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN proof_required INTEGER DEFAULT 0;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN debt_collection_clause INTEGER DEFAULT 0;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // --- multer setup for file uploads ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -736,9 +773,10 @@ app.get('/api/agreements', requireAuth, (req, res) => {
 app.post('/api/agreements', requireAuth, (req, res) => {
   let {
     lenderName, borrowerEmail, friendFirstName, amount, dueDate, direction, repaymentType, description,
-    installmentCount, installmentAmount, firstPaymentDate, finalDueDate,
+    planLength, planUnit, installmentCount, installmentAmount, firstPaymentDate, finalDueDate,
     interestRate, totalInterest, totalRepayAmount,
-    paymentPreferenceMethod, reminderEnabled
+    paymentPreferenceMethod, paymentOtherDescription, reminderMode, reminderOffsets,
+    proofRequired, debtCollectionClause
   } = req.body || {};
 
   if (!borrowerEmail || !amount || !dueDate || !description) {
@@ -791,11 +829,12 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       INSERT INTO agreements (
         lender_user_id, lender_name, borrower_email, friend_first_name,
         direction, repayment_type, amount_cents, due_date, created_at, status, description,
-        installment_count, installment_amount, first_payment_date, final_due_date,
+        plan_length, plan_unit, installment_count, installment_amount, first_payment_date, final_due_date,
         interest_rate, total_interest, total_repay_amount,
-        payment_preference_method, reminder_enabled
+        payment_preference_method, payment_other_description, reminder_mode, reminder_offsets,
+        proof_required, debt_collection_clause
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const agreementInfo = agreementStmt.run(
@@ -809,6 +848,8 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       dueDate,
       createdAt,
       description,
+      planLength || null,
+      planUnit || null,
       installmentCount || null,
       installmentAmount || null,
       firstPaymentDate || null,
@@ -817,7 +858,11 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       totalInterest || 0,
       totalRepayAmount || null,
       paymentPreferenceMethod || null,
-      reminderEnabled !== undefined ? (reminderEnabled ? 1 : 0) : 1
+      paymentOtherDescription || null,
+      reminderMode || 'auto',
+      reminderOffsets ? JSON.stringify(reminderOffsets) : null,
+      proofRequired ? 1 : 0,
+      debtCollectionClause ? 1 : 0
     );
 
     const agreementId = agreementInfo.lastInsertRowid;
