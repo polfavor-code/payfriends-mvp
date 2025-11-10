@@ -98,6 +98,9 @@ db.exec(`
     reason_text TEXT,
     can_pay_now_cents INTEGER,
     preferred_adjustments TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open',
+    lender_proposal_text TEXT,
+    resolved_at TEXT,
     created_at TEXT NOT NULL,
     FOREIGN KEY (agreement_id) REFERENCES agreements(id),
     FOREIGN KEY (borrower_user_id) REFERENCES users(id)
@@ -133,6 +136,23 @@ try {
 }
 try {
   db.exec(`ALTER TABLE payments ADD COLUMN proof_mime_type TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add status and lender response columns to hardship_requests (for existing databases)
+try {
+  db.exec(`ALTER TABLE hardship_requests ADD COLUMN status TEXT NOT NULL DEFAULT 'open';`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE hardship_requests ADD COLUMN lender_proposal_text TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE hardship_requests ADD COLUMN resolved_at TEXT;`);
 } catch (e) {
   // Column already exists, ignore
 }
@@ -462,13 +482,26 @@ app.get('/api/agreements', requireAuth, (req, res) => {
     ORDER BY created_at DESC
   `).all(req.user.id, req.user.id);
 
-  // Add payment totals to each agreement
+  // Add payment totals and difficulty request flag to each agreement
   const agreementsWithTotals = rows.map(agreement => {
     const totals = getPaymentTotals(agreement.id);
+
+    // Check if there's an open difficulty request (only for lenders on active agreements)
+    let hasOpenDifficulty = false;
+    if (agreement.lender_user_id === req.user.id && agreement.status === 'active') {
+      const difficultyRequest = db.prepare(`
+        SELECT id FROM hardship_requests
+        WHERE agreement_id = ? AND status IN ('open', 'plan_proposed')
+        LIMIT 1
+      `).get(agreement.id);
+      hasOpenDifficulty = !!difficultyRequest;
+    }
+
     return {
       ...agreement,
       total_paid_cents: totals.total_paid_cents,
-      outstanding_cents: agreement.amount_cents - totals.total_paid_cents
+      outstanding_cents: agreement.amount_cents - totals.total_paid_cents,
+      has_open_difficulty: hasOpenDifficulty
     };
   });
 
@@ -1159,6 +1192,288 @@ app.get('/api/agreements/:id/hardship-requests', requireAuth, (req, res) => {
   } catch (err) {
     console.error('Error fetching hardship requests:', err);
     res.status(500).json({ error: 'Server error fetching hardship requests' });
+  }
+});
+
+// Get current open difficulty request for an agreement
+app.get('/api/agreements/:id/difficulty', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Verify user has access to this agreement
+    const agreement = db.prepare(`
+      SELECT id, lender_user_id, borrower_user_id
+      FROM agreements
+      WHERE id = ? AND (lender_user_id = ? OR borrower_user_id = ?)
+    `).get(id, req.user.id, req.user.id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    // Get the most recent open or plan_proposed difficulty request
+    const request = db.prepare(`
+      SELECT * FROM hardship_requests
+      WHERE agreement_id = ? AND status IN ('open', 'plan_proposed')
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(id);
+
+    res.json(request || null);
+  } catch (err) {
+    console.error('Error fetching current difficulty:', err);
+    res.status(500).json({ error: 'Server error fetching difficulty request' });
+  }
+});
+
+// Lender acknowledges difficulty request and keeps current plan
+app.post('/api/agreements/:id/difficulty/acknowledge', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get agreement and verify user is the lender
+    const agreement = db.prepare(`
+      SELECT a.*,
+        u_lender.full_name as lender_full_name,
+        u_lender.email as lender_email,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email
+      FROM agreements a
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      WHERE a.id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    if (agreement.lender_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the lender can acknowledge difficulty requests' });
+    }
+
+    // Get the current open difficulty request
+    const request = db.prepare(`
+      SELECT * FROM hardship_requests
+      WHERE agreement_id = ? AND status IN ('open', 'plan_proposed')
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(id);
+
+    if (!request) {
+      return res.status(404).json({ error: 'No open difficulty request found' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Update request status to acknowledged
+    db.prepare(`
+      UPDATE hardship_requests
+      SET status = 'acknowledged', resolved_at = ?
+      WHERE id = ?
+    `).run(now, request.id);
+
+    const lenderName = agreement.lender_full_name || agreement.lender_email;
+
+    // Create activity for borrower
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.borrower_user_id,
+      id,
+      'Payment assistance acknowledged',
+      `${lenderName} read your payment difficulty request and kept the current plan.`,
+      now,
+      'HARDSHIP_ACKNOWLEDGED_BORROWER'
+    );
+
+    // Create activity for lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.lender_user_id,
+      id,
+      'Payment assistance acknowledged',
+      `You acknowledged the payment difficulty request for Agreement #${id}.`,
+      now,
+      'HARDSHIP_ACKNOWLEDGED_LENDER'
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error acknowledging difficulty request:', err);
+    res.status(500).json({ error: 'Server error acknowledging difficulty request' });
+  }
+});
+
+// Lender proposes a new payment plan
+app.post('/api/agreements/:id/difficulty/propose-plan', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { proposalText } = req.body || {};
+
+  if (!proposalText || !proposalText.trim()) {
+    return res.status(400).json({ error: 'Proposal text is required' });
+  }
+
+  try {
+    // Get agreement and verify user is the lender
+    const agreement = db.prepare(`
+      SELECT a.*,
+        u_lender.full_name as lender_full_name,
+        u_lender.email as lender_email,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email
+      FROM agreements a
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      WHERE a.id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    if (agreement.lender_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the lender can propose payment plans' });
+    }
+
+    // Get the current open difficulty request
+    const request = db.prepare(`
+      SELECT * FROM hardship_requests
+      WHERE agreement_id = ? AND status IN ('open', 'plan_proposed')
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(id);
+
+    if (!request) {
+      return res.status(404).json({ error: 'No open difficulty request found' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Update request with proposal
+    db.prepare(`
+      UPDATE hardship_requests
+      SET status = 'plan_proposed', lender_proposal_text = ?
+      WHERE id = ?
+    `).run(proposalText, request.id);
+
+    const lenderName = agreement.lender_full_name || agreement.lender_email;
+
+    // Create activity for borrower
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.borrower_user_id,
+      id,
+      'New payment plan proposed',
+      `${lenderName} proposed a new payment plan: "${proposalText}"`,
+      now,
+      'HARDSHIP_PLAN_PROPOSED_BORROWER'
+    );
+
+    // Create activity for lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.lender_user_id,
+      id,
+      'New payment plan proposed',
+      `You proposed a new payment plan for Agreement #${id}.`,
+      now,
+      'HARDSHIP_PLAN_PROPOSED_LENDER'
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error proposing payment plan:', err);
+    res.status(500).json({ error: 'Server error proposing payment plan' });
+  }
+});
+
+// Lender declines difficulty request
+app.post('/api/agreements/:id/difficulty/decline', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get agreement and verify user is the lender
+    const agreement = db.prepare(`
+      SELECT a.*,
+        u_lender.full_name as lender_full_name,
+        u_lender.email as lender_email,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email
+      FROM agreements a
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      WHERE a.id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    if (agreement.lender_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the lender can decline difficulty requests' });
+    }
+
+    // Get the current open difficulty request
+    const request = db.prepare(`
+      SELECT * FROM hardship_requests
+      WHERE agreement_id = ? AND status IN ('open', 'plan_proposed')
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(id);
+
+    if (!request) {
+      return res.status(404).json({ error: 'No open difficulty request found' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Update request status to declined
+    db.prepare(`
+      UPDATE hardship_requests
+      SET status = 'declined', resolved_at = ?
+      WHERE id = ?
+    `).run(now, request.id);
+
+    const lenderName = agreement.lender_full_name || agreement.lender_email;
+
+    // Create activity for borrower
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.borrower_user_id,
+      id,
+      'Payment assistance request declined',
+      `${lenderName} did not accept your current payment difficulty request.`,
+      now,
+      'HARDSHIP_DECLINED_BORROWER'
+    );
+
+    // Create activity for lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.lender_user_id,
+      id,
+      'Payment assistance request declined',
+      `You declined the payment difficulty request for Agreement #${id}.`,
+      now,
+      'HARDSHIP_DECLINED_LENDER'
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error declining difficulty request:', err);
+    res.status(500).json({ error: 'Server error declining difficulty request' });
   }
 });
 
