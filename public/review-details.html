@@ -1509,6 +1509,15 @@
         </div>`;
       }
 
+      // Worst case scenario (debt collection clause)
+      const worstCaseText = agreement.debt_collection_clause
+        ? 'Enabled — case may be transferred to an independent debt-collection partner if repayment fails.'
+        : 'Disabled — debt-collection partner not enabled.';
+      html += `<div>
+        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>
+        <div style="color:var(--muted); font-size:14px">${worstCaseText}</div>
+      </div>`;
+
       html += '</div>';
       content.innerHTML = html;
     }
