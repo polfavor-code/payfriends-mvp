@@ -169,6 +169,39 @@
         </div>
       </div>
 
+      <!-- Interest & payment calculation (collapsible) -->
+      <div id="interest-calc-card" class="hidden" style="margin:16px 0">
+        <button onclick="toggleReviewSection('interest-calc-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+          <span>Interest & payment calculation</span>
+          <span id="interest-calc-detail-toggle">▼</span>
+        </button>
+        <div id="interest-calc-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <div id="interest-calc-detail-content"></div>
+        </div>
+      </div>
+
+      <!-- Installment schedule (collapsible) -->
+      <div id="installment-schedule-card" class="hidden" style="margin:16px 0">
+        <button onclick="toggleReviewSection('installment-schedule-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+          <span>Installment schedule</span>
+          <span id="installment-schedule-detail-toggle">▼</span>
+        </button>
+        <div id="installment-schedule-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <div id="installment-schedule-detail-content"></div>
+        </div>
+      </div>
+
+      <!-- Payments & reminders (collapsible) -->
+      <div id="payments-reminders-card" class="hidden" style="margin:16px 0">
+        <button onclick="toggleReviewSection('payments-reminders-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+          <span>Payments & reminders</span>
+          <span id="payments-reminders-detail-toggle">▼</span>
+        </button>
+        <div id="payments-reminders-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <div id="payments-reminders-detail-content"></div>
+        </div>
+      </div>
+
       <!-- Borrower review actions (only for pending agreements) -->
       <div id="borrower-actions" class="hidden">
         <div class="note">
@@ -680,6 +713,11 @@
       }
 
       document.getElementById('status-display').innerHTML = statusHtml;
+
+      // Populate collapsible detail sections
+      populateInterestCalcDetail();
+      populateInstallmentScheduleDetail();
+      populatePaymentsAndRemindersDetail();
     }
 
     async function checkPendingPaymentConfirmation() {
@@ -1341,6 +1379,138 @@
     function closeProofModal() {
       const modal = document.getElementById('proof-modal');
       modal.style.display = 'none';
+    }
+
+    // Toggle collapsible sections in review
+    function toggleReviewSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      const toggle = document.getElementById(sectionId + '-toggle');
+
+      if (section && section.classList.contains('hidden')) {
+        section.classList.remove('hidden');
+        if (toggle) toggle.textContent = '▲';
+      } else if (section) {
+        section.classList.add('hidden');
+        if (toggle) toggle.textContent = '▼';
+      }
+    }
+
+    // Populate interest calculation detail for borrower review
+    function populateInterestCalcDetail() {
+      const card = document.getElementById('interest-calc-card');
+      const content = document.getElementById('interest-calc-detail-content');
+
+      if (!agreement.interest_rate || agreement.interest_rate === 0) {
+        card.style.display = 'none';
+        return;
+      }
+
+      card.classList.remove('hidden');
+
+      const totalInterest = formatAmount(Math.round((agreement.total_interest || 0) * 100));
+      const totalRepay = formatAmount(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
+      const termText = agreement.repayment_type === 'installments' && agreement.installment_count
+        ? `${agreement.installment_count} months`
+        : 'one payment';
+
+      let html = `<p style="margin:0; font-size:14px">At ${agreement.interest_rate}% interest per year over ${termText}, total interest is about €${totalInterest} and total to repay is €${totalRepay}.</p>`;
+      content.innerHTML = html;
+    }
+
+    // Populate installment schedule detail for borrower review
+    function populateInstallmentScheduleDetail() {
+      const card = document.getElementById('installment-schedule-card');
+      const content = document.getElementById('installment-schedule-detail-content');
+
+      if (agreement.repayment_type !== 'installments' || !agreement.installment_count) {
+        card.style.display = 'none';
+        return;
+      }
+
+      card.classList.remove('hidden');
+
+      // Calculate installment dates
+      const firstDate = new Date(agreement.first_payment_date);
+      const installmentCount = agreement.installment_count;
+      const planUnit = agreement.plan_unit || 'months';
+      const installmentAmount = agreement.installment_amount || (agreement.amount_cents / 100 / installmentCount);
+
+      let html = '<div style="max-height:300px; overflow-y:auto">';
+      html += '<table style="width:100%; font-size:13px">';
+      html += '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">';
+      html += '<th style="text-align:left; padding:8px 4px">#</th>';
+      html += '<th style="text-align:left; padding:8px 4px">Date</th>';
+      html += '<th style="text-align:right; padding:8px 4px">Payment</th>';
+      html += '</tr></thead><tbody>';
+
+      for (let i = 0; i < installmentCount; i++) {
+        const installmentDate = new Date(firstDate);
+
+        if (planUnit === 'months') {
+          installmentDate.setMonth(installmentDate.getMonth() + i);
+        } else if (planUnit === 'weeks') {
+          installmentDate.setDate(installmentDate.getDate() + (i * 7));
+        } else if (planUnit === 'days') {
+          installmentDate.setDate(installmentDate.getDate() + i);
+        } else if (planUnit === 'years') {
+          installmentDate.setFullYear(installmentDate.getFullYear() + i);
+        }
+
+        const dateStr = installmentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">`;
+        html += `<td style="padding:8px 4px">${i + 1}</td>`;
+        html += `<td style="padding:8px 4px">${dateStr}</td>`;
+        html += `<td style="text-align:right; padding:8px 4px">~€${formatAmount(Math.round(installmentAmount * 100))}</td>`;
+        html += `</tr>`;
+      }
+
+      html += '</tbody></table></div>';
+      content.innerHTML = html;
+    }
+
+    // Populate payments and reminders detail for borrower review
+    function populatePaymentsAndRemindersDetail() {
+      const card = document.getElementById('payments-reminders-card');
+      const content = document.getElementById('payments-reminders-detail-content');
+
+      card.classList.remove('hidden');
+
+      let html = '<div style="display:flex; flex-direction:column; gap:16px">';
+
+      // Payment methods
+      const methods = agreement.payment_preference_method
+        ? agreement.payment_preference_method.split(',').map(m => m.trim())
+        : [];
+      const methodsText = methods.length > 0 ? methods.join(', ') : 'Not specified';
+      html += `<div>
+        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Preferred payment methods:</div>
+        <div style="color:var(--muted); font-size:14px">${methodsText}</div>
+      </div>`;
+
+      // Proof required
+      const proofRequired = agreement.proof_required ? 'Yes - you\'ll be asked for proof when reporting payments' : 'No';
+      html += `<div>
+        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Proof of payment:</div>
+        <div style="color:var(--muted); font-size:14px">${proofRequired}</div>
+      </div>`;
+
+      // Reminder mode
+      const reminderMode = agreement.reminder_mode === 'auto' ? 'Auto (recommended)' : 'Custom schedule';
+      html += `<div>
+        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Reminders:</div>
+        <div style="color:var(--muted); font-size:14px; line-height:1.6">${reminderMode}</div>
+      </div>`;
+
+      // Reminder details
+      if (agreement.reminder_mode === 'auto') {
+        html += `<div style="color:var(--muted); font-size:13px; line-height:1.6; padding:12px; background:rgba(255,255,255,0.02); border-radius:6px">
+          You'll receive reminders 7 days before, 1 day before, and on the due date. If no payment is reported, you'll get follow-up reminders 1 day after, then every 3 days.
+        </div>`;
+      }
+
+      html += '</div>';
+      content.innerHTML = html;
     }
 
     // Initialize
