@@ -148,12 +148,16 @@
 
         const data = await res.json();
 
-        if (!res.ok) {
-          throw new Error(data.error || 'Failed to upload picture');
+        if (!data.success) {
+          pictureStatus.textContent = data.error || 'There was a problem uploading your photo. Please try another image.';
+          pictureStatus.className = 'status error';
+          // Reset file input
+          e.target.value = '';
+          return;
         }
 
-        currentUser.profile_picture = data.profile_picture;
-        displayProfilePicture(data.profile_picture);
+        currentUser.profile_picture = data.profilePictureUrl;
+        displayProfilePicture(data.profilePictureUrl);
 
         pictureStatus.textContent = '✓ Profile picture updated';
         pictureStatus.className = 'status success';
@@ -162,7 +166,7 @@
           pictureStatus.textContent = '';
         }, 3000);
       } catch (err) {
-        pictureStatus.textContent = err.message;
+        pictureStatus.textContent = 'There was a problem uploading your photo. Please try another image.';
         pictureStatus.className = 'status error';
       }
 

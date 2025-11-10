@@ -27,6 +27,9 @@ if (!fs.existsSync('./uploads')) {
 if (!fs.existsSync('./uploads/payments')) {
   fs.mkdirSync('./uploads/payments', { recursive: true });
 }
+if (!fs.existsSync('./uploads/profiles')) {
+  fs.mkdirSync('./uploads/profiles', { recursive: true });
+}
 
 // --- database setup ---
 const db = new Database('./data/payfriends.db');
@@ -488,37 +491,64 @@ app.post('/api/profile', requireAuth, (req, res) => {
 });
 
 // Upload profile picture
-app.post('/api/profile/picture', requireAuth, uploadProfilePicture.single('picture'), (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    // Delete old profile picture if it exists
-    const user = db.prepare('SELECT profile_picture FROM users WHERE id = ?').get(req.user.id);
-    if (user?.profile_picture) {
-      const oldPath = path.join(__dirname, user.profile_picture);
-      try {
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
-        }
-      } catch (err) {
-        console.error('Error deleting old profile picture:', err);
+app.post('/api/profile/picture', requireAuth, (req, res) => {
+  uploadProfilePicture.single('picture')(req, res, (err) => {
+    // Handle multer errors
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+          success: false,
+          error: 'File size too large. Maximum size is 5MB.'
+        });
       }
+      return res.status(400).json({
+        success: false,
+        error: `Upload error: ${err.message}`
+      });
+    } else if (err) {
+      return res.status(400).json({
+        success: false,
+        error: err.message || 'Invalid file type. Only JPEG, PNG, and WebP images are allowed.'
+      });
     }
 
-    // Store relative path to the profile picture
-    const relativePath = `/uploads/profiles/${req.file.filename}`;
-    db.prepare('UPDATE users SET profile_picture = ? WHERE id = ?').run(relativePath, req.user.id);
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          error: 'No file uploaded'
+        });
+      }
 
-    res.json({
-      success: true,
-      profile_picture: relativePath
-    });
-  } catch (err) {
-    console.error('Error uploading profile picture:', err);
-    res.status(500).json({ error: 'Server error uploading profile picture' });
-  }
+      // Delete old profile picture if it exists
+      const user = db.prepare('SELECT profile_picture FROM users WHERE id = ?').get(req.user.id);
+      if (user?.profile_picture) {
+        const oldPath = path.join(__dirname, user.profile_picture);
+        try {
+          if (fs.existsSync(oldPath)) {
+            fs.unlinkSync(oldPath);
+          }
+        } catch (err) {
+          console.error('Error deleting old profile picture:', err);
+        }
+      }
+
+      // Store relative path to the profile picture
+      const relativePath = `/uploads/profiles/${req.file.filename}`;
+      db.prepare('UPDATE users SET profile_picture = ? WHERE id = ?').run(relativePath, req.user.id);
+
+      res.json({
+        success: true,
+        profilePictureUrl: relativePath
+      });
+    } catch (err) {
+      console.error('Error uploading profile picture:', err);
+      res.status(500).json({
+        success: false,
+        error: 'Server error uploading profile picture'
+      });
+    }
+  });
 });
 
 // Delete profile picture
@@ -545,10 +575,26 @@ app.delete('/api/profile/picture', requireAuth, (req, res) => {
   }
 });
 
-// Serve profile picture (authenticated only)
+// Serve profile picture (authenticated only, with access control)
 app.get('/api/profile/picture/:userId', requireAuth, (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
+
+    // Check authorization: user can access their own picture or pictures of users they have agreements with
+    if (req.user.id !== userId) {
+      // Check if current user has any agreements with the requested user
+      const hasAgreement = db.prepare(`
+        SELECT COUNT(*) as count
+        FROM agreements
+        WHERE (lender_user_id = ? AND borrower_user_id = ?)
+           OR (lender_user_id = ? AND borrower_user_id = ?)
+      `).get(req.user.id, userId, userId, req.user.id);
+
+      if (hasAgreement.count === 0) {
+        return res.status(403).json({ error: 'You are not authorized to access this profile picture' });
+      }
+    }
+
     const user = db.prepare('SELECT profile_picture FROM users WHERE id = ?').get(userId);
 
     if (!user || !user.profile_picture) {
@@ -589,13 +635,31 @@ app.get('/api/agreements', requireAuth, (req, res) => {
     ORDER BY created_at DESC
   `).all(req.user.id, req.user.id);
 
-  // Add payment totals to each agreement
+  // Add payment totals and counterparty info to each agreement
   const agreementsWithTotals = rows.map(agreement => {
     const totals = getPaymentTotals(agreement.id);
+    const isLender = agreement.lender_user_id === req.user.id;
+
+    // Determine counterparty name and role
+    let counterparty_name;
+    let counterparty_role;
+
+    if (isLender) {
+      // Current user is lender, show borrower info
+      counterparty_role = 'Borrower';
+      counterparty_name = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+    } else {
+      // Current user is borrower, show lender info
+      counterparty_role = 'Lender';
+      counterparty_name = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
+    }
+
     return {
       ...agreement,
       total_paid_cents: totals.total_paid_cents,
-      outstanding_cents: agreement.amount_cents - totals.total_paid_cents
+      outstanding_cents: agreement.amount_cents - totals.total_paid_cents,
+      counterparty_name,
+      counterparty_role
     };
   });
 
@@ -610,9 +674,9 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
 
-  // Validate description length (max 80 characters)
-  if (description && description.length > 80) {
-    return res.status(400).json({ error: 'Description must be 80 characters or less.' });
+  // Validate description length (max 30 characters)
+  if (description && description.length > 30) {
+    return res.status(400).json({ error: 'Description must be 30 characters or less.' });
   }
 
   const amountCents = toCents(amount);
