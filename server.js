@@ -491,7 +491,7 @@ app.post('/api/profile', requireAuth, (req, res) => {
 });
 
 // Upload profile picture
-app.post('/api/profile/picture', requireAuth, (req, res) => {
+app.post('/api/profile/picture', requireAuth, (req, res, next) => {
   uploadProfilePicture.single('picture')(req, res, (err) => {
     // Handle multer errors
     if (err instanceof multer.MulterError) {
@@ -512,6 +512,7 @@ app.post('/api/profile/picture', requireAuth, (req, res) => {
       });
     }
 
+    // Wrap in try-catch to ensure JSON response even on unexpected errors
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -528,8 +529,9 @@ app.post('/api/profile/picture', requireAuth, (req, res) => {
           if (fs.existsSync(oldPath)) {
             fs.unlinkSync(oldPath);
           }
-        } catch (err) {
-          console.error('Error deleting old profile picture:', err);
+        } catch (deleteErr) {
+          console.error('Error deleting old profile picture:', deleteErr);
+          // Continue anyway - not critical
         }
       }
 
@@ -537,13 +539,13 @@ app.post('/api/profile/picture', requireAuth, (req, res) => {
       const relativePath = `/uploads/profiles/${req.file.filename}`;
       db.prepare('UPDATE users SET profile_picture = ? WHERE id = ?').run(relativePath, req.user.id);
 
-      res.json({
+      return res.json({
         success: true,
         profilePictureUrl: relativePath
       });
     } catch (err) {
       console.error('Error uploading profile picture:', err);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error uploading profile picture'
       });
@@ -668,7 +670,7 @@ app.get('/api/agreements', requireAuth, (req, res) => {
 
 // Create new agreement with invite (two-sided flow)
 app.post('/api/agreements', requireAuth, (req, res) => {
-  const { lenderName, borrowerEmail, friendFirstName, amount, dueDate, direction, repaymentType, description } = req.body || {};
+  let { lenderName, borrowerEmail, friendFirstName, amount, dueDate, direction, repaymentType, description } = req.body || {};
 
   if (!borrowerEmail || !amount || !dueDate || !description) {
     return res.status(400).json({ error: 'Missing required fields.' });
@@ -677,6 +679,12 @@ app.post('/api/agreements', requireAuth, (req, res) => {
   // Validate description length (max 30 characters)
   if (description && description.length > 30) {
     return res.status(400).json({ error: 'Description must be 30 characters or less.' });
+  }
+
+  // Capitalize first letter of description
+  if (description && description.length > 0) {
+    description = description.trim();
+    description = description.charAt(0).toUpperCase() + description.slice(1);
   }
 
   const amountCents = toCents(amount);

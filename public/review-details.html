@@ -92,9 +92,9 @@
 
     <!-- Agreement summary block (above details card) -->
     <div id="summary-section" class="card hidden" style="padding:20px">
-      <div style="display:flex; align-items:flex-start; gap:12px">
+      <div style="display:flex; align-items:center; gap:16px">
         <div id="profile-picture-container" style="flex-shrink:0; display:none">
-          <div style="width:40px; height:40px; border-radius:50%; overflow:hidden; background:#10151d; border:2px solid rgba(255,255,255,0.1)">
+          <div style="width:60px; height:60px; border-radius:50%; overflow:hidden; background:#10151d; border:2px solid rgba(255,255,255,0.1)">
             <img id="profile-picture-img" style="width:100%; height:100%; object-fit:cover" />
           </div>
         </div>
@@ -160,24 +160,24 @@
         </div>
       </div>
 
-      <!-- View-only mode (no actions) -->
-      <div id="view-only" class="hidden">
-        <!-- Removed duplicate status text as status is already shown in the badge -->
-      </div>
-
-      <!-- Hardship indicator for lender -->
-      <div id="hardship-indicator" class="hidden">
-        <div class="alert-box">
-          <strong>Needs attention:</strong> Borrower has requested help with this payment. Check Activity for details.
-        </div>
-      </div>
-
-      <!-- Having trouble paying button for borrower -->
-      <div id="hardship-button" class="hidden hardship-button-spacing">
-        <button class="warning" onclick="showHardshipForm()">Having trouble paying? Let's work on a solution.</button>
-      </div>
-
       <p class="status" id="action-status"></p>
+    </div>
+
+    <!-- Primary payment action button (for active agreements) -->
+    <div id="payment-action-section" class="card hidden">
+      <button id="record-payment-btn" class="record-payment-btn">Report Payment</button>
+    </div>
+
+    <!-- Secondary difficulty button (for borrowers on active agreements) -->
+    <div id="hardship-button-section" class="card hidden">
+      <button class="warning" onclick="showHardshipForm()">Having trouble paying? Let's work on a solution.</button>
+    </div>
+
+    <!-- Hardship indicator for lender (needs attention alert) -->
+    <div id="hardship-indicator" class="card hidden">
+      <div class="alert-box">
+        <strong>Needs attention:</strong> Borrower has requested help with this payment. Check Activity for details.
+      </div>
     </div>
 
     <!-- Payment summary (for active and settled agreements) -->
@@ -464,30 +464,32 @@
       if (isLender && agreement.status === 'pending') {
         // Show lender actions (cancel button)
         document.getElementById('lender-actions').classList.remove('hidden');
-        document.getElementById('view-only').classList.add('hidden');
       } else {
-        // Show view-only mode
+        // Hide lender actions
         document.getElementById('lender-actions').classList.add('hidden');
-        document.getElementById('view-only').classList.remove('hidden');
-        document.getElementById('status-text').textContent = agreement.status;
-      }
-
-      // Check for hardship requests
-      const hasHardshipRequests = await checkHardshipRequests();
-
-      // Show hardship indicator for lender if there are requests
-      if (isLender && hasHardshipRequests && agreement.status === 'active') {
-        document.getElementById('hardship-indicator').classList.remove('hidden');
-      }
-
-      // Show "Having trouble paying?" button for borrower on active agreements
-      if (isBorrower && agreement.status === 'active') {
-        document.getElementById('hardship-button').classList.remove('hidden');
       }
 
       // Show payment sections for active and settled agreements
       if (agreement.status === 'active' || agreement.status === 'settled') {
         await loadPaymentData();
+
+        // Check for hardship requests
+        const hasHardshipRequests = await checkHardshipRequests();
+
+        // Show hardship indicator for lender if there are requests
+        if (isLender && hasHardshipRequests && agreement.status === 'active') {
+          document.getElementById('hardship-indicator').classList.remove('hidden');
+        }
+
+        // Show "Having trouble paying?" button for borrower on active agreements
+        if (isBorrower && agreement.status === 'active') {
+          document.getElementById('hardship-button-section').classList.remove('hidden');
+        }
+
+        // Show payment action button for active agreements
+        if (agreement.status === 'active') {
+          showPaymentActionButton();
+        }
       }
     }
 
@@ -711,6 +713,10 @@
     // Hardship form functions
     function showHardshipForm() {
       document.getElementById('details-section').classList.add('hidden');
+      document.getElementById('payment-action-section').classList.add('hidden');
+      document.getElementById('hardship-button-section').classList.add('hidden');
+      document.getElementById('payment-summary').classList.add('hidden');
+      document.getElementById('payment-history').classList.add('hidden');
       document.getElementById('hardship-form').classList.remove('hidden');
 
       // Set lender's first name
@@ -734,6 +740,10 @@
     function cancelHardshipForm() {
       document.getElementById('hardship-form').classList.add('hidden');
       document.getElementById('details-section').classList.remove('hidden');
+      document.getElementById('payment-action-section').classList.remove('hidden');
+      document.getElementById('hardship-button-section').classList.remove('hidden');
+      document.getElementById('payment-summary').classList.remove('hidden');
+      document.getElementById('payment-history').classList.remove('hidden');
     }
 
     function togglePaymentAmount() {
@@ -982,32 +992,26 @@
       }).join('');
     }
 
-    function addRecordPaymentButton() {
-      const viewOnly = document.getElementById('view-only');
+    function showPaymentActionButton() {
+      const paymentActionSection = document.getElementById('payment-action-section');
+      const recordBtn = document.getElementById('record-payment-btn');
 
-      // Add "Record payment" button if it doesn't already exist
-      if (!document.getElementById('record-payment-btn')) {
-        const recordBtn = document.createElement('button');
-        recordBtn.id = 'record-payment-btn';
-        recordBtn.className = 'record-payment-btn';
+      // Set button text based on user role
+      const isLender = agreement.lender_user_id === currentUser.id;
+      const isBorrower = agreement.borrower_user_id === currentUser.id;
 
-        // Set button text based on user role
-        const isLender = agreement.lender_user_id === currentUser.id;
-        const isBorrower = agreement.borrower_user_id === currentUser.id;
-
-        if (isBorrower) {
-          const lenderName = (agreement.lender_full_name || agreement.lender_name || agreement.lender_email).split(' ')[0];
-          recordBtn.textContent = `Report a payment to ${lenderName}`;
-        } else if (isLender) {
-          const borrowerName = (agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email).split(' ')[0];
-          recordBtn.textContent = `Report a payment from ${borrowerName}`;
-        } else {
-          recordBtn.textContent = 'Report Payment';
-        }
-
-        recordBtn.onclick = showRecordPaymentForm;
-        viewOnly.appendChild(recordBtn);
+      if (isBorrower) {
+        const lenderName = (agreement.lender_full_name || agreement.lender_name || agreement.lender_email).split(' ')[0];
+        recordBtn.textContent = `Report a payment to ${lenderName}`;
+      } else if (isLender) {
+        const borrowerName = (agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email).split(' ')[0];
+        recordBtn.textContent = `Report a payment from ${borrowerName}`;
+      } else {
+        recordBtn.textContent = 'Report Payment';
       }
+
+      recordBtn.onclick = showRecordPaymentForm;
+      paymentActionSection.classList.remove('hidden');
     }
 
     function showRecordPaymentForm() {
@@ -1044,6 +1048,8 @@
       }
 
       document.getElementById('details-section').classList.add('hidden');
+      document.getElementById('payment-action-section').classList.add('hidden');
+      document.getElementById('hardship-button-section').classList.add('hidden');
       document.getElementById('payment-summary').classList.add('hidden');
       document.getElementById('payment-history').classList.add('hidden');
       document.getElementById('record-payment-section').classList.remove('hidden');
@@ -1052,6 +1058,8 @@
     function cancelPaymentForm() {
       document.getElementById('record-payment-section').classList.add('hidden');
       document.getElementById('details-section').classList.remove('hidden');
+      document.getElementById('payment-action-section').classList.remove('hidden');
+      document.getElementById('hardship-button-section').classList.remove('hidden');
       document.getElementById('payment-summary').classList.remove('hidden');
       document.getElementById('payment-history').classList.remove('hidden');
 

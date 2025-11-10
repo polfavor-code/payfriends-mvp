@@ -52,7 +52,8 @@
     .message-date{color:var(--muted); font-size:12px}
     .empty-state{text-align:center; color:var(--muted); padding:32px; font-size:14px}
     .wizard-steps{display:flex; gap:16px; margin-bottom:24px; align-items:center}
-    .wizard-step{flex:1; padding:8px 16px; background:#10151d; border-radius:8px; text-align:center; font-size:14px; border:2px solid transparent}
+    .wizard-step{flex:1; padding:8px 16px; background:#10151d; border-radius:8px; text-align:center; font-size:14px; border:2px solid transparent; cursor:pointer; transition:all 0.2s ease}
+    .wizard-step:hover{background:#1a2028; border-color:rgba(61,220,151,0.3)}
     .wizard-step.active{border-color:var(--accent); color:var(--accent); font-weight:600}
     .wizard-step.completed{color:var(--accent)}
     .wizard-content{min-height:200px}
@@ -111,9 +112,9 @@
 
       <!-- Wizard Steps -->
       <div class="wizard-steps">
-        <div class="wizard-step" id="step-indicator-1">1. Role</div>
-        <div class="wizard-step" id="step-indicator-2">2. Details</div>
-        <div class="wizard-step" id="step-indicator-3">3. Summary</div>
+        <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)">1. Role</div>
+        <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)">2. Details</div>
+        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)">3. Summary</div>
       </div>
 
       <!-- Step 1: Role Selection -->
@@ -140,9 +141,9 @@
         </div>
         <div class="row">
           <label>Short description*</label>
-          <input id="description" type="text" placeholder="Money for rent, Car repair..." required maxlength="30" />
+          <input id="description" type="text" placeholder="Holiday loan, Car repair..." required maxlength="30" onblur="capitalizeDescription()" />
         </div>
-        <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to help identify this agreement (max 30 characters)</p>
+        <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to help identify this agreement (max 30 characters).</p>
         <div class="row">
           <label>Amount (EUR)</label>
           <input id="amount" type="text" placeholder="50.00" required onblur="formatAmountInput()" onfocus="unformatAmountInput()" />
@@ -222,7 +223,7 @@
       <table id="list">
         <thead>
           <tr>
-            <th>Counterparty</th>
+            <th id="counterparty-header">Counterparty</th>
             <th>Description</th>
             <th>Amount</th>
             <th>Outstanding</th>
@@ -288,6 +289,15 @@
       }
     }
 
+    // Capitalize first letter of description
+    function capitalizeDescription() {
+      const input = document.getElementById('description');
+      const value = input.value.trim();
+      if (value.length > 0) {
+        input.value = value.charAt(0).toUpperCase() + value.slice(1);
+      }
+    }
+
     // Calculate time ago from a timestamp
     function timeAgo(timestamp) {
       const now = new Date();
@@ -328,6 +338,95 @@
       }
     }
 
+    // Handle step click with validation
+    function clickStep(targetStep) {
+      // Determine current step
+      let currentStep = 1;
+      for (let i = 1; i <= 3; i++) {
+        if (!document.getElementById(`wizard-step-${i}`).classList.contains('hidden')) {
+          currentStep = i;
+          break;
+        }
+      }
+
+      // Allow clicking back without validation
+      if (targetStep < currentStep) {
+        goToStep(targetStep);
+        return;
+      }
+
+      // If clicking forward, validate current step
+      if (targetStep > currentStep) {
+        // Validate step 1: role must be selected
+        if (currentStep === 1 && targetStep >= 2) {
+          if (!wizardData.role) {
+            document.getElementById('step2-status').textContent = 'Please select a role first';
+            return;
+          }
+        }
+
+        // Validate step 2: all fields must be filled
+        if (currentStep <= 2 && targetStep === 3) {
+          const friendFirstName = document.getElementById('friend-first-name').value.trim();
+          const friendEmail = document.getElementById('friend-email').value.trim();
+          const description = document.getElementById('description').value.trim();
+          const amount = document.getElementById('amount').value;
+          const dueDate = document.getElementById('due-date').value;
+
+          if (!friendFirstName || !friendEmail || !description || !amount || !dueDate) {
+            const status = document.getElementById('step2-status');
+            status.textContent = 'Please fill in all fields';
+            return;
+          }
+
+          if (description.length > 30) {
+            const status = document.getElementById('step2-status');
+            status.textContent = 'Please keep it short — maximum 30 characters.';
+            return;
+          }
+
+          // Validate amount
+          const cleanAmount = amount.replace(/[.,]/g, '');
+          const amountNum = parseFloat(cleanAmount);
+          if (isNaN(amountNum) || amountNum <= 0) {
+            const status = document.getElementById('step2-status');
+            status.textContent = 'Please enter a valid amount';
+            return;
+          }
+
+          // Validate due date
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const dueDateObj = new Date(dueDate);
+          dueDateObj.setHours(0, 0, 0, 0);
+          if (dueDateObj < today) {
+            const status = document.getElementById('step2-status');
+            status.textContent = 'Due date cannot be in the past.';
+            return;
+          }
+
+          // If validation passes, call goToSummary to populate the summary
+          goToSummary();
+          return;
+        }
+
+        // Navigate to step 2 if coming from step 1
+        if (currentStep === 1 && targetStep === 2) {
+          if (!wizardData.role) {
+            document.getElementById('step2-status').textContent = 'Please select a role first';
+            return;
+          }
+          goToStep(2);
+          return;
+        }
+      }
+
+      // If same step, do nothing
+      if (targetStep === currentStep) {
+        return;
+      }
+    }
+
     function selectRole(role) {
       wizardData.role = role;
       goToStep(2);
@@ -336,7 +435,7 @@
     function goToSummary() {
       const friendFirstName = document.getElementById('friend-first-name').value.trim();
       const friendEmail = document.getElementById('friend-email').value.trim();
-      const description = document.getElementById('description').value.trim();
+      let description = document.getElementById('description').value.trim();
       const amount = document.getElementById('amount').value;
       const dueDate = document.getElementById('due-date').value;
       const status = document.getElementById('step2-status');
@@ -349,6 +448,12 @@
       if (description.length > 30) {
         status.textContent = 'Please keep it short — maximum 30 characters.';
         return;
+      }
+
+      // Capitalize first letter
+      if (description.length > 0) {
+        description = description.charAt(0).toUpperCase() + description.slice(1);
+        document.getElementById('description').value = description;
       }
 
       // Parse amount - remove thousand separators before parsing
@@ -664,6 +769,7 @@
     function renderAgreements() {
       const tbody = document.querySelector('#list tbody');
       const emptyState = document.getElementById('empty-state');
+      const counterpartyHeader = document.getElementById('counterparty-header');
 
       let filtered = allAgreements;
       if (currentFilter !== 'all') {
@@ -686,6 +792,26 @@
       document.getElementById('list').style.display = 'table';
       tbody.innerHTML = '';
 
+      // Determine header label based on user's role in agreements
+      // Default to showing both, but if all agreements have user as same role, show specific header
+      let userRoles = new Set();
+      for (const a of filtered) {
+        const isLender = a.lender_user_id === currentUser.id;
+        userRoles.add(isLender ? 'lender' : 'borrower');
+      }
+
+      // Set header based on predominant role
+      if (userRoles.size === 1) {
+        if (userRoles.has('lender')) {
+          counterpartyHeader.textContent = 'Borrower';
+        } else {
+          counterpartyHeader.textContent = 'Lender';
+        }
+      } else {
+        // Mixed roles, keep generic header
+        counterpartyHeader.textContent = 'Counterparty';
+      }
+
       for (const a of filtered) {
         const tr = document.createElement('tr');
         tr.setAttribute('data-id', a.id);
@@ -696,12 +822,10 @@
 
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
-        const role = isLender ? 'Lender' : 'Borrower';
 
-        // Use counterparty name and role from backend
+        // Use counterparty name only, no badge
         const counterpartyName = a.counterparty_name || '—';
-        const counterpartyRole = a.counterparty_role || (isLender ? 'Borrower' : 'Lender');
-        const counterpartyDisplay = `${counterpartyName} <span class="role-badge ${counterpartyRole.toLowerCase() === 'lender' ? 'lend' : 'borrow'}" style="font-size:11px">${counterpartyRole}</span>`;
+        const counterpartyDisplay = counterpartyName;
 
         // Get description or show fallback
         const description = a.description || '<span style="color:var(--muted); font-style:italic">(No description)</span>';

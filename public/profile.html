@@ -146,6 +146,12 @@
           body: formData
         });
 
+        // Check if response is JSON
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Server returned an invalid response. Please try again.');
+        }
+
         const data = await res.json();
 
         if (!data.success) {
@@ -166,6 +172,7 @@
           pictureStatus.textContent = '';
         }, 3000);
       } catch (err) {
+        console.error('Profile picture upload error:', err);
         pictureStatus.textContent = 'There was a problem uploading your photo. Please try another image.';
         pictureStatus.className = 'status error';
       }
