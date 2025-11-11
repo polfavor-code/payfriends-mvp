@@ -301,17 +301,17 @@
         </select>
       </div>
 
+      <div id="payment-proof-section" class="form-group" style="display:none">
+        <label class="form-label" id="payment-proof-label" for="payment-proof">Proof of repayment</label>
+        <p id="payment-proof-helper" style="color:var(--muted); font-size:12px; margin-bottom:8px">
+          Upload a screenshot, photo or PDF that shows this repayment.
+        </p>
+        <input type="file" id="payment-proof" accept="image/*,.pdf" style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+      </div>
+
       <div class="form-group">
         <label class="form-label" for="payment-note">Note (optional)</label>
         <textarea id="payment-note" placeholder="Add any details about this payment..."></textarea>
-      </div>
-
-      <div id="payment-proof-section" class="form-group" style="display:none">
-        <label class="form-label" for="payment-proof">Proof of payment (optional)</label>
-        <p style="color:var(--muted); font-size:12px; margin-bottom:8px">
-          Upload a screenshot, photo, or PDF of your payment if you have it.
-        </p>
-        <input type="file" id="payment-proof" accept="image/*,.pdf" style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
       </div>
 
       <button id="payment-submit-btn" onclick="submitPayment()">Record Payment</button>
@@ -1238,8 +1238,8 @@
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
 
       const proofInput = document.getElementById('payment-proof');
-      const proofLabel = proofSection.querySelector('.form-label');
-      const proofHelper = proofSection.querySelector('p');
+      const proofLabel = document.getElementById('payment-proof-label');
+      const proofHelper = document.getElementById('payment-proof-helper');
 
       if (isBorrower) {
         formHeader.textContent = 'Report a payment';
@@ -1250,12 +1250,12 @@
 
         // Set proof requirement based on agreement
         if (agreement.proof_required) {
-          proofLabel.textContent = 'Proof of payment*';
-          proofHelper.textContent = 'Upload a photo, screenshot, scan or PDF of your transfer. Required for this agreement.';
+          proofLabel.textContent = 'Proof of repayment*';
+          proofHelper.textContent = 'Upload a screenshot, photo or PDF that shows this repayment.';
           proofInput.required = true;
         } else {
-          proofLabel.textContent = 'Proof of payment (optional)';
-          proofHelper.textContent = 'Upload a screenshot, photo, or PDF of your payment if you have it.';
+          proofLabel.textContent = 'Proof of repayment (optional)';
+          proofHelper.textContent = 'Upload a screenshot, photo or PDF of your repayment if you have it.';
           proofInput.required = false;
         }
       } else if (isLender) {
@@ -1375,10 +1375,10 @@
         return;
       }
 
-      // Validate proof of payment if required
+      // Validate proof of repayment if required
       const isBorrower = agreement.borrower_user_id === currentUser.id;
       if (isBorrower && agreement.proof_required && !proofFile) {
-        status.textContent = 'This agreement requires a proof of payment (photo, scan, or PDF) with each report.';
+        status.textContent = 'This agreement requires proof of repayment. Please upload a screenshot, photo or PDF of the repayment.';
         status.className = 'status error';
         return;
       }
@@ -1667,10 +1667,10 @@
 
       // Proof required
       const proofText = agreement.proof_required
-        ? 'The borrower must upload proof of payment (photo, screenshot, scan or PDF) with every reported payment.'
-        : 'Not required — borrower can report payments without uploading proof.';
+        ? 'Yes — The borrower will be asked to upload proof for each repayment, such as a photo, screenshot or PDF of the transfer or receipt.'
+        : 'No — The borrower can report repayments without uploading proof.';
       html += `<div>
-        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Proof of payment:</div>
+        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Require proof of repayment:</div>
         <div style="color:var(--muted); font-size:14px; line-height:1.5">${proofText}</div>
       </div>`;
 
@@ -1690,8 +1690,8 @@
 
       // Worst case scenario (debt collection clause)
       const worstCaseText = agreement.debt_collection_clause
-        ? 'Enabled — If the borrower does not repay, does not propose a new plan, or cannot reach an agreement with the lender, both parties agree that the case may be handed over to an independent debt collector registered in accordance with local law. Any collection fees are for the borrower\'s account.'
-        : 'Disabled — Debt collection clause not enabled.';
+        ? 'If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower\'s account.'
+        : 'Not enabled.';
       html += `<div>
         <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>
         <div style="color:var(--muted); font-size:14px; line-height:1.5">${worstCaseText}</div>

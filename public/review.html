@@ -249,9 +249,9 @@
       html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Preferred payment methods:</div>`;
       html += `<div style="color:var(--muted); font-size:13px">${methodsText}</div></div>`;
 
-      // Proof of payment
-      html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Proof of payment required:</div>`;
-      html += `<div style="color:var(--muted); font-size:13px">${agreement.proof_required ? 'Yes — You must upload proof with every payment' : 'No'}</div></div>`;
+      // Proof of repayment
+      html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Require proof of repayment:</div>`;
+      html += `<div style="color:var(--muted); font-size:13px">${agreement.proof_required ? 'Yes — The borrower will be asked to upload proof for each repayment.' : 'No — The borrower can report repayments without uploading proof.'}</div></div>`;
 
       // Reminder mode
       html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Reminder mode:</div>`;
@@ -260,9 +260,9 @@
       // Worst case scenario
       html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Worst case scenario:</div>`;
       if (agreement.debt_collection_clause) {
-        html += `<div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay, does not propose a new plan, or cannot reach an agreement with the lender, both parties agree that the case may be handed over to an independent debt collector registered in accordance with local law. Any collection fees are for the borrower's account.</div>`;
+        html += `<div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</div>`;
       } else {
-        html += `<div style="color:var(--muted); font-size:13px">Not selected</div>`;
+        html += `<div style="color:var(--muted); font-size:13px">Not enabled</div>`;
       }
       html += `</div>`;
 
@@ -278,6 +278,14 @@
 
       if (!fullName) {
         status.textContent = 'Full name is required';
+        status.className = 'status error';
+        return;
+      }
+
+      // Validate full name has at least 2 words
+      const nameParts = fullName.split(/\s+/);
+      if (nameParts.length < 2) {
+        status.textContent = 'Please enter your full name (first and last name), exactly as on your passport.';
         status.className = 'status error';
         return;
       }

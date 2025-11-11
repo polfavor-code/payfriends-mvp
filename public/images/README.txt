@@ -1,7 +1,5 @@
 Logo files for PayFriends
 
-payfriends-logo.svg - SVG version (currently active, works in all browsers)
-payfriends-logov2.png - PNG version (add this file for better compatibility if desired)
+payfriends-logov2.png - PNG version with transparent background (currently active)
 
-The SVG logo uses the app's accent color (#3ddc97) and matches the dark theme.
-To use PNG instead, replace references to .svg with .png in app.html and review-details.html.
+This PNG logo is used throughout the app in the dashboard header, agreement header, and login page.

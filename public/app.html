@@ -18,13 +18,14 @@
     .header-right{display:flex; gap:16px; align-items:center}
     .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
     .top-header-left{display:flex; align-items:center; gap:12px}
-    .top-header-right{display:flex; gap:16px; align-items:center}
+    .top-header-right{display:flex; flex-direction:column; align-items:flex-end; gap:8px}
     .logo-coin{height:54px; width:auto}
     .top-header-text{display:flex; flex-direction:column; gap:2px}
     .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
     .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
     .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
-    .top-header-user-info{color:var(--muted); font-size:14px}
+    .top-header-user-info{color:var(--text); font-size:14px; text-align:right}
+    .top-header-actions{display:flex; gap:12px; align-items:center}
     .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
     .logout-btn:hover{background:rgba(255,255,255,0.05)}
     .inbox-widget{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 16px; cursor:pointer}
@@ -120,6 +121,13 @@
     .due-date-overdue{color:#f87171}
     .due-date-upcoming{color:var(--muted)}
     .due-date-settled{color:#9ca3af}
+    .toggle-switch{position:relative;display:inline-block;width:48px;height:24px}
+    .toggle-switch input{opacity:0;width:0;height:0}
+    .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#4a4a4a;transition:0.3s;border-radius:24px}
+    .toggle-slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:white;transition:0.3s;border-radius:50%}
+    .toggle-switch input:checked + .toggle-slider{background-color:var(--accent)}
+    .toggle-switch input:checked + .toggle-slider:before{transform:translateX(24px)}
+    .toggle-switch input:disabled + .toggle-slider{opacity:0.5;cursor:not-allowed}
   </style>
 </head>
 <body>
@@ -136,11 +144,13 @@
       </div>
       <div class="top-header-right">
         <div class="top-header-user-info" id="user-info-display">Loading...</div>
-        <div class="inbox-widget" onclick="toggleActivity()">
-          Activity (<span class="inbox-count" id="activity-count">0</span>)
+        <div class="top-header-actions">
+          <div class="inbox-widget" onclick="toggleActivity()">
+            Activity (<span class="inbox-count" id="activity-count">0</span>)
+          </div>
+          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
+          <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
-        <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
-        <button class="logout-btn" onclick="logout()">Logout</button>
       </div>
     </header>
 
@@ -268,7 +278,7 @@
 
         <div class="row">
           <label>Loan amount (€)*</label>
-          <input id="amount" type="text" placeholder="6000" required onblur="formatAmountInput()" onfocus="unformatAmountInput()" />
+          <input id="amount" type="text" placeholder="6000" required onblur="formatAmountInput()" onfocus="unformatAmountInput()" oninput="updateOneTimeEstimate()" />
         </div>
         <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">Enter the amount in euros.</p>
 
@@ -374,10 +384,13 @@
         </div>
         <h3 style="margin-top:0">Interest & payment calculation</h3>
 
-        <div class="row" style="margin-top:20px">
+        <div class="row" style="margin-top:20px; align-items:center">
           <label>Interest rate</label>
-          <div style="flex:1; display:flex; align-items:center; gap:12px">
-            <input id="interest-rate" type="number" min="0" max="100" step="0.1" placeholder="e.g. 5% per year" oninput="calculateInterest()" style="flex:1" />
+          <div style="flex:1; display:flex; align-items:center; gap:12px; justify-content:space-between">
+            <div style="display:flex; align-items:center; gap:8px">
+              <input id="interest-rate" type="number" min="0" max="100" step="0.1" placeholder="4" oninput="calculateInterest()" style="width:100px; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
+              <span style="color:var(--text); font-size:14px">% per year</span>
+            </div>
             <span id="interest-rate-badge" style="display:inline-block; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; white-space:nowrap"></span>
           </div>
         </div>
@@ -487,15 +500,18 @@
           <div id="other-payment-method" class="hidden" style="margin:12px 0">
             <input id="other-payment-description" type="text" placeholder="Describe the other payment method" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
           </div>
+        </div>
 
-          <!-- Proof of payment requirement -->
-          <div style="margin:16px 0 0 0">
-            <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer">
-              <input type="checkbox" id="proof-required" style="margin-top:2px" />
-              <span style="font-size:14px; line-height:1.5">Require borrower to upload proof of payment</span>
+        <!-- Require proof of repayment -->
+        <div style="margin:24px 0">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
+            <label class="toggle-switch">
+              <input type="checkbox" id="proof-required" checked />
+              <span class="toggle-slider"></span>
             </label>
-            <p style="color:var(--muted); font-size:12px; margin:4px 0 0 28px">They'll be asked for proof whenever they report a payment.</p>
+            <h4 style="margin:0; font-size:16px">Require proof of repayment</h4>
           </div>
+          <p style="color:var(--muted); font-size:13px; margin:0; line-height:1.5">The borrower will be asked to upload proof for each repayment, such as a photo, screenshot or PDF of the transfer or receipt.</p>
         </div>
 
         <!-- Reminders -->
@@ -550,13 +566,14 @@
 
         <!-- Worst-case scenario -->
         <div style="margin:24px 0">
-          <h4 style="margin:0 0 12px 0; font-size:16px">Worst case scenario</h4>
-          <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer">
-            <input type="checkbox" id="debt-collection-clause" style="margin-top:2px" checked />
-            <div style="color:var(--muted); font-size:13px; line-height:1.5">
-              If the borrower does not repay, does not propose a new plan, or cannot reach an agreement with the lender, both parties agree that the case may be handed over to an independent debt collector registered in accordance with local law. Any collection fees are for the borrower's account.
-            </div>
-          </label>
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
+            <label class="toggle-switch">
+              <input type="checkbox" id="debt-collection-clause" checked />
+              <span class="toggle-slider"></span>
+            </label>
+            <h4 style="margin:0; font-size:16px">Worst case scenario</h4>
+          </div>
+          <p style="color:var(--muted); font-size:13px; margin:0; line-height:1.5">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</p>
         </div>
 
         <div style="margin-top:32px">
@@ -628,17 +645,12 @@
 
       <!-- Step 6: Share -->
       <div id="wizard-step-6" class="wizard-content hidden">
-        <h3 style="margin-top:0">Agreement sent to <span id="share-friend-name"></span></h3>
+        <h3 style="margin-top:0">6. Share</h3>
 
         <!-- Success header -->
         <div style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.25); border-radius:12px; padding:20px; margin:20px 0">
-          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px">
-            <div style="font-size:28px; color:var(--accent)">✓</div>
-            <div>
-              <p style="margin:0; font-size:18px; font-weight:600; color:var(--accent)">Invite sent to <span id="share-invite-name"></span></p>
-              <p style="margin:4px 0 0 0; font-size:14px; color:var(--text)">We've emailed an invite to <span id="share-invite-name2"></span> at <span id="share-invite-email"></span>. You can also share the link or QR code below.</p>
-            </div>
-          </div>
+          <div style="font-size:18px; font-weight:700; color:var(--accent); margin-bottom:8px">Agreement sent to <span id="share-friend-name"></span></div>
+          <div style="font-size:14px; color:var(--text)">We've emailed this agreement to <span id="share-invite-name"></span> at <span id="share-invite-email"></span>. You can also share the link or QR code below.</div>
         </div>
 
         <!-- Share link section -->
@@ -648,35 +660,22 @@
             <input id="share-link-input" type="text" readonly style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:monospace; font-size:13px" />
             <button onclick="copyShareLink()" style="width:auto; white-space:nowrap; padding:10px 16px">Copy link</button>
           </div>
-          <p style="color:var(--muted); font-size:13px; margin:0">You can paste this link into WhatsApp, Signal, email, or anywhere else you like.</p>
+          <p style="color:var(--muted); font-size:13px; margin:0">You can paste this link into WhatsApp, Signal, email or anywhere else you like.</p>
         </div>
 
         <!-- QR code section -->
         <div style="margin:24px 0">
           <h4 style="margin:0 0 12px 0; font-size:16px">Or let <span id="share-qr-name"></span> scan this QR code</h4>
-          <div style="display:flex; justify-content:center; padding:20px; background:#fff; border-radius:12px; margin-bottom:8px">
+          <div style="display:flex; justify-content:center; padding:20px; background:var(--bg); border:1px solid rgba(255,255,255,0.08); border-radius:12px; margin-bottom:8px">
             <div id="qr-code-container"></div>
           </div>
-          <p style="color:var(--muted); font-size:13px; margin:0; text-align:center">Ask your friend to scan this QR to open the agreement directly.</p>
-        </div>
-
-        <!-- Status/next steps box -->
-        <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; margin:24px 0">
-          <p style="margin:0 0 8px 0; font-size:14px">
-            <strong style="color:var(--accent)">Status: Pending</strong> — This agreement is waiting for <span id="share-status-name"></span>'s response.
-          </p>
-          <p style="margin:8px 0 0 0; font-size:13px; color:var(--muted)">
-            Once <span id="share-status-name2"></span> accepts, it will move to Active in your dashboard.
-          </p>
-          <p style="margin:16px 0 0 0; font-size:12px; color:var(--muted); padding-top:12px; border-top:1px solid rgba(255,255,255,0.06)">
-            Need to change something? Cancel this pending agreement from your dashboard and create a new one.
-          </p>
+          <p style="color:var(--muted); font-size:13px; margin:0; text-align:center">Ask <span id="share-qr-name-2"></span> to scan this QR to open the agreement directly.</p>
         </div>
 
         <!-- Buttons -->
         <div style="margin-top:32px; display:flex; gap:12px">
-          <button onclick="goToDashboard()" style="flex:1">Go to My Agreements</button>
-          <button class="secondary" onclick="createAnotherAgreement()" style="flex:1">Create another agreement</button>
+          <button onclick="goToDashboard()">Done, return to dashboard</button>
+          <button class="secondary" onclick="createAnotherAgreement()">Create another agreement</button>
         </div>
 
         <p id="step6-status" class="status"></p>
@@ -741,8 +740,8 @@
       paymentOtherDescription: '',
       reminderMode: 'auto',
       reminderOffsets: [-7, -1, 0, 1, 3],
-      proofRequired: false,
-      debtCollectionClause: false,
+      proofRequired: true,
+      debtCollectionClause: true,
       inviteUrl: '',
       agreementSent: false
     };
@@ -1144,6 +1143,11 @@
     function goToTerms() {
       if (!validateStep1()) return;
       goToStep(2);
+      // Initialize default due date for one-time payment if not already set
+      const dueDateInput = document.getElementById('due-date');
+      if (!dueDateInput.value) {
+        updateOneTimeDueOption();
+      }
     }
 
     // Toggle between one-time and installment fields
@@ -1163,7 +1167,15 @@
         oneTimeFields.classList.remove('hidden');
         installmentFields.classList.add('hidden');
         wizardData.repaymentType = 'one_time';
-        updateDueDateHelper();
+        // Ensure default due date is set
+        const dueDateInput = document.getElementById('due-date');
+        if (!dueDateInput.value) {
+          const oneTimeDueOption = document.getElementById('one-time-due-option');
+          oneTimeDueOption.value = '1month';
+          updateOneTimeDueOption();
+        } else {
+          updateOneTimeEstimate();
+        }
       }
     }
 
@@ -1235,8 +1247,9 @@
 
         // Set the date input value
         dueDateInput.value = dueDate.toISOString().split('T')[0];
-        updateOneTimeEstimate();
       }
+      // Always update the estimate when the option changes
+      updateOneTimeEstimate();
     }
 
     function updateOneTimeEstimate() {
@@ -2051,10 +2064,9 @@
       </div>`;
 
       // Proof required
-      const proofRequired = wizardData.proofRequired ? 'Yes' : 'No';
       html += `<div>
-        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Proof of payment required:</div>
-        <div style="color:var(--muted); font-size:14px">${proofRequired}</div>
+        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Require proof of repayment:</div>
+        <div style="color:var(--muted); font-size:13px; line-height:1.5">${wizardData.proofRequired ? 'Yes — The borrower will be asked to upload proof for each repayment, such as a photo, screenshot or PDF of the transfer or receipt.' : 'No — The borrower can report repayments without uploading proof.'}</div>
       </div>`;
 
       // Reminder mode
@@ -2088,9 +2100,9 @@
       html += `<div>
         <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>`;
       if (wizardData.debtCollectionClause) {
-        html += `<div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay, does not propose a new plan, or cannot reach an agreement with the lender, both parties agree that the case may be handed over to an independent debt collector registered in accordance with local law. Any collection fees are for the borrower's account.</div>`;
+        html += `<div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</div>`;
       } else {
-        html += `<div style="color:var(--muted); font-size:13px">Not selected.</div>`;
+        html += `<div style="color:var(--muted); font-size:13px">Not enabled.</div>`;
       }
       html += `</div>`;
 
@@ -2244,11 +2256,9 @@
       // Populate all name placeholders
       document.getElementById('share-friend-name').textContent = firstName;
       document.getElementById('share-invite-name').textContent = firstName;
-      document.getElementById('share-invite-name2').textContent = firstName;
       document.getElementById('share-invite-email').textContent = email;
       document.getElementById('share-qr-name').textContent = firstName;
-      document.getElementById('share-status-name').textContent = firstName;
-      document.getElementById('share-status-name2').textContent = firstName;
+      document.getElementById('share-qr-name-2').textContent = firstName;
 
       // Populate share link input
       document.getElementById('share-link-input').value = inviteUrl;
@@ -2318,8 +2328,8 @@
         paymentOtherDescription: '',
         reminderMode: 'auto',
         reminderOffsets: [-7, -1, 0, 1, 3],
-        proofRequired: false,
-        debtCollectionClause: false,
+        proofRequired: true,
+        debtCollectionClause: true,
         inviteUrl: '',
         agreementSent: false
       };
@@ -2353,8 +2363,8 @@
       document.getElementById('other-payment-description').value = '';
       document.querySelector('input[name="reminder-mode"][value="auto"]').checked = true;
       document.querySelectorAll('.custom-reminder-checkbox').forEach(cb => cb.checked = false);
-      document.getElementById('proof-required').checked = false;
-      document.getElementById('debt-collection-clause').checked = false;
+      document.getElementById('proof-required').checked = true;
+      document.getElementById('debt-collection-clause').checked = true;
 
       // Reset status messages
       document.getElementById('step1-status').textContent = '';
