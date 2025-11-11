@@ -64,7 +64,7 @@
     .status-text.settled{color:#9ca3af}
     .status-text.cancelled{color:#9ca3af}
     .status-text.declined{color:#f87171}
-    .status-dot{display:inline-block; width:10px; height:10px; border-radius:9999px}
+    .status-dot{display:inline-block; width:15px; height:15px; border-radius:9999px; cursor:help; position:relative}
     .status-dot--active{background:#22c55e}
     .status-dot--pending{background:#facc15}
     .status-dot--settled{background:#9ca3af}
@@ -191,10 +191,10 @@
       <table id="list">
         <thead>
           <tr>
-            <th id="counterparty-header">Counterparty</th>
+            <th id="counterparty-header">Borrower</th>
             <th>Description</th>
             <th>Outstanding / Total</th>
-            <th id="due-header">Due</th>
+            <th id="due-header">Next repayment due</th>
             <th>Status</th>
             <th><span class="actions-header-text">Actions</span></th>
           </tr>
@@ -2707,7 +2707,15 @@
         const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
 
         // Build status column with colored dot indicator (no text)
-        let statusBadge = `<span class="status-dot status-dot--${statusText}" role="img" aria-label="${capitalizedStatus}" title="${capitalizedStatus}"></span>`;
+        let tooltipText = capitalizedStatus;
+        if (statusText === 'pending') {
+          tooltipText = 'Pending review by borrower';
+        } else if (statusText === 'active') {
+          tooltipText = 'Active';
+        } else if (statusText === 'settled') {
+          tooltipText = 'Settled';
+        }
+        let statusBadge = `<span class="status-dot status-dot--${statusText}" role="img" aria-label="${capitalizedStatus}" title="${tooltipText}"></span>`;
 
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;

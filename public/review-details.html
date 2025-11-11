@@ -101,7 +101,7 @@
     th,td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; vertical-align:middle}
     th{color:var(--muted); font-weight:600; font-size:13px}
     .actions-column{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; width:100%}
-    .actions-column button{flex:0 0 auto; padding:8px 12px; font-size:13px; white-space:nowrap; width:auto}
+    .actions-column button{flex:0 0 auto; padding:8px 12px; font-size:14px; white-space:nowrap; width:auto}
     .empty-state{text-align:center; color:var(--muted); padding:32px; font-size:14px}
     .user-avatar{display:inline-flex; align-items:center; justify-content:center; border-radius:50%; overflow:hidden; flex-shrink:0; vertical-align:middle}
     .user-avatar.size-small{width:22px; height:22px; font-size:10px; font-weight:600; margin-right:8px}
@@ -120,6 +120,13 @@
     .due-date-overdue{color:#f87171}
     .due-date-upcoming{color:var(--muted)}
     .due-date-settled{color:#9ca3af}
+    .status-dot{display:inline-block; width:15px; height:15px; border-radius:9999px; cursor:help; position:relative}
+    .status-dot--active{background:#22c55e}
+    .status-dot--pending{background:#facc15}
+    .status-dot--settled{background:#9ca3af}
+    .status-dot--overdue{background:#f87171}
+    .status-dot--cancelled{background:#9ca3af}
+    .status-dot--declined{background:#f87171}
   </style>
 </head>
 <body>
@@ -160,10 +167,10 @@
       <table id="list">
         <thead>
           <tr>
-            <th id="counterparty-header">Counterparty</th>
+            <th id="counterparty-header">Borrower</th>
             <th>Description</th>
-            <th>Outstanding amount</th>
-            <th id="due-header">Due</th>
+            <th>Outstanding / Total</th>
+            <th id="due-header">Next repayment due</th>
             <th>Status</th>
             <th style="text-align:right">Actions</th>
           </tr>
@@ -629,7 +636,7 @@
       // Show and populate manage header
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
       const description = agreement.description || 'Agreement';
-      document.getElementById('manage-subline').textContent = `${description} - ${borrowerName}`;
+      document.getElementById('manage-subline').textContent = `${description} – ${borrowerName}`;
       document.getElementById('manage-header').classList.remove('hidden');
 
       populateDetails();
@@ -735,24 +742,13 @@
       }
       document.getElementById('agreement-summary-line3').textContent = summaryLine3;
 
-      // Create and insert counterparty avatar
-      let counterpartyName, counterpartyUserId, counterpartyProfilePicture;
-      if (isLender) {
-        counterpartyName = borrowerName;
-        counterpartyUserId = agreement.borrower_user_id;
-        counterpartyProfilePicture = agreement.borrower_profile_picture;
-      } else {
-        counterpartyName = lenderName;
-        counterpartyUserId = agreement.lender_user_id;
-        counterpartyProfilePicture = agreement.lender_profile_picture;
-      }
-
+      // Create and insert borrower avatar (always show borrower)
       let avatarHtml = '';
-      if (counterpartyProfilePicture && counterpartyUserId) {
-        avatarHtml = `<div class="user-avatar size-large"><img src="/api/profile/picture/${counterpartyUserId}" class="user-avatar-image" /></div>`;
+      if (agreement.borrower_profile_picture && agreement.borrower_user_id) {
+        avatarHtml = `<div class="user-avatar size-large"><img src="/api/profile/picture/${agreement.borrower_user_id}" class="user-avatar-image" /></div>`;
       } else {
-        const initials = getInitials(counterpartyName);
-        const colorClass = getAvatarColor(counterpartyName);
+        const initials = getInitials(borrowerName);
+        const colorClass = getAvatarColor(borrowerName);
         avatarHtml = `<div class="user-avatar size-large"><div class="user-avatar-initials ${colorClass}">${initials}</div></div>`;
       }
       document.getElementById('summary-avatar').innerHTML = avatarHtml;
@@ -1968,6 +1964,30 @@
       table.style.display = 'table';
       tbody.innerHTML = '';
 
+      // Determine header label based on user's role in agreements
+      const counterpartyHeader = document.getElementById('counterparty-header');
+      const dueHeader = document.getElementById('due-header');
+      let userRoles = new Set();
+      for (const a of filtered) {
+        const isLender = a.lender_user_id === currentUser.id;
+        userRoles.add(isLender ? 'lender' : 'borrower');
+      }
+
+      // Set headers based on predominant role
+      if (userRoles.size === 1) {
+        if (userRoles.has('lender')) {
+          counterpartyHeader.textContent = 'Borrower';
+          dueHeader.textContent = 'Next repayment due';
+        } else {
+          counterpartyHeader.textContent = 'Lender';
+          dueHeader.textContent = 'Next payment due';
+        }
+      } else {
+        // Mixed roles, keep generic headers
+        counterpartyHeader.textContent = 'Counterparty';
+        dueHeader.textContent = 'Due';
+      }
+
       filtered.forEach(a => {
         const isLender = a.lender_user_id === currentUser.id;
         const isBorrower = a.borrower_user_id === currentUser.id;
@@ -1999,8 +2019,10 @@
         // Description
         const description = a.description || '—';
 
-        // Outstanding amount
-        const outstanding = formatAmount(a.outstanding_cents || a.amount_cents);
+        // Outstanding amount with original amount tooltip
+        const outstandingCents = a.outstanding_cents || a.amount_cents;
+        const outstanding = formatAmount(outstandingCents);
+        const originalAmount = formatAmount(a.amount_cents);
 
         // Due date
         let dueDate = '';
@@ -2024,16 +2046,25 @@
           }
         }
 
-        // Status
-        const status = a.status || 'pending';
-        let statusHtml = `<span class="status-badge ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+        // Status with colored dot indicator
+        const statusText = a.status || 'pending';
+        const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+        let tooltipText = capitalizedStatus;
+        if (statusText === 'pending') {
+          tooltipText = 'Pending review by borrower';
+        } else if (statusText === 'active') {
+          tooltipText = 'Active';
+        } else if (statusText === 'settled') {
+          tooltipText = 'Settled';
+        }
+        let statusHtml = `<span class="status-dot status-dot--${statusText}" role="img" aria-label="${capitalizedStatus}" title="${tooltipText}"></span>`;
 
         // Actions
         let actionsHtml = '';
         if (a.id === parseInt(agreementId)) {
-          actionsHtml = `<button onclick="scrollToManage()" style="background:var(--accent); color:#0d130f">Viewing</button>`;
+          actionsHtml = `<button onclick="scrollToManage()" style="background:var(--accent); color:#0d130f">Manage</button>`;
         } else {
-          actionsHtml = `<button onclick="window.location.href='/agreements/${a.id}/view'" class="secondary">View</button>`;
+          actionsHtml = `<button onclick="window.location.href='/agreements/${a.id}/manage'" class="secondary">Manage</button>`;
         }
 
         const row = document.createElement('tr');
@@ -2045,7 +2076,7 @@
             </div>
           </td>
           <td>${description}</td>
-          <td>€ ${outstanding}</td>
+          <td title="Original amount: € ${originalAmount}">€ ${outstanding} / € ${originalAmount}</td>
           <td class="${dueDateClass}">${dueDate}</td>
           <td>${statusHtml}</td>
           <td>
