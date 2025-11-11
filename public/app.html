@@ -78,7 +78,7 @@
     .status-dot--overdue{background:#f87171}
     .status-dot--cancelled{background:#9ca3af}
     .status-dot--declined{background:#f87171}
-    .status-cell{display:flex;align-items:center;justify-content:center}
+    .status-dot-wrapper{display:flex;align-items:center;justify-content:center;height:100%}
     .actions-column{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; width:100%}
     .actions-column button{flex:0 0 auto; padding:8px 12px; font-size:14px; white-space:nowrap; width:auto}
     .btn-confirm-payment{background:#f97316; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px}
@@ -2903,7 +2903,7 @@
         } else if (statusText === 'declined') {
           tooltipText = 'Declined';
         }
-        let statusBadge = `<span class="status-dot status-dot--${statusText}" role="img" aria-label="${capitalizedStatus}" title="${tooltipText}"></span>`;
+        let statusBadge = `<div class="status-dot-wrapper"><span class="status-dot status-dot--${statusText}" role="img" aria-label="${capitalizedStatus}" title="${tooltipText}"></span></div>`;
 
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
@@ -2962,7 +2962,7 @@
           <td>${description}</td>
           <td>${outstandingDisplay}</td>
           <td>${dueDateDisplay}</td>
-          <td class="status-cell">${statusBadge}</td>
+          <td>${statusBadge}</td>
           <td>${actionsHtml}</td>
         `;
         tbody.appendChild(tr);
