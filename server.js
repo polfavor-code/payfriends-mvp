@@ -1006,6 +1006,37 @@ app.post('/api/activity/:id/mark-read', requireAuth, (req, res) => {
   }
 });
 
+// Get invite info for an agreement (lender only)
+app.get('/api/agreements/:id/invite', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Verify user is the lender
+    const agreement = db.prepare('SELECT lender_user_id FROM agreements WHERE id = ?').get(id);
+    if (!agreement || agreement.lender_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // Get invite data
+    const invite = db.prepare(`
+      SELECT token, created_at, accepted_at
+      FROM agreement_invites
+      WHERE agreement_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(id);
+
+    if (!invite) {
+      return res.status(404).json({ error: 'No invite found for this agreement' });
+    }
+
+    res.json(invite);
+  } catch (err) {
+    console.error('Error fetching invite:', err);
+    res.status(500).json({ error: 'Server error fetching invite' });
+  }
+});
+
 // Get single agreement by ID (for logged-in users)
 app.get('/api/agreements/:id', requireAuth, (req, res) => {
   const { id } = req.params;
