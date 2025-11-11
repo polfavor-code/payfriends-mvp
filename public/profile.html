@@ -10,7 +10,7 @@
     }
     *{box-sizing:border-box}
     body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
-    .container{max-width:1280px;margin:0 auto;padding:32px 16px;}
+    .container{max-width:1200px;margin:0 auto;padding:32px 16px;}
     .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin:16px 0}
     .row{margin:20px 0}
     .row label{display:block; margin-bottom:8px; color:var(--muted); font-size:14px; font-weight:500}
@@ -33,12 +33,17 @@
     .top-header-actions{display:flex; gap:12px; align-items:center}
     .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px; width:auto}
     .logout-btn:hover{background:rgba(255,255,255,0.05)}
+    .inbox-widget{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500;font-size:14px;text-decoration:none;display:inline-block;transition:all 0.2s ease}
+    .inbox-widget:hover{background:rgba(255,255,255,0.05)}
+    .inbox-widget.inbox-widget-has-unread{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:10px 18px;font-size:15px}
+    .inbox-widget.inbox-widget-has-unread:hover{background:#1a2028}
+    .inbox-count{color:var(--accent);font-weight:700}
 
     /* Avatar styles */
     .user-avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;flex-shrink:0;vertical-align:middle}
     .user-avatar.size-small{width:22px;height:22px;font-size:10px;margin-right:8px}
     .user-avatar.size-medium{width:48px;height:48px;font-size:18px}
-    .user-avatar.size-large{width:72px;height:72px;font-size:28px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
+    .user-avatar.size-large{width:120px;height:120px;font-size:40px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
     .user-avatar.size-large:hover{opacity:0.85}
     .user-avatar-image{width:100%;height:100%;object-fit:cover}
     .user-avatar-initials{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:600}
@@ -55,6 +60,8 @@
     .profile-info{display:flex;flex-direction:column;gap:6px}
     .profile-name{font-size:20px;font-weight:600;color:var(--text)}
     .profile-detail{font-size:14px;color:var(--muted)}
+    .avatar-upload-text{color:var(--muted);font-size:14px;cursor:pointer;text-decoration:underline;margin-top:4px}
+    .avatar-upload-text:hover{color:var(--text)}
   </style>
 </head>
 <body>
@@ -72,7 +79,7 @@
       <div class="top-header-right">
         <div class="top-header-user-info" id="user-info-display">Loading...</div>
         <div class="top-header-actions">
-          <a href="/app" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">Activity</a>
+          <a href="/app" class="inbox-widget" id="activity-link">Activity</a>
           <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block; white-space:nowrap">My Profile</a>
           <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
@@ -85,6 +92,7 @@
       <!-- Profile Header with Avatar -->
       <div class="profile-header">
         <div id="profile-avatar-container" onclick="document.getElementById('picture-input').click()" oncontextmenu="handleAvatarContextMenu(event)"></div>
+        <div class="avatar-upload-text" onclick="document.getElementById('picture-input').click()">Change photo</div>
         <input type="file" id="picture-input" accept="image/jpeg,image/png,image/webp" style="display:none" />
         <p id="picture-status" class="status" style="margin:0"></p>
       </div>
@@ -171,9 +179,38 @@
         document.getElementById('full-name').value = currentUser.full_name || '';
         document.getElementById('email').value = currentUser.email;
         document.getElementById('phone-number').value = currentUser.phone_number || '';
+
+        // Load unread count for Activity button
+        loadActivityCount();
       } catch (err) {
         console.error('Error loading profile:', err);
         window.location.href = '/';
+      }
+    }
+
+    // Load activity count for header
+    async function loadActivityCount() {
+      try {
+        const res = await fetch('/api/activity');
+        if (res.ok) {
+          const data = await res.json();
+          const unreadCount = data.messages.filter(m => !m.read_at).length;
+          updateActivityButton(unreadCount);
+        }
+      } catch (err) {
+        console.error('Error loading activity count:', err);
+      }
+    }
+
+    // Update Activity button with unread count
+    function updateActivityButton(unreadCount) {
+      const activityLink = document.getElementById('activity-link');
+      if (unreadCount > 0) {
+        activityLink.innerHTML = `Activity (<span class="inbox-count">${unreadCount}</span>)`;
+        activityLink.classList.add('inbox-widget-has-unread');
+      } else {
+        activityLink.textContent = 'Activity';
+        activityLink.classList.remove('inbox-widget-has-unread');
       }
     }
 

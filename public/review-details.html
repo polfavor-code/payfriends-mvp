@@ -11,7 +11,7 @@
     }
     *{box-sizing:border-box}
     body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
-    .container{max-width:1280px; margin:0 auto; padding:32px 16px;}
+    .container{max-width:1200px; margin:0 auto; padding:32px 16px;}
     .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
     h1{margin:0 0 8px 0; font-size:24px}
     h2{margin:0 0 16px 0; font-size:20px}
@@ -93,6 +93,11 @@
     .top-header-actions{display:flex; gap:12px; align-items:center}
     .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
     .logout-btn:hover{background:rgba(255,255,255,0.05)}
+    .inbox-widget{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500;font-size:14px;text-decoration:none;display:inline-block;transition:all 0.2s ease}
+    .inbox-widget:hover{background:rgba(255,255,255,0.05)}
+    .inbox-widget.inbox-widget-has-unread{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:10px 18px;font-size:15px}
+    .inbox-widget.inbox-widget-has-unread:hover{background:#1a2028}
+    .inbox-count{color:var(--accent);font-weight:700}
     .tabs{display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
     .tab{padding:10px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
     .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
@@ -120,7 +125,14 @@
     .due-date-overdue{color:#f87171}
     .due-date-upcoming{color:var(--muted)}
     .due-date-settled{color:#9ca3af}
-    .status-dot{display:inline-block; width:15px; height:15px; border-radius:9999px; cursor:help; position:relative}
+    .status-indicator{width:24px;height:24px;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;margin:0 auto;cursor:help}
+    .status-indicator--active{background:#22c55e}
+    .status-indicator--pending{background:#facc15}
+    .status-indicator--settled{background:#9ca3af}
+    .status-indicator--overdue{background:#f87171}
+    .status-indicator--cancelled{background:#9ca3af}
+    .status-indicator--declined{background:#f87171}
+    .status-dot{display:inline-block; width:24px; height:24px; border-radius:9999px; cursor:help; position:relative}
     .status-dot--active{background:#22c55e}
     .status-dot--pending{background:#facc15}
     .status-dot--settled{background:#9ca3af}
@@ -144,7 +156,7 @@
       <div class="top-header-right">
         <div class="top-header-user-info" id="user-info-display">Loading...</div>
         <div class="top-header-actions">
-          <a href="/app" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">Activity</a>
+          <a href="/app" class="inbox-widget" id="activity-link">Activity</a>
           <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block; white-space:nowrap">My Profile</a>
           <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
@@ -575,6 +587,9 @@
           ? `${currentUser.full_name} | ${currentUser.email}`
           : currentUser.email;
         document.getElementById('user-info-display').textContent = displayText;
+
+        // Load activity count for header
+        loadActivityCount();
 
         // Fetch agreement
         const res = await fetch(`/api/agreements/${agreementId}`);
@@ -2105,6 +2120,32 @@
       } catch (err) {
         console.error('Logout error:', err);
         window.location.href = '/';
+      }
+    }
+
+    // Load activity count for header
+    async function loadActivityCount() {
+      try {
+        const res = await fetch('/api/activity');
+        if (res.ok) {
+          const data = await res.json();
+          const unreadCount = data.messages.filter(m => !m.read_at).length;
+          updateActivityButton(unreadCount);
+        }
+      } catch (err) {
+        console.error('Error loading activity count:', err);
+      }
+    }
+
+    // Update Activity button with unread count
+    function updateActivityButton(unreadCount) {
+      const activityLink = document.getElementById('activity-link');
+      if (unreadCount > 0) {
+        activityLink.innerHTML = `Activity (<span class="inbox-count">${unreadCount}</span>)`;
+        activityLink.classList.add('inbox-widget-has-unread');
+      } else {
+        activityLink.textContent = 'Activity';
+        activityLink.classList.remove('inbox-widget-has-unread');
       }
     }
 
