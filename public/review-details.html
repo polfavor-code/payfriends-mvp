@@ -113,7 +113,7 @@
         <div class="top-header-user-info" id="user-info-display">Loading...</div>
         <div class="top-header-actions">
           <a href="/app" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">Activity</a>
-          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
+          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block; white-space:nowrap">My Profile</a>
           <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
       </div>
@@ -137,6 +137,15 @@
           <p id="agreement-summary-line2" style="margin:0; font-size:16px; line-height:1.6; color:var(--text)"></p>
         </div>
       </div>
+    </div>
+
+    <!-- Manage agreement header (for view mode) -->
+    <div id="manage-header" class="hidden" style="margin:16px 0">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px">
+        <h2 style="margin:0; font-size:24px">Manage agreement</h2>
+        <a href="/app" style="color:var(--accent); text-decoration:none; font-size:14px; font-weight:500">← Back to list</a>
+      </div>
+      <p id="manage-subline" style="margin:8px 0 0 0; font-size:16px; color:var(--muted)"></p>
     </div>
 
     <!-- Primary payment action button (for active agreements) - moved up -->
@@ -551,6 +560,12 @@
       document.getElementById('loading-text').parentElement.classList.add('hidden');
       document.getElementById('details-section').classList.remove('hidden');
       document.getElementById('page-title').textContent = 'Agreement Details';
+
+      // Show and populate manage header
+      const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+      const description = agreement.description || 'Agreement';
+      document.getElementById('manage-subline').textContent = `${description} · ${borrowerName}`;
+      document.getElementById('manage-header').classList.remove('hidden');
 
       populateDetails();
 
@@ -1757,8 +1772,9 @@
           });
 
           // Invite sent info
+          const emailPart = borrowerEmail ? ` at <strong style="color:var(--text)">${borrowerEmail}</strong>` : '';
           html += `<div>
-            <div style="color:var(--muted); font-size:14px">Invite sent to <strong style="color:var(--text)">${borrowerName}</strong> at <strong style="color:var(--text)">${borrowerEmail}</strong> on ${createdDate}.</div>
+            <div style="color:var(--muted); font-size:14px">Invite sent to <strong style="color:var(--text)">${borrowerName}</strong>${emailPart} on ${createdDate}.</div>
           </div>`;
 
           // Share link
