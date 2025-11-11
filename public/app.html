@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — My Agreements</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -152,27 +154,7 @@
 </head>
 <body>
   <main class="container">
-    <header class="top-header">
-      <div class="top-header-left">
-        <a href="/app" style="text-decoration:none; display:flex; align-items:center; gap:12px">
-          <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
-          <div class="top-header-text">
-            <div class="app-name" style="color:var(--text)">PayFriends.app</div>
-            <div class="app-slogan">Pay friends, stay friends</div>
-          </div>
-        </a>
-      </div>
-      <div class="top-header-right">
-        <div class="top-header-user-info" id="user-info-display">Loading...</div>
-        <div class="top-header-actions">
-          <div class="inbox-widget" onclick="toggleActivity()">
-            Activity (<span class="inbox-count" id="activity-count">0</span>)
-          </div>
-          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block; white-space:nowrap">My Profile</a>
-          <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
-      </div>
-    </header>
+    <!-- Header will be loaded dynamically by header.js -->
 
     <!-- Activity section (initially hidden) -->
     <section class="card" id="activity-section" style="display:none">
@@ -2650,38 +2632,23 @@
       document.getElementById('new-agreement-btn').style.display = 'flex';
     }
 
-    // Fetch current user
+    // Fetch current user (now handled by shared header, but we still need to set currentUser)
     async function loadUser() {
       try {
-        const res = await fetch('/api/user');
-        if (!res.ok) {
+        // Get user from shared header (already loaded)
+        currentUser = PayFriendsHeader.getCurrentUser();
+
+        if (!currentUser) {
           window.location.href = '/';
           return;
         }
-        const data = await res.json();
-        currentUser = data.user;
-
-        // Display full name and email, or just email if full_name is not set
-        const displayText = currentUser.full_name
-          ? `${currentUser.full_name} | ${currentUser.email}`
-          : currentUser.email;
-        document.getElementById('user-info-display').textContent = displayText;
       } catch (err) {
         console.error('Error loading user:', err);
         window.location.href = '/';
       }
     }
 
-    // Logout
-    async function logout() {
-      try {
-        await fetch('/auth/logout', { method: 'POST' });
-        window.location.href = '/';
-      } catch (err) {
-        console.error('Logout error:', err);
-        window.location.href = '/';
-      }
-    }
+    // Note: Logout is now handled by shared header.js
 
     // Toggle activity visibility
     function toggleActivity() {
@@ -2698,14 +2665,9 @@
         const messages = data.messages || [];
         const unreadCount = data.unread_count || 0;
 
-        // Update header with unread count
-        const activityWidget = document.querySelector('.inbox-widget');
-        if (unreadCount > 0) {
-          activityWidget.innerHTML = `Activity (<span class="inbox-count" id="activity-count">${unreadCount}</span>)`;
-          activityWidget.classList.add('inbox-widget-has-unread');
-        } else {
-          activityWidget.innerHTML = 'Activity';
-          activityWidget.classList.remove('inbox-widget-has-unread');
+        // Update header with unread count using shared header function
+        if (window.PayFriendsHeader) {
+          PayFriendsHeader.updateActivityButton(unreadCount);
         }
 
         const activityList = document.getElementById('activity-list');
@@ -3230,11 +3192,20 @@
       document.getElementById('difficulty-modal').style.display = 'none';
     }
 
-    // Initialize
-    loadUser();
-    refresh();
-    loadMessages();
-    goToStep(1);
+    // Initialize with shared header
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Initialize shared header with custom activity button handler
+      await PayFriendsHeader.initialize({
+        hasActivitySection: true,
+        onActivityClick: toggleActivity
+      });
+
+      // Load user and other data
+      loadUser();
+      refresh();
+      loadMessages();
+      goToStep(1);
+    });
   </script>
 </body>
 </html>

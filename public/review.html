@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — Review Agreement</title>
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -62,26 +64,8 @@
 <body>
   <!-- Header (shown only when logged in for review) -->
   <div id="logged-in-header" class="hidden">
-    <div class="container">
-      <header class="top-header">
-        <div class="top-header-left">
-          <a href="/app" style="text-decoration:none; display:flex; align-items:center; gap:12px">
-            <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
-            <div class="top-header-text">
-              <div class="app-name" style="color:var(--text)">PayFriends.app</div>
-              <div class="app-slogan">Pay friends, stay friends</div>
-            </div>
-          </a>
-        </div>
-        <div class="top-header-right">
-          <div class="top-header-user-info" id="user-info-display">Loading...</div>
-          <div class="top-header-actions">
-            <a href="/app" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">Activity</a>
-            <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block; white-space:nowrap">My Profile</a>
-            <button class="logout-btn" onclick="logout()">Logout</button>
-          </div>
-        </div>
-      </header>
+    <div class="container" id="review-header-container">
+      <!-- Header will be loaded dynamically by header.js when user is logged in -->
     </div>
   </div>
 
@@ -333,15 +317,45 @@
       }
     }
 
-    function showReviewSection() {
+    async function showReviewSection() {
       document.getElementById('loading-text').parentElement.classList.add('hidden');
       document.getElementById('review-section').classList.remove('hidden');
 
-      // Show header and populate user info
+      // Show header and load shared header component
       document.getElementById('logged-in-header').classList.remove('hidden');
-      if (currentUser) {
-        const userName = currentUser.full_name || currentUser.email;
-        document.getElementById('user-info-display').textContent = `${userName} | ${currentUser.email}`;
+
+      // Load the header HTML into the review container
+      try {
+        const response = await fetch('/components/header.html');
+        const headerHTML = await response.text();
+        document.getElementById('review-header-container').innerHTML = headerHTML;
+
+        // Now load user info and activity count using the shared header functions
+        if (window.PayFriendsHeader) {
+          const userInfoEl = document.getElementById('user-info-display');
+          if (currentUser && userInfoEl) {
+            const displayText = currentUser.full_name
+              ? `${currentUser.full_name} | ${currentUser.email}`
+              : currentUser.email;
+            userInfoEl.textContent = displayText;
+          }
+
+          // Load activity count
+          await PayFriendsHeader.refreshActivityCount();
+
+          // Set up event listeners
+          const logoutBtn = document.getElementById('logout-btn');
+          if (logoutBtn) {
+            logoutBtn.addEventListener('click', logout);
+          }
+
+          const activityButton = document.getElementById('activity-button');
+          if (activityButton) {
+            activityButton.addEventListener('click', () => window.location.href = '/app');
+          }
+        }
+      } catch (err) {
+        console.error('Error loading header:', err);
       }
 
       const agreement = inviteData.agreement;
