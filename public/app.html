@@ -42,6 +42,13 @@
     .status-badge.settled{background:#3ddc97; color:#0d130f}
     .status-badge.declined{background:#ff6b6b; color:#fff}
     .status-badge.cancelled{background:#6c757d; color:#fff}
+    .status-text{font-size:14px; font-weight:400}
+    .status-text.active{color:#22c55e}
+    .status-text.pending{color:#facc15}
+    .status-text.overdue{color:#f87171}
+    .status-text.settled{color:#9ca3af}
+    .status-text.cancelled{color:#9ca3af}
+    .status-text.declined{color:#f87171}
     .actions-column{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; width:100%}
     .actions-column button{flex:0 0 auto; padding:8px 12px; font-size:13px; white-space:nowrap; width:auto}
     .btn-confirm-payment{background:#f97316; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px}
@@ -92,7 +99,10 @@
   <main class="container">
     <header class="header">
       <div class="header-left">
-        <h1><a href="/app" style="color:var(--text); text-decoration:none; cursor:pointer">PayFriends.app</a></h1>
+        <h1 style="display:flex; align-items:center; gap:10px; margin:0 0 4px 0">
+          <img src="/payfriends-logov2.png" alt="PayFriends Logo" style="height:36px; width:auto; vertical-align:middle" />
+          <a href="/app" style="color:var(--text); text-decoration:none; cursor:pointer">PayFriends.app</a>
+        </h1>
         <p class="user-email" id="user-email">Loading...</p>
       </div>
       <div class="header-right">
@@ -2168,8 +2178,8 @@
         const statusText = a.status || 'pending';
         const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
 
-        // Build status column with main badge only
-        let statusBadge = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
+        // Build status column with plain colored text (no badge)
+        let statusBadge = `<span class="status-text ${statusText}">${capitalizedStatus}</span>`;
 
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
