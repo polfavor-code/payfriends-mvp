@@ -295,7 +295,7 @@
             </div>
           </div>
 
-          <div id="one-time-estimate" style="color:var(--text); font-size:14px; margin:24px 0 12px 0; line-height:1.6"></div>
+          <div id="one-time-estimate" style="color:var(--accent); font-size:14px; font-weight:500; margin:32px 0 12px 0; line-height:1.6"></div>
         </div>
 
         <!-- Installment fields -->
@@ -330,7 +330,7 @@
             </div>
           </div>
 
-          <div id="installment-estimate" style="color:var(--text); font-size:14px; margin:24px 0 12px 0; line-height:1.6"></div>
+          <div id="installment-estimate" style="color:var(--accent); font-size:14px; font-weight:500; margin:32px 0 12px 0; line-height:1.6"></div>
         </div>
 
         <div style="margin-top:24px">
@@ -1476,6 +1476,13 @@
     function goToSummary() {
       // Get selected payment methods
       const selectedMethods = Array.from(document.querySelectorAll('.payment-method-checkbox:checked')).map(cb => cb.value);
+
+      // Validate at least one payment method is selected
+      if (selectedMethods.length === 0) {
+        document.getElementById('step4-status').textContent = 'Please select at least one payment method';
+        return;
+      }
+
       wizardData.paymentMethods = selectedMethods;
 
       // Get payment other description if "other" is selected
@@ -1877,9 +1884,9 @@
       status.textContent = 'Creating agreement...';
 
       try {
-        // Send the first payment method for backwards compatibility
-        const primaryPaymentMethod = wizardData.paymentMethods && wizardData.paymentMethods.length > 0
-          ? wizardData.paymentMethods[0]
+        // Send all selected payment methods as comma-separated string
+        const paymentMethodsStr = wizardData.paymentMethods && wizardData.paymentMethods.length > 0
+          ? wizardData.paymentMethods.join(',')
           : 'bank';
 
         const payload = {
@@ -1894,7 +1901,7 @@
           interestRate: wizardData.interestRate,
           totalInterest: wizardData.totalInterest,
           totalRepayAmount: wizardData.totalRepayAmount,
-          paymentPreferenceMethod: primaryPaymentMethod,
+          paymentPreferenceMethod: paymentMethodsStr,
           paymentOtherDescription: wizardData.paymentOtherDescription,
           reminderMode: wizardData.reminderMode,
           reminderOffsets: wizardData.reminderOffsets,
