@@ -58,19 +58,113 @@
     .user-avatar-initials.color-6{background:#8b5cf6;color:#fff}
     .user-avatar-initials.color-7{background:#14b8a6;color:#fff}
 
-    /* intl-tel-input custom dark theme styling */
-    .iti{width:100%}
-    .iti__input{width:100%;padding:12px 12px 12px 52px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:#10151d;color:var(--text);font-size:15px}
-    .iti__selected-flag{padding:12px;background:transparent;border-right:1px solid rgba(255,255,255,0.08)}
-    .iti__flag-container{border-radius:10px 0 0 10px}
-    .iti__dropdown{background:var(--card);border:1px solid rgba(255,255,255,0.12);border-radius:10px;margin-top:4px;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
-    .iti__country{padding:8px 12px;color:var(--text)}
-    .iti__country:hover{background:rgba(255,255,255,0.08)}
-    .iti__selected-country{background:rgba(61,220,151,0.15)}
-    .iti__search-input{width:calc(100% - 24px);margin:8px 12px;padding:8px;background:#10151d;border:1px solid rgba(255,255,255,0.08);color:var(--text);border-radius:6px}
-    .iti__dial-code{color:var(--muted)}
-    .iti__country-name{color:var(--text)}
-    .iti__divider{border-bottom:1px solid rgba(255,255,255,0.08)}
+    /* intl-tel-input custom dark theme styling - scoped with .pf-phone-input wrapper */
+    .pf-phone-input .iti{width:100%}
+
+    /* Input field */
+    .pf-phone-input .iti__input{
+      width:100%;
+      padding:12px 12px 12px 52px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.08);
+      background:#10151d;
+      color:var(--text);
+      font-family:"Inter", system-ui, -apple-system, sans-serif;
+      font-size:15px;
+    }
+
+    /* Flag container */
+    .pf-phone-input .iti__flag-container{
+      background:#111;
+      border-right:1px solid rgba(255,255,255,0.06);
+      border-radius:10px 0 0 10px;
+    }
+    .pf-phone-input .iti__selected-flag{
+      padding:0 10px;
+      background:transparent;
+    }
+
+    /* Dropdown container */
+    .pf-phone-input .iti__dropdown,
+    .pf-phone-input .iti__country-list{
+      background:#111;
+      color:#f3f3f3;
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:8px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.6);
+      width:100%;
+      max-height:260px;
+      padding-top:4px;
+      padding-bottom:4px;
+      overflow-y:auto;
+      z-index:1000;
+      margin-top:4px;
+    }
+
+    /* Search input */
+    .pf-phone-input .iti__search-input{
+      background:#1a1a1a;
+      border:1px solid rgba(255,255,255,0.16);
+      color:#ffffff;
+      border-radius:6px;
+      padding:8px 10px;
+      font-size:14px;
+      margin:6px 10px 8px;
+      width:calc(100% - 20px);
+    }
+    .pf-phone-input .iti__search-input::placeholder{
+      color:rgba(255,255,255,0.5);
+    }
+    .pf-phone-input .iti__search-input:focus{
+      outline:none;
+      border-color:rgba(61,220,151,0.4);
+    }
+
+    /* Country rows */
+    .pf-phone-input .iti__country{
+      padding:7px 12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:14px;
+      color:#f3f3f3;
+      border-left:3px solid transparent;
+      transition:all 0.1s ease;
+    }
+
+    /* Hover and keyboard focus (highlight) */
+    .pf-phone-input .iti__country.iti__highlight{
+      background:rgba(61,220,151,0.10);
+      border-left:3px solid #3ddc97;
+      cursor:pointer;
+    }
+
+    /* Currently selected/active entry */
+    .pf-phone-input .iti__country.iti__active{
+      background:rgba(61,220,151,0.06);
+    }
+
+    /* Text colors */
+    .pf-phone-input .iti__dial-code{color:rgba(255,255,255,0.6)}
+    .pf-phone-input .iti__country-name{color:#f3f3f3}
+
+    /* Divider */
+    .pf-phone-input .iti__divider{border-bottom:1px solid rgba(255,255,255,0.08)}
+
+    /* Custom scrollbar */
+    .pf-phone-input .iti__country-list::-webkit-scrollbar{
+      width:6px;
+      background:transparent;
+    }
+    .pf-phone-input .iti__country-list::-webkit-scrollbar-thumb{
+      background:#333;
+      border-radius:4px;
+    }
+    .pf-phone-input .iti__country-list::-webkit-scrollbar-thumb:hover{
+      background:#444;
+    }
+
+    /* Phone error message */
     .phone-error{color:#ff6b6b;font-size:13px;margin-top:4px;display:none}
 
     /* Profile header with avatar */
@@ -124,7 +218,7 @@
           <label>Email</label>
           <input id="email" type="email" disabled />
         </div>
-        <div class="row">
+        <div class="row pf-phone-input">
           <label>Phone number</label>
           <input id="phone-number" type="tel" placeholder="+34 600 123 456" required />
           <div id="phone-error" class="phone-error">Please enter a valid phone number.</div>
