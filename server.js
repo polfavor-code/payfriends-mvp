@@ -155,6 +155,13 @@ try {
   // Column already exists, ignore
 }
 
+// Add phone_number column to users if it doesn't exist (for existing databases)
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN phone_number TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // Add installment and interest fields to agreements if they don't exist (for existing databases)
 try {
   db.exec(`ALTER TABLE agreements ADD COLUMN installment_count INTEGER;`);
@@ -321,7 +328,7 @@ app.use((req, res, next) => {
 
   try {
     const session = db.prepare(`
-      SELECT s.*, u.email, u.id as user_id, u.full_name, u.profile_picture
+      SELECT s.*, u.email, u.id as user_id, u.full_name, u.profile_picture, u.phone_number
       FROM sessions s
       JOIN users u ON s.user_id = u.id
       WHERE s.id = ? AND s.expires_at > datetime('now')
@@ -332,7 +339,8 @@ app.use((req, res, next) => {
         id: session.user_id,
         email: session.email,
         full_name: session.full_name,
-        profile_picture: session.profile_picture
+        profile_picture: session.profile_picture,
+        phone_number: session.phone_number
       };
     }
   } catch (err) {
@@ -443,10 +451,19 @@ function autoLinkPendingAgreements(userId, userEmail, userFullName) {
 
 // Signup
 app.post('/auth/signup', async (req, res) => {
-  const { email, password, fullName } = req.body || {};
+  const { email, password, fullName, phoneNumber } = req.body || {};
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  if (!phoneNumber) {
+    return res.status(400).json({ error: 'Phone number is required' });
+  }
+
+  // Basic phone validation: must contain at least some digits
+  if (!/\d/.test(phoneNumber)) {
+    return res.status(400).json({ error: 'Phone number must contain at least one digit' });
   }
 
   if (!isValidEmail(email)) {
@@ -470,9 +487,9 @@ app.post('/auth/signup', async (req, res) => {
 
     // Create user
     const result = db.prepare(`
-      INSERT INTO users (email, password_hash, created_at, full_name)
-      VALUES (?, ?, ?, ?)
-    `).run(email, passwordHash, createdAt, fullName || null);
+      INSERT INTO users (email, password_hash, created_at, full_name, phone_number)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(email, passwordHash, createdAt, fullName || null, phoneNumber || null);
 
     const userId = result.lastInsertRowid;
 
@@ -564,15 +581,23 @@ app.get('/api/user', requireAuth, (req, res) => {
 
 // Update user profile
 app.post('/api/profile', requireAuth, (req, res) => {
-  const { fullName } = req.body || {};
+  const { fullName, phoneNumber } = req.body || {};
 
   if (!fullName || !fullName.trim()) {
     return res.status(400).json({ error: 'Full name is required' });
   }
 
+  // Phone number validation if provided
+  if (phoneNumber !== undefined && phoneNumber !== null && phoneNumber !== '') {
+    if (!/\d/.test(phoneNumber)) {
+      return res.status(400).json({ error: 'Phone number must contain at least one digit' });
+    }
+  }
+
   try {
-    db.prepare('UPDATE users SET full_name = ? WHERE id = ?').run(fullName.trim(), req.user.id);
-    res.json({ success: true, full_name: fullName.trim() });
+    db.prepare('UPDATE users SET full_name = ?, phone_number = ? WHERE id = ?')
+      .run(fullName.trim(), phoneNumber || null, req.user.id);
+    res.json({ success: true, full_name: fullName.trim(), phone_number: phoneNumber || null });
   } catch (err) {
     console.error('Error updating profile:', err);
     res.status(500).json({ error: 'Server error updating profile' });
