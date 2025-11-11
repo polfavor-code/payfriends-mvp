@@ -84,11 +84,13 @@
     #proof-modal-download:hover{background:#3a3a3a; border-color:rgba(255,255,255,0.25)}
     .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
     .top-header-left{display:flex; align-items:center; gap:12px}
-    .top-header-right{display:flex; gap:16px; align-items:center}
+    .top-header-right{display:flex; gap:16px; align-items:center; flex-direction:column}
     .logo-coin{height:54px; width:auto}
     .top-header-text{display:flex; flex-direction:column; gap:2px}
     .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
     .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
+    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
+    .top-header-user-info{display:flex; align-items:center; gap:12px; margin-bottom:8px}
     .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
     .logout-btn:hover{background:rgba(255,255,255,0.05)}
   </style>
@@ -97,15 +99,22 @@
   <div class="container">
     <header class="top-header">
       <div class="top-header-left">
-        <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
-        <div class="top-header-text">
-          <div class="app-name"><a href="/app" style="color:var(--text); text-decoration:none; cursor:pointer">PayFriends.app</a></div>
-          <div class="user-meta" id="user-email">Loading...</div>
-        </div>
+        <a href="/app" style="text-decoration:none; display:flex; align-items:center; gap:12px">
+          <img src="/images/payfriends-logo.svg" class="logo-coin" alt="PayFriends logo" />
+          <div class="top-header-text">
+            <div class="app-name" style="color:var(--text)">PayFriends.app</div>
+            <div class="app-slogan">Pay friends, stay friends.</div>
+          </div>
+        </a>
       </div>
       <div class="top-header-right">
-        <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
-        <button class="logout-btn" onclick="logout()">Logout</button>
+        <div class="top-header-user-info">
+          <div class="user-meta" id="user-email">Loading...</div>
+        </div>
+        <div style="display:flex; gap:16px; align-items:center">
+          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
       </div>
     </header>
 
@@ -166,7 +175,7 @@
           <span class="detail-value" id="money-sent-display"></span>
         </div>
         <div class="detail-row" id="repayment-type-row">
-          <span class="detail-label">Repayment type</span>
+          <span class="detail-label">Payment type</span>
           <span class="detail-value" id="repayment-type-display"></span>
         </div>
         <div class="detail-row" id="installment-info-row" style="display:none">
@@ -1368,7 +1377,7 @@
       // Validate proof of payment if required
       const isBorrower = agreement.borrower_user_id === currentUser.id;
       if (isBorrower && agreement.proof_required && !proofFile) {
-        status.textContent = 'This agreement requires proof of payment. Please upload a photo, screenshot, scan or PDF of your transfer before submitting.';
+        status.textContent = 'This agreement requires a proof of payment (photo, scan, or PDF) with each report.';
         status.className = 'status error';
         return;
       }
