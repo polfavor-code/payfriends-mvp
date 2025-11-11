@@ -82,11 +82,32 @@
     .form-section{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:24px}
     .form-section-title{font-size:16px; font-weight:600; color:var(--text); margin-bottom:12px}
     #proof-modal-download:hover{background:#3a3a3a; border-color:rgba(255,255,255,0.25)}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; gap:16px; align-items:center}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
+    .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
+    .logout-btn:hover{background:rgba(255,255,255,0.05)}
   </style>
 </head>
 <body>
   <div class="container">
-    <a href="/app" class="back-link">← Back to Dashboard</a>
+    <header class="top-header">
+      <div class="top-header-left">
+        <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
+        <div class="top-header-text">
+          <div class="app-name"><a href="/app" style="color:var(--text); text-decoration:none; cursor:pointer">PayFriends.app</a></div>
+          <div class="user-meta" id="user-email">Loading...</div>
+        </div>
+      </div>
+      <div class="top-header-right">
+        <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
 
     <div class="card">
       <h1 id="page-title">Agreement Details</h1>
@@ -265,8 +286,8 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="payment-method">Payment method (optional)</label>
-        <select id="payment-method" style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+        <label class="form-label" for="payment-method">Payment method*</label>
+        <select id="payment-method" required style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
           <option value="">Select method...</option>
           <option value="cash">Cash</option>
           <option value="bank">Bank transfer</option>
@@ -444,6 +465,12 @@
         }
         const userData = await userRes.json();
         currentUser = userData.user;
+
+        // Display user info in header
+        const displayText = currentUser.full_name
+          ? `${currentUser.full_name} | ${currentUser.email}`
+          : currentUser.email;
+        document.getElementById('user-email').textContent = displayText;
 
         // Fetch agreement
         const res = await fetch(`/api/agreements/${agreementId}`);
@@ -1189,24 +1216,96 @@
       const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
 
+      const proofInput = document.getElementById('payment-proof');
+      const proofLabel = proofSection.querySelector('.form-label');
+      const proofHelper = proofSection.querySelector('p');
+
       if (isBorrower) {
         formHeader.textContent = 'Report a payment';
         formSubtitle.textContent = `Confirm your payment to ${lenderName}.`;
         submitBtn.textContent = 'Report Payment';
         // Show proof upload for borrowers
         proofSection.style.display = 'block';
+
+        // Set proof requirement based on agreement
+        if (agreement.proof_required) {
+          proofLabel.textContent = 'Proof of payment*';
+          proofHelper.textContent = 'Upload a photo, screenshot, scan or PDF of your transfer. Required for this agreement.';
+          proofInput.required = true;
+        } else {
+          proofLabel.textContent = 'Proof of payment (optional)';
+          proofHelper.textContent = 'Upload a screenshot, photo, or PDF of your payment if you have it.';
+          proofInput.required = false;
+        }
       } else if (isLender) {
         formHeader.textContent = 'Add Received Payment';
         formSubtitle.textContent = `Confirm a payment from ${borrowerName}.`;
         submitBtn.textContent = 'Add Payment';
         // Hide proof upload for lenders
         proofSection.style.display = 'none';
+        proofInput.required = false;
       } else {
         formHeader.textContent = 'Report a payment';
         formSubtitle.textContent = 'Record a payment that has been made for this agreement.';
         submitBtn.textContent = 'Report Payment';
         // Hide proof upload by default
         proofSection.style.display = 'none';
+        proofInput.required = false;
+      }
+
+      // Populate payment method dropdown with only allowed methods
+      const paymentMethodSelect = document.getElementById('payment-method');
+      const allowedMethods = agreement.payment_preference_method
+        ? agreement.payment_preference_method.split(',').map(m => m.trim())
+        : [];
+
+      // Clear existing options
+      paymentMethodSelect.innerHTML = '';
+
+      // Map method values to display names
+      const methodNames = {
+        'bank': 'Bank transfer',
+        'cash': 'Cash',
+        'paypal': 'PayPal / mobile payment',
+        'crypto': 'Crypto',
+        'other': 'Other',
+        'any': 'Any method'
+      };
+
+      // If only one method allowed, auto-select it
+      if (allowedMethods.length === 1) {
+        const method = allowedMethods[0];
+        const option = document.createElement('option');
+        option.value = method;
+        option.textContent = methodNames[method] || method;
+        option.selected = true;
+        paymentMethodSelect.appendChild(option);
+      } else if (allowedMethods.length > 1) {
+        // Multiple methods: add a placeholder and all allowed methods
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select method...';
+        paymentMethodSelect.appendChild(placeholder);
+
+        allowedMethods.forEach(method => {
+          const option = document.createElement('option');
+          option.value = method;
+          option.textContent = methodNames[method] || method;
+          paymentMethodSelect.appendChild(option);
+        });
+      } else {
+        // No methods specified, show all
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select method...';
+        paymentMethodSelect.appendChild(placeholder);
+
+        ['cash', 'bank', 'paypal', 'crypto', 'other'].forEach(method => {
+          const option = document.createElement('option');
+          option.value = method;
+          option.textContent = methodNames[method];
+          paymentMethodSelect.appendChild(option);
+        });
       }
 
       document.getElementById('details-section').classList.add('hidden');
@@ -1244,6 +1343,21 @@
       // Validate amount
       if (!amount || amount <= 0) {
         status.textContent = 'Please enter a valid amount';
+        status.className = 'status error';
+        return;
+      }
+
+      // Validate payment method
+      if (!method) {
+        status.textContent = 'Please select a payment method';
+        status.className = 'status error';
+        return;
+      }
+
+      // Validate proof of payment if required
+      const isBorrower = agreement.borrower_user_id === currentUser.id;
+      if (isBorrower && agreement.proof_required && !proofFile) {
+        status.textContent = 'This agreement requires proof of payment. Please upload a photo, screenshot, scan or PDF of your transfer before submitting.';
         status.className = 'status error';
         return;
       }
@@ -1531,10 +1645,12 @@
       </div>`;
 
       // Proof required
-      const proofRequired = agreement.proof_required ? 'Yes - you\'ll be asked for proof when reporting payments' : 'No';
+      const proofText = agreement.proof_required
+        ? 'The borrower must upload proof of payment (photo, screenshot, scan or PDF) with every reported payment.'
+        : 'Not required — borrower can report payments without uploading proof.';
       html += `<div>
         <div style="font-weight:600; margin-bottom:6px; font-size:14px">Proof of payment:</div>
-        <div style="color:var(--muted); font-size:14px">${proofRequired}</div>
+        <div style="color:var(--muted); font-size:14px; line-height:1.5">${proofText}</div>
       </div>`;
 
       // Reminder mode
@@ -1553,15 +1669,26 @@
 
       // Worst case scenario (debt collection clause)
       const worstCaseText = agreement.debt_collection_clause
-        ? 'Enabled — case may be transferred to an independent debt-collection partner if repayment fails.'
-        : 'Disabled — debt-collection partner not enabled.';
+        ? 'Enabled — If the borrower does not repay, does not propose a new plan, or cannot reach an agreement with the lender, both parties agree that the case may be handed over to an independent debt collector registered in accordance with local law. Any collection fees are for the borrower\'s account.'
+        : 'Disabled — Debt collection clause not enabled.';
       html += `<div>
         <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>
-        <div style="color:var(--muted); font-size:14px">${worstCaseText}</div>
+        <div style="color:var(--muted); font-size:14px; line-height:1.5">${worstCaseText}</div>
       </div>`;
 
       html += '</div>';
       content.innerHTML = html;
+    }
+
+    // Logout
+    async function logout() {
+      try {
+        await fetch('/auth/logout', { method: 'POST' });
+        window.location.href = '/';
+      } catch (err) {
+        console.error('Logout error:', err);
+        window.location.href = '/';
+      }
     }
 
     // Initialize

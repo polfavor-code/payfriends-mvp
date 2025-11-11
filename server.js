@@ -804,24 +804,7 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Amount must be a positive number.' });
   }
 
-  // Validate due date is not in the past
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dueDateObj = new Date(dueDate);
-  dueDateObj.setHours(0, 0, 0, 0);
-
-  if (dueDateObj < today) {
-    return res.status(400).json({ error: 'Due date cannot be in the past.' });
-  }
-
-  // For installments, validate first payment date
-  if (repaymentType === 'installments' && firstPaymentDate) {
-    const firstPaymentObj = new Date(firstPaymentDate);
-    firstPaymentObj.setHours(0, 0, 0, 0);
-    if (firstPaymentObj < today) {
-      return res.status(400).json({ error: 'First payment date cannot be in the past.' });
-    }
-  }
+  // Allow past dates for existing loans (no validation needed)
 
   const createdAt = new Date().toISOString();
 
