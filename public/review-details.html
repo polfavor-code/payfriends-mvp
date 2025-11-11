@@ -112,6 +112,7 @@
     .user-avatar.size-small{width:22px; height:22px; font-size:10px; font-weight:600; margin-right:8px}
     .user-avatar.size-medium{width:48px; height:48px; font-size:18px; font-weight:600}
     .user-avatar.size-large{width:60px; height:60px; font-size:22px; font-weight:600; margin-right:16px}
+    .user-avatar.size-xl{width:110px; height:110px; font-size:36px; font-weight:600; margin-right:20px}
     .user-avatar-image{width:100%; height:100%; object-fit:cover}
     .user-avatar-initials{width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; text-transform:uppercase}
     .user-avatar-initials.color-1{background:#6366f1}
@@ -125,20 +126,21 @@
     .due-date-overdue{color:#f87171}
     .due-date-upcoming{color:var(--muted)}
     .due-date-settled{color:#9ca3af}
-    .status-indicator{width:24px;height:24px;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;margin:0 auto;cursor:help}
+    .status-indicator{width:22px;height:22px;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;margin:0 auto;cursor:help}
     .status-indicator--active{background:#22c55e}
     .status-indicator--pending{background:#facc15}
     .status-indicator--settled{background:#9ca3af}
     .status-indicator--overdue{background:#f87171}
     .status-indicator--cancelled{background:#9ca3af}
     .status-indicator--declined{background:#f87171}
-    .status-dot{display:inline-block; width:24px; height:24px; border-radius:9999px; cursor:help; position:relative}
+    .status-dot{display:inline-block; width:22px; height:22px; border-radius:9999px; cursor:help; position:relative}
     .status-dot--active{background:#22c55e}
     .status-dot--pending{background:#facc15}
     .status-dot--settled{background:#9ca3af}
     .status-dot--overdue{background:#f87171}
     .status-dot--cancelled{background:#9ca3af}
     .status-dot--declined{background:#f87171}
+    .status-cell{display:flex;align-items:center;justify-content:center}
   </style>
 </head>
 <body>
@@ -191,6 +193,12 @@
       </table>
       <div id="empty-state" class="empty-state" style="display:none">
         No agreements found for this filter.
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-top:16px">
+        <button onclick="window.location.href='/app'" style="display:flex; align-items:center; gap:8px; padding:12px 20px; width:auto">
+          <span style="font-size:18px; font-weight:bold">+</span>
+          <span>New Agreement</span>
+        </button>
       </div>
     </section>
 
@@ -760,11 +768,11 @@
       // Create and insert borrower avatar (always show borrower)
       let avatarHtml = '';
       if (agreement.borrower_profile_picture && agreement.borrower_user_id) {
-        avatarHtml = `<div class="user-avatar size-large"><img src="/api/profile/picture/${agreement.borrower_user_id}" class="user-avatar-image" /></div>`;
+        avatarHtml = `<div class="user-avatar size-xl"><img src="/api/profile/picture/${agreement.borrower_user_id}" class="user-avatar-image" /></div>`;
       } else {
         const initials = getInitials(borrowerName);
         const colorClass = getAvatarColor(borrowerName);
-        avatarHtml = `<div class="user-avatar size-large"><div class="user-avatar-initials ${colorClass}">${initials}</div></div>`;
+        avatarHtml = `<div class="user-avatar size-xl"><div class="user-avatar-initials ${colorClass}">${initials}</div></div>`;
       }
       document.getElementById('summary-avatar').innerHTML = avatarHtml;
 
@@ -2066,11 +2074,15 @@
         const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
         let tooltipText = capitalizedStatus;
         if (statusText === 'pending') {
-          tooltipText = 'Pending review by borrower';
+          tooltipText = 'Pending';
         } else if (statusText === 'active') {
           tooltipText = 'Active';
         } else if (statusText === 'settled') {
           tooltipText = 'Settled';
+        } else if (statusText === 'cancelled') {
+          tooltipText = 'Cancelled';
+        } else if (statusText === 'declined') {
+          tooltipText = 'Declined';
         }
         let statusHtml = `<span class="status-dot status-dot--${statusText}" role="img" aria-label="${capitalizedStatus}" title="${tooltipText}"></span>`;
 
@@ -2093,7 +2105,7 @@
           <td>${description}</td>
           <td title="Original amount: € ${originalAmount}">€ ${outstanding} / € ${originalAmount}</td>
           <td class="${dueDateClass}">${dueDate}</td>
-          <td>${statusHtml}</td>
+          <td class="status-cell">${statusHtml}</td>
           <td>
             <div class="actions-column">
               ${actionsHtml}
