@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — My Agreements</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -126,7 +127,7 @@
     <header class="top-header">
       <div class="top-header-left">
         <a href="/app" style="text-decoration:none; display:flex; align-items:center; gap:12px">
-          <img src="/images/payfriends-logo.svg" class="logo-coin" alt="PayFriends logo" />
+          <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
           <div class="top-header-text">
             <div class="app-name" style="color:var(--text)">PayFriends.app</div>
             <div class="app-slogan">Pay friends, stay friends.</div>
@@ -208,10 +209,14 @@
         <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)">3. Interest</div>
         <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)">4. Payments</div>
         <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)">5. Summary</div>
+        <div class="wizard-step" id="step-indicator-6" onclick="clickStep(6)">6. Share</div>
       </div>
 
       <!-- Step 1: Setup -->
       <div id="wizard-step-1" class="wizard-content">
+        <div id="readonly-banner-1" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
+          ⚠️ This agreement has already been sent to <span id="readonly-name-1"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
+        </div>
         <h3 style="margin-top:0">Let's set up your agreement.</h3>
         <p style="color:var(--muted); font-size:14px; margin:-6px 0 20px 0">Start by choosing what you want to do.</p>
 
@@ -260,6 +265,9 @@
 
       <!-- Step 2: Terms -->
       <div id="wizard-step-2" class="wizard-content hidden">
+        <div id="readonly-banner-2" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
+          ⚠️ This agreement has already been sent to <span id="readonly-name-2"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
+        </div>
         <h3 style="margin-top:0">Define the loan terms.</h3>
 
         <div class="row">
@@ -365,6 +373,9 @@
 
       <!-- Step 3: Interest & Calculation -->
       <div id="wizard-step-3" class="wizard-content hidden">
+        <div id="readonly-banner-3" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
+          ⚠️ This agreement has already been sent to <span id="readonly-name-3"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
+        </div>
         <h3 style="margin-top:0">Interest & payment calculation</h3>
 
         <div class="row" style="margin-top:20px">
@@ -440,6 +451,9 @@
 
       <!-- Step 4: Payments & Reminders -->
       <div id="wizard-step-4" class="wizard-content hidden">
+        <div id="readonly-banner-4" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
+          ⚠️ This agreement has already been sent to <span id="readonly-name-4"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
+        </div>
         <h3 style="margin-top:0">Decide how repayments will be made and managed.</h3>
 
         <!-- Payment methods -->
@@ -558,11 +572,14 @@
 
       <!-- Step 5: Summary -->
       <div id="wizard-step-5" class="wizard-content hidden">
+        <div id="readonly-banner-5" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
+          ⚠️ This agreement has already been sent to <span id="readonly-name-5"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
+        </div>
         <h3 style="margin-top:0">Review and send your agreement.</h3>
 
         <!-- Summary text at top -->
         <div style="background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px; padding:20px; margin:20px 0">
-          <p id="full-summary-text" style="margin:0; color:var(--text); font-size:15px; line-height:1.8"></p>
+          <p id="full-summary-text" style="margin:0; color:var(--accent); font-size:15px; line-height:1.8"></p>
         </div>
 
         <!-- General details table -->
@@ -612,6 +629,62 @@
 
         <p id="step5-status" class="status"></p>
       </div>
+
+      <!-- Step 6: Share -->
+      <div id="wizard-step-6" class="wizard-content hidden">
+        <h3 style="margin-top:0">Share this agreement with <span id="share-friend-name"></span></h3>
+
+        <!-- Success header -->
+        <div style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.25); border-radius:12px; padding:20px; margin:20px 0">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px">
+            <div style="font-size:28px; color:var(--accent)">✓</div>
+            <div>
+              <p style="margin:0; font-size:18px; font-weight:600; color:var(--accent)">Invite sent to <span id="share-invite-name"></span>.</p>
+              <p style="margin:4px 0 0 0; font-size:14px; color:var(--text)">We emailed a secure link to <span id="share-invite-email"></span> so <span id="share-invite-name2"></span> can review and accept this agreement.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Share link section -->
+        <div style="margin:24px 0">
+          <h4 style="margin:0 0 12px 0; font-size:16px">Share the invite link</h4>
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
+            <input id="share-link-input" type="text" readonly style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:monospace; font-size:13px" />
+            <button onclick="copyShareLink()" style="width:auto; white-space:nowrap; padding:10px 16px">Copy link</button>
+          </div>
+          <p style="color:var(--muted); font-size:13px; margin:0">You can paste this link into WhatsApp, Signal, email, or anywhere else you like.</p>
+        </div>
+
+        <!-- QR code section -->
+        <div style="margin:24px 0">
+          <h4 style="margin:0 0 12px 0; font-size:16px">Or let <span id="share-qr-name"></span> scan this QR code</h4>
+          <div style="display:flex; justify-content:center; padding:20px; background:#fff; border-radius:12px; margin-bottom:8px">
+            <div id="qr-code-container"></div>
+          </div>
+          <p style="color:var(--muted); font-size:13px; margin:0; text-align:center">Scanning this code opens the agreement review page.</p>
+        </div>
+
+        <!-- Status/next steps box -->
+        <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; margin:24px 0">
+          <p style="margin:0 0 8px 0; font-size:14px">
+            <strong style="color:var(--accent)">Status: Pending</strong> — This agreement is waiting for <span id="share-status-name"></span>'s response.
+          </p>
+          <p style="margin:8px 0 0 0; font-size:13px; color:var(--muted)">
+            Once <span id="share-status-name2"></span> accepts, it will move to Active in your dashboard.
+          </p>
+          <p style="margin:16px 0 0 0; font-size:12px; color:var(--muted); padding-top:12px; border-top:1px solid rgba(255,255,255,0.06)">
+            Need to change something? Cancel this pending agreement from your dashboard and create a new one.
+          </p>
+        </div>
+
+        <!-- Buttons -->
+        <div style="margin-top:32px; display:flex; gap:12px">
+          <button onclick="goToDashboard()" style="flex:1">Go to My Agreements</button>
+          <button class="secondary" onclick="createAnotherAgreement()" style="flex:1">Create another agreement</button>
+        </div>
+
+        <p id="step6-status" class="status"></p>
+      </div>
     </section>
 
     <!-- Payment Confirmation Modal -->
@@ -653,6 +726,8 @@
       amount: '',
       repaymentType: 'one_time',
       dueDate: '',
+      moneySentDate: '',
+      moneySentOption: 'on-acceptance',
       // Installment fields
       planLength: null,
       planUnit: 'months',
@@ -672,7 +747,8 @@
       reminderOffsets: [-7, -1, 0, 1, 3],
       proofRequired: false,
       debtCollectionClause: false,
-      inviteUrl: ''
+      inviteUrl: '',
+      agreementSent: false
     };
 
     // Format amount in cents to euros with thousand separators, no decimals
@@ -831,7 +907,7 @@
     // Wizard functions
     function goToStep(step) {
       // Hide all steps
-      for (let i = 1; i <= 5; i++) {
+      for (let i = 1; i <= 6; i++) {
         document.getElementById(`wizard-step-${i}`).classList.add('hidden');
         document.getElementById(`step-indicator-${i}`).classList.remove('active');
       }
@@ -849,17 +925,67 @@
       if (step === 1) {
         toggleBorrowerFields();
       }
+
+      // Apply read-only mode if agreement has been sent
+      if (wizardData.agreementSent && step <= 5) {
+        applyReadOnlyMode(step);
+      }
+    }
+
+    function applyReadOnlyMode(step) {
+      // Show banner with borrower name
+      const banner = document.getElementById(`readonly-banner-${step}`);
+      const nameSpan = document.getElementById(`readonly-name-${step}`);
+      if (banner && nameSpan) {
+        nameSpan.textContent = wizardData.friendFirstName;
+        banner.classList.remove('hidden');
+      }
+
+      // Disable all inputs in the step
+      const stepDiv = document.getElementById(`wizard-step-${step}`);
+      if (stepDiv) {
+        const inputs = stepDiv.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+          input.disabled = true;
+          input.style.opacity = '0.6';
+          input.style.cursor = 'not-allowed';
+        });
+
+        // Disable all buttons except "Back" or navigation buttons
+        const buttons = stepDiv.querySelectorAll('button');
+        buttons.forEach(button => {
+          if (!button.classList.contains('secondary') && !button.textContent.includes('Back')) {
+            button.disabled = true;
+            button.style.opacity = '0.5';
+            button.style.cursor = 'not-allowed';
+          }
+        });
+      }
+
+      // Special handling for Step 5: hide the send button, show a message
+      if (step === 5) {
+        const inviteNotSent = document.getElementById('invite-not-sent');
+        if (inviteNotSent) {
+          inviteNotSent.classList.add('hidden');
+        }
+      }
     }
 
     // Handle step click with validation
     function clickStep(targetStep) {
       // Determine current step
       let currentStep = 1;
-      for (let i = 1; i <= 5; i++) {
+      for (let i = 1; i <= 6; i++) {
         if (!document.getElementById(`wizard-step-${i}`).classList.contains('hidden')) {
           currentStep = i;
           break;
         }
+      }
+
+      // If agreement has been sent, prevent forward navigation from steps 1-5
+      if (wizardData.agreementSent && targetStep <= 5) {
+        goToStep(targetStep);
+        return;
       }
 
       // Allow clicking back without validation
@@ -899,6 +1025,17 @@
         // Step 4 → 5: Navigate to summary
         if (currentStep === 4 && targetStep === 5) {
           goToSummary();
+          return;
+        }
+
+        // Step 5 → 6: Can only happen after sending (handled by sendInvite)
+        if (currentStep === 5 && targetStep === 6) {
+          return; // Prevent manual navigation to step 6
+        }
+
+        // Step 6 allows clicking back
+        if (currentStep === 6 && targetStep < 6) {
+          goToStep(targetStep);
           return;
         }
       }
@@ -1027,6 +1164,9 @@
       const customDateField = document.getElementById('custom-money-sent-date');
       const moneySentDateInput = document.getElementById('money-sent-date');
 
+      // Store the option for later use
+      wizardData.moneySentOption = option;
+
       if (option === 'custom') {
         customDateField.classList.remove('hidden');
       } else {
@@ -1038,7 +1178,7 @@
 
         if (option === 'on-acceptance') {
           // Store a special value, will be resolved later
-          wizardData.moneySentOption = 'on-acceptance';
+          wizardData.moneySentDate = 'on-acceptance';
           return;
         } else if (option === 'today') {
           sentDate = new Date(today);
@@ -1736,9 +1876,22 @@
         <span style="font-weight:600">€${formatAmount(Math.round(wizardData.amount * 100))}</span>
       </div>`;
 
-      const moneySentDateFormatted = new Date(wizardData.moneySentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      let moneySentDateFormatted;
+      if (wizardData.moneySentDate === 'on-acceptance') {
+        moneySentDateFormatted = 'Upon agreement acceptance';
+      } else if (wizardData.moneySentOption) {
+        // Show friendly text for relative dates
+        const option = wizardData.moneySentOption;
+        if (option === 'today') moneySentDateFormatted = 'Today';
+        else if (option === 'tomorrow') moneySentDateFormatted = 'Tomorrow';
+        else if (option === '3days') moneySentDateFormatted = 'In 3 days';
+        else if (option === '7days') moneySentDateFormatted = 'In 7 days';
+        else moneySentDateFormatted = new Date(wizardData.moneySentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      } else {
+        moneySentDateFormatted = new Date(wizardData.moneySentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
       html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-        <span style="color:var(--muted)">Money sent to borrower</span>
+        <span style="color:var(--muted)">Money transfer date</span>
         <span style="font-weight:600">${moneySentDateFormatted}</span>
       </div>`;
 
@@ -1922,6 +2075,16 @@
         </div>`;
       }
 
+      // Worst case scenario
+      html += `<div>
+        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>`;
+      if (wizardData.debtCollectionClause) {
+        html += `<div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay, does not propose a new plan, or cannot reach an agreement with the lender, both parties agree that the case may be handed over to an independent debt collector registered in accordance with local law. Any collection fees are for the borrower's account.</div>`;
+      } else {
+        html += `<div style="color:var(--muted); font-size:13px">Not selected.</div>`;
+      }
+      html += `</div>`;
+
       html += '</div>';
       content.innerHTML = html;
     }
@@ -2039,13 +2202,12 @@
         if (!res.ok) throw new Error(data.error || 'Failed');
 
         wizardData.inviteUrl = data.inviteUrl;
-        document.getElementById('invite-url').textContent = data.inviteUrl;
+        wizardData.agreementSent = true;
 
-        // Hide send button, show invite URL
-        document.getElementById('invite-not-sent').classList.add('hidden');
-        document.getElementById('invite-sent').classList.remove('hidden');
-
+        // Navigate to Step 6 (Share)
         status.textContent = '';
+        goToStep(6);
+        populateShareStep();
         refresh();
         loadMessages();
       } catch (err) {
@@ -2065,6 +2227,63 @@
       });
     }
 
+    function populateShareStep() {
+      const firstName = wizardData.friendFirstName;
+      const email = wizardData.friendEmail;
+      const inviteUrl = wizardData.inviteUrl;
+
+      // Populate all name placeholders
+      document.getElementById('share-friend-name').textContent = firstName;
+      document.getElementById('share-invite-name').textContent = firstName;
+      document.getElementById('share-invite-name2').textContent = firstName;
+      document.getElementById('share-invite-email').textContent = email;
+      document.getElementById('share-qr-name').textContent = firstName;
+      document.getElementById('share-status-name').textContent = firstName;
+      document.getElementById('share-status-name2').textContent = firstName;
+
+      // Populate share link input
+      document.getElementById('share-link-input').value = inviteUrl;
+
+      // Generate QR code
+      const qrContainer = document.getElementById('qr-code-container');
+      qrContainer.innerHTML = ''; // Clear any existing QR code
+      new QRCode(qrContainer, {
+        text: inviteUrl,
+        width: 200,
+        height: 200,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    function copyShareLink() {
+      const url = wizardData.inviteUrl;
+      const button = event.target;
+      const originalText = button.textContent;
+
+      navigator.clipboard.writeText(url).then(() => {
+        button.textContent = '✓ Copied!';
+        button.style.background = 'var(--accent)';
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.style.background = '';
+        }, 2000);
+      }).catch(() => {
+        document.getElementById('step6-status').textContent = '❌ Failed to copy';
+      });
+    }
+
+    function goToDashboard() {
+      closeNewAgreement();
+      refresh();
+    }
+
+    function createAnotherAgreement() {
+      resetWizard();
+      goToStep(1);
+    }
+
     function resetWizard() {
       wizardData = {
         role: null,
@@ -2074,6 +2293,8 @@
         amount: '',
         repaymentType: 'one_time',
         dueDate: '',
+        moneySentDate: '',
+        moneySentOption: 'on-acceptance',
         planLength: null,
         planUnit: 'months',
         firstPaymentDate: '',
@@ -2090,7 +2311,8 @@
         reminderOffsets: [-7, -1, 0, 1, 3],
         proofRequired: false,
         debtCollectionClause: false,
-        inviteUrl: ''
+        inviteUrl: '',
+        agreementSent: false
       };
 
       // Reset Step 1 fields
