@@ -32,13 +32,11 @@
     .success{color:var(--accent)}
     .amount{font-size:32px; font-weight:700; color:var(--accent); text-align:center; margin:16px 0}
     .note{background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.2); border-radius:8px; padding:12px; color:var(--text); font-size:14px; margin:16px 0}
-    .back-link{display:inline-block; margin-bottom:16px; color:var(--accent); text-decoration:none; font-size:14px}
-    .back-link:hover{text-decoration:underline}
     .status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600}
-    .status-badge.pending{background:#f59e0b; color:#0d130f}
-    .status-badge.active{background:#22c55e; color:#fff}
-    .status-badge.settled{background:#9ca3af; color:#fff}
-    .status-badge.declined{background:#ef4444; color:#fff}
+    .status-badge.pending{background:#4a4a4a; color:#fff}
+    .status-badge.active{background:#3d7bdc; color:#fff}
+    .status-badge.settled{background:#3ddc97; color:#0d130f}
+    .status-badge.declined{background:#ff6b6b; color:#fff}
     .status-badge.cancelled{background:#6c757d; color:#fff}
     .alert-box{background:rgba(255,165,0,0.1); border:1px solid rgba(255,165,0,0.3); border-radius:8px; padding:12px; color:var(--text); font-size:14px; margin:16px 0}
     .form-group{margin:20px 0}
@@ -55,7 +53,7 @@
     textarea::placeholder{color:var(--muted)}
     input[type="number"]{width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px}
     input[type="number"]::placeholder{color:var(--muted)}
-    .summary-box{background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.2); border-radius:8px; padding:16px; margin:16px 0}
+    .summary-box{background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px; padding:20px; margin:20px 0}
     .summary-item{margin:8px 0; color:var(--text); font-size:14px}
     .summary-label{color:var(--muted); font-weight:600}
     button.warning{background:#ff9800; color:#0d130f}
@@ -95,6 +93,31 @@
     .top-header-actions{display:flex; gap:12px; align-items:center}
     .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
     .logout-btn:hover{background:rgba(255,255,255,0.05)}
+    .tabs{display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .tab{padding:10px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
+    .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
+    .tab:hover{color:var(--text)}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; vertical-align:middle}
+    th{color:var(--muted); font-weight:600; font-size:13px}
+    .actions-column{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; width:100%}
+    .actions-column button{flex:0 0 auto; padding:8px 12px; font-size:13px; white-space:nowrap; width:auto}
+    .empty-state{text-align:center; color:var(--muted); padding:32px; font-size:14px}
+    .user-avatar{display:inline-flex; align-items:center; justify-content:center; border-radius:50%; overflow:hidden; flex-shrink:0; vertical-align:middle}
+    .user-avatar.size-small{width:22px; height:22px; font-size:10px; font-weight:600; margin-right:8px}
+    .user-avatar-image{width:100%; height:100%; object-fit:cover}
+    .user-avatar-initials{width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; text-transform:uppercase}
+    .user-avatar-initials.color-1{background:#6366f1}
+    .user-avatar-initials.color-2{background:#8b5cf6}
+    .user-avatar-initials.color-3{background:#ec4899}
+    .user-avatar-initials.color-4{background:#f59e0b}
+    .user-avatar-initials.color-5{background:#10b981}
+    .user-avatar-initials.color-6{background:#3b82f6}
+    .user-avatar-initials.color-7{background:#14b8a6}
+    .counterparty-cell{display:flex; align-items:center}
+    .due-date-overdue{color:#f87171}
+    .due-date-upcoming{color:var(--muted)}
+    .due-date-settled{color:#9ca3af}
   </style>
 </head>
 <body>
@@ -105,7 +128,7 @@
           <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
           <div class="top-header-text">
             <div class="app-name" style="color:var(--text)">PayFriends.app</div>
-            <div class="app-slogan">Pay friends, stay friends.</div>
+            <div class="app-slogan">Pay friends, stay friends</div>
           </div>
         </a>
       </div>
@@ -119,32 +142,52 @@
       </div>
     </header>
 
-    <div class="card">
+    <!-- My Agreements section -->
+    <section class="card" id="list-section">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+        <h2 style="margin:0">My Agreements</h2>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-filter="all" onclick="filterByStatus('all')">All</div>
+        <div class="tab" data-filter="pending" onclick="filterByStatus('pending')">Pending</div>
+        <div class="tab" data-filter="active" onclick="filterByStatus('active')">Active</div>
+        <div class="tab" data-filter="settled" onclick="filterByStatus('settled')">Settled</div>
+      </div>
+
+      <table id="list">
+        <thead>
+          <tr>
+            <th id="counterparty-header">Counterparty</th>
+            <th>Description</th>
+            <th>Outstanding amount</th>
+            <th id="due-header">Due</th>
+            <th>Status</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="empty-state" class="empty-state" style="display:none">
+        No agreements found for this filter.
+      </div>
+    </section>
+
+    <div class="card hidden" id="loading-card">
       <h1 id="page-title">Agreement Details</h1>
       <p id="loading-text">Loading agreement details...</p>
     </div>
 
     <!-- Agreement summary block (above details card) -->
-    <div id="summary-section" class="card hidden" style="padding:20px">
-      <div style="display:flex; align-items:center; gap:16px">
-        <div id="profile-picture-container" style="flex-shrink:0; display:none">
-          <div style="width:80px; height:80px; border-radius:50%; overflow:hidden; background:#10151d; border:2px solid rgba(255,255,255,0.1)">
-            <img id="profile-picture-img" style="width:100%; height:100%; object-fit:cover" />
-          </div>
-        </div>
-        <div style="flex:1">
-          <p id="agreement-summary-line1" style="margin:0 0 8px 0; font-size:16px; line-height:1.6; color:var(--text)"></p>
-          <p id="agreement-summary-line2" style="margin:0; font-size:16px; line-height:1.6; color:var(--text)"></p>
-        </div>
-      </div>
+    <div id="summary-section" class="hidden" style="background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px; padding:20px; margin:20px 0">
+      <p id="agreement-summary-line1" style="margin:0 0 12px 0; font-size:15px; line-height:1.6; color:var(--accent)"></p>
+      <p id="agreement-summary-line2" style="margin:0 0 12px 0; font-size:15px; line-height:1.6; color:var(--accent)"></p>
+      <p id="agreement-summary-line3" style="margin:0; font-size:15px; line-height:1.6; color:var(--accent)"></p>
     </div>
 
     <!-- Manage agreement header (for view mode) -->
     <div id="manage-header" class="hidden" style="margin:16px 0">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px">
-        <h2 style="margin:0; font-size:24px">Manage agreement</h2>
-        <a href="/app" style="color:var(--accent); text-decoration:none; font-size:14px; font-weight:500">← Back to list</a>
-      </div>
+      <h2 style="margin:0 0 8px 0; font-size:24px">Manage agreement</h2>
       <p id="manage-subline" style="margin:8px 0 0 0; font-size:16px; color:var(--muted)"></p>
     </div>
 
@@ -479,10 +522,29 @@
     const agreementId = pathParts[2];
     const action = pathParts[3]; // 'review' or 'view'
 
+    // For agreements list
+    let allAgreements = [];
+    let currentFilter = 'all';
+
     // Format amount in cents to euros with thousand separators, no decimals
     function formatAmount(cents) {
       const euros = Math.round(cents / 100);
       return new Intl.NumberFormat('de-DE').format(euros);
+    }
+
+    // Generate initials for user avatar
+    function getInitials(name) {
+      if (!name) return '?';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+
+    // Get avatar color based on name
+    function getAvatarColor(name) {
+      if (!name) return 'color-1';
+      const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      return `color-${(hash % 7) + 1}`;
     }
 
     async function loadAgreementData() {
@@ -528,9 +590,8 @@
     }
 
     function showReviewSection() {
-      document.getElementById('loading-text').parentElement.classList.add('hidden');
+      document.getElementById('loading-card').classList.add('hidden');
       document.getElementById('details-section').classList.remove('hidden');
-      document.getElementById('page-title').textContent = 'Review Agreement';
 
       populateDetails();
 
@@ -557,9 +618,8 @@
     }
 
     async function showViewSection() {
-      document.getElementById('loading-text').parentElement.classList.add('hidden');
+      document.getElementById('loading-card').classList.add('hidden');
       document.getElementById('details-section').classList.remove('hidden');
-      document.getElementById('page-title').textContent = 'Agreement Details';
 
       // Show and populate manage header
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
@@ -648,36 +708,27 @@
       }
       document.getElementById('agreement-summary-line1').textContent = summaryLine1;
 
-      // Generate human-readable summary line 2
-      const outstanding = formatAmount(agreement.outstanding_cents || agreement.amount_cents);
+      // Generate human-readable summary line 2 (payment schedule)
       let summaryLine2 = '';
-
       if (repaymentType === 'installments' && agreement.installment_count) {
         const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        summaryLine2 = `${agreement.installment_count} monthly payments, from ${firstDate} to ${finalDate}. €${outstanding} remains outstanding.`;
+        summaryLine2 = `${agreement.installment_count} monthly payments, from ${firstDate} to ${finalDate}.`;
       } else {
         const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        summaryLine2 = `€${outstanding} remains outstanding and is due by ${dueDate}.`;
+        summaryLine2 = `Due by ${dueDate}.`;
       }
+      document.getElementById('agreement-summary-line2').textContent = summaryLine2;
+
+      // Generate human-readable summary line 3 (outstanding and total)
+      const outstanding = formatAmount(agreement.outstanding_cents || agreement.amount_cents);
+      let summaryLine3 = `€${outstanding} remains outstanding.`;
 
       if (hasInterest) {
         const totalRepay = formatAmount(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
-        summaryLine2 += ` Total to repay: €${totalRepay} (incl. ${agreement.interest_rate}% interest).`;
+        summaryLine3 += ` Total to repay: €${totalRepay} (incl. ${agreement.interest_rate}% interest).`;
       }
-
-      document.getElementById('agreement-summary-line2').textContent = summaryLine2;
-
-      // Show profile picture in summary if available
-      const otherPersonProfilePicture = isLender ? agreement.borrower_profile_picture : agreement.lender_profile_picture;
-      const otherPersonUserId = isLender ? agreement.borrower_user_id : agreement.lender_user_id;
-
-      if (otherPersonProfilePicture && otherPersonUserId) {
-        const profilePictureContainer = document.getElementById('profile-picture-container');
-        const profilePictureImg = document.getElementById('profile-picture-img');
-        profilePictureImg.src = `/api/profile/picture/${otherPersonUserId}`;
-        profilePictureContainer.style.display = 'block';
-      }
+      document.getElementById('agreement-summary-line3').textContent = summaryLine3;
 
       // Show summary section
       document.getElementById('summary-section').classList.remove('hidden');
@@ -811,7 +862,7 @@
     }
 
     function showError(message) {
-      document.getElementById('loading-text').parentElement.classList.add('hidden');
+      document.getElementById('loading-card').classList.add('hidden');
       document.getElementById('error-section').classList.remove('hidden');
       document.getElementById('error-message').textContent = message;
     }
@@ -1836,6 +1887,158 @@
       }, 2000);
     }
 
+    // Load all agreements
+    async function loadAllAgreements() {
+      try {
+        const res = await fetch('/api/agreements');
+        if (res.ok) {
+          allAgreements = await res.json();
+          renderAgreements();
+        }
+      } catch (err) {
+        console.error('Error loading agreements:', err);
+      }
+    }
+
+    // Filter agreements by status
+    function filterByStatus(status) {
+      currentFilter = status;
+
+      // Update active tab
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.getAttribute('data-filter') === status) {
+          tab.classList.add('active');
+        }
+      });
+
+      renderAgreements();
+    }
+
+    // Render agreements table
+    function renderAgreements() {
+      const tbody = document.querySelector('#list tbody');
+      const emptyState = document.getElementById('empty-state');
+      const table = document.getElementById('list');
+
+      let filtered = allAgreements;
+      if (currentFilter !== 'all') {
+        if (currentFilter === 'pending') {
+          filtered = allAgreements.filter(a => a.status === 'pending');
+        } else {
+          filtered = allAgreements.filter(a => a.status === currentFilter);
+        }
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        table.style.display = 'none';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      table.style.display = 'table';
+      tbody.innerHTML = '';
+
+      filtered.forEach(a => {
+        const isLender = a.lender_user_id === currentUser.id;
+        const isBorrower = a.borrower_user_id === currentUser.id;
+
+        // Counterparty info
+        let counterpartyName, counterpartyEmail, counterpartyUserId, counterpartyProfilePicture;
+        if (isLender) {
+          counterpartyName = a.borrower_full_name || a.friend_first_name || a.borrower_email;
+          counterpartyEmail = a.borrower_email;
+          counterpartyUserId = a.borrower_user_id;
+          counterpartyProfilePicture = a.borrower_profile_picture;
+        } else {
+          counterpartyName = a.lender_full_name || a.lender_name || a.lender_email;
+          counterpartyEmail = a.lender_email;
+          counterpartyUserId = a.lender_user_id;
+          counterpartyProfilePicture = a.lender_profile_picture;
+        }
+
+        // Avatar
+        let avatarHtml = '';
+        if (counterpartyProfilePicture && counterpartyUserId) {
+          avatarHtml = `<div class="user-avatar size-small"><img src="/api/profile/picture/${counterpartyUserId}" class="user-avatar-image" /></div>`;
+        } else {
+          const initials = getInitials(counterpartyName);
+          const colorClass = getAvatarColor(counterpartyName);
+          avatarHtml = `<div class="user-avatar size-small"><div class="user-avatar-initials ${colorClass}">${initials}</div></div>`;
+        }
+
+        // Description
+        const description = a.description || '—';
+
+        // Outstanding amount
+        const outstanding = formatAmount(a.outstanding_cents || a.amount_cents);
+
+        // Due date
+        let dueDate = '';
+        let dueDateClass = '';
+        if (a.status === 'settled') {
+          dueDate = '—';
+          dueDateClass = 'due-date-settled';
+        } else {
+          const dueTimestamp = a.repayment_type === 'installments' && a.final_due_date
+            ? new Date(a.final_due_date)
+            : new Date(a.due_date);
+          const now = new Date();
+          const diffDays = Math.floor((dueTimestamp - now) / (1000 * 60 * 60 * 24));
+
+          dueDate = dueTimestamp.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+          if (diffDays < 0) {
+            dueDateClass = 'due-date-overdue';
+          } else {
+            dueDateClass = 'due-date-upcoming';
+          }
+        }
+
+        // Status
+        const status = a.status || 'pending';
+        let statusHtml = `<span class="status-badge ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+
+        // Actions
+        let actionsHtml = '';
+        if (a.id === parseInt(agreementId)) {
+          actionsHtml = `<button onclick="scrollToManage()" style="background:var(--accent); color:#0d130f">Viewing</button>`;
+        } else {
+          actionsHtml = `<button onclick="window.location.href='/agreements/${a.id}/view'" class="secondary">View</button>`;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>
+            <div class="counterparty-cell">
+              ${avatarHtml}
+              ${counterpartyName}
+            </div>
+          </td>
+          <td>${description}</td>
+          <td>€ ${outstanding}</td>
+          <td class="${dueDateClass}">${dueDate}</td>
+          <td>${statusHtml}</td>
+          <td>
+            <div class="actions-column">
+              ${actionsHtml}
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Scroll to manage section
+    function scrollToManage() {
+      const manageHeader = document.getElementById('manage-header');
+      if (manageHeader) {
+        manageHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
     // Logout
     async function logout() {
       try {
@@ -1851,7 +2054,9 @@
     if (!agreementId) {
       showError('Invalid agreement ID.');
     } else {
+      // Load both the specific agreement and all agreements
       loadAgreementData();
+      loadAllAgreements();
     }
   </script>
 
