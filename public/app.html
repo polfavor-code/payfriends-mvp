@@ -17,11 +17,13 @@
     .header-right{display:flex; gap:16px; align-items:center}
     .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
     .top-header-left{display:flex; align-items:center; gap:12px}
-    .top-header-right{display:flex; gap:16px; align-items:center}
+    .top-header-right{display:flex; gap:16px; align-items:center; flex-direction:column}
     .logo-coin{height:54px; width:auto}
     .top-header-text{display:flex; flex-direction:column; gap:2px}
     .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
     .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
+    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
+    .top-header-user-info{display:flex; align-items:center; gap:12px; margin-bottom:8px}
     .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
     .logout-btn:hover{background:rgba(255,255,255,0.05)}
     .inbox-widget{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 16px; cursor:pointer}
@@ -102,24 +104,46 @@
     .modal-note{background:#10151d; padding:12px; border-radius:8px; margin:12px 0; font-size:14px; color:var(--text)}
     .modal-helper-text{color:var(--muted); font-size:13px; margin-bottom:16px; line-height:1.5}
     .actions-header-text{display:inline-block; text-align:right; width:100%}
+    .user-avatar{display:inline-flex; align-items:center; justify-content:center; border-radius:50%; overflow:hidden; flex-shrink:0; vertical-align:middle}
+    .user-avatar.size-small{width:22px; height:22px; font-size:10px; font-weight:600; margin-right:8px}
+    .user-avatar-image{width:100%; height:100%; object-fit:cover}
+    .user-avatar-initials{width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; text-transform:uppercase}
+    .user-avatar-initials.color-1{background:#6366f1}
+    .user-avatar-initials.color-2{background:#8b5cf6}
+    .user-avatar-initials.color-3{background:#ec4899}
+    .user-avatar-initials.color-4{background:#f59e0b}
+    .user-avatar-initials.color-5{background:#10b981}
+    .user-avatar-initials.color-6{background:#3b82f6}
+    .user-avatar-initials.color-7{background:#14b8a6}
+    .counterparty-cell{display:flex; align-items:center}
+    .due-date-overdue{color:#f87171}
+    .due-date-upcoming{color:var(--muted)}
+    .due-date-settled{color:#9ca3af}
   </style>
 </head>
 <body>
   <main class="container">
     <header class="top-header">
       <div class="top-header-left">
-        <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
-        <div class="top-header-text">
-          <div class="app-name"><a href="/app" style="color:var(--text); text-decoration:none; cursor:pointer">PayFriends.app</a></div>
-          <div class="user-meta" id="user-email">Loading...</div>
-        </div>
+        <a href="/app" style="text-decoration:none; display:flex; align-items:center; gap:12px">
+          <img src="/images/payfriends-logo.svg" class="logo-coin" alt="PayFriends logo" />
+          <div class="top-header-text">
+            <div class="app-name" style="color:var(--text)">PayFriends.app</div>
+            <div class="app-slogan">Pay friends, stay friends.</div>
+          </div>
+        </a>
       </div>
       <div class="top-header-right">
-        <div class="inbox-widget" onclick="toggleActivity()">
-          Activity (<span class="inbox-count" id="activity-count">0</span>)
+        <div class="top-header-user-info">
+          <div class="user-meta" id="user-email">Loading...</div>
         </div>
-        <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
-        <button class="logout-btn" onclick="logout()">Logout</button>
+        <div style="display:flex; gap:16px; align-items:center">
+          <div class="inbox-widget" onclick="toggleActivity()">
+            Activity (<span class="inbox-count" id="activity-count">0</span>)
+          </div>
+          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
       </div>
     </header>
 
@@ -151,9 +175,8 @@
           <tr>
             <th id="counterparty-header">Counterparty</th>
             <th>Description</th>
-            <th>Amount</th>
-            <th>Outstanding</th>
-            <th>Due</th>
+            <th>Outstanding amount</th>
+            <th id="due-header">Due</th>
             <th>Status</th>
             <th><span class="actions-header-text">Actions</span></th>
           </tr>
@@ -279,7 +302,7 @@
         <!-- One-time payment fields -->
         <div id="one-time-fields">
           <div class="row">
-            <label>First payment due*</label>
+            <label>First repayment due*</label>
             <select id="one-time-due-option" onchange="updateOneTimeDueOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
               <option value="1month">In 1 month</option>
               <option value="2months">In 2 months</option>
@@ -314,7 +337,7 @@
           </div>
 
           <div class="row">
-            <label>First payment due*</label>
+            <label>First repayment due*</label>
             <select id="first-payment-option" onchange="updateFirstPaymentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
               <option value="1month">In 1 month</option>
               <option value="2months">In 2 months</option>
@@ -656,6 +679,93 @@
     function formatAmount(cents) {
       const euros = Math.round(cents / 100);
       return new Intl.NumberFormat('de-DE').format(euros);
+    }
+
+    // Get initials from a name (e.g., "Alex Smith" -> "AS", "Alex" -> "A")
+    function getInitials(name) {
+      if (!name || typeof name !== 'string') return '?';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 1) {
+        return parts[0].charAt(0).toUpperCase();
+      }
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+
+    // Get consistent color class based on name hash
+    function getColorClass(name) {
+      if (!name) return 'color-1';
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const colorIndex = (Math.abs(hash) % 7) + 1;
+      return `color-${colorIndex}`;
+    }
+
+    // Generate avatar HTML (image or initials)
+    function generateAvatarHTML(user, size = 'small') {
+      const initials = getInitials(user.name || user.counterparty_name || '');
+      const colorClass = getColorClass(user.name || user.counterparty_name || '');
+
+      if (user.profile_picture_url) {
+        return `<div class="user-avatar size-${size}">
+          <img src="${user.profile_picture_url}" class="user-avatar-image" alt="${user.name || ''}" />
+        </div>`;
+      } else {
+        return `<div class="user-avatar size-${size}">
+          <div class="user-avatar-initials ${colorClass}">${initials}</div>
+        </div>`;
+      }
+    }
+
+    // Format due date with countdown logic
+    function formatDueDate(agreement, isLender) {
+      const status = agreement.status || 'pending';
+
+      // For settled agreements
+      if (status === 'settled' && agreement.settled_date) {
+        const settledDate = new Date(agreement.settled_date);
+        const formatted = settledDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        return `<span class="due-date-settled">Settled on ${formatted}</span>`;
+      }
+
+      // For pending or cancelled, just show the date
+      if (status === 'pending' || status === 'cancelled') {
+        return agreement.due_date || '—';
+      }
+
+      // For active agreements, calculate next payment due
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let nextDueDate = null;
+      if (agreement.next_payment_date) {
+        nextDueDate = new Date(agreement.next_payment_date);
+      } else if (agreement.due_date) {
+        nextDueDate = new Date(agreement.due_date);
+      }
+
+      if (!nextDueDate) {
+        return '—';
+      }
+
+      nextDueDate.setHours(0, 0, 0, 0);
+      const diffTime = nextDueDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      const dateStr = nextDueDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+      if (diffDays < 0) {
+        // Overdue
+        const daysOverdue = Math.abs(diffDays);
+        return `<span class="due-date-overdue">${dateStr} (${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue)</span>`;
+      } else if (diffDays === 0) {
+        return `<span class="due-date-overdue">${dateStr} (due today)</span>`;
+      } else if (diffDays <= 7) {
+        return `<span>${dateStr} (in ${diffDays} day${diffDays !== 1 ? 's' : ''})</span>`;
+      } else {
+        return dateStr;
+      }
     }
 
     // Format the amount input field on blur
@@ -1002,7 +1112,7 @@
       const amountFormatted = new Intl.NumberFormat('de-DE').format(Math.round(amountNum));
 
       document.getElementById('one-time-estimate').innerHTML =
-        `Estimated final payment date: ${dateFormatted}<br>1 payment of €${amountFormatted}, excluding interest.`;
+        `Estimated final repayment date: ${dateFormatted}<br>1 repayment of €${amountFormatted}, excluding interest.`;
     }
 
     function updateFirstPaymentOption() {
@@ -1115,7 +1225,7 @@
                           'daily';
 
       document.getElementById('installment-estimate').innerHTML =
-        `Estimated final payment date: ${finalFormatted}<br>${installmentCount} ${frequencyLabel} payments of about €${installmentFormatted} each, excluding interest.`;
+        `Estimated final repayment date: ${finalFormatted}<br>${installmentCount} ${frequencyLabel} repayments of about €${installmentFormatted} each, excluding interest.`;
     }
 
     // Update due date helper text
@@ -2268,16 +2378,20 @@
         userRoles.add(isLender ? 'lender' : 'borrower');
       }
 
-      // Set header based on predominant role
+      // Set headers based on predominant role
+      const dueHeader = document.getElementById('due-header');
       if (userRoles.size === 1) {
         if (userRoles.has('lender')) {
           counterpartyHeader.textContent = 'Borrower';
+          dueHeader.textContent = 'Next repayment due';
         } else {
           counterpartyHeader.textContent = 'Lender';
+          dueHeader.textContent = 'Next payment due';
         }
       } else {
-        // Mixed roles, keep generic header
+        // Mixed roles, keep generic headers
         counterpartyHeader.textContent = 'Counterparty';
+        dueHeader.textContent = 'Due';
       }
 
       for (const a of filtered) {
@@ -2293,15 +2407,25 @@
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
 
-        // Use counterparty name only, no badge
+        // Generate avatar and counterparty display with name
         const counterpartyName = a.counterparty_name || '—';
-        const counterpartyDisplay = counterpartyName;
+        const avatarHTML = generateAvatarHTML({
+          counterparty_name: counterpartyName,
+          profile_picture_url: a.counterparty_profile_picture_url
+        });
+        const counterpartyDisplay = `<div class="counterparty-cell">${avatarHTML}<span>${counterpartyName}</span></div>`;
 
         // Get description or show fallback
         const description = a.description || '<span style="color:var(--muted); font-style:italic">(No description)</span>';
 
-        // Calculate outstanding amount
-        const outstanding = formatAmount(a.outstanding_cents || a.amount_cents);
+        // Calculate outstanding amount with original amount tooltip
+        const outstandingCents = a.outstanding_cents || a.amount_cents;
+        const outstanding = formatAmount(outstandingCents);
+        const originalAmount = formatAmount(a.amount_cents);
+        const outstandingDisplay = `<span title="Original: €${originalAmount}">€ ${outstanding} / € ${originalAmount}</span>`;
+
+        // Format due date with countdown
+        const dueDateDisplay = formatDueDate(a, isLender);
 
         // Build actions column with main button and conditional alert buttons
         let actionsHtml = '';
@@ -2335,9 +2459,8 @@
         tr.innerHTML = `
           <td>${counterpartyDisplay}</td>
           <td>${description}</td>
-          <td>€ ${amount}</td>
-          <td>€ ${outstanding}</td>
-          <td>${a.due_date}</td>
+          <td>${outstandingDisplay}</td>
+          <td>${dueDateDisplay}</td>
           <td>${statusBadge}</td>
           <td>${actionsHtml}</td>
         `;
