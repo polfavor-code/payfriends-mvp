@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — My Profile</title>
+  <!-- intl-tel-input library -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/css/intlTelInput.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -54,6 +57,21 @@
     .user-avatar-initials.color-5{background:#3b82f6;color:#fff}
     .user-avatar-initials.color-6{background:#8b5cf6;color:#fff}
     .user-avatar-initials.color-7{background:#14b8a6;color:#fff}
+
+    /* intl-tel-input custom dark theme styling */
+    .iti{width:100%}
+    .iti__input{width:100%;padding:12px 12px 12px 52px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:#10151d;color:var(--text);font-size:15px}
+    .iti__selected-flag{padding:12px;background:transparent;border-right:1px solid rgba(255,255,255,0.08)}
+    .iti__flag-container{border-radius:10px 0 0 10px}
+    .iti__dropdown{background:var(--card);border:1px solid rgba(255,255,255,0.12);border-radius:10px;margin-top:4px;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+    .iti__country{padding:8px 12px;color:var(--text)}
+    .iti__country:hover{background:rgba(255,255,255,0.08)}
+    .iti__selected-country{background:rgba(61,220,151,0.15)}
+    .iti__search-input{width:calc(100% - 24px);margin:8px 12px;padding:8px;background:#10151d;border:1px solid rgba(255,255,255,0.08);color:var(--text);border-radius:6px}
+    .iti__dial-code{color:var(--muted)}
+    .iti__country-name{color:var(--text)}
+    .iti__divider{border-bottom:1px solid rgba(255,255,255,0.08)}
+    .phone-error{color:#ff6b6b;font-size:13px;margin-top:4px;display:none}
 
     /* Profile header with avatar */
     .profile-header{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:24px;margin-bottom:12px}
@@ -108,7 +126,8 @@
         </div>
         <div class="row">
           <label>Phone number</label>
-          <input id="phone-number" type="tel" placeholder="+1 234 567 8900" required />
+          <input id="phone-number" type="tel" placeholder="+34 600 123 456" required />
+          <div id="phone-error" class="phone-error">Please enter a valid phone number.</div>
         </div>
         <button type="submit">Save Changes</button>
         <p id="profile-status" class="status"></p>
@@ -118,6 +137,7 @@
 
   <script>
     let currentUser = null;
+    let phoneInput = null;
 
     // Avatar helper functions
     function getInitials(name) {
@@ -178,7 +198,27 @@
         // Populate form fields
         document.getElementById('full-name').value = currentUser.full_name || '';
         document.getElementById('email').value = currentUser.email;
-        document.getElementById('phone-number').value = currentUser.phone_number || '';
+
+        // Initialize intl-tel-input
+        const input = document.querySelector("#phone-number");
+        phoneInput = window.intlTelInput(input, {
+          initialCountry: "auto",
+          geoIpLookup: callback => {
+            fetch('https://ipapi.co/json')
+              .then(res => res.json())
+              .then(data => callback(data.country_code))
+              .catch(() => callback('es'));
+          },
+          nationalMode: false,
+          formatOnDisplay: true,
+          separateDialCode: false,
+          utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/utils.js"
+        });
+
+        // Set phone number after initializing intl-tel-input
+        if (currentUser.phone_number) {
+          phoneInput.setNumber(currentUser.phone_number);
+        }
 
         // Load unread count for Activity button
         loadActivityCount();
@@ -328,8 +368,11 @@
     document.getElementById('profile-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const fullName = document.getElementById('full-name').value.trim();
-      const phoneNumber = document.getElementById('phone-number').value.trim();
       const status = document.getElementById('profile-status');
+      const phoneError = document.getElementById('phone-error');
+
+      // Hide phone error initially
+      phoneError.style.display = 'none';
 
       if (!fullName) {
         status.textContent = 'Full name is required';
@@ -337,18 +380,16 @@
         return;
       }
 
-      if (!phoneNumber) {
-        status.textContent = 'Phone number is required';
+      // Validate phone number using intl-tel-input
+      if (!phoneInput || !phoneInput.isValidNumber()) {
+        phoneError.style.display = 'block';
+        status.textContent = 'Please fix the errors above';
         status.className = 'status error';
         return;
       }
 
-      // Basic phone validation: must contain at least some digits
-      if (!/\d/.test(phoneNumber)) {
-        status.textContent = 'Phone number must contain at least one digit';
-        status.className = 'status error';
-        return;
-      }
+      // Get phone number in E.164 format
+      const phoneNumber = phoneInput.getNumber();
 
       status.textContent = 'Saving...';
       status.className = 'status';
