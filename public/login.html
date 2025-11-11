@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — Login</title>
+  <!-- intl-tel-input library -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/css/intlTelInput.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -12,6 +15,38 @@
     body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
     .container{max-width:500px;margin:0 auto;padding:64px 16px;}
     .header{margin-bottom:32px; text-align:center}
+
+    /* Two-column layout for desktop */
+    @media (min-width: 900px) {
+      body{display:flex;align-items:center;justify-content:center;min-height:100vh;}
+      .page-wrapper{display:flex;max-width:1200px;width:100%;gap:64px;align-items:center;padding:32px;}
+      .left-column{flex:1;padding:32px;}
+      .right-column{flex:1;max-width:500px;}
+      .container{max-width:none;padding:0;margin:0;}
+      .header{text-align:left;}
+    }
+
+    /* Left column styling */
+    .left-column{display:none}
+    @media (min-width: 900px) {
+      .left-column{display:block}
+    }
+    .left-logo-section{margin-bottom:32px}
+    .left-logo-section img{height:56px;width:auto;margin-bottom:12px}
+    .left-tagline{font-size:28px;font-weight:700;margin:16px 0 24px 0;line-height:1.2}
+    .left-features{list-style:none;padding:0;margin:0;font-size:14px;color:var(--muted)}
+    .left-features li{margin:12px 0;line-height:1.5}
+
+    /* Mobile: show left content above form */
+    .mobile-left-content{display:block;margin-bottom:32px;text-align:center}
+    .mobile-left-content .left-logo-section img{height:48px}
+    .mobile-left-content .left-tagline{font-size:20px;margin:12px 0 16px 0}
+    .mobile-left-content .left-features{font-size:13px}
+    .mobile-left-content .left-features li{margin:8px 0}
+
+    @media (min-width: 900px) {
+      .mobile-left-content{display:none}
+    }
     h1{margin:0 0 8px 0;font-size:32px}
     .tagline{color:var(--muted)}
     .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin:24px 0}
@@ -29,11 +64,54 @@
     .form-section{display:none}
     .form-section.active{display:block}
     .footer{margin-top:32px; text-align:center; color:var(--muted); font-size:12px;}
+
+    /* intl-tel-input custom dark theme styling */
+    .iti{width:100%}
+    .iti__input{width:100%;padding:12px 12px 12px 52px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:#10151d;color:var(--text);font-size:15px}
+    .iti__selected-flag{padding:12px;background:transparent;border-right:1px solid rgba(255,255,255,0.08)}
+    .iti__flag-container{border-radius:10px 0 0 10px}
+    .iti__dropdown{background:var(--card);border:1px solid rgba(255,255,255,0.12);border-radius:10px;margin-top:4px;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+    .iti__country{padding:8px 12px;color:var(--text)}
+    .iti__country:hover{background:rgba(255,255,255,0.08)}
+    .iti__selected-country{background:rgba(61,220,151,0.15)}
+    .iti__search-input{width:calc(100% - 24px);margin:8px 12px;padding:8px;background:#10151d;border:1px solid rgba(255,255,255,0.08);color:var(--text);border-radius:6px}
+    .iti__dial-code{color:var(--muted)}
+    .iti__country-name{color:var(--text)}
+    .iti__divider{border-bottom:1px solid rgba(255,255,255,0.08)}
+    .phone-error{color:#ff6b6b;font-size:13px;margin-top:4px;display:none}
   </style>
 </head>
 <body>
-  <main class="container">
-    <header class="header">
+  <div class="page-wrapper">
+    <!-- Left column for desktop -->
+    <div class="left-column">
+      <div class="left-logo-section">
+        <img src="/images/payfriends-logov2.png" alt="PayFriends logo" />
+        <h2 class="left-tagline">Pay friends, stay friends</h2>
+      </div>
+      <ul class="left-features">
+        <li>• Fair, trust-based loans between friends</li>
+        <li>• Automatic reminders and smart interest recalculation</li>
+        <li>• App handles chasing and negotiations — you stay friends</li>
+      </ul>
+    </div>
+
+    <!-- Right column / main content -->
+    <main class="container right-column">
+    <!-- Mobile: show left content above form -->
+    <div class="mobile-left-content">
+      <div class="left-logo-section">
+        <img src="/images/payfriends-logov2.png" alt="PayFriends logo" />
+        <h2 class="left-tagline">Pay friends, stay friends</h2>
+      </div>
+      <ul class="left-features">
+        <li>• Fair, trust-based loans between friends</li>
+        <li>• Automatic reminders and smart interest recalculation</li>
+        <li>• App handles chasing and negotiations — you stay friends</li>
+      </ul>
+    </div>
+
+    <header class="header" style="display:none">
       <img src="/images/payfriends-logov2.png" alt="PayFriends logo" style="height:56px; width:auto; margin-bottom:16px" />
       <h1>PayFriends</h1>
       <p class="tagline">Create simple agreements between friends.</p>
@@ -72,10 +150,10 @@
           <input id="signup-email" type="email" placeholder="your@email.com" required />
         </div>
         <div class="row">
-          <label>Phone number</label>
-          <input id="signup-phone" type="tel" placeholder="+1 234 567 8900" required />
+          <label>Phone number*</label>
+          <input id="signup-phone" type="tel" required />
+          <div id="signup-phone-error" class="phone-error">Please enter a valid phone number.</div>
         </div>
-        <p style="color:var(--muted); font-size:13px; margin:0 0 8px 0">We'll use this later for reminders and notifications. It won't be shared with friends without your permission.</p>
         <div class="row">
           <label>Password</label>
           <input id="signup-password" type="password" placeholder="••••••••" required />
@@ -85,11 +163,8 @@
         <p id="signup-status" class="status"></p>
       </form>
     </section>
-
-    <footer class="footer">
-      New user accounts and agreements dashboard.
-    </footer>
   </main>
+  </div>
 
   <script>
     function showTab(tab) {
@@ -134,14 +209,36 @@
       }
     });
 
+    // Initialize intl-tel-input for signup
+    let signupPhoneInput;
+    window.addEventListener('DOMContentLoaded', () => {
+      const input = document.querySelector("#signup-phone");
+      signupPhoneInput = window.intlTelInput(input, {
+        initialCountry: "auto",
+        geoIpLookup: callback => {
+          fetch('https://ipapi.co/json')
+            .then(res => res.json())
+            .then(data => callback(data.country_code))
+            .catch(() => callback('es'));
+        },
+        nationalMode: false,
+        formatOnDisplay: true,
+        separateDialCode: false,
+        utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/utils.js"
+      });
+    });
+
     // Signup form
     document.getElementById('signup-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const fullName = document.getElementById('signup-fullname').value.trim();
       const email = document.getElementById('signup-email').value.trim();
-      const phoneNumber = document.getElementById('signup-phone').value.trim();
       const password = document.getElementById('signup-password').value;
       const status = document.getElementById('signup-status');
+      const phoneError = document.getElementById('signup-phone-error');
+
+      // Hide phone error initially
+      phoneError.style.display = 'none';
 
       if (!fullName) {
         status.textContent = 'Full name is required';
@@ -157,18 +254,16 @@
         return;
       }
 
-      if (!phoneNumber) {
-        status.textContent = 'Phone number is required';
+      // Validate phone number using intl-tel-input
+      if (!signupPhoneInput.isValidNumber()) {
+        phoneError.style.display = 'block';
+        status.textContent = 'Please fix the errors above';
         status.className = 'status error';
         return;
       }
 
-      // Basic phone validation: must contain at least some digits
-      if (!/\d/.test(phoneNumber)) {
-        status.textContent = 'Phone number must contain at least one digit';
-        status.className = 'status error';
-        return;
-      }
+      // Get phone number in E.164 format
+      const phoneNumber = signupPhoneInput.getNumber();
 
       status.textContent = 'Creating account...';
       status.className = 'status';
