@@ -92,7 +92,7 @@
   <main class="container">
     <header class="header">
       <div class="header-left">
-        <h1><a href="/app" style="color:var(--text); text-decoration:none; cursor:pointer">My Agreements</a></h1>
+        <h1><a href="/app" style="color:var(--text); text-decoration:none; cursor:pointer">PayFriends.app</a></h1>
         <p class="user-email" id="user-email">Loading...</p>
       </div>
       <div class="header-right">
@@ -112,6 +112,43 @@
       </div>
       <div class="messages-list" id="activity-list">
         <p class="empty-state">No activity yet</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+        <h2 style="margin:0">My Agreements</h2>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-filter="all" onclick="filterByStatus('all')">All</div>
+        <div class="tab" data-filter="pending" onclick="filterByStatus('pending')">Pending</div>
+        <div class="tab" data-filter="active" onclick="filterByStatus('active')">Active</div>
+        <div class="tab" data-filter="settled" onclick="filterByStatus('settled')">Settled</div>
+      </div>
+
+      <table id="list">
+        <thead>
+          <tr>
+            <th id="counterparty-header">Counterparty</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Outstanding</th>
+            <th>Due</th>
+            <th>Status</th>
+            <th><span class="actions-header-text">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="empty-state" class="empty-state" style="display:none">
+        No agreements found for this filter.
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-top:16px">
+        <button id="new-agreement-btn" onclick="toggleNewAgreement()" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
+          <span style="font-size:18px; font-weight:bold">+</span>
+          <span>New Agreement</span>
+        </button>
       </div>
     </section>
 
@@ -189,6 +226,12 @@
         </div>
         <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">Enter the amount in euros.</p>
 
+        <div class="row">
+          <label>Money sent to borrower*</label>
+          <input id="money-sent-date" type="date" required />
+        </div>
+        <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">When was or will the money be paid to the borrower?</p>
+
         <div style="margin:16px 0 24px 0">
           <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">Repayment type*</label>
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); margin-bottom:8px">
@@ -228,7 +271,7 @@
           <div class="row">
             <label>First payment due*</label>
             <select id="first-payment-option" onchange="updateFirstPaymentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="1month">In 1 month (recommended)</option>
+              <option value="1month">In 1 month</option>
               <option value="2months">In 2 months</option>
               <option value="3months">In 3 months</option>
               <option value="custom">Pick a date…</option>
@@ -506,43 +549,6 @@
         </div>
 
         <p id="step5-status" class="status"></p>
-      </div>
-    </section>
-
-    <section class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
-        <h2 style="margin:0">Agreements</h2>
-      </div>
-
-      <div class="tabs">
-        <div class="tab active" data-filter="all" onclick="filterByStatus('all')">All</div>
-        <div class="tab" data-filter="pending" onclick="filterByStatus('pending')">Pending</div>
-        <div class="tab" data-filter="active" onclick="filterByStatus('active')">Active</div>
-        <div class="tab" data-filter="settled" onclick="filterByStatus('settled')">Settled</div>
-      </div>
-
-      <table id="list">
-        <thead>
-          <tr>
-            <th id="counterparty-header">Counterparty</th>
-            <th>Description</th>
-            <th>Amount</th>
-            <th>Outstanding</th>
-            <th>Due</th>
-            <th>Status</th>
-            <th><span class="actions-header-text">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div id="empty-state" class="empty-state" style="display:none">
-        No agreements found for this filter.
-      </div>
-      <div style="display:flex; justify-content:flex-end; margin-top:16px">
-        <button id="new-agreement-btn" onclick="toggleNewAgreement()" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
-          <span style="font-size:18px; font-weight:bold">+</span>
-          <span>New Agreement</span>
-        </button>
       </div>
     </section>
 
@@ -1026,6 +1032,13 @@
         return false;
       }
 
+      // Validate money sent date
+      const moneySentDate = document.getElementById('money-sent-date').value;
+      if (!moneySentDate) {
+        status.textContent = 'Please select when money was/will be sent to borrower';
+        return false;
+      }
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -1071,6 +1084,7 @@
 
       // Store validated data
       wizardData.amount = amountNum;
+      wizardData.moneySentDate = moneySentDate;
 
       status.textContent = '';
       return true;
@@ -1495,6 +1509,12 @@
         <span style="font-weight:600">€${formatAmount(Math.round(wizardData.amount * 100))}</span>
       </div>`;
 
+      const moneySentDateFormatted = new Date(wizardData.moneySentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:var(--muted)">Money sent to borrower</span>
+        <span style="font-weight:600">${moneySentDateFormatted}</span>
+      </div>`;
+
       html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
         <span style="color:var(--muted)">Repayment type</span>
         <span style="font-weight:600">${wizardData.repaymentType === 'one_time' ? 'One-time payment' : 'Installments'}</span>
@@ -1755,6 +1775,7 @@
           borrowerEmail: wizardData.friendEmail,
           description: wizardData.description,
           amount: wizardData.amount,
+          moneySentDate: wizardData.moneySentDate,
           dueDate: wizardData.dueDate,
           direction: wizardData.role,
           repaymentType: wizardData.repaymentType,
@@ -1899,6 +1920,10 @@
       if (section.classList.contains('hidden')) {
         section.classList.remove('hidden');
         document.getElementById('new-agreement-btn').style.display = 'none';
+        // Scroll the wizard into view
+        setTimeout(() => {
+          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
       } else {
         closeNewAgreement();
       }

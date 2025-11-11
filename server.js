@@ -238,6 +238,11 @@ try {
 } catch (e) {
   // Column already exists, ignore
 }
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN money_sent_date TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
 
 // --- multer setup for file uploads ---
 const storage = multer.diskStorage({
@@ -772,7 +777,7 @@ app.get('/api/agreements', requireAuth, (req, res) => {
 // Create new agreement with invite (two-sided flow)
 app.post('/api/agreements', requireAuth, (req, res) => {
   let {
-    lenderName, borrowerEmail, friendFirstName, amount, dueDate, direction, repaymentType, description,
+    lenderName, borrowerEmail, friendFirstName, amount, moneySentDate, dueDate, direction, repaymentType, description,
     planLength, planUnit, installmentCount, installmentAmount, firstPaymentDate, finalDueDate,
     interestRate, totalInterest, totalRepayAmount,
     paymentPreferenceMethod, paymentOtherDescription, reminderMode, reminderOffsets,
@@ -828,13 +833,13 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     const agreementStmt = db.prepare(`
       INSERT INTO agreements (
         lender_user_id, lender_name, borrower_email, friend_first_name,
-        direction, repayment_type, amount_cents, due_date, created_at, status, description,
+        direction, repayment_type, amount_cents, money_sent_date, due_date, created_at, status, description,
         plan_length, plan_unit, installment_count, installment_amount, first_payment_date, final_due_date,
         interest_rate, total_interest, total_repay_amount,
         payment_preference_method, payment_other_description, reminder_mode, reminder_offsets,
         proof_required, debt_collection_clause
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const agreementInfo = agreementStmt.run(
@@ -845,6 +850,7 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       direction || 'lend',
       repaymentType || 'one_time',
       amountCents,
+      moneySentDate || null,
       dueDate,
       createdAt,
       description,

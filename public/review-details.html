@@ -140,6 +140,10 @@
           <span class="detail-label">Amount</span>
           <span class="detail-value" id="amount-display"></span>
         </div>
+        <div class="detail-row" id="money-sent-row" style="display:none">
+          <span class="detail-label">Money sent to borrower</span>
+          <span class="detail-value" id="money-sent-display"></span>
+        </div>
         <div class="detail-row" id="repayment-type-row">
           <span class="detail-label">Repayment type</span>
           <span class="detail-value" id="repayment-type-display"></span>
@@ -619,6 +623,15 @@
       document.getElementById('amount-display').textContent = `€ ${amount}`;
       document.getElementById('lender-name').textContent = lenderName;
       document.getElementById('borrower-name').textContent = borrowerName;
+
+      // Money sent to borrower (show if available)
+      if (agreement.money_sent_date) {
+        const moneySentDate = new Date(agreement.money_sent_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        document.getElementById('money-sent-display').textContent = moneySentDate;
+        document.getElementById('money-sent-row').style.display = 'flex';
+      } else {
+        document.getElementById('money-sent-row').style.display = 'none';
+      }
 
       // Repayment type
       const repaymentTypeText = repaymentType === 'installments' ? 'Installments' : 'One-time payment';
