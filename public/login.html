@@ -94,11 +94,11 @@
     /* Dropdown container */
     .pf-phone-input .iti__dropdown,
     .pf-phone-input .iti__country-list{
-      background:#111;
-      color:#f3f3f3;
-      border:1px solid rgba(255,255,255,0.10);
-      border-radius:8px;
-      box-shadow:0 8px 24px rgba(0,0,0,0.6);
+      background-color:#111 !important;
+      border:1px solid rgba(255,255,255,0.1) !important;
+      color:#f3f3f3 !important;
+      box-shadow:0 4px 16px rgba(0, 0, 0, 0.6);
+      border-radius:8px !important;
       width:100%;
       max-height:260px;
       padding-top:4px;
@@ -110,17 +110,18 @@
 
     /* Search input */
     .pf-phone-input .iti__search-input{
-      background:#1a1a1a;
-      border:1px solid rgba(255,255,255,0.16);
-      color:#ffffff;
-      border-radius:6px;
-      padding:8px 10px;
-      font-size:14px;
+      background-color:#1a1a1a !important;
+      color:#fff !important;
+      border:1px solid rgba(255,255,255,0.15) !important;
+      border-radius:6px !important;
+      padding:8px 12px !important;
+      font-size:15px !important;
+      font-family:Inter, sans-serif !important;
       margin:6px 10px 8px;
       width:calc(100% - 20px);
     }
     .pf-phone-input .iti__search-input::placeholder{
-      color:rgba(255,255,255,0.5);
+      color:rgba(255,255,255,0.5) !important;
     }
     .pf-phone-input .iti__search-input:focus{
       outline:none;
@@ -141,8 +142,8 @@
 
     /* Hover and keyboard focus (highlight) */
     .pf-phone-input .iti__country.iti__highlight{
-      background:rgba(61,220,151,0.10);
-      border-left:3px solid #3ddc97;
+      background-color:rgba(61,220,151,0.08) !important;
+      border-left:3px solid #3ddc97 !important;
       cursor:pointer;
     }
 
@@ -161,14 +162,10 @@
     /* Custom scrollbar */
     .pf-phone-input .iti__country-list::-webkit-scrollbar{
       width:6px;
-      background:transparent;
     }
     .pf-phone-input .iti__country-list::-webkit-scrollbar-thumb{
-      background:#333;
+      background-color:#333;
       border-radius:4px;
-    }
-    .pf-phone-input .iti__country-list::-webkit-scrollbar-thumb:hover{
-      background:#444;
     }
 
     /* Phone error message */
