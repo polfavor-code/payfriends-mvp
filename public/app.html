@@ -592,7 +592,7 @@
 
         <!-- Summary text at top -->
         <div style="background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px; padding:20px; margin:20px 0">
-          <p id="full-summary-text" style="margin:0; color:var(--accent); font-size:15px; line-height:1.8"></p>
+          <p id="full-summary-text" style="margin:0; color:var(--accent); font-size:15px; line-height:1.8; white-space:pre-line"></p>
         </div>
 
         <!-- General details table -->
@@ -666,10 +666,7 @@
         <!-- QR code section -->
         <div style="margin:24px 0">
           <h4 style="margin:0 0 12px 0; font-size:16px">Or let <span id="share-qr-name"></span> scan this QR code</h4>
-          <div style="display:flex; justify-content:center; padding:20px; background:var(--bg); border:1px solid rgba(255,255,255,0.08); border-radius:12px; margin-bottom:8px">
-            <div id="qr-code-container"></div>
-          </div>
-          <p style="color:var(--muted); font-size:13px; margin:0; text-align:center">Ask <span id="share-qr-name-2"></span> to scan this QR to open the agreement directly.</p>
+          <div id="qr-code-container"></div>
         </div>
 
         <!-- Buttons -->
@@ -1839,23 +1836,28 @@
       const totalRepayAmount = Math.round(wizardData.totalRepayAmount * 100);
       const totalRepayFormatted = formatAmount(totalRepayAmount);
 
-      // Full summary text (3 sentences)
-      let summaryText = `${lenderName} lends €${amountFormatted} to ${borrowerName} for '${description}'. `;
+      // Full summary text (3 lines)
+      let summaryLine1 = `${lenderName} lends €${amountFormatted} to ${borrowerName} for '${description}'.`;
 
+      let summaryLine2 = '';
       if (wizardData.repaymentType === 'one_time') {
         const dueDate = new Date(wizardData.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        summaryText += `To be repaid in one payment by ${dueDate}. `;
+        summaryLine2 = `To be repaid in one payment by ${dueDate}.`;
       } else {
         const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        summaryText += `To be repaid in ${wizardData.installmentCount} monthly payments from ${firstDate} to ${finalDate}. `;
+        const frequency = wizardData.planUnit === 'months' ? 'monthly' : wizardData.planUnit === 'weeks' ? 'weekly' : wizardData.planUnit === 'days' ? 'daily' : 'yearly';
+        summaryLine2 = `To be repaid in ${wizardData.installmentCount} ${frequency} payments, from ${firstDate} to ${finalDate}.`;
       }
 
+      let summaryLine3 = '';
       if (interestRate > 0) {
-        summaryText += `Total to repay: €${totalRepayFormatted} (including ${interestRate}% interest per year).`;
+        summaryLine3 = `Total to repay: €${totalRepayFormatted} (including ${interestRate}% interest per year).`;
       } else {
-        summaryText += `Total to repay: €${amountFormatted} (interest-free loan).`;
+        summaryLine3 = `Total to repay: €${amountFormatted} (interest-free loan).`;
       }
+
+      const summaryText = summaryLine1 + '\n' + summaryLine2 + '\n' + summaryLine3;
 
       document.getElementById('full-summary-text').textContent = summaryText;
       document.getElementById('send-friend-name').textContent = borrowerName;
@@ -2096,15 +2098,13 @@
         </div>`;
       }
 
-      // Worst case scenario
-      html += `<div>
-        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>`;
+      // Worst case scenario (only show if enabled)
       if (wizardData.debtCollectionClause) {
-        html += `<div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</div>`;
-      } else {
-        html += `<div style="color:var(--muted); font-size:13px">Not enabled.</div>`;
+        html += `<div>
+          <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>
+          <div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</div>
+        </div>`;
       }
-      html += `</div>`;
 
       html += '</div>';
       content.innerHTML = html;

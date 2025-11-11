@@ -75,31 +75,77 @@
     <div id="review-section" class="card hidden">
       <h2>Agreement Details</h2>
 
-      <div class="amount" id="amount-display"></div>
-
+      <!-- Details section -->
       <div style="margin:16px 0">
         <div class="detail-row">
-          <span class="detail-label">From (Lender)</span>
+          <span class="detail-label">Lender</span>
           <span class="detail-value" id="lender-name"></span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">To (Borrower)</span>
+          <span class="detail-label">Borrower</span>
           <span class="detail-value" id="borrower-name"></span>
+        </div>
+        <div class="detail-row" id="description-row" style="display:none">
+          <span class="detail-label">Description</span>
+          <span class="detail-value" id="description-display"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Amount</span>
+          <span class="detail-value" id="amount-display"></span>
+        </div>
+        <div class="detail-row" id="money-sent-row" style="display:none">
+          <span class="detail-label">Money transfer date</span>
+          <span class="detail-value" id="money-sent-display"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Payment type</span>
+          <span class="detail-value" id="repayment-type"></span>
+        </div>
+        <div class="detail-row" id="installment-info-row" style="display:none">
+          <span class="detail-label">Installment plan</span>
+          <span class="detail-value" id="installment-info-display"></span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Due date</span>
-          <span class="detail-value" id="due-date"></span>
+          <span class="detail-value">
+            <span id="due-date"></span>
+            <span id="due-date-countdown" style="color:var(--muted); margin-left:8px"></span>
+          </span>
+        </div>
+        <div class="detail-row" id="interest-row" style="display:none">
+          <span class="detail-label">Interest</span>
+          <span class="detail-value" id="interest-display"></span>
+        </div>
+        <div class="detail-row" id="total-repay-row" style="display:none">
+          <span class="detail-label">Total to repay</span>
+          <span class="detail-value" id="total-repay-display"></span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">Repayment type</span>
-          <span class="detail-value" id="repayment-type"></span>
+          <span class="detail-label">Status</span>
+          <span class="detail-value" id="status-display">Pending review</span>
         </div>
       </div>
 
-      <!-- Payments & reminders section -->
-      <div id="payments-reminders-section" style="margin:24px 0; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:16px">
-        <h3 style="margin:0 0 16px 0; font-size:16px">Payments & reminders</h3>
-        <div id="payments-reminders-details"></div>
+      <!-- Interest, payment calculation & installment schedule (collapsible) -->
+      <div id="interest-calc-card" class="hidden" style="margin:16px 0">
+        <button onclick="toggleReviewSection('interest-calc-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+          <span>Interest, payment calculation & installment schedule</span>
+          <span id="interest-calc-detail-toggle">▼</span>
+        </button>
+        <div id="interest-calc-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <div id="interest-calc-detail-content"></div>
+        </div>
+      </div>
+
+      <!-- Payments & reminders (collapsible) -->
+      <div id="payments-reminders-card" style="margin:16px 0">
+        <button onclick="toggleReviewSection('payments-reminders-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+          <span>Payments & reminders</span>
+          <span id="payments-reminders-detail-toggle">▼</span>
+        </button>
+        <div id="payments-reminders-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <div id="payments-reminders-details"></div>
+        </div>
       </div>
 
       <div class="note">
@@ -203,27 +249,158 @@
       }
     }
 
+    function getDueDateCountdown(dueDate) {
+      const due = new Date(dueDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      due.setHours(0, 0, 0, 0);
+      const diffTime = due - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) return `(${Math.abs(diffDays)} days overdue)`;
+      if (diffDays === 0) return '(due today)';
+      if (diffDays === 1) return '(in 1 day)';
+      return `(in ${diffDays} days)`;
+    }
+
+    function toggleReviewSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      const toggle = document.getElementById(sectionId + '-toggle');
+
+      if (section.classList.contains('hidden')) {
+        section.classList.remove('hidden');
+        toggle.textContent = '▲';
+      } else {
+        section.classList.add('hidden');
+        toggle.textContent = '▼';
+      }
+    }
+
     function showReviewSection() {
       document.getElementById('loading-text').parentElement.classList.add('hidden');
       document.getElementById('review-section').classList.remove('hidden');
 
-      const amount = formatAmount(inviteData.agreement.amount_cents);
-      document.getElementById('amount-display').textContent = `€ ${amount}`;
+      const agreement = inviteData.agreement;
+      const amount = formatAmount(agreement.amount_cents);
 
       // Use lender's full_name if available, fallback to lender_name
-      const lenderName = (inviteData.lender && inviteData.lender.full_name) || inviteData.agreement.lender_name;
+      const lenderName = (inviteData.lender && inviteData.lender.full_name) || agreement.lender_name;
       document.getElementById('lender-name').textContent = lenderName;
 
-      const borrowerName = currentUser.full_name || inviteData.agreement.friend_first_name || inviteData.invite.email;
+      const borrowerName = currentUser.full_name || agreement.friend_first_name || inviteData.invite.email;
       document.getElementById('borrower-name').textContent = borrowerName;
 
-      document.getElementById('due-date').textContent = new Date(inviteData.agreement.due_date).toLocaleDateString();
+      // Description (show if available)
+      if (agreement.description) {
+        document.getElementById('description-display').textContent = agreement.description;
+        document.getElementById('description-row').style.display = 'flex';
+      }
 
-      const repaymentType = inviteData.agreement.repayment_type === 'one_time' ? 'One-time payment' : inviteData.agreement.repayment_type;
+      // Amount
+      document.getElementById('amount-display').textContent = `€ ${amount}`;
+
+      // Money transfer date (show if available)
+      if (agreement.money_sent_date) {
+        let moneySentDateText;
+        if (agreement.money_sent_date === 'on-acceptance') {
+          moneySentDateText = 'Upon agreement acceptance';
+        } else {
+          moneySentDateText = new Date(agreement.money_sent_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        document.getElementById('money-sent-display').textContent = moneySentDateText;
+        document.getElementById('money-sent-row').style.display = 'flex';
+      }
+
+      // Repayment type
+      const repaymentType = agreement.repayment_type === 'one_time' ? 'One-time payment' : 'Installments';
       document.getElementById('repayment-type').textContent = repaymentType;
+
+      // Installment info (show only if installments)
+      if (agreement.repayment_type === 'installments' && agreement.installment_count) {
+        const installmentAmount = formatAmount(Math.round((agreement.installment_amount || 0) * 100));
+        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        document.getElementById('installment-info-display').innerHTML =
+          `<div style="text-align:right">${agreement.installment_count} monthly payments of €${installmentAmount}</div><div style="text-align:right">from ${firstDate} to ${finalDate}</div>`;
+        document.getElementById('installment-info-row').style.display = 'flex';
+      }
+
+      // Due date
+      const dueDate = agreement.repayment_type === 'installments' && agreement.final_due_date
+        ? new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        : new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      document.getElementById('due-date').textContent = dueDate;
+
+      // Add due date countdown
+      const dueDateForCountdown = agreement.repayment_type === 'installments' && agreement.final_due_date
+        ? agreement.final_due_date
+        : agreement.due_date;
+      document.getElementById('due-date-countdown').textContent = getDueDateCountdown(dueDateForCountdown);
+
+      // Interest info (show only if interest > 0)
+      if (agreement.interest_rate && agreement.interest_rate > 0) {
+        const totalInterest = formatAmount(Math.round((agreement.total_interest || 0) * 100));
+        document.getElementById('interest-display').textContent = `${agreement.interest_rate}% per year (total interest: €${totalInterest})`;
+        document.getElementById('interest-row').style.display = 'flex';
+
+        // Total to repay
+        const totalRepay = formatAmount(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
+        document.getElementById('total-repay-display').textContent = `€${totalRepay}`;
+        document.getElementById('total-repay-row').style.display = 'flex';
+
+        // Show interest calculation card
+        populateInterestCalcDetail();
+      }
+
+      // Status
+      const borrowerFirstName = borrowerName.split(' ')[0];
+      document.getElementById('status-display').textContent = `Pending review by ${borrowerFirstName}`;
 
       // Populate payments & reminders section
       populatePaymentsReminders();
+    }
+
+    function populateInterestCalcDetail() {
+      const agreement = inviteData.agreement;
+      const card = document.getElementById('interest-calc-card');
+      const content = document.getElementById('interest-calc-detail-content');
+
+      if (!agreement.interest_rate || agreement.interest_rate === 0) {
+        return;
+      }
+
+      card.classList.remove('hidden');
+
+      const totalInterest = formatAmount(Math.round((agreement.total_interest || 0) * 100));
+      const totalRepay = formatAmount(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
+      const termText = agreement.repayment_type === 'installments' && agreement.installment_count
+        ? `${agreement.installment_count} months`
+        : 'one payment';
+
+      let html = '<div style="display:flex; flex-direction:column; gap:12px">';
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0">
+        <span style="color:var(--muted)">Loan amount</span>
+        <span style="font-weight:600">€${formatAmount(agreement.amount_cents)}</span>
+      </div>`;
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0">
+        <span style="color:var(--muted)">Term</span>
+        <span style="font-weight:600">${termText}</span>
+      </div>`;
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0">
+        <span style="color:var(--muted)">Interest rate</span>
+        <span style="font-weight:600">${agreement.interest_rate}% per year</span>
+      </div>`;
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid rgba(255,255,255,0.08); margin-top:8px; padding-top:12px">
+        <span style="color:var(--muted)">Total interest</span>
+        <span style="font-weight:600">€${totalInterest}</span>
+      </div>`;
+      html += `<div style="display:flex; justify-content:space-between; padding:8px 0">
+        <span style="color:var(--muted); font-weight:600">Total to repay</span>
+        <span style="font-weight:700; color:var(--accent)">€${totalRepay}</span>
+      </div>`;
+      html += '</div>';
+
+      content.innerHTML = html;
     }
 
     function populatePaymentsReminders() {
@@ -257,14 +434,12 @@
       html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Reminder mode:</div>`;
       html += `<div style="color:var(--muted); font-size:13px">${agreement.reminder_mode === 'auto' ? 'Auto (recommended)' : 'Custom schedule'}</div></div>`;
 
-      // Worst case scenario
-      html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Worst case scenario:</div>`;
+      // Worst case scenario (only show if enabled)
       if (agreement.debt_collection_clause) {
+        html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Worst case scenario:</div>`;
         html += `<div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</div>`;
-      } else {
-        html += `<div style="color:var(--muted); font-size:13px">Not enabled</div>`;
+        html += `</div>`;
       }
-      html += `</div>`;
 
       html += '</div>';
       detailsDiv.innerHTML = html;

@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — Agreement Details</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -90,7 +91,8 @@
     .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
     .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
     .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
-    .top-header-user-info{color:var(--muted); font-size:14px}
+    .top-header-user-info{color:var(--text); font-size:14px; text-align:right}
+    .top-header-actions{display:flex; gap:12px; align-items:center}
     .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
     .logout-btn:hover{background:rgba(255,255,255,0.05)}
   </style>
@@ -109,8 +111,11 @@
       </div>
       <div class="top-header-right">
         <div class="top-header-user-info" id="user-info-display">Loading...</div>
-        <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
-        <button class="logout-btn" onclick="logout()">Logout</button>
+        <div class="top-header-actions">
+          <a href="/app" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">Activity</a>
+          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
       </div>
     </header>
 
@@ -218,6 +223,17 @@
         </button>
         <div id="payments-reminders-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
           <div id="payments-reminders-detail-content"></div>
+        </div>
+      </div>
+
+      <!-- Share (collapsible, lender only, for pending agreements) -->
+      <div id="share-card" class="hidden" style="margin:16px 0">
+        <button onclick="toggleReviewSection('share-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+          <span>Share</span>
+          <span id="share-detail-toggle">▼</span>
+        </button>
+        <div id="share-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <div id="share-detail-content"></div>
         </div>
       </div>
 
@@ -724,7 +740,14 @@
 
       // Status badge with secondary badges
       const statusText = agreement.status || 'pending';
-      const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+      let capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+
+      // For pending agreements, show "Pending review by {BorrowerName}" for lenders
+      if (statusText === 'pending' && isLender) {
+        const borrowerFirstName = (agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email).split(' ')[0];
+        capitalizedStatus = `Pending review by ${borrowerFirstName}`;
+      }
+
       let statusHtml = `<span class="status-badge ${statusText}">${capitalizedStatus}</span>`;
 
       // Check for pending payment confirmation (only for lenders on active agreements)
@@ -756,6 +779,7 @@
       // Populate collapsible detail sections
       populateInterestCalcDetail();
       populatePaymentsAndRemindersDetail();
+      populateShareDetail();
     }
 
     async function checkPendingPaymentConfirmation() {
@@ -1688,17 +1712,111 @@
         </div>`;
       }
 
-      // Worst case scenario (debt collection clause)
-      const worstCaseText = agreement.debt_collection_clause
-        ? 'If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower\'s account.'
-        : 'Not enabled.';
-      html += `<div>
-        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>
-        <div style="color:var(--muted); font-size:14px; line-height:1.5">${worstCaseText}</div>
-      </div>`;
+      // Worst case scenario (debt collection clause) - only show if enabled
+      if (agreement.debt_collection_clause) {
+        html += `<div>
+          <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>
+          <div style="color:var(--muted); font-size:14px; line-height:1.5">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</div>
+        </div>`;
+      }
 
       html += '</div>';
       content.innerHTML = html;
+    }
+
+    // Populate share detail (lender only, for pending agreements)
+    async function populateShareDetail() {
+      const card = document.getElementById('share-card');
+      const content = document.getElementById('share-detail-content');
+
+      // Only show for lenders with pending agreements
+      const isLender = agreement.lender_user_id === currentUser.id;
+      if (!isLender) {
+        card.style.display = 'none';
+        return;
+      }
+
+      card.classList.remove('hidden');
+
+      let html = '<div style="display:flex; flex-direction:column; gap:20px">';
+
+      // Fetch invite token to construct URL
+      try {
+        const res = await fetch(`/api/agreements/${agreement.id}/invite`);
+        if (res.ok) {
+          const inviteData = await res.json();
+          const inviteUrl = `${window.location.origin}/review?token=${inviteData.token}`;
+          const borrowerEmail = agreement.borrower_email;
+          const createdDate = new Date(inviteData.created_at).toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          // Invite sent info
+          html += `<div>
+            <div style="color:var(--muted); font-size:14px">Invite sent to <strong style="color:var(--text)">${borrowerEmail}</strong> on ${createdDate}.</div>
+          </div>`;
+
+          // Share link
+          html += `<div>
+            <div style="font-weight:600; margin-bottom:8px; font-size:14px">Share link:</div>
+            <div style="display:flex; gap:8px; align-items:center">
+              <input type="text" readonly value="${inviteUrl}" id="manage-share-link" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#0e1116; color:var(--text); font-family:monospace; font-size:13px" />
+              <button onclick="copyManageShareLink()" style="width:auto; white-space:nowrap; padding:10px 16px; background:var(--accent); color:#0d130f; border:none; border-radius:10px; font-weight:600; cursor:pointer">Copy link</button>
+            </div>
+          </div>`;
+
+          // QR code
+          html += `<div>
+            <div style="font-weight:600; margin-bottom:8px; font-size:14px">QR code:</div>
+            <div id="manage-qr-code-container"></div>
+          </div>`;
+
+          html += '</div>';
+          content.innerHTML = html;
+
+          // Generate QR code
+          setTimeout(() => {
+            const qrContainer = document.getElementById('manage-qr-code-container');
+            if (qrContainer && typeof QRCode !== 'undefined') {
+              qrContainer.innerHTML = ''; // Clear any existing QR
+              new QRCode(qrContainer, {
+                text: inviteUrl,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+              });
+            }
+          }, 100);
+        } else {
+          html += '<div style="color:var(--muted); font-size:14px">Unable to load share information.</div></div>';
+          content.innerHTML = html;
+        }
+      } catch (err) {
+        console.error('Error loading invite:', err);
+        html += '<div style="color:var(--muted); font-size:14px">Unable to load share information.</div></div>';
+        content.innerHTML = html;
+      }
+    }
+
+    // Copy share link from manage page
+    function copyManageShareLink() {
+      const input = document.getElementById('manage-share-link');
+      input.select();
+      input.setSelectionRange(0, 99999); // For mobile
+      document.execCommand('copy');
+
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => {
+        btn.textContent = originalText;
+      }, 2000);
     }
 
     // Logout
