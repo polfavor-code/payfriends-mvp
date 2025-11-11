@@ -96,6 +96,12 @@
         </div>
       </div>
 
+      <!-- Payments & reminders section -->
+      <div id="payments-reminders-section" style="margin:24px 0; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:16px">
+        <h3 style="margin:0 0 16px 0; font-size:16px">Payments & reminders</h3>
+        <div id="payments-reminders-details"></div>
+      </div>
+
       <div class="note">
         By accepting this agreement, you confirm the terms and agree to repay the amount by the due date.
       </div>
@@ -215,6 +221,53 @@
 
       const repaymentType = inviteData.agreement.repayment_type === 'one_time' ? 'One-time payment' : inviteData.agreement.repayment_type;
       document.getElementById('repayment-type').textContent = repaymentType;
+
+      // Populate payments & reminders section
+      populatePaymentsReminders();
+    }
+
+    function populatePaymentsReminders() {
+      const agreement = inviteData.agreement;
+      const detailsDiv = document.getElementById('payments-reminders-details');
+
+      let html = '<div style="display:flex; flex-direction:column; gap:12px">';
+
+      // Payment methods
+      let methodsText = 'Not specified';
+      if (agreement.payment_preference_method) {
+        const methods = agreement.payment_preference_method.split(',').map(m => {
+          if (m === 'bank') return 'Bank transfer';
+          if (m === 'cash') return 'Cash in person';
+          if (m === 'crypto') return 'Crypto';
+          if (m === 'paypal') return 'PayPal';
+          if (m === 'any') return 'Any method';
+          if (m === 'other') return 'Other';
+          return m;
+        });
+        methodsText = methods.join(', ');
+      }
+      html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Preferred payment methods:</div>`;
+      html += `<div style="color:var(--muted); font-size:13px">${methodsText}</div></div>`;
+
+      // Proof of payment
+      html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Proof of payment required:</div>`;
+      html += `<div style="color:var(--muted); font-size:13px">${agreement.proof_required ? 'Yes — You must upload proof with every payment' : 'No'}</div></div>`;
+
+      // Reminder mode
+      html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Reminder mode:</div>`;
+      html += `<div style="color:var(--muted); font-size:13px">${agreement.reminder_mode === 'auto' ? 'Auto (recommended)' : 'Custom schedule'}</div></div>`;
+
+      // Worst case scenario
+      html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Worst case scenario:</div>`;
+      if (agreement.debt_collection_clause) {
+        html += `<div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay, does not propose a new plan, or cannot reach an agreement with the lender, both parties agree that the case may be handed over to an independent debt collector registered in accordance with local law. Any collection fees are for the borrower's account.</div>`;
+      } else {
+        html += `<div style="color:var(--muted); font-size:13px">Not selected</div>`;
+      }
+      html += `</div>`;
+
+      html += '</div>';
+      detailsDiv.innerHTML = html;
     }
 
     async function handleSignup() {
