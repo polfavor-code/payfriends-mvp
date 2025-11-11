@@ -140,7 +140,7 @@
     .status-dot--overdue{background:#f87171}
     .status-dot--cancelled{background:#9ca3af}
     .status-dot--declined{background:#f87171}
-    .status-cell{display:flex;align-items:center;justify-content:center}
+    .status-dot-wrapper{display:flex;align-items:center;justify-content:center;height:100%}
   </style>
 </head>
 <body>
@@ -2084,7 +2084,7 @@
         } else if (statusText === 'declined') {
           tooltipText = 'Declined';
         }
-        let statusHtml = `<span class="status-dot status-dot--${statusText}" role="img" aria-label="${capitalizedStatus}" title="${tooltipText}"></span>`;
+        let statusHtml = `<div class="status-dot-wrapper"><span class="status-dot status-dot--${statusText}" role="img" aria-label="${capitalizedStatus}" title="${tooltipText}"></span></div>`;
 
         // Actions
         let actionsHtml = '';
@@ -2105,7 +2105,7 @@
           <td>${description}</td>
           <td title="Original amount: € ${originalAmount}">€ ${outstanding} / € ${originalAmount}</td>
           <td class="${dueDateClass}">${dueDate}</td>
-          <td class="status-cell">${statusHtml}</td>
+          <td>${statusHtml}</td>
           <td>
             <div class="actions-column">
               ${actionsHtml}
