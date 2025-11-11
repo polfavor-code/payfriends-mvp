@@ -143,6 +143,14 @@
         return;
       }
 
+      // Validate full name has at least 2 words
+      const nameParts = fullName.split(/\s+/);
+      if (nameParts.length < 2) {
+        status.textContent = 'Please enter your full name (first and last name), exactly as on your passport.';
+        status.className = 'status error';
+        return;
+      }
+
       status.textContent = 'Creating account...';
       status.className = 'status';
 
