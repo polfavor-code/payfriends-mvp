@@ -15,6 +15,13 @@
     .header-left h1{margin:0 0 4px 0;font-size:28px}
     .header-left .user-email{color:var(--muted); font-size:14px}
     .header-right{display:flex; gap:16px; align-items:center}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; gap:16px; align-items:center}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
     .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
     .logout-btn:hover{background:rgba(255,255,255,0.05)}
     .inbox-widget{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 16px; cursor:pointer}
@@ -97,15 +104,15 @@
 </head>
 <body>
   <main class="container">
-    <header class="header">
-      <div class="header-left">
-        <h1 style="display:flex; align-items:center; gap:10px; margin:0 0 4px 0">
-          <img src="/payfriends-logov2.png" alt="PayFriends Logo" style="height:36px; width:auto; vertical-align:middle" />
-          <a href="/app" style="color:var(--text); text-decoration:none; cursor:pointer">PayFriends.app</a>
-        </h1>
-        <p class="user-email" id="user-email">Loading...</p>
+    <header class="top-header">
+      <div class="top-header-left">
+        <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
+        <div class="top-header-text">
+          <div class="app-name"><a href="/app" style="color:var(--text); text-decoration:none; cursor:pointer">PayFriends.app</a></div>
+          <div class="user-meta" id="user-email">Loading...</div>
+        </div>
       </div>
-      <div class="header-right">
+      <div class="top-header-right">
         <div class="inbox-widget" onclick="toggleActivity()">
           Activity (<span class="inbox-count" id="activity-count">0</span>)
         </div>
@@ -237,10 +244,23 @@
         <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">Enter the amount in euros.</p>
 
         <div class="row">
-          <label>Money sent to borrower*</label>
-          <input id="money-sent-date" type="date" required />
+          <label>Money transfer date*</label>
+          <select id="money-sent-option" onchange="updateMoneySentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+            <option value="on-acceptance">When agreement is accepted</option>
+            <option value="today">Today</option>
+            <option value="tomorrow">Tomorrow</option>
+            <option value="3days">In 3 days</option>
+            <option value="7days">In 7 days</option>
+            <option value="custom">Pick a date…</option>
+          </select>
         </div>
-        <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">When was or will the money be paid to the borrower?</p>
+        <div id="custom-money-sent-date" class="hidden" style="margin:16px 0">
+          <div class="row">
+            <label>Pick a date</label>
+            <input id="money-sent-date" type="date" required />
+          </div>
+        </div>
+        <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">When was or will the money be sent to the borrower? You can also choose a date in the past when adding an existing loan.</p>
 
         <div style="margin:16px 0 24px 0">
           <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">Repayment type*</label>
@@ -257,10 +277,23 @@
         <!-- One-time payment fields -->
         <div id="one-time-fields">
           <div class="row">
-            <label>Due date</label>
-            <input id="due-date" type="date" required onchange="updateDueDateHelper()" />
+            <label>First payment due*</label>
+            <select id="one-time-due-option" onchange="updateOneTimeDueOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+              <option value="1month">In 1 month</option>
+              <option value="2months">In 2 months</option>
+              <option value="3months">In 3 months</option>
+              <option value="custom">Pick a date…</option>
+            </select>
           </div>
-          <p id="due-date-helper" style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px"></p>
+
+          <div id="custom-one-time-due-date" class="hidden" style="margin:16px 0">
+            <div class="row">
+              <label>Pick a date</label>
+              <input id="due-date" type="date" required onchange="updateDueDateHelper()" />
+            </div>
+          </div>
+
+          <div id="one-time-estimate" style="color:var(--text); font-size:14px; margin:24px 0 12px 0; line-height:1.6"></div>
         </div>
 
         <!-- Installment fields -->
@@ -295,8 +328,7 @@
             </div>
           </div>
 
-          <div id="final-payment-estimate" style="color:var(--accent); font-size:13px; margin:12px 0; font-weight:500"></div>
-          <p id="installment-summary" style="color:var(--muted); font-size:13px; margin:8px 0 12px 0"></p>
+          <div id="installment-estimate" style="color:var(--text); font-size:14px; margin:24px 0 12px 0; line-height:1.6"></div>
         </div>
 
         <div style="margin-top:24px">
@@ -481,18 +513,13 @@
           </label>
         </div>
 
-        <!-- Worst-case scenario (optional) -->
+        <!-- Worst-case scenario -->
         <div style="margin:24px 0">
-          <h4 style="margin:0 0 12px 0; font-size:16px">Worst case scenario (optional)</h4>
+          <h4 style="margin:0 0 12px 0; font-size:16px">Worst case scenario</h4>
           <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer">
-            <input type="checkbox" id="debt-collection-clause" style="margin-top:2px" />
-            <div>
-              <div style="color:var(--text); font-size:14px; font-weight:500; margin-bottom:6px">
-                Allow debt-collection partner if we can't resolve this together.
-              </div>
-              <div style="color:var(--muted); font-size:13px; line-height:1.5">
-                If the borrower doesn't repay, doesn't respond to reminders, or you both can't agree on a new plan, you both agree the case may be transferred to an independent debt-collection partner registered under local law. Any collection fees are for the borrower to pay.
-              </div>
+            <input type="checkbox" id="debt-collection-clause" style="margin-top:2px" checked />
+            <div style="color:var(--muted); font-size:13px; line-height:1.5">
+              If the borrower does not repay, does not propose a new plan, or cannot reach an agreement with the lender, both parties agree that the case may be handed over to an independent debt collector registered in accordance with local law. Any collection fees are for the borrower's account.
             </div>
           </label>
         </div>
@@ -883,6 +910,99 @@
     }
 
     // Update first payment date based on selected option
+    function updateMoneySentOption() {
+      const option = document.getElementById('money-sent-option').value;
+      const customDateField = document.getElementById('custom-money-sent-date');
+      const moneySentDateInput = document.getElementById('money-sent-date');
+
+      if (option === 'custom') {
+        customDateField.classList.remove('hidden');
+      } else {
+        customDateField.classList.add('hidden');
+
+        // Calculate money sent date
+        const today = new Date();
+        let sentDate;
+
+        if (option === 'on-acceptance') {
+          // Store a special value, will be resolved later
+          wizardData.moneySentOption = 'on-acceptance';
+          return;
+        } else if (option === 'today') {
+          sentDate = new Date(today);
+        } else if (option === 'tomorrow') {
+          sentDate = new Date(today);
+          sentDate.setDate(sentDate.getDate() + 1);
+        } else if (option === '3days') {
+          sentDate = new Date(today);
+          sentDate.setDate(sentDate.getDate() + 3);
+        } else if (option === '7days') {
+          sentDate = new Date(today);
+          sentDate.setDate(sentDate.getDate() + 7);
+        }
+
+        // Set the date input value
+        moneySentDateInput.value = sentDate.toISOString().split('T')[0];
+        wizardData.moneySentDate = moneySentDateInput.value;
+      }
+    }
+
+    function updateOneTimeDueOption() {
+      const option = document.getElementById('one-time-due-option').value;
+      const customDateField = document.getElementById('custom-one-time-due-date');
+      const dueDateInput = document.getElementById('due-date');
+
+      if (option === 'custom') {
+        customDateField.classList.remove('hidden');
+      } else {
+        customDateField.classList.add('hidden');
+
+        // Calculate due date
+        const today = new Date();
+        let dueDate;
+
+        if (option === '1month') {
+          dueDate = new Date(today);
+          dueDate.setMonth(dueDate.getMonth() + 1);
+        } else if (option === '2months') {
+          dueDate = new Date(today);
+          dueDate.setMonth(dueDate.getMonth() + 2);
+        } else if (option === '3months') {
+          dueDate = new Date(today);
+          dueDate.setMonth(dueDate.getMonth() + 3);
+        }
+
+        // Set the date input value
+        dueDateInput.value = dueDate.toISOString().split('T')[0];
+        updateOneTimeEstimate();
+      }
+    }
+
+    function updateOneTimeEstimate() {
+      const dueDate = document.getElementById('due-date').value;
+      const amount = document.getElementById('amount').value;
+
+      if (!dueDate || !amount) {
+        document.getElementById('one-time-estimate').textContent = '';
+        return;
+      }
+
+      const cleanAmount = amount.replace(/[.,]/g, '');
+      const amountNum = parseFloat(cleanAmount);
+
+      if (isNaN(amountNum) || amountNum <= 0) {
+        document.getElementById('one-time-estimate').textContent = '';
+        return;
+      }
+
+      const date = new Date(dueDate);
+      const dateFormatted = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const amountFormatted = new Intl.NumberFormat('de-DE').format(Math.round(amountNum));
+
+      document.getElementById('one-time-estimate').innerHTML =
+        `Estimated final payment date: ${dateFormatted}<br>1 payment of €${amountFormatted}, excluding interest.`;
+    }
+
     function updateFirstPaymentOption() {
       const option = document.getElementById('first-payment-option').value;
       const customDateField = document.getElementById('custom-first-payment-date');
@@ -922,12 +1042,12 @@
       const firstPaymentDate = document.getElementById('first-payment-date').value;
 
       if (!amount || !planLength || !firstPaymentDate) {
-        document.getElementById('installment-summary').textContent = '';
+        document.getElementById('installment-estimate').textContent = '';
         return;
       }
 
       if (planLength <= 0) {
-        document.getElementById('installment-summary').textContent = 'Plan length must be greater than 0';
+        document.getElementById('installment-estimate').textContent = 'Plan length must be greater than 0';
         return;
       }
 
@@ -936,7 +1056,7 @@
       const amountNum = parseFloat(cleanAmount);
 
       if (isNaN(amountNum) || amountNum <= 0) {
-        document.getElementById('installment-summary').textContent = '';
+        document.getElementById('installment-estimate').textContent = '';
         return;
       }
 
@@ -992,35 +1112,13 @@
                           planUnit === 'weeks' ? 'weekly' :
                           'daily';
 
-      document.getElementById('final-payment-estimate').textContent =
-        `Estimated final payment date: ${finalFormatted}`;
-      document.getElementById('installment-summary').textContent =
-        `${installmentCount} ${frequencyLabel} payments of about €${installmentFormatted} each.`;
+      document.getElementById('installment-estimate').innerHTML =
+        `Estimated final payment date: ${finalFormatted}<br>${installmentCount} ${frequencyLabel} payments of about €${installmentFormatted} each, excluding interest.`;
     }
 
     // Update due date helper text
     function updateDueDateHelper() {
-      const dueDate = document.getElementById('due-date').value;
-      if (!dueDate) {
-        document.getElementById('due-date-helper').textContent = '';
-        return;
-      }
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const dueDateObj = new Date(dueDate);
-      dueDateObj.setHours(0, 0, 0, 0);
-
-      const diffMs = dueDateObj - today;
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-      if (diffDays > 0) {
-        document.getElementById('due-date-helper').textContent = `Due in ${diffDays} day${diffDays === 1 ? '' : 's'}`;
-      } else if (diffDays === 0) {
-        document.getElementById('due-date-helper').textContent = 'Due today';
-      } else {
-        document.getElementById('due-date-helper').textContent = 'Due date cannot be in the past';
-      }
+      updateOneTimeEstimate();
     }
 
     // Validate step 2 (Terms)
@@ -1043,10 +1141,20 @@
       }
 
       // Validate money sent date
-      const moneySentDate = document.getElementById('money-sent-date').value;
-      if (!moneySentDate) {
-        status.textContent = 'Please select when money was/will be sent to borrower';
-        return false;
+      const moneySentOption = document.getElementById('money-sent-option').value;
+      let moneySentDate;
+
+      if (moneySentOption === 'custom') {
+        moneySentDate = document.getElementById('money-sent-date').value;
+        if (!moneySentDate) {
+          status.textContent = 'Please select when money was/will be sent to borrower';
+          return false;
+        }
+      } else if (moneySentOption === 'on-acceptance') {
+        moneySentDate = 'on-acceptance'; // Special value
+      } else {
+        // For other options, the date should already be set by updateMoneySentOption
+        moneySentDate = document.getElementById('money-sent-date').value;
       }
 
       const today = new Date();
@@ -1059,15 +1167,9 @@
           return false;
         }
 
-        const dueDateObj = new Date(dueDate);
-        dueDateObj.setHours(0, 0, 0, 0);
-        if (dueDateObj < today) {
-          status.textContent = 'Due date cannot be in the past';
-          return false;
-        }
-
         wizardData.dueDate = dueDate;
         wizardData.finalDueDate = dueDate;
+        wizardData.installmentCount = 1;
       } else {
         const planLength = parseInt(document.getElementById('plan-length').value);
         if (!planLength || planLength <= 0) {
@@ -1078,13 +1180,6 @@
         const firstPaymentDate = document.getElementById('first-payment-date').value;
         if (!firstPaymentDate) {
           status.textContent = 'Please select a first payment date';
-          return false;
-        }
-
-        const firstDateObj = new Date(firstPaymentDate);
-        firstDateObj.setHours(0, 0, 0, 0);
-        if (firstDateObj < today) {
-          status.textContent = 'First payment date cannot be in the past';
           return false;
         }
 
@@ -1330,7 +1425,10 @@
 
         // Calculate installment date
         let dateStr = '—';
-        if (wizardData.repaymentType === 'installments' && wizardData.firstPaymentDate) {
+        if (wizardData.repaymentType === 'one_time' && wizardData.dueDate) {
+          const dueDate = new Date(wizardData.dueDate);
+          dateStr = dueDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        } else if (wizardData.repaymentType === 'installments' && wizardData.firstPaymentDate) {
           const installmentDate = new Date(wizardData.firstPaymentDate);
           const planUnit = wizardData.planUnit || 'months';
 
@@ -1578,37 +1676,39 @@
         const breakdownTbody = document.getElementById('breakdown-tbody');
         const rows = breakdownTbody?.getElementsByTagName('tr') || [];
 
-        if (rows.length > 0 && wizardData.repaymentType === 'installments') {
-          const firstDate = new Date(wizardData.firstPaymentDate);
-          const installmentCount = wizardData.installmentCount;
-          const planUnit = wizardData.planUnit || 'months';
-
-          html += `<div style="margin:16px 0"><button onclick="togglePaymentBreakdownInSummary()" class="secondary" style="padding:8px 16px; font-size:13px">
-            <span id="summary-breakdown-toggle-text">Show payment breakdown</span>
-          </button></div>`;
-          html += `<div id="summary-payment-breakdown" class="hidden" style="margin:12px 0; max-height:300px; overflow-y:auto">`;
+        if (rows.length > 0) {
+          html += `<div id="summary-payment-breakdown" style="margin:16px 0; max-height:300px; overflow-y:auto">`;
           html += `<table style="width:100%; font-size:12px">`;
           html += `<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">`;
-          html += `<th style="text-align:left; padding:8px 4px">#</th>`;
-          html += `<th style="text-align:left; padding:8px 4px">Date</th>`;
-          html += `<th style="text-align:right; padding:8px 4px">Payment</th>`;
-          html += `<th style="text-align:right; padding:8px 4px">Loan repayment</th>`;
-          html += `<th style="text-align:right; padding:8px 4px">Interest</th>`;
-          html += `<th style="text-align:right; padding:8px 4px">Remaining</th>`;
+          html += `<th style="text-align:left; padding:6px 4px; font-size:12px">№</th>`;
+          html += `<th style="text-align:left; padding:6px 4px; font-size:12px">Date</th>`;
+          html += `<th style="text-align:right; padding:6px 4px; font-size:12px">Payment</th>`;
+          html += `<th style="text-align:right; padding:6px 4px; font-size:12px">Loan repayment</th>`;
+          html += `<th style="text-align:right; padding:6px 4px; font-size:12px">Interest</th>`;
+          html += `<th style="text-align:right; padding:6px 4px; font-size:12px">Remaining</th>`;
           html += `</tr></thead><tbody>`;
 
-          for (let i = 0; i < installmentCount; i++) {
-            const installmentDate = new Date(firstDate);
-            if (planUnit === 'months') {
-              installmentDate.setMonth(installmentDate.getMonth() + i);
-            } else if (planUnit === 'weeks') {
-              installmentDate.setDate(installmentDate.getDate() + (i * 7));
-            } else if (planUnit === 'days') {
-              installmentDate.setDate(installmentDate.getDate() + i);
-            } else if (planUnit === 'years') {
-              installmentDate.setFullYear(installmentDate.getFullYear() + i);
+          const rowCount = wizardData.repaymentType === 'installments' ? wizardData.installmentCount : 1;
+          for (let i = 0; i < rowCount; i++) {
+            let dateStr = '—';
+            if (wizardData.repaymentType === 'one_time' && wizardData.dueDate) {
+              const dueDate = new Date(wizardData.dueDate);
+              dateStr = dueDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            } else if (wizardData.repaymentType === 'installments' && wizardData.firstPaymentDate) {
+              const firstDate = new Date(wizardData.firstPaymentDate);
+              const planUnit = wizardData.planUnit || 'months';
+              const installmentDate = new Date(firstDate);
+              if (planUnit === 'months') {
+                installmentDate.setMonth(installmentDate.getMonth() + i);
+              } else if (planUnit === 'weeks') {
+                installmentDate.setDate(installmentDate.getDate() + (i * 7));
+              } else if (planUnit === 'days') {
+                installmentDate.setDate(installmentDate.getDate() + i);
+              } else if (planUnit === 'years') {
+                installmentDate.setFullYear(installmentDate.getFullYear() + i);
+              }
+              dateStr = installmentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
             }
-            const dateStr = installmentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
             // Get corresponding values from the breakdown table
             let numVal = '', paymentVal = '', interestVal = '', principalVal = '', remainingVal = '';
@@ -1757,14 +1857,14 @@
       html += `<div style="color:var(--muted); font-size:13px">${methodsText}</div>`;
       html += `</div>`;
 
-      html += `<div style="margin-bottom:12px">`;
+      html += `<div style="margin-bottom:16px">`;
       html += `<div style="font-weight:600; font-size:14px; margin-bottom:4px">Proof of payment:</div>`;
-      html += `<div style="color:var(--muted); font-size:13px">${wizardData.proofRequired ? 'Required when reporting payments' : 'Not required'}</div>`;
+      html += `<div style="color:var(--muted); font-size:13px; line-height:1.5">${wizardData.proofRequired ? 'The borrower must upload proof of payment (photo, screenshot, scan or PDF) with every reported payment.' : 'Not required — borrower can report payments without uploading proof.'}</div>`;
       html += `</div>`;
 
       html += `<div>`;
       html += `<div style="font-weight:600; font-size:14px; margin-bottom:4px">Worst case scenario:</div>`;
-      html += `<div style="color:var(--muted); font-size:13px">${wizardData.debtCollectionClause ? 'Enabled — case may be transferred to an independent debt-collection partner if repayment fails.' : 'Disabled — debt-collection partner not enabled.'}</div>`;
+      html += `<div style="color:var(--muted); font-size:13px; line-height:1.5">${wizardData.debtCollectionClause ? 'Enabled — If the borrower does not repay, does not propose a new plan, or cannot reach an agreement with the lender, both parties agree that the case may be handed over to an independent debt collector registered in accordance with local law. Any collection fees are for the borrower\'s account.' : 'Disabled — Debt collection clause not enabled.'}</div>`;
       html += `</div>`;
 
       content.innerHTML = html;

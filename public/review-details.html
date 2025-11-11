@@ -82,11 +82,32 @@
     .form-section{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:24px}
     .form-section-title{font-size:16px; font-weight:600; color:var(--text); margin-bottom:12px}
     #proof-modal-download:hover{background:#3a3a3a; border-color:rgba(255,255,255,0.25)}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; gap:16px; align-items:center}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
+    .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
+    .logout-btn:hover{background:rgba(255,255,255,0.05)}
   </style>
 </head>
 <body>
   <div class="container">
-    <a href="/app" class="back-link">← Back to Dashboard</a>
+    <header class="top-header">
+      <div class="top-header-left">
+        <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
+        <div class="top-header-text">
+          <div class="app-name"><a href="/app" style="color:var(--text); text-decoration:none; cursor:pointer">PayFriends.app</a></div>
+          <div class="user-meta" id="user-email">Loading...</div>
+        </div>
+      </div>
+      <div class="top-header-right">
+        <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
 
     <div class="card">
       <h1 id="page-title">Agreement Details</h1>
@@ -444,6 +465,12 @@
         }
         const userData = await userRes.json();
         currentUser = userData.user;
+
+        // Display user info in header
+        const displayText = currentUser.full_name
+          ? `${currentUser.full_name} | ${currentUser.email}`
+          : currentUser.email;
+        document.getElementById('user-email').textContent = displayText;
 
         // Fetch agreement
         const res = await fetch(`/api/agreements/${agreementId}`);
@@ -1562,6 +1589,17 @@
 
       html += '</div>';
       content.innerHTML = html;
+    }
+
+    // Logout
+    async function logout() {
+      try {
+        await fetch('/auth/logout', { method: 'POST' });
+        window.location.href = '/';
+      } catch (err) {
+        console.error('Logout error:', err);
+        window.location.href = '/';
+      }
     }
 
     // Initialize
