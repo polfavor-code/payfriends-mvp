@@ -1097,10 +1097,21 @@
       const isLender = agreement.lender_user_id === currentUser.id;
       const isBorrower = agreement.borrower_user_id === currentUser.id;
 
+      // Map method values to display names
+      const methodNames = {
+        'bank': 'Bank transfer',
+        'cash': 'Cash',
+        'paypal': 'PayPal / mobile payment',
+        'crypto': 'Crypto',
+        'other': 'Other',
+        'any': 'Any method'
+      };
+
       paymentsList.innerHTML = payments.map(payment => {
         const amount = formatAmount(payment.amount_cents);
         const date = new Date(payment.created_at).toLocaleString();
-        const method = payment.method ? `<div class="payment-method" style="color:var(--muted); margin-top:4px">Method: ${payment.method}</div>` : '';
+        const methodDisplay = payment.method ? (methodNames[payment.method] || payment.method) : '';
+        const method = methodDisplay ? `<div class="payment-method" style="color:var(--muted); margin-top:4px">Method: ${methodDisplay}</div>` : '';
         const note = payment.note ? `<div class="payment-note" style="color:var(--muted); margin-top:4px">Note: ${payment.note}</div>` : '';
 
         // Determine who recorded the payment

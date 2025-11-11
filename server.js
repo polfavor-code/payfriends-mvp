@@ -1508,6 +1508,10 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
     return res.status(400).json({ error: 'Amount must be a positive number' });
   }
 
+  if (!method) {
+    return res.status(400).json({ error: 'Payment method is required' });
+  }
+
   try {
     // Get agreement and verify user has access
     const agreement = db.prepare(`
@@ -1529,6 +1533,14 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
     // Verify agreement is active
     if (agreement.status !== 'active') {
       return res.status(400).json({ error: 'Can only record payments for active agreements' });
+    }
+
+    // Validate payment method is allowed by the agreement
+    if (agreement.payment_preference_method) {
+      const allowedMethods = agreement.payment_preference_method.split(',').map(m => m.trim());
+      if (!allowedMethods.includes(method)) {
+        return res.status(400).json({ error: 'Payment method not allowed for this agreement' });
+      }
     }
 
     const now = new Date().toISOString();
