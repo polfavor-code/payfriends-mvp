@@ -64,11 +64,18 @@
     .status-text.settled{color:#9ca3af}
     .status-text.cancelled{color:#9ca3af}
     .status-text.declined{color:#f87171}
+    .status-dot{display:inline-block; width:10px; height:10px; border-radius:9999px}
+    .status-dot--active{background:#22c55e}
+    .status-dot--pending{background:#facc15}
+    .status-dot--settled{background:#9ca3af}
+    .status-dot--overdue{background:#f87171}
+    .status-dot--cancelled{background:#9ca3af}
+    .status-dot--declined{background:#f87171}
     .actions-column{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; width:100%}
-    .actions-column button{flex:0 0 auto; padding:8px 12px; font-size:13px; white-space:nowrap; width:auto}
-    .btn-confirm-payment{background:#f97316; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px}
+    .actions-column button{flex:0 0 auto; padding:8px 12px; font-size:14px; white-space:nowrap; width:auto}
+    .btn-confirm-payment{background:#f97316; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px}
     .btn-confirm-payment:hover{background:#ea580c}
-    .btn-payment-issue{background:#dc2626; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px}
+    .btn-payment-issue{background:#dc2626; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px}
     .btn-payment-issue:hover{background:#b91c1c}
     .messages-list{margin-top:12px}
     .message-item{padding:10px; background:var(--card); border-radius:8px; margin:8px 0; font-size:14px; transition:all 0.2s ease; border:1px solid transparent}
@@ -186,7 +193,7 @@
           <tr>
             <th id="counterparty-header">Counterparty</th>
             <th>Description</th>
-            <th>Outstanding amount</th>
+            <th>Outstanding / Total</th>
             <th id="due-header">Due</th>
             <th>Status</th>
             <th><span class="actions-header-text">Actions</span></th>
@@ -2699,8 +2706,8 @@
         const statusText = a.status || 'pending';
         const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
 
-        // Build status column with plain colored text (no badge)
-        let statusBadge = `<span class="status-text ${statusText}">${capitalizedStatus}</span>`;
+        // Build status column with colored dot indicator (no text)
+        let statusBadge = `<span class="status-dot status-dot--${statusText}" role="img" aria-label="${capitalizedStatus}" title="${capitalizedStatus}"></span>`;
 
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
