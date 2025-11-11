@@ -349,11 +349,11 @@
 
         <div style="margin:16px 0 24px 0">
           <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">Repayment type*</label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); margin-bottom:8px">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:8px; transition:all 0.2s" id="repayment-onetime-card">
             <input type="radio" name="repayment-type" value="one_time" onchange="toggleInstallmentFields()" checked />
             <span>One-time payment</span>
           </label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); transition:all 0.2s" id="repayment-installments-card">
             <input type="radio" name="repayment-type" value="installments" onchange="toggleInstallmentFields()" />
             <span>Installments</span>
           </label>
@@ -419,13 +419,13 @@
           <div class="row">
             <label>First repayment due*</label>
             <select id="first-payment-option" onchange="updateFirstPaymentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="1month">In 1 month</option>
-              <option value="2months">In 2 months</option>
-              <option value="3months">In 3 months</option>
-              <option value="3days">In 3 days</option>
-              <option value="7days">In 7 days</option>
               <option value="today">Today</option>
               <option value="tomorrow">Tomorrow</option>
+              <option value="3days">In 3 days</option>
+              <option value="7days">In 7 days</option>
+              <option value="1month" selected>In 1 month from now</option>
+              <option value="2months">In 2 months from now</option>
+              <option value="3months">In 3 months from now</option>
               <option value="custom">Pick a date…</option>
             </select>
           </div>
@@ -991,6 +991,21 @@
         toggleBorrowerFields();
       }
 
+      // Special handling for step 2: initialize repayment type card styling
+      if (step === 2) {
+        const oneTimeCard = document.getElementById('repayment-onetime-card');
+        const installmentsCard = document.getElementById('repayment-installments-card');
+        const repaymentType = document.querySelector('input[name="repayment-type"]:checked').value;
+
+        if (repaymentType === 'one_time') {
+          oneTimeCard.classList.add('reminder-option-active');
+          installmentsCard.classList.remove('reminder-option-active');
+        } else {
+          oneTimeCard.classList.remove('reminder-option-active');
+          installmentsCard.classList.add('reminder-option-active');
+        }
+      }
+
       // Special handling for step 4: initialize reminder mode highlight
       if (step === 4) {
         toggleReminderMode();
@@ -1230,11 +1245,17 @@
       const repaymentType = document.querySelector('input[name="repayment-type"]:checked').value;
       const oneTimeFields = document.getElementById('one-time-fields');
       const installmentFields = document.getElementById('installment-fields');
+      const oneTimeCard = document.getElementById('repayment-onetime-card');
+      const installmentsCard = document.getElementById('repayment-installments-card');
 
       if (repaymentType === 'installments') {
         oneTimeFields.classList.add('hidden');
         installmentFields.classList.remove('hidden');
         wizardData.repaymentType = 'installments';
+
+        // Update card styling
+        oneTimeCard.classList.remove('reminder-option-active');
+        installmentsCard.classList.add('reminder-option-active');
 
         // Set defaults for new hybrid fields
         const numRepaymentsSelect = document.getElementById('num-repayments');
@@ -1254,6 +1275,11 @@
         oneTimeFields.classList.remove('hidden');
         installmentFields.classList.add('hidden');
         wizardData.repaymentType = 'one_time';
+
+        // Update card styling
+        oneTimeCard.classList.add('reminder-option-active');
+        installmentsCard.classList.remove('reminder-option-active');
+
         // Ensure default due date is set
         const dueDateInput = document.getElementById('due-date');
         if (!dueDateInput.value) {
@@ -1529,8 +1555,8 @@
       // Display summary
       const installmentFormatted = new Intl.NumberFormat('de-DE').format(Math.round(installmentAmount));
 
-      // Plan length summary
-      planLengthSummary.textContent = `Plan length: ${planLengthMonths} months (from ${firstFormatted} to ${finalFormatted}).`;
+      // Loan duration summary
+      planLengthSummary.textContent = `Loan duration: ${planLengthMonths} months (from ${firstFormatted} to ${finalFormatted}).`;
 
       // Payment summary
       installmentEstimate.textContent = `${numRepayments} repayments of about €${installmentFormatted} each, excluding interest.`;
@@ -2147,7 +2173,7 @@
         </div>`;
 
         html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-          <span style="color:var(--muted)">Plan length</span>
+          <span style="color:var(--muted)">Loan duration</span>
           <span style="font-weight:600">${wizardData.planLength} months</span>
         </div>`;
 
