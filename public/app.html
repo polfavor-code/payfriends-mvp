@@ -18,13 +18,13 @@
     .header-right{display:flex; gap:16px; align-items:center}
     .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
     .top-header-left{display:flex; align-items:center; gap:12px}
-    .top-header-right{display:flex; gap:16px; align-items:center; flex-direction:column}
+    .top-header-right{display:flex; gap:16px; align-items:center}
     .logo-coin{height:54px; width:auto}
     .top-header-text{display:flex; flex-direction:column; gap:2px}
     .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
     .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
     .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
-    .top-header-user-info{display:flex; align-items:center; gap:12px; margin-bottom:8px}
+    .top-header-user-info{color:var(--muted); font-size:14px}
     .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
     .logout-btn:hover{background:rgba(255,255,255,0.05)}
     .inbox-widget{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 16px; cursor:pointer}
@@ -68,10 +68,10 @@
     .btn-payment-issue{background:#dc2626; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px}
     .btn-payment-issue:hover{background:#b91c1c}
     .messages-list{margin-top:12px}
-    .message-item{padding:10px; background:#10151d; border-radius:8px; margin:8px 0; font-size:14px; transition:all 0.2s ease}
-    .message-item.message-clickable{cursor:pointer; border:1px solid transparent}
+    .message-item{padding:10px; background:#10151d; border-radius:8px; margin:8px 0; font-size:14px; transition:all 0.2s ease; border:1px solid transparent}
+    .message-item.message-clickable{cursor:pointer}
     .message-item.message-clickable:hover{background:#1a2028; border-color:rgba(61,220,151,0.3); transform:translateX(2px)}
-    .message-item.message-unread{font-weight:500; background:#1a2028; border:1px solid rgba(61,220,151,0.15)}
+    .message-item.message-unread{font-weight:500; background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.25)}
     .unread-indicator{color:var(--accent); font-size:16px; margin-left:8px}
     .message-subject{font-weight:600; margin-bottom:4px}
     .message-date{color:var(--muted); font-size:12px}
@@ -135,16 +135,12 @@
         </a>
       </div>
       <div class="top-header-right">
-        <div class="top-header-user-info">
-          <div class="user-meta" id="user-email">Loading...</div>
+        <div class="top-header-user-info" id="user-info-display">Loading...</div>
+        <div class="inbox-widget" onclick="toggleActivity()">
+          Activity (<span class="inbox-count" id="activity-count">0</span>)
         </div>
-        <div style="display:flex; gap:16px; align-items:center">
-          <div class="inbox-widget" onclick="toggleActivity()">
-            Activity (<span class="inbox-count" id="activity-count">0</span>)
-          </div>
-          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
-          <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
+        <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
+        <button class="logout-btn" onclick="logout()">Logout</button>
       </div>
     </header>
 
@@ -204,7 +200,7 @@
 
       <!-- Wizard Steps -->
       <div class="wizard-steps">
-        <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)">1. Setup</div>
+        <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)">1. Basics</div>
         <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)">2. Terms</div>
         <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)">3. Interest</div>
         <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)">4. Payments</div>
@@ -632,15 +628,15 @@
 
       <!-- Step 6: Share -->
       <div id="wizard-step-6" class="wizard-content hidden">
-        <h3 style="margin-top:0">Share this agreement with <span id="share-friend-name"></span></h3>
+        <h3 style="margin-top:0">Agreement sent to <span id="share-friend-name"></span></h3>
 
         <!-- Success header -->
         <div style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.25); border-radius:12px; padding:20px; margin:20px 0">
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px">
             <div style="font-size:28px; color:var(--accent)">✓</div>
             <div>
-              <p style="margin:0; font-size:18px; font-weight:600; color:var(--accent)">Invite sent to <span id="share-invite-name"></span>.</p>
-              <p style="margin:4px 0 0 0; font-size:14px; color:var(--text)">We emailed a secure link to <span id="share-invite-email"></span> so <span id="share-invite-name2"></span> can review and accept this agreement.</p>
+              <p style="margin:0; font-size:18px; font-weight:600; color:var(--accent)">Invite sent to <span id="share-invite-name"></span></p>
+              <p style="margin:4px 0 0 0; font-size:14px; color:var(--text)">We've emailed an invite to <span id="share-invite-name2"></span> at <span id="share-invite-email"></span>. You can also share the link or QR code below.</p>
             </div>
           </div>
         </div>
@@ -661,7 +657,7 @@
           <div style="display:flex; justify-content:center; padding:20px; background:#fff; border-radius:12px; margin-bottom:8px">
             <div id="qr-code-container"></div>
           </div>
-          <p style="color:var(--muted); font-size:13px; margin:0; text-align:center">Scanning this code opens the agreement review page.</p>
+          <p style="color:var(--muted); font-size:13px; margin:0; text-align:center">Ask your friend to scan this QR to open the agreement directly.</p>
         </div>
 
         <!-- Status/next steps box -->
@@ -962,11 +958,24 @@
         });
       }
 
-      // Special handling for Step 5: hide the send button, show a message
+      // Special handling for Step 5: replace send button with "View Share options"
       if (step === 5) {
         const inviteNotSent = document.getElementById('invite-not-sent');
-        if (inviteNotSent) {
+        const inviteSent = document.getElementById('invite-sent');
+        if (inviteNotSent && inviteSent) {
           inviteNotSent.classList.add('hidden');
+          inviteSent.classList.add('hidden');
+        }
+
+        // Add a button to navigate to Step 6 if it doesn't exist
+        const step5Div = document.getElementById('wizard-step-5');
+        let viewShareBtn = document.getElementById('view-share-btn');
+        if (!viewShareBtn && step5Div) {
+          viewShareBtn = document.createElement('div');
+          viewShareBtn.id = 'view-share-btn';
+          viewShareBtn.style.marginTop = '32px';
+          viewShareBtn.innerHTML = '<button onclick="goToStep(6)">View Share options</button>';
+          step5Div.appendChild(viewShareBtn);
         }
       }
     }
@@ -982,8 +991,8 @@
         }
       }
 
-      // If agreement has been sent, prevent forward navigation from steps 1-5
-      if (wizardData.agreementSent && targetStep <= 5) {
+      // If agreement has been sent, allow navigation to all steps including Step 6
+      if (wizardData.agreementSent) {
         goToStep(targetStep);
         return;
       }
@@ -2400,7 +2409,7 @@
         const displayText = currentUser.full_name
           ? `${currentUser.full_name} | ${currentUser.email}`
           : currentUser.email;
-        document.getElementById('user-email').textContent = displayText;
+        document.getElementById('user-info-display').textContent = displayText;
       } catch (err) {
         console.error('Error loading user:', err);
         window.location.href = '/';
@@ -2471,6 +2480,10 @@
               activityText = msg.body;
             } else if (msg.event_type === 'AGREEMENT_CANCELLED_BORROWER') {
               activityText = msg.body;
+            } else if (msg.event_type === 'HARDSHIP_REQUEST_LENDER') {
+              // Payment difficulty - use borrower's name and add emphasis
+              const borrowerName = msg.borrower_full_name || msg.friend_first_name || msg.borrower_email;
+              activityText = `${borrowerName} reported a payment issue and requested a new plan`;
             }
 
             // Determine the link URL based on agreement_id and event_type
@@ -2489,13 +2502,17 @@
             const clickableClass = linkUrl ? 'message-clickable' : '';
             const onclickAttr = linkUrl ? `onclick="handleActivityClick(${msg.id}, '${linkUrl}')"` : '';
 
+            // Add warning icon for payment difficulty
+            const isPaymentDifficulty = msg.event_type === 'HARDSHIP_REQUEST_LENDER';
+            const warningIcon = isPaymentDifficulty ? '<span style="color:#f59e0b; font-weight:700; margin-right:8px" title="Payment issue requires attention">⚠</span>' : '';
+
             return `
               <div class="message-item ${unreadClass} ${clickableClass}" ${onclickAttr}>
                 <div style="display:flex; justify-content:space-between; align-items:center">
                   <div class="message-date">${timestamp} (${relativeTime})</div>
                   ${isUnread ? '<span class="unread-indicator">●</span>' : ''}
                 </div>
-                <div style="margin-top:4px">${activityText}</div>
+                <div style="margin-top:4px; ${isPaymentDifficulty ? 'font-weight:600; color:var(--text)' : ''}">${warningIcon}${activityText}</div>
               </div>
             `;
           }).join('');

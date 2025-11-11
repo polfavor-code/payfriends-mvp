@@ -84,13 +84,13 @@
     #proof-modal-download:hover{background:#3a3a3a; border-color:rgba(255,255,255,0.25)}
     .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
     .top-header-left{display:flex; align-items:center; gap:12px}
-    .top-header-right{display:flex; gap:16px; align-items:center; flex-direction:column}
+    .top-header-right{display:flex; gap:16px; align-items:center}
     .logo-coin{height:54px; width:auto}
     .top-header-text{display:flex; flex-direction:column; gap:2px}
     .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
     .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
     .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
-    .top-header-user-info{display:flex; align-items:center; gap:12px; margin-bottom:8px}
+    .top-header-user-info{color:var(--muted); font-size:14px}
     .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
     .logout-btn:hover{background:rgba(255,255,255,0.05)}
   </style>
@@ -100,7 +100,7 @@
     <header class="top-header">
       <div class="top-header-left">
         <a href="/app" style="text-decoration:none; display:flex; align-items:center; gap:12px">
-          <img src="/images/payfriends-logo.svg" class="logo-coin" alt="PayFriends logo" />
+          <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
           <div class="top-header-text">
             <div class="app-name" style="color:var(--text)">PayFriends.app</div>
             <div class="app-slogan">Pay friends, stay friends.</div>
@@ -108,13 +108,9 @@
         </a>
       </div>
       <div class="top-header-right">
-        <div class="top-header-user-info">
-          <div class="user-meta" id="user-email">Loading...</div>
-        </div>
-        <div style="display:flex; gap:16px; align-items:center">
-          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
-          <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
+        <div class="top-header-user-info" id="user-info-display">Loading...</div>
+        <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
+        <button class="logout-btn" onclick="logout()">Logout</button>
       </div>
     </header>
 
@@ -171,7 +167,7 @@
           <span class="detail-value" id="amount-display"></span>
         </div>
         <div class="detail-row" id="money-sent-row" style="display:none">
-          <span class="detail-label">Money sent to borrower</span>
+          <span class="detail-label">Money transfer date</span>
           <span class="detail-value" id="money-sent-display"></span>
         </div>
         <div class="detail-row" id="repayment-type-row">
@@ -479,7 +475,7 @@
         const displayText = currentUser.full_name
           ? `${currentUser.full_name} | ${currentUser.email}`
           : currentUser.email;
-        document.getElementById('user-email').textContent = displayText;
+        document.getElementById('user-info-display').textContent = displayText;
 
         // Fetch agreement
         const res = await fetch(`/api/agreements/${agreementId}`);
@@ -660,10 +656,15 @@
       document.getElementById('lender-name').textContent = lenderName;
       document.getElementById('borrower-name').textContent = borrowerName;
 
-      // Money sent to borrower (show if available)
+      // Money transfer date (show if available)
       if (agreement.money_sent_date) {
-        const moneySentDate = new Date(agreement.money_sent_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        document.getElementById('money-sent-display').textContent = moneySentDate;
+        let moneySentDateText;
+        if (agreement.money_sent_date === 'on-acceptance') {
+          moneySentDateText = 'Upon agreement acceptance';
+        } else {
+          moneySentDateText = new Date(agreement.money_sent_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        document.getElementById('money-sent-display').textContent = moneySentDateText;
         document.getElementById('money-sent-row').style.display = 'flex';
       } else {
         document.getElementById('money-sent-row').style.display = 'none';
