@@ -35,6 +35,8 @@
     button:hover{filter:brightness(1.06)}
     button.secondary{background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-left:8px}
     button.secondary:hover{background:rgba(255,255,255,0.05)}
+    button.btn-review-pending{background:#facc15; color:#0d130f}
+    button.btn-review-pending:hover{filter:brightness(1.1)}
     .tabs{display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
     .tab{padding:10px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
     .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
@@ -2302,7 +2304,7 @@
         } else if (statusText === 'pending' && !isLender) {
           // Borrower can review pending agreements
           actionsHtml = `<div class="actions-column">
-            <button onclick="reviewAgreement(${a.id})">Review</button>
+            <button class="btn-review-pending" onclick="reviewAgreement(${a.id})">Review</button>
           </div>`;
         } else {
           // For lenders on any agreement, or borrowers on active/settled
