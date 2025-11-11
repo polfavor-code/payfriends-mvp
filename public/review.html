@@ -10,7 +10,8 @@
     }
     *{box-sizing:border-box}
     body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); padding:32px 16px;}
-    .container{max-width:600px; margin:0 auto;}
+    .container{max-width:1200px; margin:0 auto;}
+    .container-narrow{max-width:600px; margin:0 auto;}
     .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
     h1{margin:0 0 8px 0; font-size:24px}
     h2{margin:0 0 16px 0; font-size:20px}
@@ -34,17 +35,62 @@
     .success{color:var(--accent)}
     .amount{font-size:32px; font-weight:700; color:var(--accent); text-align:center; margin:16px 0}
     .note{background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.2); border-radius:8px; padding:12px; color:var(--text); font-size:14px; margin:16px 0}
+    .status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600}
+    .status-badge.pending{background:#f59e0b; color:#0d130f}
+    .status-badge.active{background:#22c55e; color:#fff}
+    .status-badge.settled{background:#9ca3af; color:#fff}
+    .status-badge.declined{background:#ef4444; color:#fff}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; flex-direction:column; align-items:flex-end; gap:8px}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
+    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
+    .top-header-user-info{color:var(--text); font-size:14px; text-align:right}
+    .top-header-actions{display:flex; gap:12px; align-items:center}
+    .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px}
+    .logout-btn:hover{background:rgba(255,255,255,0.05)}
   </style>
 </head>
 <body>
-  <div class="container">
+  <!-- Header (shown only when logged in for review) -->
+  <div id="logged-in-header" class="hidden">
+    <div class="container">
+      <header class="top-header">
+        <div class="top-header-left">
+          <a href="/app" style="text-decoration:none; display:flex; align-items:center; gap:12px">
+            <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
+            <div class="top-header-text">
+              <div class="app-name" style="color:var(--text)">PayFriends.app</div>
+              <div class="app-slogan">Pay friends, stay friends.</div>
+            </div>
+          </a>
+        </div>
+        <div class="top-header-right">
+          <div class="top-header-user-info" id="user-info-display">Loading...</div>
+          <div class="top-header-actions">
+            <a href="/app" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">Activity</a>
+            <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+          </div>
+        </div>
+      </header>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div class="container-narrow">
     <div class="card">
       <h1>Agreement Review</h1>
       <p id="loading-text">Loading agreement details...</p>
     </div>
+  </div>
 
-    <!-- Not logged in: show signup/login flow -->
-    <div id="auth-section" class="card hidden">
+  <!-- Not logged in: show signup/login flow -->
+  <div id="auth-section" class="container-narrow hidden">
+    <div class="card">
       <h2>Sign up to review this agreement</h2>
       <p id="invite-email-notice"></p>
 
@@ -70,9 +116,11 @@
         <a href="/" style="color:var(--accent); text-decoration:none">Log in here</a>
       </div>
     </div>
+  </div>
 
-    <!-- Logged in: show agreement review -->
-    <div id="review-section" class="card hidden">
+  <!-- Logged in: show agreement review -->
+  <div id="review-section" class="container hidden">
+    <div class="card">
       <h2>Agreement Details</h2>
 
       <!-- Details section -->
@@ -157,16 +205,20 @@
       <button class="tertiary" onclick="handleReviewLater()">Review Later</button>
       <p class="status" id="review-status"></p>
     </div>
+  </div>
 
-    <!-- Already accepted/declined -->
-    <div id="already-processed" class="card hidden">
+  <!-- Already accepted/declined -->
+  <div id="already-processed" class="container-narrow hidden">
+    <div class="card">
       <h2>Agreement Already Processed</h2>
       <p>This agreement has already been accepted or declined.</p>
       <a href="/app" style="display:inline-block; margin-top:16px; padding:10px 20px; background:var(--accent); color:#0d130f; border-radius:10px; text-decoration:none; font-weight:600">Go to Dashboard</a>
     </div>
+  </div>
 
-    <!-- Agreement cancelled -->
-    <div id="agreement-cancelled" class="card hidden">
+  <!-- Agreement cancelled -->
+  <div id="agreement-cancelled" class="container-narrow hidden">
+    <div class="card">
       <h2>Agreement No Longer Available</h2>
       <p>This agreement is no longer available. The lender cancelled the request.</p>
       <a href="/app" style="display:inline-block; margin-top:16px; padding:10px 20px; background:var(--accent); color:#0d130f; border-radius:10px; text-decoration:none; font-weight:600">Go to Dashboard</a>
@@ -279,6 +331,13 @@
     function showReviewSection() {
       document.getElementById('loading-text').parentElement.classList.add('hidden');
       document.getElementById('review-section').classList.remove('hidden');
+
+      // Show header and populate user info
+      document.getElementById('logged-in-header').classList.remove('hidden');
+      if (currentUser) {
+        const userName = currentUser.full_name || currentUser.email;
+        document.getElementById('user-info-display').textContent = `${userName} | ${currentUser.email}`;
+      }
 
       const agreement = inviteData.agreement;
       const amount = formatAmount(agreement.amount_cents);
@@ -597,6 +656,17 @@
       } catch (err) {
         status.textContent = 'Error: ' + err.message;
         status.className = 'status error';
+      }
+    }
+
+    // Logout
+    async function logout() {
+      try {
+        await fetch('/auth/logout', { method: 'POST' });
+        window.location.href = '/';
+      } catch (err) {
+        console.error('Logout error:', err);
+        window.location.href = '/';
       }
     }
 

@@ -1746,6 +1746,7 @@
         if (res.ok) {
           const inviteData = await res.json();
           const inviteUrl = `${window.location.origin}/review?token=${inviteData.token}`;
+          const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
           const borrowerEmail = agreement.borrower_email;
           const createdDate = new Date(inviteData.created_at).toLocaleDateString('en-GB', {
             day: 'numeric',
@@ -1757,7 +1758,7 @@
 
           // Invite sent info
           html += `<div>
-            <div style="color:var(--muted); font-size:14px">Invite sent to <strong style="color:var(--text)">${borrowerEmail}</strong> on ${createdDate}.</div>
+            <div style="color:var(--muted); font-size:14px">Invite sent to <strong style="color:var(--text)">${borrowerName}</strong> at <strong style="color:var(--text)">${borrowerEmail}</strong> on ${createdDate}.</div>
           </div>`;
 
           // Share link

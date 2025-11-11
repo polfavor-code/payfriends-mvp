@@ -11,11 +11,6 @@
     *{box-sizing:border-box}
     body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
     .container{max-width:600px;margin:0 auto;padding:32px 16px;}
-    .header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .header-left h1{margin:0 0 4px 0;font-size:28px}
-    .header-right{display:flex; gap:16px; align-items:center}
-    .back-link{color:var(--accent); text-decoration:none; font-weight:500; font-size:14px}
-    .back-link:hover{text-decoration:underline}
     .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin:16px 0}
     .row{margin:20px 0}
     .row label{display:block; margin-bottom:8px; color:var(--muted); font-size:14px; font-weight:500}
@@ -26,16 +21,39 @@
     .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px; text-align:center}
     .error{color:#ff6b6b}
     .success{color:var(--accent)}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; flex-direction:column; align-items:flex-end; gap:8px}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
+    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
+    .top-header-user-info{color:var(--text); font-size:14px; text-align:right}
+    .top-header-actions{display:flex; gap:12px; align-items:center}
+    .logout-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text);font-weight:500; cursor:pointer; font-size:14px; width:auto}
+    .logout-btn:hover{background:rgba(255,255,255,0.05)}
   </style>
 </head>
 <body>
   <main class="container">
-    <header class="header">
-      <div class="header-left">
-        <h1>My Profile</h1>
+    <header class="top-header">
+      <div class="top-header-left">
+        <a href="/app" style="text-decoration:none; display:flex; align-items:center; gap:12px">
+          <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
+          <div class="top-header-text">
+            <div class="app-name" style="color:var(--text)">PayFriends.app</div>
+            <div class="app-slogan">Pay friends, stay friends.</div>
+          </div>
+        </a>
       </div>
-      <div class="header-right">
-        <a href="/app" class="back-link">← Back to Dashboard</a>
+      <div class="top-header-right">
+        <div class="top-header-user-info" id="user-info-display">Loading...</div>
+        <div class="top-header-actions">
+          <a href="/app" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">Activity</a>
+          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block">My Profile</a>
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
       </div>
     </header>
 
@@ -87,6 +105,10 @@
         }
         const data = await res.json();
         currentUser = data.user;
+
+        // Populate header user info
+        const userName = currentUser.full_name || currentUser.email;
+        document.getElementById('user-info-display').textContent = `${userName} | ${currentUser.email}`;
 
         document.getElementById('full-name').value = currentUser.full_name || '';
         document.getElementById('email').value = currentUser.email;
@@ -255,6 +277,17 @@
         status.className = 'status error';
       }
     });
+
+    // Logout
+    async function logout() {
+      try {
+        await fetch('/auth/logout', { method: 'POST' });
+        window.location.href = '/';
+      } catch (err) {
+        console.error('Logout error:', err);
+        window.location.href = '/';
+      }
+    }
 
     // Initialize
     loadProfile();
