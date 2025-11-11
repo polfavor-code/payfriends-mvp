@@ -10,7 +10,7 @@
     }
     *{box-sizing:border-box}
     body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
-    .container{max-width:1200px;margin:0 auto;padding:32px 16px;}
+    .container{max-width:1280px;margin:0 auto;padding:32px 16px;}
     .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin:16px 0}
     .row{margin:20px 0}
     .row label{display:block; margin-bottom:8px; color:var(--muted); font-size:14px; font-weight:500}
@@ -38,7 +38,8 @@
     .user-avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;flex-shrink:0;vertical-align:middle}
     .user-avatar.size-small{width:22px;height:22px;font-size:10px;margin-right:8px}
     .user-avatar.size-medium{width:48px;height:48px;font-size:18px}
-    .user-avatar.size-large{width:72px;height:72px;font-size:28px;font-weight:600}
+    .user-avatar.size-large{width:72px;height:72px;font-size:28px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
+    .user-avatar.size-large:hover{opacity:0.85}
     .user-avatar-image{width:100%;height:100%;object-fit:cover}
     .user-avatar-initials{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:600}
     .user-avatar-initials.color-1{background:#6366f1;color:#fff}
@@ -50,7 +51,7 @@
     .user-avatar-initials.color-7{background:#14b8a6;color:#fff}
 
     /* Profile header with avatar */
-    .profile-header{display:flex;align-items:center;gap:24px;margin-bottom:32px}
+    .profile-header{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:24px;margin-bottom:24px}
     .profile-info{display:flex;flex-direction:column;gap:6px}
     .profile-name{font-size:20px;font-weight:600;color:var(--text)}
     .profile-detail{font-size:14px;color:var(--muted)}
@@ -83,25 +84,9 @@
 
       <!-- Profile Header with Avatar -->
       <div class="profile-header">
-        <div id="profile-avatar-container"></div>
-        <div class="profile-info">
-          <div class="profile-name" id="profile-display-name">Loading...</div>
-          <div class="profile-detail" id="profile-display-email">Loading...</div>
-          <div class="profile-detail" id="profile-display-phone">Loading...</div>
-        </div>
-      </div>
-
-      <!-- Profile Picture Upload Section -->
-      <div style="margin-bottom:32px">
-        <label style="display:block; color:var(--muted); font-weight:500; margin-bottom:12px; font-size:14px">Profile Picture</label>
+        <div id="profile-avatar-container" onclick="document.getElementById('picture-input').click()" oncontextmenu="handleAvatarContextMenu(event)"></div>
         <input type="file" id="picture-input" accept="image/jpeg,image/png,image/webp" style="display:none" />
-        <button type="button" onclick="document.getElementById('picture-input').click()" style="width:auto; padding:8px 16px; font-size:14px; margin-right:8px">
-          <span id="upload-btn-text">Upload Photo</span>
-        </button>
-        <button type="button" id="remove-picture-btn" onclick="removeProfilePicture()" style="width:auto; padding:8px 16px; font-size:14px; background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); display:none">
-          Remove Photo
-        </button>
-        <p id="picture-status" class="status"></p>
+        <p id="picture-status" class="status" style="margin:0"></p>
       </div>
 
       <form id="profile-form">
@@ -182,21 +167,10 @@
         const avatarContainer = document.getElementById('profile-avatar-container');
         avatarContainer.innerHTML = generateAvatarHTML(currentUser, 'large');
 
-        // Display user info in profile header
-        document.getElementById('profile-display-name').textContent = currentUser.full_name || 'No name set';
-        document.getElementById('profile-display-email').textContent = currentUser.email;
-        document.getElementById('profile-display-phone').textContent = currentUser.phone_number || 'No phone number set';
-
         // Populate form fields
         document.getElementById('full-name').value = currentUser.full_name || '';
         document.getElementById('email').value = currentUser.email;
         document.getElementById('phone-number').value = currentUser.phone_number || '';
-
-        // Update upload button text if profile picture exists
-        if (currentUser.profile_picture) {
-          document.getElementById('upload-btn-text').textContent = 'Change Photo';
-          document.getElementById('remove-picture-btn').style.display = 'inline-block';
-        }
       } catch (err) {
         console.error('Error loading profile:', err);
         window.location.href = '/';
@@ -205,28 +179,16 @@
 
     // Display profile picture - refresh avatar
     function displayProfilePicture(picturePath) {
-      const removeBtn = document.getElementById('remove-picture-btn');
-      const uploadBtnText = document.getElementById('upload-btn-text');
       const avatarContainer = document.getElementById('profile-avatar-container');
-
       // Refresh the avatar to show the new picture
       avatarContainer.innerHTML = generateAvatarHTML(currentUser, 'large');
-
-      removeBtn.style.display = 'inline-block';
-      uploadBtnText.textContent = 'Change Photo';
     }
 
     // Hide profile picture - refresh avatar to show initials
     function hideProfilePicture() {
-      const removeBtn = document.getElementById('remove-picture-btn');
-      const uploadBtnText = document.getElementById('upload-btn-text');
       const avatarContainer = document.getElementById('profile-avatar-container');
-
       // Refresh the avatar to show initials instead of picture
       avatarContainer.innerHTML = generateAvatarHTML(currentUser, 'large');
-
-      removeBtn.style.display = 'none';
-      uploadBtnText.textContent = 'Upload Photo';
     }
 
     // Handle profile picture upload
@@ -282,12 +244,19 @@
       e.target.value = '';
     });
 
+    // Handle avatar context menu (right-click)
+    function handleAvatarContextMenu(event) {
+      // Only show context menu if user has a profile picture
+      if (currentUser && currentUser.profile_picture) {
+        event.preventDefault();
+        if (confirm('Remove profile picture?')) {
+          removeProfilePicture();
+        }
+      }
+    }
+
     // Remove profile picture
     async function removeProfilePicture() {
-      if (!confirm('Are you sure you want to remove your profile picture?')) {
-        return;
-      }
-
       const pictureStatus = document.getElementById('picture-status');
       pictureStatus.textContent = 'Removing...';
       pictureStatus.className = 'status';
@@ -362,10 +331,6 @@
         // Update current user data
         currentUser.full_name = fullName;
         currentUser.phone_number = phoneNumber;
-
-        // Refresh displayed user info in profile header
-        document.getElementById('profile-display-name').textContent = fullName;
-        document.getElementById('profile-display-phone').textContent = phoneNumber;
 
         // Refresh avatar (in case name changed, initials might change)
         const avatarContainer = document.getElementById('profile-avatar-container');
