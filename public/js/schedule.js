@@ -169,13 +169,13 @@ function generateScheduleAccordionHTML(params) {
     startDate
   });
 
-  // Format totals for display (no decimals for summary)
-  const totalInterestDisplay = new Intl.NumberFormat('de-DE').format(Math.round(schedule.totalInterestCents / 100));
-  const totalToRepayDisplay = new Intl.NumberFormat('de-DE').format(Math.round(schedule.totalToRepayCents / 100));
+  // Format totals for display (no decimals for summary, nl-NL locale)
+  const totalInterestDisplay = formatCurrency0(schedule.totalInterestCents);
+  const totalToRepayDisplay = formatCurrency0(schedule.totalToRepayCents);
 
   // Build lead-in sentence
   const countText = count === 1 ? '1 repayment' : `${count} repayments`;
-  const leadInSentence = `At ${aprPercent}% interest per year over ${countText}, total interest is about €${totalInterestDisplay} and total to repay is €${totalToRepayDisplay}.`;
+  const leadInSentence = `At ${aprPercent}% interest per year over ${countText}, total interest is about ${totalInterestDisplay} and total to repay is ${totalToRepayDisplay}.`;
 
   // Build complete HTML
   let html = `<p style="margin:0 0 16px 0; font-size:14px; color:#a7b0bd; line-height:1.5">${leadInSentence}</p>`;
