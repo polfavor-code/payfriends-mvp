@@ -1,0 +1,171 @@
+/* PayFriends Shared Control Styles - Normalize height & baseline across browsers */
+
+/* Base control normalization - for inputs and select-like controls */
+.pf-control {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #10151d;
+  color: var(--text);
+  font-size: 15px;
+  box-sizing: border-box;
+  outline: none;
+  align-middle: middle;
+  vertical-align: middle;
+  line-height: normal;
+  font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+}
+
+.pf-control:focus {
+  border-color: rgba(61, 220, 151, 0.4);
+  outline: none;
+}
+
+.pf-control:hover {
+  background: #10151d;
+}
+
+/* Header buttons - normalize all interactive elements in header */
+.pf-btn-header {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  background: transparent;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: normal;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.pf-btn-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pf-btn-header:focus {
+  outline: none;
+}
+
+/* Special styling for activity button with counter */
+.pf-btn-header.has-unread {
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pf-btn-header.has-unread:hover {
+  background: #1a2028;
+}
+
+/* Phone input controls - ensure all three elements align perfectly */
+.pf-phone-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+  .pf-phone-row {
+    flex-wrap: nowrap;
+  }
+}
+
+/* Country select button */
+.pf-phone-country {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  background: #10151d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  min-width: 200px;
+  box-sizing: border-box;
+  vertical-align: middle;
+  line-height: normal;
+}
+
+.pf-phone-country:hover,
+.pf-phone-country:focus {
+  border-color: rgba(61, 220, 151, 0.4);
+  outline: none;
+}
+
+/* Dial code prefix display */
+.pf-phone-prefix {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  background: #10151d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 15px;
+  min-width: 60px;
+  box-sizing: border-box;
+  vertical-align: middle;
+  line-height: normal;
+}
+
+/* Phone number input */
+.pf-phone-input {
+  flex: 1;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  background: #10151d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 15px;
+  font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+  box-sizing: border-box;
+  vertical-align: middle;
+  line-height: normal;
+}
+
+.pf-phone-input:focus {
+  outline: none;
+  border-color: rgba(61, 220, 151, 0.4);
+  background: #10151d;
+}
+
+.pf-phone-input:hover {
+  background: #10151d;
+}
+
+.pf-phone-input:-webkit-autofill,
+.pf-phone-input:-webkit-autofill:hover,
+.pf-phone-input:-webkit-autofill:focus,
+.pf-phone-input:-webkit-autofill:active {
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: var(--text);
+  transition: background-color 5000s ease-in-out 0s;
+  box-shadow: inset 0 0 20px 20px #10151d;
+}
+
+.pf-phone-input.phone-input-invalid {
+  border-color: #ff6b6b;
+}
