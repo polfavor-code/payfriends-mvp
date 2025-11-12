@@ -196,6 +196,29 @@
         </div>
       </div>
 
+      <!-- Fairness Between Friends (collapsible) -->
+      <div id="fairness-card" style="margin:16px 0">
+        <button onclick="toggleReviewSection('fairness-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+          <span>Fairness Between Friends</span>
+          <span id="fairness-detail-toggle">▼</span>
+        </button>
+        <div id="fairness-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
+            PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
+            Interest is calculated dynamically on the outstanding balance and the time elapsed.
+          </p>
+          <ul style="margin:0 0 12px 0; padding-left:20px; font-size:14px; line-height:1.6">
+            <li style="margin-bottom:8px"><strong>Early or higher payments</strong> reduce the total interest and, where applicable, lower future installment amounts.</li>
+            <li style="margin-bottom:8px"><strong>Late or smaller payments</strong> increase the total interest for the period the amount remains outstanding.</li>
+            <li style="margin-bottom:8px">These recalculations happen automatically and are reflected instantly in the agreement for both lender and borrower.</li>
+          </ul>
+          <p style="margin:0; font-size:14px; line-height:1.6">
+            Each repayment entry in the payment history clearly notes when a payment caused a change in the total interest, outstanding balance, or future installments.
+            This ensures both parties always see the current, fair value of the loan.
+          </p>
+        </div>
+      </div>
+
       <!-- Payments & reminders (collapsible) -->
       <div id="payments-reminders-card" style="margin:16px 0">
         <button onclick="toggleReviewSection('payments-reminders-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
@@ -253,7 +276,20 @@
             <input type="checkbox" id="accept-confirm-proof" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
             <span style="color:var(--text); font-size:13px; line-height:1.5;">I will provide proof of payment when requested.</span>
           </label>
+
+          <!-- Fairness principle checkbox (always required) -->
+          <label style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+            <input type="checkbox" id="accept-confirm-fairness" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
+            <span style="color:var(--text); font-size:13px; line-height:1.5;">
+              <strong>I understand and agree that if my repayment timing or amount changes, the interest will be recalculated automatically.</strong>
+              Paying earlier or more will lower my interest, while paying later or less may increase it.
+            </span>
+          </label>
         </div>
+        <!-- Optional explainer below confirmations -->
+        <p style="color:var(--muted); font-size:12px; margin:8px 0 0 0; line-height:1.5; font-style:italic;">
+          PayFriends automatically keeps the agreement fair for both sides — adjusting interest based on real repayment behavior.
+        </p>
       </div>
 
       <!-- Signature section -->
@@ -874,6 +910,7 @@
     function validateAcceptModal() {
       const agreement = inviteData.agreement;
       const termsChecked = document.getElementById('accept-confirm-terms').checked;
+      const fairnessChecked = document.getElementById('accept-confirm-fairness').checked;
       const signature = document.getElementById('accept-signature').value.trim();
       const confirmBtn = document.getElementById('accept-modal-confirm-btn');
       const signatureError = document.getElementById('accept-signature-error');
@@ -886,7 +923,7 @@
       const proofChecked = !proofRequired || document.getElementById('accept-confirm-proof').checked;
 
       // Validate all required fields
-      const allCheckboxesValid = termsChecked && remindersChecked && proofChecked;
+      const allCheckboxesValid = termsChecked && fairnessChecked && remindersChecked && proofChecked;
       const signatureValid = signature.length > 0;
 
       if (allCheckboxesValid && signatureValid) {
@@ -904,6 +941,7 @@
     async function confirmAccept() {
       const status = document.getElementById('accept-modal-status');
       const confirmBtn = document.getElementById('accept-modal-confirm-btn');
+      const fairnessChecked = document.getElementById('accept-confirm-fairness').checked;
 
       status.textContent = 'Accepting agreement...';
       status.className = 'status';
@@ -913,7 +951,8 @@
       try {
         const res = await fetch(`/api/invites/${token}/accept`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fairnessAccepted: fairnessChecked })
         });
 
         const data = await res.json();
