@@ -929,7 +929,7 @@
 
       <!-- Step 6: Share -->
       <div id="wizard-step-6" class="wizard-content hidden">
-        <h3 style="margin-top:0">6. Share</h3>
+        <h3 style="margin-top:0">Sharing options</h3>
 
         <!-- Success header -->
         <div style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.25); border-radius:12px; padding:20px; margin:20px 0">
@@ -3305,154 +3305,8 @@
 
     // Render agreements based on current filter
     function renderAgreements() {
-      const tbody = document.querySelector('#list tbody');
-      const emptyState = document.getElementById('empty-state');
-      const counterpartyHeader = document.getElementById('counterparty-header');
-      const listSection = document.getElementById('list-section');
-      const welcomeCard = document.getElementById('welcome-card');
-
-      // Show welcome card if user has zero agreements overall
-      if (allAgreements.length === 0) {
-        listSection.style.display = 'none';
-        welcomeCard.style.display = 'block';
-        return;
-      }
-
-      // Hide welcome card when there are agreements
-      listSection.style.display = 'block';
-      welcomeCard.style.display = 'none';
-
-      let filtered = allAgreements;
-      if (currentFilter !== 'all') {
-        // For Pending tab, exclude cancelled agreements
-        if (currentFilter === 'pending') {
-          filtered = allAgreements.filter(a => a.status === 'pending');
-        } else {
-          filtered = allAgreements.filter(a => a.status === currentFilter);
-        }
-      }
-
-      if (filtered.length === 0) {
-        tbody.innerHTML = '';
-        emptyState.style.display = 'block';
-        document.getElementById('list').style.display = 'none';
-        return;
-      }
-
-      emptyState.style.display = 'none';
-      document.getElementById('list').style.display = 'table';
-      tbody.innerHTML = '';
-
-      // Determine header label based on user's role in agreements
-      // Default to showing both, but if all agreements have user as same role, show specific header
-      let userRoles = new Set();
-      for (const a of filtered) {
-        const isLender = a.lender_user_id === currentUser.id;
-        userRoles.add(isLender ? 'lender' : 'borrower');
-      }
-
-      // Set headers based on predominant role
-      const dueHeader = document.getElementById('due-header');
-      if (userRoles.size === 1) {
-        if (userRoles.has('lender')) {
-          counterpartyHeader.textContent = 'Borrower';
-          dueHeader.textContent = 'Next repayment due';
-        } else {
-          counterpartyHeader.textContent = 'Lender';
-          dueHeader.textContent = 'Next payment due';
-        }
-      } else {
-        // Mixed roles, keep generic headers
-        counterpartyHeader.textContent = 'Counterparty';
-        dueHeader.textContent = 'Due';
-      }
-
-      for (const a of filtered) {
-        const tr = document.createElement('tr');
-        tr.setAttribute('data-id', a.id);
-        const amount = formatAmount(a.amount_cents);
-        const statusText = a.status || 'pending';
-        const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
-
-        // Build status column with colored dot indicator (no text)
-        let tooltipText = capitalizedStatus;
-        if (statusText === 'pending') {
-          tooltipText = 'Pending';
-        } else if (statusText === 'active') {
-          tooltipText = 'Active';
-        } else if (statusText === 'settled') {
-          tooltipText = 'Settled';
-        } else if (statusText === 'cancelled') {
-          tooltipText = 'Cancelled';
-        } else if (statusText === 'declined') {
-          tooltipText = 'Declined';
-        } else if (statusText === 'overdue') {
-          tooltipText = 'Overdue';
-        }
-        let statusBadge = `<div class="status-dot-wrapper" data-tooltip="${tooltipText}"><span class="status-dot status-dot--${statusText}" role="img" aria-label="${tooltipText}"></span></div>`;
-
-        // Determine role
-        const isLender = a.lender_user_id === currentUser.id;
-
-        // Generate avatar and counterparty display with name
-        const counterpartyName = a.counterparty_name || '—';
-        const avatarHTML = generateAvatarHTML({
-          counterparty_name: counterpartyName,
-          profile_picture_url: a.counterparty_profile_picture_url
-        });
-        const counterpartyDisplay = `<div class="counterparty-cell">${avatarHTML}<span>${counterpartyName}</span></div>`;
-
-        // Get description or show fallback
-        const description = a.description || '<span style="color:var(--muted); font-style:italic">(No description)</span>';
-
-        // Calculate outstanding amount with original amount tooltip
-        const outstandingCents = a.outstanding_cents || a.amount_cents;
-        const outstanding = formatAmount(outstandingCents);
-        const originalAmount = formatAmount(a.amount_cents);
-        const outstandingDisplay = `<span title="Original: €${originalAmount}">€ ${outstanding} / € ${originalAmount}</span>`;
-
-        // Format due date with countdown
-        const dueDateDisplay = formatDueDate(a, isLender);
-
-        // Build actions column with main button and conditional alert buttons
-        let actionsHtml = '';
-        if (statusText === 'cancelled') {
-          // No actions for cancelled agreements
-          actionsHtml = '—';
-        } else if (statusText === 'pending' && !isLender) {
-          // Borrower can review pending agreements
-          actionsHtml = `<div class="actions-column">
-            <button class="btn-review-pending" onclick="reviewAgreement(${a.id})">Review</button>
-          </div>`;
-        } else {
-          // For lenders on any agreement, or borrowers on active/settled
-          let mainBtnLabel = (statusText === 'pending' || statusText === 'active' || statusText === 'settled') ? 'Manage' : 'View';
-
-          let buttons = `<button onclick="viewAgreement(${a.id})">${mainBtnLabel}</button>`;
-
-          // Add conditional action buttons for lenders
-          if (isLender) {
-            if (a.hasPendingPaymentToConfirm) {
-              buttons += `<button class="btn-confirm-payment" onclick="openConfirmPaymentModal(${a.id})">Confirm payment</button>`;
-            }
-            if (a.hasOpenDifficulty) {
-              buttons += `<button class="btn-payment-issue" onclick="openDifficultyModal(${a.id})">Payment issue</button>`;
-            }
-          }
-
-          actionsHtml = `<div class="actions-column">${buttons}</div>`;
-        }
-
-        tr.innerHTML = `
-          <td>${counterpartyDisplay}</td>
-          <td>${description}</td>
-          <td>${outstandingDisplay}</td>
-          <td>${dueDateDisplay}</td>
-          <td>${statusBadge}</td>
-          <td>${actionsHtml}</td>
-        `;
-        tbody.appendChild(tr);
-      }
+      // Use shared component
+      renderAgreementsTable(allAgreements, currentUser, currentFilter);
     }
 
     // Refresh agreements
@@ -3712,5 +3566,8 @@
       goToStep(1);
     });
   </script>
+
+  <!-- Shared Agreements Table Component -->
+  <script src="/components/agreements-table.js"></script>
 </body>
 </html>

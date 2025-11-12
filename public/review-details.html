@@ -163,7 +163,10 @@
     .status-dot--overdue{background:#f87171}
     .status-dot--cancelled{background:#9ca3af}
     .status-dot--declined{background:#f87171}
-    .status-dot-wrapper{display:flex;align-items:center;justify-content:center;height:100%}
+    .status-dot-wrapper{display:inline-flex;align-items:center;justify-content:center;position:relative}
+    .status-dot-wrapper::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.2s ease;border:1px solid rgba(255,255,255,0.1);z-index:1000}
+    .status-dot-wrapper::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1f2937;opacity:0;pointer-events:none;transition:opacity 0.2s ease;z-index:1000}
+    .status-dot-wrapper:hover::after,.status-dot-wrapper:hover::before{opacity:1}
   </style>
 </head>
 <body>
@@ -2024,157 +2027,8 @@
 
     // Render agreements table
     function renderAgreements() {
-      const tbody = document.querySelector('#list tbody');
-      const emptyState = document.getElementById('empty-state');
-      const table = document.getElementById('list');
-
-      let filtered = allAgreements;
-      if (currentFilter !== 'all') {
-        if (currentFilter === 'pending') {
-          filtered = allAgreements.filter(a => a.status === 'pending');
-        } else {
-          filtered = allAgreements.filter(a => a.status === currentFilter);
-        }
-      }
-
-      if (filtered.length === 0) {
-        tbody.innerHTML = '';
-        emptyState.style.display = 'block';
-        table.style.display = 'none';
-        return;
-      }
-
-      emptyState.style.display = 'none';
-      table.style.display = 'table';
-      tbody.innerHTML = '';
-
-      // Determine header label based on user's role in agreements
-      const counterpartyHeader = document.getElementById('counterparty-header');
-      const dueHeader = document.getElementById('due-header');
-      let userRoles = new Set();
-      for (const a of filtered) {
-        const isLender = a.lender_user_id === currentUser.id;
-        userRoles.add(isLender ? 'lender' : 'borrower');
-      }
-
-      // Set headers based on predominant role
-      if (userRoles.size === 1) {
-        if (userRoles.has('lender')) {
-          counterpartyHeader.textContent = 'Borrower';
-          dueHeader.textContent = 'Next repayment due';
-        } else {
-          counterpartyHeader.textContent = 'Lender';
-          dueHeader.textContent = 'Next payment due';
-        }
-      } else {
-        // Mixed roles, keep generic headers
-        counterpartyHeader.textContent = 'Counterparty';
-        dueHeader.textContent = 'Due';
-      }
-
-      filtered.forEach(a => {
-        const isLender = a.lender_user_id === currentUser.id;
-        const isBorrower = a.borrower_user_id === currentUser.id;
-
-        // Counterparty info
-        let counterpartyName, counterpartyEmail, counterpartyUserId, counterpartyProfilePicture;
-        if (isLender) {
-          counterpartyName = a.borrower_full_name || a.friend_first_name || a.borrower_email;
-          counterpartyEmail = a.borrower_email;
-          counterpartyUserId = a.borrower_user_id;
-          counterpartyProfilePicture = a.borrower_profile_picture;
-        } else {
-          counterpartyName = a.lender_full_name || a.lender_name || a.lender_email;
-          counterpartyEmail = a.lender_email;
-          counterpartyUserId = a.lender_user_id;
-          counterpartyProfilePicture = a.lender_profile_picture;
-        }
-
-        // Avatar
-        let avatarHtml = '';
-        if (counterpartyProfilePicture && counterpartyUserId) {
-          avatarHtml = `<div class="user-avatar size-small"><img src="/api/profile/picture/${counterpartyUserId}" class="user-avatar-image" /></div>`;
-        } else {
-          const initials = getInitials(counterpartyName);
-          const colorClass = getAvatarColor(counterpartyName);
-          avatarHtml = `<div class="user-avatar size-small"><div class="user-avatar-initials ${colorClass}">${initials}</div></div>`;
-        }
-
-        // Description
-        const description = a.description || '—';
-
-        // Outstanding amount with original amount tooltip
-        const outstandingCents = a.outstanding_cents || a.amount_cents;
-        const outstanding = formatAmount(outstandingCents);
-        const originalAmount = formatAmount(a.amount_cents);
-
-        // Due date
-        let dueDate = '';
-        let dueDateClass = '';
-        if (a.status === 'settled') {
-          dueDate = '—';
-          dueDateClass = 'due-date-settled';
-        } else {
-          const dueTimestamp = a.repayment_type === 'installments' && a.final_due_date
-            ? new Date(a.final_due_date)
-            : new Date(a.due_date);
-          const now = new Date();
-          const diffDays = Math.floor((dueTimestamp - now) / (1000 * 60 * 60 * 24));
-
-          dueDate = dueTimestamp.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-
-          if (diffDays < 0) {
-            dueDateClass = 'due-date-overdue';
-          } else {
-            dueDateClass = 'due-date-upcoming';
-          }
-        }
-
-        // Status with colored dot indicator
-        const statusText = a.status || 'pending';
-        const capitalizedStatus = statusText.charAt(0).toUpperCase() + statusText.slice(1);
-        let tooltipText = capitalizedStatus;
-        if (statusText === 'pending') {
-          tooltipText = 'Pending';
-        } else if (statusText === 'active') {
-          tooltipText = 'Active';
-        } else if (statusText === 'settled') {
-          tooltipText = 'Settled';
-        } else if (statusText === 'cancelled') {
-          tooltipText = 'Cancelled';
-        } else if (statusText === 'declined') {
-          tooltipText = 'Declined';
-        }
-        let statusHtml = `<div class="status-dot-wrapper"><span class="status-dot status-dot--${statusText}" role="img" aria-label="${capitalizedStatus}" title="${tooltipText}"></span></div>`;
-
-        // Actions
-        let actionsHtml = '';
-        if (a.id === parseInt(agreementId)) {
-          actionsHtml = `<button onclick="scrollToManage()" style="background:var(--accent); color:#0d130f">Manage</button>`;
-        } else {
-          actionsHtml = `<button onclick="window.location.href='/agreements/${a.id}/manage'" class="secondary">Manage</button>`;
-        }
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>
-            <div class="counterparty-cell">
-              ${avatarHtml}
-              ${counterpartyName}
-            </div>
-          </td>
-          <td>${description}</td>
-          <td title="Original amount: € ${originalAmount}">€ ${outstanding} / € ${originalAmount}</td>
-          <td class="${dueDateClass}">${dueDate}</td>
-          <td>${statusHtml}</td>
-          <td>
-            <div class="actions-column">
-              ${actionsHtml}
-            </div>
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
+      // Use shared component - pass agreementId for highlighting current agreement
+      renderAgreementsTable(allAgreements, currentUser, currentFilter, agreementId);
     }
 
     // Scroll to manage section
@@ -2182,6 +2036,36 @@
       const manageHeader = document.getElementById('manage-header');
       if (manageHeader) {
         manageHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    // Navigation functions for agreements table
+    function reviewAgreement(id) {
+      window.location.href = `/agreements/${id}/review`;
+    }
+
+    function viewAgreement(id) {
+      window.location.href = `/agreements/${id}/manage`;
+    }
+
+    // Modal functions - redirect to manage page if not on current agreement
+    function openConfirmPaymentModal(id) {
+      if (id === parseInt(agreementId)) {
+        // Open the modal if already on this agreement's page
+        // For now, just scroll to manage section - modal implementation TBD
+        scrollToManage();
+      } else {
+        window.location.href = `/agreements/${id}/manage`;
+      }
+    }
+
+    function openDifficultyModal(id) {
+      if (id === parseInt(agreementId)) {
+        // Open the modal if already on this agreement's page
+        // For now, just scroll to manage section - modal implementation TBD
+        scrollToManage();
+      } else {
+        window.location.href = `/agreements/${id}/manage`;
       }
     }
 
@@ -2198,6 +2082,9 @@
       }
     }
   </script>
+
+  <!-- Shared Agreements Table Component -->
+  <script src="/components/agreements-table.js"></script>
 
   <!-- Proof of payment modal -->
   <div id="proof-modal" onclick="closeProofModal()" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); align-items:center; justify-content:center;">
