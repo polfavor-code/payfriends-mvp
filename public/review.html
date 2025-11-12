@@ -191,14 +191,69 @@
         </div>
       </div>
 
-      <div class="note">
-        By accepting this agreement, you confirm the terms and agree to repay the amount by the due date.
-      </div>
-
       <button onclick="handleAccept()">Accept Agreement</button>
       <button class="secondary" onclick="handleDecline()">Decline</button>
       <button class="tertiary" onclick="handleReviewLater()">Review Later</button>
       <p class="status" id="review-status"></p>
+    </div>
+  </div>
+
+  <!-- Accept Agreement Modal -->
+  <div id="accept-modal" onclick="closeAcceptModal()" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.85); align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="accept-modal-title">
+    <div onclick="event.stopPropagation()" style="max-width:650px; width:90%; max-height:90vh; overflow-y:auto; position:relative; background:#1a1f26; padding:24px; border-radius:12px; cursor:default; border:1px solid rgba(255,255,255,0.1);">
+      <!-- Close button -->
+      <span onclick="closeAcceptModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeAcceptModal();}" tabindex="0" role="button" style="position:absolute; top:10px; right:15px; color:#fff; font-size:28px; font-weight:bold; cursor:pointer; line-height:1;" aria-label="Close">&times;</span>
+
+      <!-- Title -->
+      <h3 id="accept-modal-title" style="color:#fff; margin:0 0 8px 0; padding-right:35px; font-size:20px; font-weight:600;">Accept this agreement?</h3>
+
+      <!-- Lead -->
+      <p style="color:var(--muted); margin:0 0 20px 0; font-size:14px; line-height:1.5;">Review the key terms below and confirm to proceed.</p>
+
+      <!-- Key terms section -->
+      <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin-bottom:20px;">
+        <div style="font-weight:600; margin-bottom:12px; font-size:14px; color:var(--text);">Key terms</div>
+        <div id="accept-modal-terms" style="display:flex; flex-direction:column; gap:8px; font-size:13px;"></div>
+      </div>
+
+      <!-- Confirmations section -->
+      <div style="margin-bottom:20px;">
+        <div style="font-weight:600; margin-bottom:12px; font-size:14px; color:var(--text);">Confirmations</div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <!-- Always required -->
+          <label style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+            <input type="checkbox" id="accept-confirm-terms" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
+            <span style="color:var(--text); font-size:13px; line-height:1.5;">I confirm the above terms are correct and I agree to repay as stated.</span>
+          </label>
+
+          <!-- Reminders checkbox (conditional) -->
+          <label id="accept-confirm-reminders-container" class="hidden" style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+            <input type="checkbox" id="accept-confirm-reminders" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
+            <span style="color:var(--text); font-size:13px; line-height:1.5;">I agree to the reminder schedule for upcoming and late payments.</span>
+          </label>
+
+          <!-- Proof of payment checkbox (conditional) -->
+          <label id="accept-confirm-proof-container" class="hidden" style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+            <input type="checkbox" id="accept-confirm-proof" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
+            <span style="color:var(--text); font-size:13px; line-height:1.5;">I will provide proof of payment when requested.</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Signature section -->
+      <div style="margin-bottom:20px;">
+        <label for="accept-signature" style="display:block; font-weight:600; margin-bottom:8px; font-size:14px; color:var(--text);">Type your full name to confirm</label>
+        <input type="text" id="accept-signature" placeholder="Your full name" style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px;" oninput="validateAcceptModal()">
+        <p id="accept-signature-error" class="hidden" style="color:#ff6b6b; font-size:12px; margin:6px 0 0 0;"></p>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex; gap:12px; flex-direction:row-reverse;">
+        <button id="accept-modal-confirm-btn" onclick="confirmAccept()" style="width:auto; flex:1; margin-top:0; background:#22c55e; color:#0d130f; font-weight:700; border:none; padding:12px 20px; border-radius:10px; cursor:pointer; opacity:0.5;" disabled>Accept & Sign</button>
+        <button class="secondary" onclick="closeAcceptModal()" style="width:auto; flex:1; margin-top:0;">Cancel</button>
+      </div>
+
+      <p class="status" id="accept-modal-status" style="text-align:center; margin-top:12px;"></p>
     </div>
   </div>
 
@@ -689,10 +744,188 @@
       }
     }
 
-    async function handleAccept() {
-      const status = document.getElementById('review-status');
-      status.textContent = 'Accepting...';
+    function handleAccept() {
+      openAcceptModal();
+    }
+
+    function openAcceptModal() {
+      const modal = document.getElementById('accept-modal');
+      const termsContainer = document.getElementById('accept-modal-terms');
+      const agreement = inviteData.agreement;
+
+      // Reset modal state
+      document.getElementById('accept-confirm-terms').checked = false;
+      document.getElementById('accept-confirm-reminders').checked = false;
+      document.getElementById('accept-confirm-proof').checked = false;
+      document.getElementById('accept-signature').value = '';
+      document.getElementById('accept-modal-status').textContent = '';
+      document.getElementById('accept-signature-error').classList.add('hidden');
+
+      // Build key terms HTML
+      let termsHTML = '';
+
+      // Helper function to add a term row
+      const addTerm = (label, value) => {
+        termsHTML += `<div style="display:grid; grid-template-columns:140px 1fr; gap:12px; padding:6px 0;">
+          <span style="color:var(--muted)">${label}:</span>
+          <span style="color:var(--text); font-weight:500;">${value}</span>
+        </div>`;
+      };
+
+      const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
+      const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+      const borrowerEmail = inviteData.invite.email;
+      const principalEuros = agreement.amount_cents / 100;
+      const amount = formatEuro2(principalEuros);
+      const repaymentType = agreement.repayment_type === 'installments' ? 'Installments' : 'One-time payment';
+
+      addTerm('Lender', lenderName);
+      addTerm('Borrower', `${borrowerName} (${borrowerEmail})`);
+      addTerm('Amount', amount);
+      addTerm('Repayment type', repaymentType);
+
+      // Installment plan (only for installments)
+      if (agreement.repayment_type === 'installments' && (agreement.number_of_installments || agreement.installment_count)) {
+        const numInstallments = agreement.number_of_installments || agreement.installment_count;
+        const freqLabel = agreement.payment_frequency_label || 'monthly';
+        const installmentAmt = formatEuro2(agreement.installment_amount || (principalEuros / numInstallments));
+        const firstDate = formatISOToHuman(agreement.first_payment_date);
+        const finalDate = formatISOToHuman(agreement.final_due_date);
+        const planText = `${numInstallments} ${freqLabel} payments of ${installmentAmt} from ${firstDate} to ${finalDate}`;
+        addTerm('Installment plan', planText);
+      }
+
+      // Loan duration
+      if (agreement.loan_duration_label) {
+        addTerm('Loan duration', agreement.loan_duration_label);
+      }
+
+      // Interest rate
+      if (agreement.interest_rate && agreement.interest_rate > 0) {
+        const totalInterest = formatEuro2(agreement.total_interest || 0);
+        addTerm('Interest rate', `${agreement.interest_rate}% per year`);
+        addTerm('Total interest', totalInterest);
+
+        const totalRepay = agreement.total_repay_amount || principalEuros;
+        addTerm('Total to repay', formatEuro2(totalRepay));
+      }
+
+      // Due dates
+      if (agreement.repayment_type === 'installments') {
+        if (agreement.first_payment_date) {
+          const firstDate = formatISOToHuman(agreement.first_payment_date);
+          addTerm('First repayment date', firstDate);
+        }
+        if (agreement.final_due_date) {
+          const finalDate = formatISOToHuman(agreement.final_due_date);
+          addTerm('Final due date', finalDate);
+        }
+      } else {
+        if (agreement.due_date) {
+          const dueDate = formatISOToHuman(agreement.due_date);
+          addTerm('Full repayment due', dueDate);
+        }
+      }
+
+      // Payment methods
+      if (agreement.payment_preference_method) {
+        const methods = agreement.payment_preference_method.split(',').map(m => {
+          const trimmed = m.trim();
+          if (trimmed === 'bank') return 'Bank transfer';
+          if (trimmed === 'cash') return 'Cash in person';
+          if (trimmed === 'crypto') return 'Crypto';
+          if (trimmed === 'paypal') return 'PayPal';
+          if (trimmed === 'any') return 'Any method';
+          if (trimmed === 'other') return 'Other';
+          return trimmed;
+        });
+        addTerm('Repayment method(s)', methods.join(', '));
+      }
+
+      // Proof required
+      addTerm('Require proof of payment', agreement.proof_required ? 'Yes' : 'No');
+
+      // Reminders
+      const reminderMode = agreement.reminder_mode === 'auto' ? 'On (auto)' : agreement.reminder_mode === 'custom' ? 'On (custom)' : 'Off';
+      addTerm('Reminders', reminderMode);
+
+      // Worst case scenario (only if enabled)
+      if (agreement.debt_collection_clause) {
+        addTerm('Worst case scenario', 'If you do not repay in time and ignore reminders or cannot agree a new plan, PayFriends will hand the case to an independent debt collector.');
+      }
+
+      termsContainer.innerHTML = termsHTML;
+
+      // Show/hide conditional checkboxes
+      const hasReminders = agreement.reminder_mode && agreement.reminder_mode !== 'off';
+      const reminderContainer = document.getElementById('accept-confirm-reminders-container');
+      if (hasReminders) {
+        reminderContainer.classList.remove('hidden');
+        reminderContainer.style.display = 'flex';
+      } else {
+        reminderContainer.classList.add('hidden');
+        reminderContainer.style.display = 'none';
+      }
+
+      const proofContainer = document.getElementById('accept-confirm-proof-container');
+      if (agreement.proof_required) {
+        proofContainer.classList.remove('hidden');
+        proofContainer.style.display = 'flex';
+      } else {
+        proofContainer.classList.add('hidden');
+        proofContainer.style.display = 'none';
+      }
+
+      // Reset and disable confirm button
+      validateAcceptModal();
+
+      // Show modal
+      modal.style.display = 'flex';
+    }
+
+    function closeAcceptModal() {
+      const modal = document.getElementById('accept-modal');
+      modal.style.display = 'none';
+    }
+
+    function validateAcceptModal() {
+      const agreement = inviteData.agreement;
+      const termsChecked = document.getElementById('accept-confirm-terms').checked;
+      const signature = document.getElementById('accept-signature').value.trim();
+      const confirmBtn = document.getElementById('accept-modal-confirm-btn');
+      const signatureError = document.getElementById('accept-signature-error');
+
+      // Check conditional checkboxes
+      const hasReminders = agreement.reminder_mode && agreement.reminder_mode !== 'off';
+      const remindersChecked = !hasReminders || document.getElementById('accept-confirm-reminders').checked;
+
+      const proofRequired = agreement.proof_required;
+      const proofChecked = !proofRequired || document.getElementById('accept-confirm-proof').checked;
+
+      // Validate all required fields
+      const allCheckboxesValid = termsChecked && remindersChecked && proofChecked;
+      const signatureValid = signature.length > 0;
+
+      if (allCheckboxesValid && signatureValid) {
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
+        confirmBtn.style.cursor = 'pointer';
+        signatureError.classList.add('hidden');
+      } else {
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = '0.5';
+        confirmBtn.style.cursor = 'not-allowed';
+      }
+    }
+
+    async function confirmAccept() {
+      const status = document.getElementById('accept-modal-status');
+      const confirmBtn = document.getElementById('accept-modal-confirm-btn');
+
+      status.textContent = 'Accepting agreement...';
       status.className = 'status';
+      confirmBtn.disabled = true;
+      confirmBtn.style.opacity = '0.5';
 
       try {
         const res = await fetch(`/api/invites/${token}/accept`, {
@@ -705,10 +938,12 @@
         if (!res.ok) {
           status.textContent = data.error || 'Failed to accept';
           status.className = 'status error';
+          confirmBtn.disabled = false;
+          confirmBtn.style.opacity = '1';
           return;
         }
 
-        status.textContent = 'Agreement accepted! Redirecting...';
+        status.textContent = 'Agreement accepted!';
         status.className = 'status success';
 
         setTimeout(() => {
@@ -717,6 +952,8 @@
       } catch (err) {
         status.textContent = 'Error: ' + err.message;
         status.className = 'status error';
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
       }
     }
 
