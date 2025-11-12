@@ -441,13 +441,13 @@
       </div>
 
       <!-- Wizard Steps -->
-      <div class="wizard-steps">
-        <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)">1. Basics</div>
-        <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)">2. Terms</div>
-        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)">3. Interest</div>
-        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)">4. Payments</div>
-        <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)">5. Summary</div>
-        <div class="wizard-step" id="step-indicator-6" onclick="clickStep(6)">6. Share with Bob</div>
+      <div class="wizard-steps" role="navigation" aria-label="Agreement wizard steps">
+        <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
+        <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">2. Terms</div>
+        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Interest">3. Interest</div>
+        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Payments">4. Payments</div>
+        <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Summary">5. Summary</div>
+        <div class="wizard-step" id="step-indicator-6" onclick="clickStep(6)" aria-label="Step 6, Share">6. Share</div>
       </div>
 
       <!-- Step 1: Setup -->
@@ -929,7 +929,7 @@
 
       <!-- Step 6: Share -->
       <div id="wizard-step-6" class="wizard-content hidden">
-        <h3 style="margin-top:0">6. Share agreement with <span id="share-heading-name"></span></h3>
+        <h3 style="margin-top:0">6. Share</h3>
 
         <!-- Success header -->
         <div style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.25); border-radius:12px; padding:20px; margin:20px 0">
@@ -1214,12 +1214,16 @@
       // Hide all steps
       for (let i = 1; i <= 6; i++) {
         document.getElementById(`wizard-step-${i}`).classList.add('hidden');
-        document.getElementById(`step-indicator-${i}`).classList.remove('active');
+        const indicator = document.getElementById(`step-indicator-${i}`);
+        indicator.classList.remove('active');
+        indicator.removeAttribute('aria-current');
       }
 
       // Show current step
       document.getElementById(`wizard-step-${step}`).classList.remove('hidden');
-      document.getElementById(`step-indicator-${step}`).classList.add('active');
+      const activeIndicator = document.getElementById(`step-indicator-${step}`);
+      activeIndicator.classList.add('active');
+      activeIndicator.setAttribute('aria-current', 'step');
 
       // Mark previous steps as completed
       for (let i = 1; i < step; i++) {
@@ -2969,11 +2973,10 @@
       const email = wizardData.friendEmail;
       const inviteUrl = wizardData.inviteUrl;
 
-      // Update step indicator to include borrower name
-      document.getElementById('step-indicator-6').textContent = `6. Share with ${firstName}`;
+      // Update step indicator
+      document.getElementById('step-indicator-6').textContent = '6. Share';
 
       // Populate all name placeholders
-      document.getElementById('share-heading-name').textContent = firstName;
       document.getElementById('share-invite-name').textContent = firstName;
       document.getElementById('share-invite-email').textContent = email;
       document.getElementById('share-qr-name').textContent = firstName;
