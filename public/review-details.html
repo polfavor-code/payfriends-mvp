@@ -239,6 +239,13 @@
       </div>
     </div>
 
+    <!-- Next Payment Due Card (borrower-only, active agreements) -->
+    <div id="next-payment-card" class="card hidden" style="padding:20px; margin:16px 0">
+      <div style="color:var(--muted); font-size:14px; margin-bottom:8px">Next payment due</div>
+      <div id="next-payment-amount" style="font-size:28px; font-weight:600; color:var(--accent); margin-bottom:4px"></div>
+      <div style="color:var(--muted); font-size:14px">Due on <span id="next-payment-date"></span></div>
+    </div>
+
     <!-- Primary payment action button (for active agreements) - moved up -->
     <div id="payment-action-section" class="hidden" style="margin:16px 0">
       <button id="record-payment-btn" class="record-payment-btn" style="width:100%">Report Payment</button>
@@ -821,6 +828,9 @@
           document.getElementById('hardship-button-section').classList.remove('hidden');
         }
 
+        // Show next payment card for borrower on active agreements
+        showNextPaymentCard();
+
         // Show payment action button for active agreements
         if (agreement.status === 'active') {
           showPaymentActionButton();
@@ -843,6 +853,35 @@
         const overdueDays = Math.abs(diffDays);
         return `(${overdueDays} day${overdueDays === 1 ? '' : 's'} overdue)`;
       }
+    }
+
+    function showNextPaymentCard() {
+      // Only show for borrowers on active agreements
+      const isBorrower = agreement.borrower_user_id === currentUser.id;
+
+      if (!isBorrower || agreement.status !== 'active') {
+        document.getElementById('next-payment-card').classList.add('hidden');
+        return;
+      }
+
+      // Calculate next payment info
+      const nextPaymentInfo = getNextPaymentInfo(agreement);
+
+      if (!nextPaymentInfo) {
+        // No next payment due, hide the card
+        document.getElementById('next-payment-card').classList.add('hidden');
+        return;
+      }
+
+      // Populate the card
+      const amountFormatted = formatCurrency2(nextPaymentInfo.amount_cents);
+      const dateFormatted = formatDate(nextPaymentInfo.due_date);
+
+      document.getElementById('next-payment-amount').textContent = amountFormatted;
+      document.getElementById('next-payment-date').textContent = dateFormatted;
+
+      // Show the card
+      document.getElementById('next-payment-card').classList.remove('hidden');
     }
 
     async function populateDetails() {

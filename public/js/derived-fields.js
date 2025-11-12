@@ -147,10 +147,119 @@ function formatRepaymentFrequency(frequency) {
   }
 }
 
+/**
+ * Calculate next payment information for an agreement
+ * @param {Object} agreement - Agreement object with repayment details and payment totals
+ * @returns {Object|null} Object with { amount_cents, due_date } or null if no payment due
+ */
+function getNextPaymentInfo(agreement) {
+  if (!agreement) {
+    return null;
+  }
+
+  // Only calculate for active agreements
+  if (agreement.status !== 'active') {
+    return null;
+  }
+
+  const totalPaid = agreement.total_paid_cents || 0;
+  const totalOwed = agreement.amount_cents || 0;
+  const outstanding = totalOwed - totalPaid;
+
+  // If fully paid, no next payment
+  if (outstanding <= 0) {
+    return null;
+  }
+
+  // For one-time repayment
+  if (agreement.repayment_type === 'one_time') {
+    return {
+      amount_cents: outstanding,
+      due_date: agreement.due_date
+    };
+  }
+
+  // For installment repayment
+  if (agreement.repayment_type === 'installments') {
+    const installmentAmount = agreement.installment_amount;
+    const installmentCount = agreement.installment_count || 0;
+
+    if (!installmentAmount || installmentCount === 0) {
+      return null;
+    }
+
+    // Convert installment amount from euros to cents
+    const installmentCents = Math.round(installmentAmount * 100);
+
+    // Next payment amount is the installment amount (or remaining if less)
+    const nextAmount = Math.min(installmentCents, outstanding);
+
+    // Calculate which installment number is next (1-based)
+    const numPaymentsMade = Math.floor(totalPaid / installmentCents);
+    const nextInstallmentNumber = numPaymentsMade + 1;
+
+    // If all installments paid, no next payment
+    if (nextInstallmentNumber > installmentCount) {
+      return null;
+    }
+
+    // Calculate next due date based on first payment date and frequency
+    const firstPaymentDate = agreement.first_payment_date;
+    const frequency = agreement.payment_frequency || 'monthly';
+
+    if (!firstPaymentDate) {
+      // Fallback to final due date if first payment date not set
+      return {
+        amount_cents: nextAmount,
+        due_date: agreement.final_due_date || agreement.due_date
+      };
+    }
+
+    // Calculate next due date based on installment number and frequency
+    const baseDate = new Date(firstPaymentDate);
+    let nextDate = new Date(baseDate);
+
+    // Add periods based on installment number (0-indexed for calculation)
+    const periodsToAdd = nextInstallmentNumber - 1;
+
+    switch (frequency) {
+      case 'weekly':
+        nextDate.setDate(nextDate.getDate() + (periodsToAdd * 7));
+        break;
+      case 'biweekly':
+        nextDate.setDate(nextDate.getDate() + (periodsToAdd * 14));
+        break;
+      case 'every_4_weeks':
+        nextDate.setDate(nextDate.getDate() + (periodsToAdd * 28));
+        break;
+      case 'monthly':
+        nextDate.setMonth(nextDate.getMonth() + periodsToAdd);
+        break;
+      case 'quarterly':
+        nextDate.setMonth(nextDate.getMonth() + (periodsToAdd * 3));
+        break;
+      case 'yearly':
+        nextDate.setFullYear(nextDate.getFullYear() + periodsToAdd);
+        break;
+      default:
+        // For custom frequencies, default to monthly
+        nextDate.setMonth(nextDate.getMonth() + periodsToAdd);
+    }
+
+    return {
+      amount_cents: nextAmount,
+      due_date: nextDate.toISOString().split('T')[0]
+    };
+  }
+
+  return null;
+}
+
 // Export functions for use in other files
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     getLoanDurationLabel,
-    formatRepaymentFrequency
+    formatRepaymentFrequency,
+    getNextPaymentInfo
   };
 }
