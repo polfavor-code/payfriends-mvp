@@ -512,23 +512,6 @@
         </div>
         <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">When was or will the money be sent to the borrower? You can also choose a date in the past when adding an existing loan.</p>
 
-        <!-- Loan duration (always visible) -->
-        <div id="loan-duration-section">
-          <div class="row">
-            <label>Loan duration</label>
-            <div style="flex:1; display:flex; gap:8px">
-              <input id="loan-duration-value" type="number" min="1" max="600" step="1" value="12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
-              <select id="loan-duration-unit" onchange="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-                <option value="days">Days</option>
-                <option value="weeks">Weeks</option>
-                <option value="months" selected>Months</option>
-                <option value="years">Years</option>
-              </select>
-            </div>
-          </div>
-          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">How long the loan lasts in total (for example 12 months or 3 years).</p>
-        </div>
-
         <div style="margin:16px 0 24px 0">
           <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">Repayment type</label>
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:8px; transition:all 0.2s" id="repayment-onetime-card">
@@ -552,7 +535,7 @@
               <option value="custom">Pick a date…</option>
             </select>
           </div>
-          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">Select when the borrower is expected to repay the full amount in a single payment.</p>
+          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">Select when the borrower is expected to repay the full loan amount.</p>
 
           <div id="custom-one-time-due-date" class="hidden" style="margin:16px 0">
             <div class="row">
@@ -566,6 +549,23 @@
 
         <!-- Installment fields -->
         <div id="installment-fields" class="hidden">
+          <!-- Loan duration (only visible for installments) -->
+          <div id="loan-duration-section">
+            <div class="row">
+              <label>Loan duration</label>
+              <div style="flex:1; display:flex; gap:8px">
+                <input id="loan-duration-value" type="number" min="1" max="600" step="1" value="12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
+                <select id="loan-duration-unit" onchange="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+                  <option value="days">Days</option>
+                  <option value="weeks">Weeks</option>
+                  <option value="months" selected>Months</option>
+                  <option value="years">Years</option>
+                </select>
+              </div>
+            </div>
+            <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">How long the loan lasts in total (for example 12 months or 3 years).</p>
+          </div>
+
           <div class="row">
             <label>Number of payments</label>
             <input id="num-repayments" type="number" min="2" max="120" step="1" value="12" placeholder="e.g. 12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
@@ -1500,6 +1500,12 @@
         // Update card styling
         oneTimeCard.classList.add('reminder-option-active');
         installmentsCard.classList.remove('reminder-option-active');
+
+        // Clear loan duration values to avoid leaking into calculations
+        const loanDurationValue = document.getElementById('loan-duration-value');
+        const loanDurationUnit = document.getElementById('loan-duration-unit');
+        loanDurationValue.value = '';
+        loanDurationUnit.value = 'months';
 
         // Ensure default due date is set
         const dueDateInput = document.getElementById('due-date');
