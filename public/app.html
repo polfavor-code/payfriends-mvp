@@ -404,19 +404,19 @@
 
         <div id="borrower-fields" class="hidden" style="transition:all 0.3s ease">
           <div class="row">
-            <label>Borrower name*</label>
+            <label>Borrower name</label>
             <input id="friend-first-name" placeholder="Alex" required oninput="autoCapitalizeName()" />
           </div>
           <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">Full name or first name.</p>
 
           <div class="row">
-            <label>Borrower email*</label>
+            <label>Borrower email</label>
             <input id="friend-email" type="email" placeholder="alex@example.com" required />
           </div>
-          <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">They'll receive a link to review the agreement.</p>
+          <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">To this email address we will send the link to review the agreement.</p>
 
           <div class="row">
-            <label>Phone number*</label>
+            <label>Borrower phone</label>
             <div class="phone-input-wrapper" data-phone-id="agreement-phone">
               <div class="phone-input-row">
                 <button type="button" class="phone-country-button"></button>
@@ -431,10 +431,10 @@
             </div>
             <div id="agreement-phone-error" class="phone-error">Please enter a valid phone number.</div>
           </div>
-          <p style="color:rgba(255,255,255,0.5); font-size:13px; margin:-6px 0 12px 172px">Your phone number is required to send reminder messages.</p>
+          <p style="color:rgba(255,255,255,0.5); font-size:13px; margin:-6px 0 12px 172px">Borrower's phone number is required to send reminders.</p>
 
           <div class="row">
-            <label>Loan description*</label>
+            <label>Loan description</label>
             <input id="description" type="text" placeholder="e.g. Money for rent, Car repair, Holiday loan" required maxlength="30" oninput="autoCapitalizeDescription()" />
           </div>
           <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to identify this agreement.</p>
@@ -454,14 +454,14 @@
         <h3 style="margin-top:0">Define the loan terms.</h3>
 
         <div class="row">
-          <label>Loan amount (€)*</label>
+          <label>Loan amount (€)</label>
           <input id="amount" type="text" placeholder="e.g. 6.000" required onblur="formatAmountInput(); validateAmountField();" onfocus="unformatAmountInput()" oninput="updateOneTimeEstimate()" />
         </div>
         <p style="color:var(--muted); font-size:12px; margin:6px 0 4px 172px">Enter the amount in euros.</p>
         <p id="amount-error" class="hidden" style="color:#f87171; font-size:13px; margin:0 0 16px 172px"></p>
 
         <div class="row">
-          <label>Money transfer date*</label>
+          <label>Money transfer date</label>
           <select id="money-sent-option" onchange="updateMoneySentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
             <option value="on-acceptance">When agreement is accepted</option>
             <option value="today">Today</option>
@@ -482,7 +482,7 @@
         <!-- Loan duration (always visible) -->
         <div id="loan-duration-section">
           <div class="row">
-            <label>Loan duration*</label>
+            <label>Loan duration</label>
             <div style="flex:1; display:flex; gap:8px">
               <input id="loan-duration-value" type="number" min="1" max="600" step="1" value="12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
               <select id="loan-duration-unit" onchange="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
@@ -497,7 +497,7 @@
         </div>
 
         <div style="margin:16px 0 24px 0">
-          <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">Repayment type*</label>
+          <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">Repayment type</label>
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:8px; transition:all 0.2s" id="repayment-onetime-card">
             <input type="radio" name="repayment-type" value="one_time" onchange="toggleInstallmentFields()" checked />
             <span>One-time payment</span>
@@ -511,7 +511,7 @@
         <!-- One-time payment fields -->
         <div id="one-time-fields">
           <div class="row">
-            <label>First payment due*</label>
+            <label>First payment due</label>
             <select id="one-time-due-option" onchange="updateOneTimeDueOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
               <option value="1month">In 1 month</option>
               <option value="2months">In 2 months</option>
@@ -534,14 +534,14 @@
         <!-- Installment fields -->
         <div id="installment-fields" class="hidden">
           <div class="row">
-            <label>Number of payments*</label>
+            <label>Number of payments</label>
             <input id="num-repayments" type="number" min="2" max="120" step="1" value="12" placeholder="e.g. 12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
           </div>
           <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">How many separate payments the borrower will make over this period.</p>
           <p id="num-repayments-error" class="hidden" style="color:#f87171; font-size:13px; margin:-14px 0 20px 172px"></p>
 
           <div class="row">
-            <label>Payment frequency*</label>
+            <label>Payment frequency</label>
             <div id="repayment-interval-display" style="flex:1; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,0.02); color:var(--muted); font-size:14px">
               Every 1 month
             </div>
@@ -549,7 +549,7 @@
           <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">Automatically calculated from the loan duration and number of payments.</p>
 
           <div class="row">
-            <label>First payment due*</label>
+            <label>First payment due</label>
             <select id="first-payment-option" onchange="updateFirstPaymentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
               <option value="3days">In 3 days</option>
               <option value="7days">In 7 days</option>
