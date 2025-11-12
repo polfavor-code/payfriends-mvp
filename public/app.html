@@ -496,25 +496,10 @@
 
           <div class="row">
             <label>Number of repayments*</label>
-            <select id="num-repayments" onchange="handleNumRepaymentsChange()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="3">3 repayments</option>
-              <option value="4">4 repayments</option>
-              <option value="6">6 repayments</option>
-              <option value="12" selected>12 repayments</option>
-              <option value="18">18 repayments</option>
-              <option value="24">24 repayments</option>
-              <option value="custom">Custom…</option>
-            </select>
+            <input id="num-repayments" type="number" min="2" max="120" step="1" value="12" placeholder="e.g. 12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
           </div>
-
-          <div id="custom-num-repayments-field" class="hidden" style="margin:16px 0">
-            <div class="row">
-              <label>Number of repayments*</label>
-              <input id="custom-num-repayments" type="number" min="2" max="120" step="1" placeholder="12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
-            </div>
-            <p style="color:var(--muted); font-size:12px; margin:6px 0 0 172px">Between 2 and 120 repayments.</p>
-            <p id="custom-num-repayments-error" class="hidden" style="color:#f87171; font-size:12px; margin:6px 0 0 172px"></p>
-          </div>
+          <p style="color:rgba(255,255,255,0.5); font-size:13px; margin:6px 0 0 172px">Enter between 2 and 120 repayments.</p>
+          <p id="num-repayments-error" class="hidden" style="color:#f87171; font-size:13px; margin:6px 0 0 172px"></p>
 
           <div class="row">
             <label>Repayment interval</label>
@@ -1384,7 +1369,7 @@
         // Set defaults for loan duration fields
         const loanDurationValue = document.getElementById('loan-duration-value');
         const loanDurationUnit = document.getElementById('loan-duration-unit');
-        const numRepaymentsSelect = document.getElementById('num-repayments');
+        const numRepaymentsInput = document.getElementById('num-repayments');
 
         if (!loanDurationValue.value) {
           loanDurationValue.value = '12';
@@ -1392,8 +1377,8 @@
         if (!loanDurationUnit.value) {
           loanDurationUnit.value = 'months';
         }
-        if (!numRepaymentsSelect.value) {
-          numRepaymentsSelect.value = '12';
+        if (!numRepaymentsInput.value) {
+          numRepaymentsInput.value = '12';
         }
 
         // Set default first payment option
@@ -1567,24 +1552,6 @@
       }
     }
 
-    // Handle number of repayments change (preset vs custom)
-    function handleNumRepaymentsChange() {
-      const select = document.getElementById('num-repayments');
-      const customField = document.getElementById('custom-num-repayments-field');
-      const customInput = document.getElementById('custom-num-repayments');
-      const errorElement = document.getElementById('custom-num-repayments-error');
-
-      if (select.value === 'custom') {
-        customField.classList.remove('hidden');
-        customInput.value = '12'; // Default value
-        errorElement.classList.add('hidden');
-      } else {
-        customField.classList.add('hidden');
-        errorElement.classList.add('hidden');
-      }
-
-      calculateInstallments();
-    }
 
     function updateFirstPaymentOption() {
       const option = document.getElementById('first-payment-option').value;
@@ -1634,10 +1601,9 @@
       const amount = document.getElementById('amount').value;
       const loanDurationValue = parseInt(document.getElementById('loan-duration-value').value);
       const loanDurationUnit = document.getElementById('loan-duration-unit').value;
-      const numRepaymentsSelect = document.getElementById('num-repayments');
-      const customNumRepaymentsInput = document.getElementById('custom-num-repayments');
+      const numRepaymentsInput = document.getElementById('num-repayments');
       const firstPaymentDate = document.getElementById('first-payment-date').value;
-      const errorElement = document.getElementById('custom-num-repayments-error');
+      const errorElement = document.getElementById('num-repayments-error');
       const planLengthSummary = document.getElementById('plan-length-summary');
       const installmentEstimate = document.getElementById('installment-estimate');
       const intervalDisplay = document.getElementById('repayment-interval-display');
@@ -1646,26 +1612,22 @@
       errorElement.classList.add('hidden');
 
       // Get number of repayments
-      let numRepayments;
-      if (numRepaymentsSelect.value === 'custom') {
-        numRepayments = parseInt(customNumRepaymentsInput.value);
+      const numRepayments = parseInt(numRepaymentsInput.value);
 
-        // Validate custom input
-        if (!customNumRepaymentsInput.value || isNaN(numRepayments) || numRepayments < 2 || numRepayments > 120) {
-          errorElement.textContent = 'Please enter a number between 2 and 120.';
-          errorElement.classList.remove('hidden');
-          planLengthSummary.textContent = '';
-          installmentEstimate.textContent = '';
-          return;
-        }
-      } else {
-        numRepayments = parseInt(numRepaymentsSelect.value);
+      // Validate input
+      if (!numRepaymentsInput.value || isNaN(numRepayments) || numRepayments < 2 || numRepayments > 120) {
+        errorElement.textContent = 'Please enter a number between 2 and 120.';
+        errorElement.classList.remove('hidden');
+        planLengthSummary.textContent = '';
+        installmentEstimate.textContent = '';
+        intervalDisplay.textContent = '';
+        return;
       }
 
       if (!loanDurationValue || !loanDurationUnit || !amount || !numRepayments || !firstPaymentDate) {
         planLengthSummary.textContent = '';
         installmentEstimate.textContent = '';
-        intervalDisplay.textContent = 'Every 1 month';
+        intervalDisplay.textContent = '';
         return;
       }
 
@@ -1852,8 +1814,7 @@
         // Validate installment fields
         const loanDurationValue = parseInt(document.getElementById('loan-duration-value').value);
         const loanDurationUnit = document.getElementById('loan-duration-unit').value;
-        const numRepaymentsSelect = document.getElementById('num-repayments');
-        const customNumRepaymentsInput = document.getElementById('custom-num-repayments');
+        const numRepaymentsInput = document.getElementById('num-repayments');
         const firstPaymentDate = document.getElementById('first-payment-date').value;
 
         // Validate loan duration
@@ -1863,15 +1824,10 @@
         }
 
         // Validate number of repayments
-        let numRepayments;
-        if (numRepaymentsSelect.value === 'custom') {
-          numRepayments = parseInt(customNumRepaymentsInput.value);
-          if (!customNumRepaymentsInput.value || isNaN(numRepayments) || numRepayments < 2 || numRepayments > 120) {
-            status.textContent = 'Please enter a valid number of repayments (2-120)';
-            return false;
-          }
-        } else {
-          numRepayments = parseInt(numRepaymentsSelect.value);
+        const numRepayments = parseInt(numRepaymentsInput.value);
+        if (!numRepaymentsInput.value || isNaN(numRepayments) || numRepayments < 2 || numRepayments > 120) {
+          status.textContent = 'Please enter a valid number of repayments (2-120)';
+          return false;
         }
 
         // Validate first payment date
