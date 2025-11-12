@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — Agreements MVP</title>
+  <!-- Centralized currency formatters -->
+  <script src="/js/formatters.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -125,7 +127,7 @@
       for (const a of rows) {
         const tr = document.createElement('tr');
         tr.setAttribute('data-id', a.id);
-        const amount = (a.amount_cents / 100).toFixed(2);
+        const amount = formatCurrency2(a.amount_cents);
         const statusText = a.status || 'pending';
         const actionBtn = statusText === 'pending'
           ? `<button onclick="markAsPaid(${a.id})">Mark as Paid</button>`
@@ -134,7 +136,7 @@
           <td>${a.id}</td>
           <td>${a.lender_name}</td>
           <td>${a.borrower_email}</td>
-          <td>€ ${amount}</td>
+          <td>${amount}</td>
           <td>${a.due_date}</td>
           <td>${new Date(a.created_at).toLocaleString()}</td>
           <td class="status-cell">${statusText}</td>
