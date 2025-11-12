@@ -31,6 +31,23 @@
       grid-template-columns: auto 1fr;
       align-items: center;
       gap: clamp(16px, 3vw, 32px);
+    .left-logo-section{margin-bottom:32px}
+    .left-logo-section img{height:56px;width:auto;margin-bottom:12px}
+    .left-tagline{font-size:28px;font-weight:700;margin:16px 0 24px 0;line-height:1.2}
+    .left-features{list-style:none;padding:0;margin:0;font-size:14px;color:var(--muted)}
+    .left-features li{margin:12px 0;line-height:1.5}
+
+    /* Mobile: show left content above form */
+    .mobile-left-content{display:block;margin-bottom:32px;text-align:center}
+    .mobile-left-content .left-logo-section img{height:48px}
+    .mobile-left-content .left-tagline{font-size:20px;margin:12px 0 16px 0}
+    .mobile-left-content .left-features{font-size:13px}
+    .mobile-left-content .left-features li{margin:8px 0}
+    /* Horizontal layout: logo beside text block */
+    .left-hero-section{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:48px;margin-bottom:32px}
+    .left-hero-section img{width:144px;height:144px;flex-shrink:0;user-select:none;-webkit-user-drag:none;pointer-events:none}
+    @media (min-width: 1200px) {
+      .left-hero-section img{width:160px;height:160px}
     }
 
     .auth-hero__logo {
@@ -153,6 +170,27 @@
 
           <p class="auth-hero__intro">
             PayFriends is a kind, smart fintech app — built to keep friends on good terms.
+    <!-- Left column for desktop -->
+    <div class="left-column">
+      <div class="left-logo-section">
+        <img src="/images/payfriends-logov2.png" alt="PayFriends logo" />
+        <h2 class="left-tagline">Pay friends, stay friends</h2>
+      </div>
+      <ul class="left-features">
+        <li>• Fair, trust-based loans between friends</li>
+        <li>• Automatic reminders and smart interest recalculation</li>
+        <li>• App handles chasing and negotiations — you stay friends</li>
+      </ul>
+      <section class="left-hero-section">
+        <!-- LEFT: logo -->
+        <img src="/logo-payfriends.svg" alt="PayFriends logo" />
+
+        <!-- RIGHT: text block -->
+        <div class="left-text-block">
+          <h1 class="left-tagline">Pay friends, stay friends</h1>
+
+          <p class="left-description">
+            PayFriends is a kind, smart fintech app, built to keep friends on good terms.
             It motivates early repayments, adjusts interest fairly, and finds solutions when paying gets hard.
             We handle the math and reminders — you keep the friendship.
           </p>
@@ -168,6 +206,33 @@
 
     <!-- Right column / main content -->
     <main class="container right-column">
+    <!-- Mobile: show left content above form -->
+    <div class="mobile-left-content">
+      <div class="left-logo-section">
+        <img src="/images/payfriends-logov2.png" alt="PayFriends logo" />
+        <h2 class="left-tagline">Pay friends, stay friends</h2>
+      </div>
+      <img src="/logo-payfriends.svg" alt="PayFriends logo" />
+      <h1 class="left-tagline">Pay friends, stay friends</h1>
+
+      <p class="left-description">
+        PayFriends is a kind, smart fintech app, built to keep friends on good terms.
+        It motivates early repayments, adjusts interest fairly, and finds solutions when paying gets hard.
+        We handle the math and reminders, you keep the friendship.
+      </p>
+
+      <ul class="left-features">
+        <li>• Fair, trust-based loans between friends</li>
+        <li>• Automatic reminders and smart interest recalculation</li>
+        <li>• App handles chasing and negotiations — you stay friends</li>
+      </ul>
+    </div>
+
+    <header class="header" style="display:none">
+      <img src="/images/payfriends-logov2.png" alt="PayFriends logo" style="height:56px; width:auto; margin-bottom:16px" />
+      <h1>PayFriends</h1>
+      <p class="tagline">Create simple agreements between friends.</p>
+    </header>
 
     <div class="tabs">
       <div class="tab active" onclick="showTab('login')">Login</div>
