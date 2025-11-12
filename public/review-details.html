@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — Agreement Details</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -145,25 +147,7 @@
 </head>
 <body>
   <div class="container">
-    <header class="top-header">
-      <div class="top-header-left">
-        <a href="/app" style="text-decoration:none; display:flex; align-items:center; gap:12px">
-          <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
-          <div class="top-header-text">
-            <div class="app-name" style="color:var(--text)">PayFriends.app</div>
-            <div class="app-slogan">Pay friends, stay friends</div>
-          </div>
-        </a>
-      </div>
-      <div class="top-header-right">
-        <div class="top-header-user-info" id="user-info-display">Loading...</div>
-        <div class="top-header-actions">
-          <a href="/app" class="inbox-widget" id="activity-link">Activity</a>
-          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block; white-space:nowrap">My Profile</a>
-          <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
-      </div>
-    </header>
+    <!-- Header will be loaded dynamically by header.js -->
 
     <!-- My Agreements section -->
     <section class="card" id="list-section">
@@ -550,6 +534,12 @@
     let agreement = null;
     let currentUser = null;
     let mode = 'view'; // 'review' or 'view'
+
+    // Initialize shared header
+    document.addEventListener('DOMContentLoaded', async () => {
+      await PayFriendsHeader.initialize();
+      initializePage();
+    });
     const pathParts = window.location.pathname.split('/');
     const agreementId = pathParts[2];
     const action = pathParts[3]; // 'review' or 'view'
@@ -581,23 +571,13 @@
 
     async function loadAgreementData() {
       try {
-        // Fetch current user
-        const userRes = await fetch('/api/user');
-        if (!userRes.ok) {
+        // Get current user from shared header
+        currentUser = PayFriendsHeader.getCurrentUser();
+
+        if (!currentUser) {
           window.location.href = '/';
           return;
         }
-        const userData = await userRes.json();
-        currentUser = userData.user;
-
-        // Display user info in header
-        const displayText = currentUser.full_name
-          ? `${currentUser.full_name} | ${currentUser.email}`
-          : currentUser.email;
-        document.getElementById('user-info-display').textContent = displayText;
-
-        // Load activity count for header
-        loadActivityCount();
 
         // Fetch agreement
         const res = await fetch(`/api/agreements/${agreementId}`);
@@ -2124,50 +2104,17 @@
       }
     }
 
-    // Logout
-    async function logout() {
-      try {
-        await fetch('/auth/logout', { method: 'POST' });
-        window.location.href = '/';
-      } catch (err) {
-        console.error('Logout error:', err);
-        window.location.href = '/';
-      }
-    }
+    // Note: Header initialization, user info, logout, and activity count are now handled by shared header.js
 
-    // Load activity count for header
-    async function loadActivityCount() {
-      try {
-        const res = await fetch('/api/activity');
-        if (res.ok) {
-          const data = await res.json();
-          const unreadCount = data.messages.filter(m => !m.read_at).length;
-          updateActivityButton(unreadCount);
-        }
-      } catch (err) {
-        console.error('Error loading activity count:', err);
-      }
-    }
-
-    // Update Activity button with unread count
-    function updateActivityButton(unreadCount) {
-      const activityLink = document.getElementById('activity-link');
-      if (unreadCount > 0) {
-        activityLink.innerHTML = `Activity (<span class="inbox-count">${unreadCount}</span>)`;
-        activityLink.classList.add('inbox-widget-has-unread');
+    // Create initializePage wrapper for DOMContentLoaded
+    function initializePage() {
+      if (!agreementId) {
+        showError('Invalid agreement ID.');
       } else {
-        activityLink.textContent = 'Activity';
-        activityLink.classList.remove('inbox-widget-has-unread');
+        // Load both the specific agreement and all agreements
+        loadAgreementData();
+        loadAllAgreements();
       }
-    }
-
-    // Initialize
-    if (!agreementId) {
-      showError('Invalid agreement ID.');
-    } else {
-      // Load both the specific agreement and all agreements
-      loadAgreementData();
-      loadAllAgreements();
     }
   </script>
 

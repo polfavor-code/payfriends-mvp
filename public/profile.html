@@ -7,6 +7,8 @@
   <!-- intl-tel-input library -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/css/intlTelInput.min.css">
   <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -175,25 +177,7 @@
 </head>
 <body>
   <main class="container">
-    <header class="top-header">
-      <div class="top-header-left">
-        <a href="/app" style="text-decoration:none; display:flex; align-items:center; gap:12px">
-          <img src="/images/payfriends-logov2.png" class="logo-coin" alt="PayFriends logo" />
-          <div class="top-header-text">
-            <div class="app-name" style="color:var(--text)">PayFriends.app</div>
-            <div class="app-slogan">Pay friends, stay friends</div>
-          </div>
-        </a>
-      </div>
-      <div class="top-header-right">
-        <div class="top-header-user-info" id="user-info-display">Loading...</div>
-        <div class="top-header-actions">
-          <a href="/app" class="inbox-widget" id="activity-link">Activity</a>
-          <a href="/profile" style="color:var(--text); text-decoration:none; padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; font-weight:500; font-size:14px; display:inline-block; white-space:nowrap">My Profile</a>
-          <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
-      </div>
-    </header>
+    <!-- Header will be loaded dynamically by header.js -->
 
     <section class="card">
       <h2 style="margin-top:0; margin-bottom:24px">Profile Information</h2>
@@ -229,6 +213,12 @@
   <script>
     let currentUser = null;
     let phoneInput = null;
+
+    // Initialize shared header
+    document.addEventListener('DOMContentLoaded', async () => {
+      await PayFriendsHeader.initialize();
+      loadProfile();
+    });
 
     // Avatar helper functions
     function getInitials(name) {
@@ -270,17 +260,14 @@
     // Load user profile
     async function loadProfile() {
       try {
-        const res = await fetch('/api/user');
-        if (!res.ok) {
-          window.location.href = '/';
+        // Get user from shared header (already loaded)
+        currentUser = PayFriendsHeader.getCurrentUser();
+
+        if (!currentUser) {
+          // If header hasn't loaded user yet, wait a bit and try again
+          setTimeout(loadProfile, 100);
           return;
         }
-        const data = await res.json();
-        currentUser = data.user;
-
-        // Populate header user info
-        const userName = currentUser.full_name || currentUser.email;
-        document.getElementById('user-info-display').textContent = `${userName} | ${currentUser.email}`;
 
         // Render large avatar in profile header
         const avatarContainer = document.getElementById('profile-avatar-container');
@@ -310,38 +297,9 @@
         if (currentUser.phone_number) {
           phoneInput.setNumber(currentUser.phone_number);
         }
-
-        // Load unread count for Activity button
-        loadActivityCount();
       } catch (err) {
         console.error('Error loading profile:', err);
         window.location.href = '/';
-      }
-    }
-
-    // Load activity count for header
-    async function loadActivityCount() {
-      try {
-        const res = await fetch('/api/activity');
-        if (res.ok) {
-          const data = await res.json();
-          const unreadCount = data.messages.filter(m => !m.read_at).length;
-          updateActivityButton(unreadCount);
-        }
-      } catch (err) {
-        console.error('Error loading activity count:', err);
-      }
-    }
-
-    // Update Activity button with unread count
-    function updateActivityButton(unreadCount) {
-      const activityLink = document.getElementById('activity-link');
-      if (unreadCount > 0) {
-        activityLink.innerHTML = `Activity (<span class="inbox-count">${unreadCount}</span>)`;
-        activityLink.classList.add('inbox-widget-has-unread');
-      } else {
-        activityLink.textContent = 'Activity';
-        activityLink.classList.remove('inbox-widget-has-unread');
       }
     }
 
@@ -520,19 +478,7 @@
       }
     });
 
-    // Logout
-    async function logout() {
-      try {
-        await fetch('/auth/logout', { method: 'POST' });
-        window.location.href = '/';
-      } catch (err) {
-        console.error('Logout error:', err);
-        window.location.href = '/';
-      }
-    }
-
-    // Initialize
-    loadProfile();
+    // Note: Header initialization and logout are now handled by shared header.js
   </script>
 </body>
 </html>
