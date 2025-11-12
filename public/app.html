@@ -314,6 +314,46 @@
 
     /* Phone error message */
     .phone-error{color:#ff6b6b;font-size:13px;margin-top:4px;display:none}
+
+    /* Summary grid layout for Step 5 */
+    .summary-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:16px;
+    }
+    .summary-grid-row{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+    }
+    .summary-grid-label{
+      font-size:14px;
+      color:#a7b0bd;
+    }
+    .summary-grid-value{
+      width:100%;
+    }
+    @media (min-width: 768px) {
+      .summary-grid{
+        grid-template-columns:repeat(12, 1fr);
+        gap:20px 16px;
+      }
+      .summary-grid-row{
+        grid-column:span 12;
+        grid-template-columns:repeat(12, 1fr);
+        align-items:center;
+        gap:16px;
+      }
+      .summary-grid-row.items-start{
+        align-items:start;
+      }
+      .summary-grid-label{
+        grid-column:span 4;
+      }
+      .summary-grid-value{
+        grid-column:span 8;
+      }
+    }
   </style>
 </head>
 <body>
@@ -2518,31 +2558,31 @@
       const content = document.getElementById('general-details-content');
       const lenderName = currentUser?.full_name || currentUser?.email || 'You';
 
-      let html = '<div style="display:flex; flex-direction:column; gap:12px">';
+      let html = '<div class="summary-grid">';
 
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-        <span style="color:var(--muted)">Description</span>
-        <span style="font-weight:600">${wizardData.description}</span>
+      html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span class="summary-grid-label">Description</span>
+        <span class="summary-grid-value" style="font-weight:600">${wizardData.description}</span>
       </div>`;
 
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-        <span style="color:var(--muted)">Lender</span>
-        <span style="font-weight:600">${lenderName}</span>
+      html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span class="summary-grid-label">Lender</span>
+        <span class="summary-grid-value" style="font-weight:600">${lenderName}</span>
       </div>`;
 
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-        <span style="color:var(--muted)">Borrower</span>
-        <span style="font-weight:600">${wizardData.friendFirstName}</span>
+      html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span class="summary-grid-label">Borrower</span>
+        <span class="summary-grid-value" style="font-weight:600">${wizardData.friendFirstName}</span>
       </div>`;
 
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-        <span style="color:var(--muted)">Borrower email</span>
-        <span style="font-weight:600">${wizardData.friendEmail}</span>
+      html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span class="summary-grid-label">Borrower email</span>
+        <span class="summary-grid-value" style="font-weight:600">${wizardData.friendEmail}</span>
       </div>`;
 
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-        <span style="color:var(--muted)">Amount</span>
-        <span style="font-weight:600">€${formatAmount(Math.round(wizardData.amount * 100))}</span>
+      html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span class="summary-grid-label">Amount</span>
+        <span class="summary-grid-value" style="font-weight:600">€${formatAmount(Math.round(wizardData.amount * 100))}</span>
       </div>`;
 
       let moneySentDateFormatted;
@@ -2559,14 +2599,14 @@
       } else {
         moneySentDateFormatted = new Date(wizardData.moneySentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
       }
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-        <span style="color:var(--muted)">Money transfer date</span>
-        <span style="font-weight:600">${moneySentDateFormatted}</span>
+      html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span class="summary-grid-label">Money transfer date</span>
+        <span class="summary-grid-value" style="font-weight:600">${moneySentDateFormatted}</span>
       </div>`;
 
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-        <span style="color:var(--muted)">Repayment type</span>
-        <span style="font-weight:600">${wizardData.repaymentType === 'one_time' ? 'One-time payment' : 'Installments'}</span>
+      html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span class="summary-grid-label">Repayment type</span>
+        <span class="summary-grid-value" style="font-weight:600">${wizardData.repaymentType === 'one_time' ? 'One-time payment' : 'Installments'}</span>
       </div>`;
 
       if (wizardData.repaymentType === 'installments') {
@@ -2578,37 +2618,37 @@
                              wizardData.planUnit === 'years' ? `${wizardData.planLength} ${wizardData.planLength === 1 ? 'year' : 'years'}` :
                              `${wizardData.planLength} months`;
 
-        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-          <span style="color:var(--muted)">Loan duration</span>
-          <span style="font-weight:600">${durationText}</span>
+        html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span class="summary-grid-label">Loan duration</span>
+          <span class="summary-grid-value" style="font-weight:600">${durationText}</span>
         </div>`;
 
-        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-          <span style="color:var(--muted)">Number of repayments</span>
-          <span style="font-weight:600">${wizardData.numRepayments || wizardData.installmentCount}</span>
+        html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span class="summary-grid-label">Number of repayments</span>
+          <span class="summary-grid-value" style="font-weight:600">${wizardData.numRepayments || wizardData.installmentCount}</span>
         </div>`;
 
-        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-          <span style="color:var(--muted)">Repayment interval</span>
-          <span style="font-weight:600">${intervalText}</span>
+        html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span class="summary-grid-label">Repayment interval</span>
+          <span class="summary-grid-value" style="font-weight:600">${intervalText}</span>
         </div>`;
 
         const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-          <span style="color:var(--muted)">First payment date</span>
-          <span style="font-weight:600">${firstDate}</span>
+        html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span class="summary-grid-label">First payment date</span>
+          <span class="summary-grid-value" style="font-weight:600">${firstDate}</span>
         </div>`;
 
         const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-          <span style="color:var(--muted)">Final due date</span>
-          <span style="font-weight:600">${finalDate}</span>
+        html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span class="summary-grid-label">Final due date</span>
+          <span class="summary-grid-value" style="font-weight:600">${finalDate}</span>
         </div>`;
       } else {
         const dueDate = new Date(wizardData.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-          <span style="color:var(--muted)">Due date</span>
-          <span style="font-weight:600">${dueDate}</span>
+        html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span class="summary-grid-label">Due date</span>
+          <span class="summary-grid-value" style="font-weight:600">${dueDate}</span>
         </div>`;
       }
 
@@ -2718,33 +2758,41 @@
     function populatePaymentsAndReminders() {
       const content = document.getElementById('payments-reminders-content');
 
-      let html = '<div style="display:flex; flex-direction:column; gap:16px">';
+      let html = '<div class="summary-grid">';
 
       // Payment methods
       const methods = wizardData.paymentMethods || [];
       const methodsText = methods.length > 0 ? methods.join(', ') : 'Not specified';
-      html += `<div>
-        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Preferred payment methods:</div>
-        <div style="color:var(--muted); font-size:14px">${methodsText}</div>
+      html += `<div class="summary-grid-row">
+        <label class="summary-grid-label">Preferred payment methods:</label>
+        <div class="summary-grid-value">
+          <div style="color:var(--muted); font-size:14px">${methodsText}</div>
+        </div>
       </div>`;
 
       // Proof required
-      html += `<div>
-        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Require proof of repayment:</div>
-        <div style="color:var(--muted); font-size:13px; line-height:1.5">${wizardData.proofRequired ? 'Yes — The borrower will be asked to upload proof for each repayment, such as a photo, screenshot or PDF of the transfer or receipt.' : 'No — The borrower can report repayments without uploading proof.'}</div>
+      html += `<div class="summary-grid-row">
+        <label class="summary-grid-label">Require proof of repayment:</label>
+        <div class="summary-grid-value">
+          <div style="color:var(--muted); font-size:13px; line-height:1.5">${wizardData.proofRequired ? 'Yes — The borrower will be asked to upload proof for each repayment, such as a photo, screenshot or PDF of the transfer or receipt.' : 'No — The borrower can report repayments without uploading proof.'}</div>
+        </div>
       </div>`;
 
       // Reminder mode
-      html += `<div>
-        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Reminder mode:</div>
-        <div style="color:var(--muted); font-size:14px">${wizardData.reminderMode === 'auto' ? 'Auto (recommended)' : 'Custom schedule'}</div>
+      html += `<div class="summary-grid-row">
+        <label class="summary-grid-label">Reminder mode:</label>
+        <div class="summary-grid-value">
+          <div style="color:var(--muted); font-size:14px">${wizardData.reminderMode === 'auto' ? 'Auto (recommended)' : 'Custom schedule'}</div>
+        </div>
       </div>`;
 
       // Reminder details
       if (wizardData.reminderMode === 'auto') {
-        html += `<div>
-          <div style="font-weight:600; margin-bottom:6px; font-size:14px">Reminder schedule:</div>
-          <div style="color:var(--muted); font-size:14px; line-height:1.6">7 days before, 1 day before, on the due date. If unpaid: 1 day after, then every 3 days.</div>
+        html += `<div class="summary-grid-row">
+          <label class="summary-grid-label">Reminder schedule:</label>
+          <div class="summary-grid-value">
+            <div style="color:var(--muted); font-size:14px; line-height:1.6">7 days before, 1 day before, on the due date. If unpaid: 1 day after, then every 3 days.</div>
+          </div>
         </div>`;
       } else if (wizardData.reminderOffsets && wizardData.reminderOffsets.length > 0) {
         const reminders = wizardData.reminderOffsets.sort((a, b) => a - b).map(offset => {
@@ -2755,17 +2803,21 @@
           return `${offset} day${offset > 1 ? 's' : ''} after`;
         }).join(', ');
 
-        html += `<div>
-          <div style="font-weight:600; margin-bottom:6px; font-size:14px">Reminder schedule:</div>
-          <div style="color:var(--muted); font-size:14px">${reminders}</div>
+        html += `<div class="summary-grid-row">
+          <label class="summary-grid-label">Reminder schedule:</label>
+          <div class="summary-grid-value">
+            <div style="color:var(--muted); font-size:14px">${reminders}</div>
+          </div>
         </div>`;
       }
 
       // Worst case scenario (only show if enabled)
       if (wizardData.debtCollectionClause) {
-        html += `<div>
-          <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>
-          <div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</div>
+        html += `<div class="summary-grid-row items-start">
+          <label class="summary-grid-label">Worst case scenario:</label>
+          <div class="summary-grid-value">
+            <div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</div>
+          </div>
         </div>`;
       }
 
