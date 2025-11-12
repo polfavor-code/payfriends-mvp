@@ -943,14 +943,10 @@
         document.getElementById('installment-info-display').textContent = installmentPlan;
         document.getElementById('installment-info-row').style.display = 'flex';
       } else {
-        document.getElementById('loan-duration-row').style.display = 'none';
+        document.getElementById('installment-info-row').style.display = 'none';
       }
 
-      // Interest rate and total interest (show only if interest > 0)
       // Due date (for one-time, this is the due date; for installments, this is the final due date)
-      const dueDate = repaymentType === 'installments' && agreement.final_due_date
-        ? new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
-        : new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
       const isInstallments = repaymentType === 'installments' && agreement.final_due_date;
       const dueDate = isInstallments
         ? new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -992,10 +988,6 @@
 
       // Show spacer before repayment type section if interest section is shown
       document.getElementById('repayment-type-spacer').style.display = hasInterest ? 'block' : 'none';
-
-      // Repayment type
-      const repaymentTypeText = repaymentType === 'installments' ? 'Installments' : 'One-time payment';
-      document.getElementById('repayment-type-display').textContent = repaymentTypeText;
 
       // Installment-specific fields (show only if installments)
       if (repaymentType === 'installments' && agreement.installment_count) {
