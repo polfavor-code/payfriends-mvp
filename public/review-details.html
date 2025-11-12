@@ -1746,35 +1746,30 @@
 
       const n = agreement.repayment_type === 'installments' ? agreement.installment_count : 1;
 
-      // Build payment dates
-      let paymentDates = [];
-      if (agreement.repayment_type === 'installments' && agreement.first_payment_date) {
-        const firstDate = new Date(agreement.first_payment_date);
-        const planUnit = agreement.plan_unit || 'months';
-
-        for (let i = 0; i < n; i++) {
-          const installmentDate = new Date(firstDate);
-          if (planUnit === 'months') {
-            installmentDate.setMonth(installmentDate.getMonth() + i);
-          } else if (planUnit === 'weeks') {
-            installmentDate.setDate(installmentDate.getDate() + (i * 7));
-          } else if (planUnit === 'days') {
-            installmentDate.setDate(installmentDate.getDate() + i);
-          } else if (planUnit === 'years') {
-            installmentDate.setFullYear(installmentDate.getFullYear() + i);
-          }
-          paymentDates.push(installmentDate);
-        }
-      } else if (agreement.repayment_type === 'one_time' && agreement.due_date) {
-        paymentDates.push(new Date(agreement.due_date));
-      }
-
       // Determine start date
       let startDate;
       if (agreement.money_sent_date && agreement.money_sent_date !== 'on-acceptance') {
         startDate = new Date(agreement.money_sent_date);
       } else {
         startDate = agreement.first_payment_date ? new Date(agreement.first_payment_date) : new Date();
+      }
+
+      // Build payment dates using frequency-based calculation
+      let paymentDates = [];
+      if (agreement.repayment_type === 'installments' && agreement.first_payment_date) {
+        // Use frequency from agreement, fallback to 'monthly' if not set
+        const frequency = agreement.payment_frequency || 'monthly';
+
+        // Generate payment dates using frequency-based calculation with normalization
+        const dateResult = generatePaymentDates({
+          transferDate: startDate,
+          firstDueDate: agreement.first_payment_date,
+          frequency: frequency,
+          count: n
+        });
+        paymentDates = dateResult.paymentDates;
+      } else if (agreement.repayment_type === 'one_time' && agreement.due_date) {
+        paymentDates.push(new Date(agreement.due_date));
       }
 
       // Use shared buildRepaymentSchedule function

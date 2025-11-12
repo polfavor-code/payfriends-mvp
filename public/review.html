@@ -517,30 +517,24 @@
       }
       startDate.setHours(0, 0, 0, 0);
 
-      // Build payment dates array
+      // Build payment dates array using frequency-based calculation
       let n = 1;
       let paymentDates = [];
 
       if (agreement.repayment_type === 'installments' && agreement.installment_count) {
         n = agreement.installment_count;
 
-        // Generate evenly-spaced payment dates from first to final
-        const firstDate = new Date(agreement.first_payment_date);
-        const finalDate = new Date(agreement.final_due_date);
-        const totalDurationMs = finalDate - firstDate;
+        // Use frequency from agreement, fallback to 'monthly' if not set
+        const frequency = agreement.payment_frequency || 'monthly';
 
-        for (let i = 0; i < n; i++) {
-          let paymentDate;
-          if (i === 0) {
-            paymentDate = new Date(firstDate);
-          } else if (i === n - 1) {
-            paymentDate = new Date(finalDate);
-          } else {
-            const progressRatio = i / (n - 1);
-            paymentDate = new Date(firstDate.getTime() + (totalDurationMs * progressRatio));
-          }
-          paymentDates.push(paymentDate);
-        }
+        // Generate payment dates using frequency-based calculation with normalization
+        const dateResult = generatePaymentDates({
+          transferDate: startDate,
+          firstDueDate: agreement.first_payment_date,
+          frequency: frequency,
+          count: n
+        });
+        paymentDates = dateResult.paymentDates;
       } else if (agreement.repayment_type === 'one_time' && agreement.due_date) {
         n = 1;
         paymentDates.push(new Date(agreement.due_date));
