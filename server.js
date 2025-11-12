@@ -2096,7 +2096,26 @@ app.get('/api/invites/:token', (req, res) => {
         repayment_type: invite.repayment_type,
         amount_cents: invite.amount_cents,
         due_date: invite.due_date,
-        status: invite.status
+        status: invite.status,
+        description: invite.description,
+        money_sent_date: invite.money_sent_date,
+        installment_count: invite.installment_count,
+        installment_amount: invite.installment_amount,
+        first_payment_date: invite.first_payment_date,
+        final_due_date: invite.final_due_date,
+        interest_rate: invite.interest_rate,
+        total_interest: invite.total_interest,
+        total_repay_amount: invite.total_repay_amount,
+        payment_preference_method: invite.payment_preference_method,
+        reminder_enabled: invite.reminder_enabled,
+        plan_length: invite.plan_length,
+        plan_unit: invite.plan_unit,
+        payment_other_description: invite.payment_other_description,
+        reminder_mode: invite.reminder_mode,
+        reminder_offsets: invite.reminder_offsets,
+        proof_required: invite.proof_required,
+        debt_collection_clause: invite.debt_collection_clause,
+        created_at: invite.created_at
       },
       lender: lender || null
     });
