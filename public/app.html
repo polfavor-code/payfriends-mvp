@@ -853,7 +853,7 @@
 
       <!-- Step 6: Share -->
       <div id="wizard-step-6" class="wizard-content hidden">
-        <h3 style="margin-top:0">6. Share</h3>
+        <h3 style="margin-top:0">6. Share agreement with <span id="share-heading-name"></span></h3>
 
         <!-- Success header -->
         <div style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.25); border-radius:12px; padding:20px; margin:20px 0">
@@ -2808,6 +2808,7 @@
       document.getElementById('step-indicator-6').textContent = `6. Share with ${firstName}`;
 
       // Populate all name placeholders
+      document.getElementById('share-heading-name').textContent = firstName;
       document.getElementById('share-invite-name').textContent = firstName;
       document.getElementById('share-invite-email').textContent = email;
       document.getElementById('share-qr-name').textContent = firstName;
