@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="/css/shared-controls.css" />
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
+  <!-- Centralized currency formatters -->
+  <script src="/js/formatters.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -568,16 +570,10 @@
     let allAgreements = [];
     let currentFilter = 'all';
 
-    // Format amount in cents to euros with thousand separators, no decimals
-    function formatAmount(cents) {
-      const euros = Math.round(cents / 100);
-      return new Intl.NumberFormat('de-DE').format(euros);
-    }
-
-    // Format currency with 2 decimals for schedule tables
-    function formatCurrency2(amount) {
-      return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-    }
+    // Currency formatters are loaded from /js/formatters.js
+    // - formatCurrency0(cents) - for compact displays (no decimals, nl-NL locale)
+    // - formatCurrency2(cents) - for details and schedules (2 decimals, nl-NL locale)
+    // - formatEuro0(euros), formatEuro2(euros) - for euro amounts (not cents)
 
     // Generate initials for user avatar
     function getInitials(name) {
@@ -726,7 +722,7 @@
     }
 
     function populateDetails() {
-      const amount = formatAmount(agreement.amount_cents);
+      const amount = formatCurrency2(agreement.amount_cents);
       const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
 
@@ -740,11 +736,11 @@
       // Generate human-readable summary line 1
       let summaryLine1 = '';
       if (isLender) {
-        summaryLine1 = `You lent €${amount} to ${borrowerName}.`;
+        summaryLine1 = `You lent ${amount} to ${borrowerName}.`;
       } else if (isBorrower) {
-        summaryLine1 = `${lenderName} lent you €${amount}.`;
+        summaryLine1 = `${lenderName} lent you ${amount}.`;
       } else {
-        summaryLine1 = `${lenderName} lent €${amount} to ${borrowerName}.`;
+        summaryLine1 = `${lenderName} lent ${amount} to ${borrowerName}.`;
       }
       document.getElementById('agreement-summary-line1').textContent = summaryLine1;
 
@@ -761,12 +757,12 @@
       document.getElementById('agreement-summary-line2').textContent = summaryLine2;
 
       // Generate human-readable summary line 3 (outstanding and total)
-      const outstanding = formatAmount(agreement.outstanding_cents || agreement.amount_cents);
-      let summaryLine3 = `€${outstanding} remains outstanding.`;
+      const outstanding = formatCurrency2(agreement.outstanding_cents || agreement.amount_cents);
+      let summaryLine3 = `${outstanding} remains outstanding.`;
 
       if (hasInterest) {
-        const totalRepay = formatAmount(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
-        summaryLine3 += ` Total to repay: €${totalRepay} (incl. ${agreement.interest_rate}% interest).`;
+        const totalRepay = formatCurrency2(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
+        summaryLine3 += ` Total to repay: ${totalRepay} (incl. ${agreement.interest_rate}% interest).`;
       }
       document.getElementById('agreement-summary-line3').textContent = summaryLine3;
 
@@ -809,11 +805,11 @@
 
       // Installment info (show only if installments)
       if (repaymentType === 'installments' && agreement.installment_count) {
-        const installmentAmount = formatAmount(Math.round((agreement.installment_amount || 0) * 100));
+        const installmentAmount = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
         const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         document.getElementById('installment-info-display').innerHTML =
-          `<div style="text-align:right">${agreement.installment_count} monthly payments of €${installmentAmount}</div><div style="text-align:right">from ${firstDate} to ${finalDate}</div>`;
+          `<div style="text-align:right">${agreement.installment_count} monthly payments of ${installmentAmount}</div><div style="text-align:right">from ${firstDate} to ${finalDate}</div>`;
         document.getElementById('installment-info-row').style.display = 'flex';
       } else {
         document.getElementById('installment-info-row').style.display = 'none';
@@ -834,13 +830,13 @@
       // Interest info (show only if interest > 0)
       if (hasInterest) {
         const interestRate = agreement.interest_rate;
-        const totalInterest = formatAmount(Math.round((agreement.total_interest || 0) * 100));
-        document.getElementById('interest-display').textContent = `${interestRate}% per year (total interest: €${totalInterest})`;
+        const totalInterest = formatCurrency2(Math.round((agreement.total_interest || 0) * 100));
+        document.getElementById('interest-display').textContent = `${interestRate}% per year (total interest: ${totalInterest})`;
         document.getElementById('interest-row').style.display = 'flex';
 
         // Total to repay
-        const totalRepay = formatAmount(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
-        document.getElementById('total-repay-display').textContent = `€${totalRepay}`;
+        const totalRepay = formatCurrency2(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
+        document.getElementById('total-repay-display').textContent = totalRepay;
         document.getElementById('total-repay-row').style.display = 'flex';
       } else {
         document.getElementById('interest-row').style.display = 'none';
@@ -1278,9 +1274,9 @@
       try {
         // Show payment summary
         document.getElementById('payment-summary').classList.remove('hidden');
-        document.getElementById('original-amount').textContent = `€ ${formatAmount(agreement.amount_cents)}`;
-        document.getElementById('total-paid').textContent = `€ ${formatAmount(agreement.total_paid_cents || 0)}`;
-        document.getElementById('outstanding-amount').textContent = `€ ${formatAmount(agreement.outstanding_cents || agreement.amount_cents)}`;
+        document.getElementById('original-amount').textContent = formatCurrency2(agreement.amount_cents);
+        document.getElementById('total-paid').textContent = formatCurrency2(agreement.total_paid_cents || 0);
+        document.getElementById('outstanding-amount').textContent = formatCurrency2(agreement.outstanding_cents || agreement.amount_cents);
 
         // Load payment history
         const res = await fetch(`/api/agreements/${agreementId}/payments`);
@@ -1323,7 +1319,7 @@
       };
 
       paymentsList.innerHTML = payments.map(payment => {
-        const amount = formatAmount(payment.amount_cents);
+        const amount = formatCurrency2(payment.amount_cents);
         const date = new Date(payment.created_at).toLocaleString();
         const methodDisplay = payment.method ? (methodNames[payment.method] || payment.method) : '';
         const method = methodDisplay ? `<div class="payment-method" style="color:var(--muted); margin-top:4px">Method: ${methodDisplay}</div>` : '';
@@ -1390,7 +1386,7 @@
           <div class="payment-item">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
               <div style="display:flex; align-items:center; gap:8px">
-                <span class="payment-amount">€ ${amount}</span>
+                <span class="payment-amount">${amount}</span>
                 ${statusBadge}
               </div>
               <div class="payment-date">${date}</div>
@@ -1806,13 +1802,13 @@
 
       card.classList.remove('hidden');
 
-      const totalInterest = formatAmount(Math.round((agreement.total_interest || 0) * 100));
-      const totalRepay = formatAmount(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
+      const totalInterest = formatCurrency2(Math.round((agreement.total_interest || 0) * 100));
+      const totalRepay = formatCurrency2(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
       const termText = agreement.repayment_type === 'installments' && agreement.installment_count
         ? `${agreement.installment_count} months`
         : 'one payment';
 
-      let html = `<p style="margin:0 0 12px 0; font-size:14px">At ${agreement.interest_rate}% interest per year over ${termText}, total interest is about €${totalInterest} and total to repay is €${totalRepay}.</p>`;
+      let html = `<p style="margin:0 0 12px 0; font-size:14px">At ${agreement.interest_rate}% interest per year over ${termText}, total interest is about ${totalInterest} and total to repay is ${totalRepay}.</p>`;
 
       // Add detailed breakdown table for installments
       if (agreement.repayment_type === 'installments' && agreement.installment_count) {
@@ -1850,10 +1846,10 @@
               const rowStyle = i % 2 === 0 ? 'background:#0c1015' : 'background:#0a0d11';
               html += `<tr style="${rowStyle}; border-bottom:1px solid rgba(255,255,255,0.05)">`;
               html += `<td style="padding:8px 4px">${dateStr}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px; font-weight:600">${formatCurrency2(row.payment)}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px">${formatCurrency2(row.principal)}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px">${formatCurrency2(row.interest)}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px">${formatCurrency2(row.remaining)}</td>`;
+              html += `<td style="text-align:right; padding:8px 4px; font-weight:600">${formatEuro2(row.payment)}</td>`;
+              html += `<td style="text-align:right; padding:8px 4px">${formatEuro2(row.principal)}</td>`;
+              html += `<td style="text-align:right; padding:8px 4px">${formatEuro2(row.interest)}</td>`;
+              html += `<td style="text-align:right; padding:8px 4px">${formatEuro2(row.remaining)}</td>`;
               html += `</tr>`;
             }
           }

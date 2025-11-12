@@ -8,6 +8,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const fs = require('fs');
 const multer = require('multer');
+const { formatCurrency0, formatCurrency2, formatEuro0, formatEuro2 } = require('./lib/formatters');
 
 // --- basic setup ---
 const app = express();
@@ -367,11 +368,10 @@ function toCents(amountStr) {
   return Math.round(n * 100);
 }
 
-// format amount in cents to euros with thousand separators (e.g. "1.234")
-function formatAmount(cents) {
-  const euros = Math.round(cents / 100);
-  return new Intl.NumberFormat('de-DE').format(euros);
-}
+// Currency formatters imported from lib/formatters.js
+// - formatCurrency0(cents) - for compact displays (no decimals, nl-NL locale)
+// - formatCurrency2(cents) - for details and notifications (2 decimals, nl-NL locale)
+// - formatEuro0(euros), formatEuro2(euros) - for euro amounts (not cents)
 
 // compute payment totals for an agreement (only approved payments)
 function getPaymentTotals(agreementId) {
@@ -1639,7 +1639,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
       // Borrower reported a payment - pending approval
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
       const lenderName = agreement.lender_full_name || agreement.lender_name;
-      const amountFormatted = formatAmount(amountCents);
+      const amountFormatted = formatCurrency2(amountCents);
 
       // Activity for borrower
       db.prepare(`
@@ -1649,7 +1649,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
         req.user.id,
         id,
         'Payment reported',
-        `You reported a payment of € ${amountFormatted} — waiting for ${lenderName.split(' ')[0] || lenderName}'s confirmation.`,
+        `You reported a payment of ${amountFormatted} — waiting for ${lenderName.split(' ')[0] || lenderName}'s confirmation.`,
         now,
         'PAYMENT_REPORTED_BORROWER'
       );
@@ -1662,7 +1662,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
         agreement.lender_user_id,
         id,
         'Payment reported by borrower',
-        `${borrowerName} reported a payment of € ${amountFormatted} — please review.`,
+        `${borrowerName} reported a payment of ${amountFormatted} — please review.`,
         now,
         'PAYMENT_REPORTED_LENDER'
       );
@@ -1670,7 +1670,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
       // Lender added a received payment - approved immediately
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
       const lenderName = agreement.lender_full_name || agreement.lender_name;
-      const amountFormatted = formatAmount(amountCents);
+      const amountFormatted = formatCurrency2(amountCents);
 
       // Create activity messages for both parties
       // Activity for lender
@@ -1681,7 +1681,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
         req.user.id,
         id,
         'Payment recorded',
-        `You recorded a payment of € ${amountFormatted} from ${borrowerName}.`,
+        `You recorded a payment of ${amountFormatted} from ${borrowerName}.`,
         now,
         'PAYMENT_RECORDED_LENDER'
       );
@@ -1695,7 +1695,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
           agreement.borrower_user_id,
           id,
           'Payment confirmed',
-          `${lenderName.split(' ')[0] || lenderName} confirmed a payment of € ${amountFormatted}.`,
+          `${lenderName.split(' ')[0] || lenderName} confirmed a payment of ${amountFormatted}.`,
           now,
           'PAYMENT_RECORDED_BORROWER'
         );
@@ -1847,7 +1847,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
       WHERE id = ?
     `).run(id);
 
-    const amountFormatted = formatAmount(payment.amount_cents);
+    const amountFormatted = formatCurrency2(payment.amount_cents);
     const lenderName = payment.lender_full_name || req.user.full_name;
     const borrowerName = payment.borrower_full_name || payment.friend_first_name;
 
@@ -1859,7 +1859,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
       req.user.id,
       payment.agreement_id,
       'Payment confirmed',
-      `You confirmed a payment of € ${amountFormatted} from ${borrowerName}.`,
+      `You confirmed a payment of ${amountFormatted} from ${borrowerName}.`,
       now,
       'PAYMENT_APPROVED_LENDER'
     );
@@ -1873,7 +1873,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
         payment.borrower_user_id,
         payment.agreement_id,
         'Payment confirmed',
-        `${lenderName.split(' ')[0] || lenderName} confirmed your payment of € ${amountFormatted}.`,
+        `${lenderName.split(' ')[0] || lenderName} confirmed your payment of ${amountFormatted}.`,
         now,
         'PAYMENT_APPROVED_BORROWER'
       );
@@ -1967,7 +1967,7 @@ app.post('/api/payments/:id/decline', requireAuth, (req, res) => {
       WHERE id = ?
     `).run(id);
 
-    const amountFormatted = formatAmount(payment.amount_cents);
+    const amountFormatted = formatCurrency2(payment.amount_cents);
     const lenderName = payment.lender_full_name || req.user.full_name;
     const borrowerName = payment.borrower_full_name || payment.friend_first_name;
 
@@ -1979,7 +1979,7 @@ app.post('/api/payments/:id/decline', requireAuth, (req, res) => {
       req.user.id,
       payment.agreement_id,
       'Payment declined',
-      `You declined the reported payment of € ${amountFormatted} from ${borrowerName}.`,
+      `You declined the reported payment of ${amountFormatted} from ${borrowerName}.`,
       now,
       'PAYMENT_DECLINED_LENDER'
     );
@@ -1993,7 +1993,7 @@ app.post('/api/payments/:id/decline', requireAuth, (req, res) => {
         payment.borrower_user_id,
         payment.agreement_id,
         'Payment not confirmed',
-        `${lenderName.split(' ')[0] || lenderName} did not confirm your reported payment of € ${amountFormatted}.`,
+        `${lenderName.split(' ')[0] || lenderName} did not confirm your reported payment of ${amountFormatted}.`,
         now,
         'PAYMENT_DECLINED_BORROWER'
       );

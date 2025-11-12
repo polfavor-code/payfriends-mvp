@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="/css/shared-controls.css" />
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
+  <!-- Centralized currency formatters -->
+  <script src="/js/formatters.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -224,21 +226,10 @@
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
 
-    // Format amount in cents to euros with thousand separators, no decimals
-    function formatAmount(cents) {
-      const euros = Math.round(cents / 100);
-      return new Intl.NumberFormat('de-DE').format(euros);
-    }
-
-    // Format currency with € symbol using nl-NL locale
-    function formatCurrency(amount) {
-      return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount);
-    }
-
-    // Format currency with 2 decimals for schedule tables
-    function formatCurrency2(amount) {
-      return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-    }
+    // Currency formatters are loaded from /js/formatters.js
+    // - formatCurrency0(cents) - for compact displays (no decimals, nl-NL locale)
+    // - formatCurrency2(cents) - for details and schedules (2 decimals, nl-NL locale)
+    // - formatEuro0(euros), formatEuro2(euros) - for euro amounts (not cents)
 
     // Format ISO date to human-readable format (dd MMM yyyy)
     function formatISOToHuman(isoDate) {
@@ -450,13 +441,13 @@
 
       // (5) Total to repay
       const totalToRepay = agreement.total_repay_amount || principalEuros;
-      document.getElementById('total-repay-display').textContent = formatCurrency(totalToRepay);
+      document.getElementById('total-repay-display').textContent = formatEuro2(totalToRepay);
 
       // (6) Lender
       document.getElementById('lender-display').textContent = agreement.lender_full_name || '—';
 
       // (7) Amount
-      document.getElementById('amount-display').textContent = formatCurrency(principalEuros);
+      document.getElementById('amount-display').textContent = formatEuro2(principalEuros);
 
       // (8) Loan duration
       let loanDurationText = '—';

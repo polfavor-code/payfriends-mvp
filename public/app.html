@@ -11,6 +11,8 @@
   <script src="/js/header.js"></script>
   <!-- Phone input component -->
   <script src="/js/phone-input.js"></script>
+  <!-- Centralized currency formatters -->
+  <script src="/js/formatters.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -691,7 +693,7 @@
           <h4 style="margin:0 0 16px 0; font-size:16px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px">Loan summary</h4>
           <div style="display:flex; justify-content:space-between; padding:8px 0">
             <span style="color:var(--muted)">Loan amount</span>
-            <span style="font-weight:600">€<span id="summary-loan-amount">0</span></span>
+            <span style="font-weight:600" id="summary-loan-amount">€ 0,00</span>
           </div>
           <div style="display:flex; justify-content:space-between; padding:8px 0">
             <span style="color:var(--muted)">Duration</span>
@@ -703,11 +705,11 @@
           </div>
           <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid rgba(255,255,255,0.08); margin-top:8px; padding-top:12px">
             <span style="color:var(--muted)">Total interest</span>
-            <span style="font-weight:600">€<span id="total-interest-display">0</span></span>
+            <span style="font-weight:600" id="total-interest-display">€ 0,00</span>
           </div>
           <div style="display:flex; justify-content:space-between; padding:8px 0">
             <span style="color:var(--muted); font-weight:600">Total to repay</span>
-            <span style="font-weight:700; font-size:18px; color:var(--accent)">€<span id="total-repay-display">0</span></span>
+            <span style="font-weight:700; font-size:18px; color:var(--accent)" id="total-repay-display">€ 0,00</span>
           </div>
           <p style="margin:12px 0 0 0; color:var(--muted); font-size:12px; line-height:1.5">Interest is calculated only on the remaining balance — fair and transparent.</p>
         </div>
@@ -1026,16 +1028,10 @@
       agreementSent: false
     };
 
-    // Format amount in cents to euros with thousand separators, no decimals
-    function formatAmount(cents) {
-      const euros = Math.round(cents / 100);
-      return new Intl.NumberFormat('de-DE').format(euros);
-    }
-
-    // Format currency with 2 decimals for schedule tables
-    function formatCurrency2(amount) {
-      return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-    }
+    // Currency formatters are loaded from /js/formatters.js
+    // - formatCurrency0(cents) - for My Agreements table (no decimals, nl-NL locale)
+    // - formatCurrency2(cents) - for details and schedules (2 decimals, nl-NL locale)
+    // - formatEuro0(euros), formatEuro2(euros) - for euro amounts (not cents)
 
     // Get initials from a name (e.g., "Alex Smith" -> "AS", "Alex" -> "A")
     function getInitials(name) {
@@ -1135,8 +1131,8 @@
       const num = parseFloat(cleanValue);
 
       if (!isNaN(num) && num > 0) {
-        // Format with thousand separators (German style: 6.000)
-        input.value = new Intl.NumberFormat('de-DE').format(num);
+        // Format with thousand separators (nl-NL style: 6.000)
+        input.value = new Intl.NumberFormat('nl-NL').format(num);
       }
     }
 
@@ -1706,10 +1702,10 @@
 
       const date = new Date(dueDate);
       const dateFormatted = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-      const amountFormatted = new Intl.NumberFormat('de-DE').format(Math.round(amountNum));
+      const amountFormatted = formatEuro2(amountNum);
 
       document.getElementById('one-time-estimate').textContent =
-        `1 payment of about €${amountFormatted} on ${dateFormatted}, excluding interest.`;
+        `1 payment of about ${amountFormatted} on ${dateFormatted}, excluding interest.`;
     }
 
     // Unified function to update estimate based on repayment type
@@ -2017,14 +2013,14 @@
       wizardData.installmentSchedule = installmentSchedule;
 
       // Display summary
-      const installmentFormatted = new Intl.NumberFormat('de-DE').format(Math.round(installmentAmount));
+      const installmentFormatted = formatEuro2(installmentAmount);
       const frequencyText = getFrequencyTextForSummary(loanDurationValue, loanDurationUnit, numRepayments);
 
       // Loan duration summary
       planLengthSummary.textContent = `Plan length: ${durationText} (from ${firstFormatted} to ${finalFormatted}).`;
 
       // Payment summary with frequency
-      installmentEstimate.textContent = `${numRepayments} payment${numRepayments === 1 ? '' : 's'} of about €${installmentFormatted} each, ${frequencyText}, excluding interest.`;
+      installmentEstimate.textContent = `${numRepayments} payment${numRepayments === 1 ? '' : 's'} of about ${installmentFormatted} each, ${frequencyText}, excluding interest.`;
     }
 
     // Update due date helper text
@@ -2382,12 +2378,12 @@
       wizardData.totalInterest = totalInterest;
       wizardData.totalRepayAmount = totalRepayAmount;
 
-      // Update summary card
-      document.getElementById('summary-loan-amount').textContent = new Intl.NumberFormat('de-DE').format(Math.round(principal));
+      // Update summary card (use formatEuro2 for 2-decimal nl-NL formatting)
+      document.getElementById('summary-loan-amount').textContent = formatEuro2(principal);
       document.getElementById('summary-duration').textContent = durationLabel;
       document.getElementById('summary-interest-rate').textContent = interestRate;
-      document.getElementById('total-interest-display').textContent = new Intl.NumberFormat('de-DE').format(Math.round(totalInterest));
-      document.getElementById('total-repay-display').textContent = new Intl.NumberFormat('de-DE').format(Math.round(totalRepayAmount));
+      document.getElementById('total-interest-display').textContent = formatEuro2(totalInterest);
+      document.getElementById('total-repay-display').textContent = formatEuro2(totalRepayAmount);
 
       // Generate breakdown table using shared schedule utility
       const tbody = document.getElementById('breakdown-tbody');
@@ -2525,14 +2521,14 @@
       const lenderName = currentUser?.full_name || currentUser?.email || 'You';
       const borrowerName = wizardData.friendFirstName;
       const amountCents = Math.round(wizardData.amount * 100);
-      const amountFormatted = formatAmount(amountCents);
+      const amountFormatted = formatCurrency2(amountCents);
       const description = wizardData.description;
       const interestRate = wizardData.interestRate;
       const totalRepayAmount = Math.round(wizardData.totalRepayAmount * 100);
-      const totalRepayFormatted = formatAmount(totalRepayAmount);
+      const totalRepayFormatted = formatCurrency2(totalRepayAmount);
 
       // Full summary text (3 lines)
-      let summaryLine1 = `${lenderName} lends €${amountFormatted} to ${borrowerName} for '${description}'.`;
+      let summaryLine1 = `${lenderName} lends ${amountFormatted} to ${borrowerName} for '${description}'.`;
 
       let summaryLine2 = '';
       if (wizardData.repaymentType === 'one_time') {
@@ -2547,9 +2543,9 @@
 
       let summaryLine3 = '';
       if (interestRate > 0) {
-        summaryLine3 = `Total to repay: €${totalRepayFormatted} (including ${interestRate}% interest per year).`;
+        summaryLine3 = `Total to repay: ${totalRepayFormatted} (including ${interestRate}% interest per year).`;
       } else {
-        summaryLine3 = `Total to repay: €${amountFormatted} (interest-free loan).`;
+        summaryLine3 = `Total to repay: ${amountFormatted} (interest-free loan).`;
       }
 
       const summaryText = summaryLine1 + '\n' + summaryLine2 + '\n' + summaryLine3;
@@ -2592,7 +2588,7 @@
 
       html += `<div class="summary-grid-row" style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
         <span class="summary-grid-label">Amount</span>
-        <span class="summary-grid-value" style="font-weight:600">€${formatAmount(Math.round(wizardData.amount * 100))}</span>
+        <span class="summary-grid-value" style="font-weight:600">${formatCurrency2(Math.round(wizardData.amount * 100))}</span>
       </div>`;
 
       let moneySentDateFormatted;
@@ -2673,13 +2669,13 @@
       if (wizardData.interestRate === 0 || !wizardData.hasInterest) {
         content.innerHTML = `<p style="margin:0; font-size:14px">This is an interest-free loan. Borrower repays only the loan amount.</p>`;
       } else {
-        const totalInterest = formatAmount(Math.round(wizardData.totalInterest * 100));
-        const totalRepay = formatAmount(Math.round(wizardData.totalRepayAmount * 100));
+        const totalInterest = formatCurrency2(Math.round(wizardData.totalInterest * 100));
+        const totalRepay = formatCurrency2(Math.round(wizardData.totalRepayAmount * 100));
         const termText = wizardData.repaymentType === 'installments'
           ? `${wizardData.installmentCount} repayments`
           : 'one payment';
 
-        let html = `<p style="margin:0 0 12px 0; font-size:14px">At ${wizardData.interestRate}% interest per year over ${termText}, total interest is about €${totalInterest} and total to repay is €${totalRepay}.</p>`;
+        let html = `<p style="margin:0 0 12px 0; font-size:14px">At ${wizardData.interestRate}% interest per year over ${termText}, total interest is about ${totalInterest} and total to repay is ${totalRepay}.</p>`;
 
         // Build unified breakdown table using shared schedule utility
         const n = wizardData.repaymentType === 'installments' ? wizardData.installmentCount : 1;
@@ -3360,7 +3356,7 @@
         }
 
         // Build modal content
-        const amount = formatAmount(pendingPayment.amount_cents);
+        const amount = formatCurrency2(pendingPayment.amount_cents);
         const borrowerName = pendingPayment.recorded_by_name || agreement.friend_first_name || agreement.borrower_email;
 
         let proofOfPaymentHtml = '';
@@ -3376,7 +3372,7 @@
         modalBody.innerHTML = `
           <div class="modal-info-row">
             <span class="modal-info-label">Amount</span>
-            <span class="modal-info-value">€ ${amount}</span>
+            <span class="modal-info-value">${amount}</span>
           </div>
           <div class="modal-info-row">
             <span class="modal-info-label">Method</span>
@@ -3497,9 +3493,9 @@
         }
 
         // Format can_pay_now amount
-        let canPayNowText = '€ 0 (Cannot pay anything now)';
+        let canPayNowText = '€ 0,00 (Cannot pay anything now)';
         if (openDifficulty.can_pay_now_cents && openDifficulty.can_pay_now_cents > 0) {
-          canPayNowText = `€ ${formatAmount(openDifficulty.can_pay_now_cents)}`;
+          canPayNowText = formatCurrency2(openDifficulty.can_pay_now_cents);
         }
 
         modalBody.innerHTML = `
