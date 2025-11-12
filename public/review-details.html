@@ -574,6 +574,11 @@
       return new Intl.NumberFormat('de-DE').format(euros);
     }
 
+    // Format currency with 2 decimals for schedule tables
+    function formatCurrency2(amount) {
+      return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+    }
+
     // Generate initials for user avatar
     function getInitials(name) {
       if (!name) return '?';
@@ -1805,12 +1810,11 @@
           html += '<div style="margin:16px 0; max-height:300px; overflow-y:auto">';
           html += '<table style="width:100%; font-size:12px">';
           html += '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">';
-          html += '<th style="text-align:left; padding:8px 4px">#</th>';
-          html += '<th style="text-align:left; padding:8px 4px">Date</th>';
-          html += '<th style="text-align:right; padding:8px 4px">Payment</th>';
+          html += '<th style="text-align:left; padding:8px 4px">Due date</th>';
+          html += '<th style="text-align:right; padding:8px 4px">Payment total</th>';
           html += '<th style="text-align:right; padding:8px 4px">Loan repayment</th>';
           html += '<th style="text-align:right; padding:8px 4px">Interest</th>';
-          html += '<th style="text-align:right; padding:8px 4px">Remaining</th>';
+          html += '<th style="text-align:right; padding:8px 4px">Outstanding</th>';
           html += '</tr></thead><tbody>';
 
           for (let i = 0; i < installmentCount; i++) {
@@ -1829,12 +1833,11 @@
             const row = schedule[i];
             if (row) {
               html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">`;
-              html += `<td style="padding:8px 4px">${row.period}</td>`;
               html += `<td style="padding:8px 4px">${dateStr}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.payment))}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.principal))}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.interest))}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.remaining))}</td>`;
+              html += `<td style="text-align:right; padding:8px 4px; font-weight:600">${formatCurrency2(row.payment)}</td>`;
+              html += `<td style="text-align:right; padding:8px 4px">${formatCurrency2(row.principal)}</td>`;
+              html += `<td style="text-align:right; padding:8px 4px">${formatCurrency2(row.interest)}</td>`;
+              html += `<td style="text-align:right; padding:8px 4px">${formatCurrency2(row.remaining)}</td>`;
               html += `</tr>`;
             }
           }

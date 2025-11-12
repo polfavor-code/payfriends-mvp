@@ -723,12 +723,11 @@
           <table style="width:100%; font-size:13px">
             <thead>
               <tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
-                <th style="text-align:left; padding:8px 4px">#</th>
-                <th style="text-align:left; padding:8px 4px">Date</th>
-                <th style="text-align:right; padding:8px 4px">Payment</th>
+                <th style="text-align:left; padding:8px 4px">Due date</th>
+                <th style="text-align:right; padding:8px 4px">Payment total</th>
                 <th style="text-align:right; padding:8px 4px">Loan repayment</th>
                 <th style="text-align:right; padding:8px 4px">Interest</th>
-                <th style="text-align:right; padding:8px 4px">Remaining</th>
+                <th style="text-align:right; padding:8px 4px">Outstanding</th>
               </tr>
             </thead>
             <tbody id="breakdown-tbody"></tbody>
@@ -1031,6 +1030,11 @@
     function formatAmount(cents) {
       const euros = Math.round(cents / 100);
       return new Intl.NumberFormat('de-DE').format(euros);
+    }
+
+    // Format currency with 2 decimals for schedule tables
+    function formatCurrency2(amount) {
+      return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
     }
 
     // Get initials from a name (e.g., "Alex Smith" -> "AS", "Alex" -> "A")
@@ -2401,12 +2405,11 @@
         const tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
         tr.innerHTML = `
-          <td style="padding:8px 4px">${row.period}</td>
           <td style="padding:8px 4px">${dateStr}</td>
-          <td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.payment))}</td>
-          <td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.principal))}</td>
-          <td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.interest))}</td>
-          <td style="text-align:right; padding:8px 4px">€${new Intl.NumberFormat('de-DE').format(Math.round(row.remaining))}</td>
+          <td style="text-align:right; padding:8px 4px; font-weight:600">${formatCurrency2(row.payment)}</td>
+          <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.principal)}</td>
+          <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.interest)}</td>
+          <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.remaining)}</td>
         `;
         tbody.appendChild(tr);
       }

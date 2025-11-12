@@ -152,6 +152,18 @@
             <span style="color:var(--muted)">Total to repay</span>
             <span style="color:var(--text); font-weight:600" id="total-repay-display">—</span>
           </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Lender</span>
+            <span style="color:var(--text)" id="lender-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Amount</span>
+            <span style="color:var(--text)" id="amount-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Loan duration</span>
+            <span style="color:var(--text)" id="loan-duration-display">—</span>
+          </div>
         </div>
       </section>
 
@@ -221,6 +233,11 @@
     // Format currency with € symbol using nl-NL locale
     function formatCurrency(amount) {
       return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount);
+    }
+
+    // Format currency with 2 decimals for schedule tables
+    function formatCurrency2(amount) {
+      return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
     }
 
     // Format ISO date to human-readable format (dd MMM yyyy)
@@ -435,6 +452,50 @@
       const totalToRepay = agreement.total_repay_amount || principalEuros;
       document.getElementById('total-repay-display').textContent = formatCurrency(totalToRepay);
 
+      // (6) Lender
+      document.getElementById('lender-display').textContent = agreement.lender_full_name || '—';
+
+      // (7) Amount
+      document.getElementById('amount-display').textContent = formatCurrency(principalEuros);
+
+      // (8) Loan duration
+      let loanDurationText = '—';
+      if (agreement.repayment_type === 'installments' && agreement.installment_count) {
+        const totalDays = daysBetween(agreement.first_payment_date, agreement.final_due_date);
+        const intervalDays = totalDays / agreement.installment_count;
+
+        if (intervalDays < 14) {
+          const days = Math.round(totalDays);
+          loanDurationText = `${days} day${days === 1 ? '' : 's'}`;
+        } else if (intervalDays < 60) {
+          const weeks = Math.round(totalDays / 7);
+          loanDurationText = `${weeks} week${weeks === 1 ? '' : 's'}`;
+        } else if (intervalDays < 730) {
+          const months = Math.round(totalDays / 30);
+          loanDurationText = `${months} month${months === 1 ? '' : 's'}`;
+        } else {
+          const years = Math.round(totalDays / 365);
+          loanDurationText = `${years} year${years === 1 ? '' : 's'}`;
+        }
+      } else if (agreement.repayment_type === 'one_time' && agreement.money_sent_date && agreement.due_date) {
+        const startDate = agreement.money_sent_date === 'on-acceptance' ? new Date() : new Date(agreement.money_sent_date);
+        const totalDays = daysBetween(startDate, agreement.due_date);
+
+        if (totalDays < 14) {
+          loanDurationText = `${totalDays} day${totalDays === 1 ? '' : 's'}`;
+        } else if (totalDays < 60) {
+          const weeks = Math.round(totalDays / 7);
+          loanDurationText = `${weeks} week${weeks === 1 ? '' : 's'}`;
+        } else if (totalDays < 730) {
+          const months = Math.round(totalDays / 30);
+          loanDurationText = `${months} month${months === 1 ? '' : 's'}`;
+        } else {
+          const years = Math.round(totalDays / 365);
+          loanDurationText = `${years} year${years === 1 ? '' : 's'}`;
+        }
+      }
+      document.getElementById('loan-duration-display').textContent = loanDurationText;
+
       // Show interest calculation card with schedule if interest > 0
       if (agreement.interest_rate && agreement.interest_rate > 0) {
         populateInterestCalcDetail();
@@ -538,24 +599,22 @@
       html += '<div style="overflow-x:auto; border:1px solid rgba(255,255,255,0.08); border-radius:8px">';
       html += '<table class="payment-schedule-table">';
       html += '<thead><tr>';
-      html += '<th>#</th>';
-      html += '<th>Date</th>';
-      html += '<th class="text-right">Remaining</th>';
-      html += '<th class="text-right">Principal</th>';
+      html += '<th>Due date</th>';
+      html += '<th class="text-right">Payment total</th>';
+      html += '<th class="text-right">Loan repayment</th>';
       html += '<th class="text-right">Interest</th>';
-      html += '<th class="text-right">Payment</th>';
+      html += '<th class="text-right">Outstanding</th>';
       html += '</tr></thead>';
       html += '<tbody>';
 
       for (let i = 0; i < schedule.length; i++) {
         const row = schedule[i];
         html += '<tr>';
-        html += `<td>${row.period}</td>`;
         html += `<td>${formatISOToHuman(row.date.toISOString())}</td>`;
-        html += `<td class="text-right">${formatCurrency(row.remaining)}</td>`;
-        html += `<td class="text-right">${formatCurrency(row.principal)}</td>`;
-        html += `<td class="text-right">${formatCurrency(row.interest)}</td>`;
-        html += `<td class="text-right" style="font-weight:600">${formatCurrency(row.payment)}</td>`;
+        html += `<td class="text-right" style="font-weight:600">${formatCurrency2(row.payment)}</td>`;
+        html += `<td class="text-right">${formatCurrency2(row.principal)}</td>`;
+        html += `<td class="text-right">${formatCurrency2(row.interest)}</td>`;
+        html += `<td class="text-right">${formatCurrency2(row.remaining)}</td>`;
         html += '</tr>';
       }
 
