@@ -175,6 +175,9 @@
   <div class="container">
     <!-- Header will be loaded dynamically by header.js -->
 
+    <!-- Page top bar (for manage/view mode) -->
+    <div id="page-topbar-container"></div>
+
     <!-- My Agreements section -->
     <section class="card" id="list-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
@@ -217,10 +220,9 @@
       <p id="loading-text">Loading agreement details...</p>
     </div>
 
-    <!-- Manage agreement header (for view mode) -->
+    <!-- Manage agreement header (for view mode) - now using page-topbar component -->
     <div id="manage-header" class="hidden" style="margin:16px 0 24px 0">
-      <h2 style="margin:0 0 8px 0; font-size:24px">Manage agreement</h2>
-      <p id="manage-subline" style="margin:8px 0 0 0; font-size:16px; color:var(--muted)"></p>
+      <!-- Top bar will be rendered here dynamically -->
     </div>
 
     <!-- Agreement summary block (above details card) -->
@@ -625,9 +627,33 @@
       }
     }
 
-    function showReviewSection() {
+    async function showReviewSection() {
       document.getElementById('loading-card').classList.add('hidden');
       document.getElementById('details-section').classList.remove('hidden');
+
+      // Hide My Agreements section when in review mode
+      document.getElementById('list-section').classList.add('hidden');
+
+      // Show top bar for review mode
+      const description = agreement.description || 'Agreement';
+
+      // Dynamically import and render the top bar
+      try {
+        const { renderPageTopbar } = await import('/components/page-topbar.js');
+        const topbar = renderPageTopbar({
+          title: 'Review agreement',
+          subtitle: description,
+          href: '/app'
+        });
+
+        // Clear and append the top bar
+        const manageHeader = document.getElementById('manage-header');
+        manageHeader.innerHTML = '';
+        manageHeader.appendChild(topbar);
+        manageHeader.classList.remove('hidden');
+      } catch (err) {
+        console.error('Error loading top bar component:', err);
+      }
 
       populateDetails();
 
@@ -657,11 +683,33 @@
       document.getElementById('loading-card').classList.add('hidden');
       document.getElementById('details-section').classList.remove('hidden');
 
-      // Show and populate manage header
+      // Hide My Agreements section when viewing a specific agreement
+      document.getElementById('list-section').classList.add('hidden');
+
+      // Show and populate manage header with new top bar component
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
       const description = agreement.description || 'Agreement';
-      document.getElementById('manage-subline').textContent = `${description} – ${borrowerName}`;
-      document.getElementById('manage-header').classList.remove('hidden');
+
+      // Dynamically import and render the top bar
+      try {
+        const { renderPageTopbar } = await import('/components/page-topbar.js');
+        const topbar = renderPageTopbar({
+          title: 'Manage agreement',
+          subtitle: `${description} — ${borrowerName}`,
+          href: '/app'
+        });
+
+        // Clear and append the top bar
+        const manageHeader = document.getElementById('manage-header');
+        manageHeader.innerHTML = '';
+        manageHeader.appendChild(topbar);
+        manageHeader.classList.remove('hidden');
+      } catch (err) {
+        console.error('Error loading top bar component:', err);
+        // Fallback to old header if import fails
+        document.getElementById('manage-subline').textContent = `${description} – ${borrowerName}`;
+        document.getElementById('manage-header').classList.remove('hidden');
+      }
 
       populateDetails();
 
