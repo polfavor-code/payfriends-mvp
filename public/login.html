@@ -7,211 +7,201 @@
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+      --card-border: rgba(255,255,255,0.06);
+      --input-bg:#10151d;
     }
     *{box-sizing:border-box}
-    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
-    .container{max-width:500px;margin:0 auto;padding:64px 16px;}
-    .header{margin-bottom:32px; text-align:center}
-
-    /* Two-column layout for desktop */
-    @media (min-width: 900px) {
-      body{display:flex;align-items:center;justify-content:center;min-height:100vh;}
-      .page-wrapper{display:flex;max-width:1200px;width:100%;gap:64px;align-items:center;padding:32px;}
-      .left-column{flex:1;padding:32px;}
-      .right-column{flex:1;max-width:500px;}
-      .container{max-width:none;padding:0;margin:0;}
-      .header{text-align:left;}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+    }
+    .page{
+      width:100%; max-width:1200px; padding:32px 16px;
+      display:grid; grid-template-columns:1fr; gap:40px; align-items:center;
+    }
+    @media (min-width:900px){
+      .page{grid-template-columns:1.1fr .9fr; gap:64px; padding:48px;}
     }
 
-    /* Left column styling */
-    .left-column{display:none}
-    @media (min-width: 900px) {
-      .left-column{display:block}
+    /* HERO */
+    .hero h1{
+      margin:0 0 16px; font-size:40px; line-height:1.15; font-weight:700;
+      letter-spacing:-0.02em;
     }
-    .left-logo-section{margin-bottom:32px}
-    .left-logo-section img{height:56px;width:auto;margin-bottom:12px}
-    .left-tagline{font-size:28px;font-weight:700;margin:16px 0 24px 0;line-height:1.2}
-    .left-features{list-style:none;padding:0;margin:0;font-size:14px;color:var(--muted)}
-    .left-features li{margin:12px 0;line-height:1.5}
-
-    /* Mobile: show left content above form */
-    .mobile-left-content{display:block;margin-bottom:32px;text-align:center}
-    .mobile-left-content .left-logo-section img{height:48px}
-    .mobile-left-content .left-tagline{font-size:20px;margin:12px 0 16px 0}
-    .mobile-left-content .left-features{font-size:13px}
-    .mobile-left-content .left-features li{margin:8px 0}
-    /* Horizontal layout: logo beside text block */
-    .left-hero-section{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:40px;margin-bottom:32px}
-    .left-hero-section img{width:128px;height:128px;flex-shrink:0}
-    .left-text-block{flex:1;space-y:12px}
-    .left-tagline{font-size:28px;font-weight:600;margin:0 0 12px 0;line-height:1.3;color:var(--text)}
-    .left-description{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 16px 0;max-width:480px}
-    .left-features{list-style:disc;list-style-position:inside;padding:0;margin:0;font-size:13px;color:var(--muted)}
-    .left-features li{margin:6px 0;line-height:1.5}
-
-    /* Mobile: show left content above form */
-    .mobile-left-content{display:block;margin-bottom:32px;text-align:center}
-    .mobile-left-content img{height:80px;width:80px;margin:0 auto 16px auto}
-    .mobile-left-content .left-tagline{font-size:22px;font-weight:600;margin:0 0 12px 0;line-height:1.3}
-    .mobile-left-content .left-description{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 16px 0;padding:0 16px}
-    .mobile-left-content .left-features{font-size:12px;text-align:left;max-width:360px;margin:0 auto}
-    .mobile-left-content .left-features li{margin:6px 0}
-
-    @media (min-width: 900px) {
-      .mobile-left-content{display:none}
+    .hero-row{
+      display:flex; gap:40px; align-items:flex-start;
     }
-    h1{margin:0 0 8px 0;font-size:32px}
-    .tagline{color:var(--muted)}
-    .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin:24px 0}
-    .row{margin:16px 0}
-    .row label{display:block; margin-bottom:6px; color:var(--muted); font-size:14px}
-    .row input{width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-size:15px}
-    .row input:focus{outline:none; border-color:var(--accent); background:#10151d}
-    .row input:hover{background:#10151d}
-    .row input:-webkit-autofill,
-    .row input:-webkit-autofill:hover,
-    .row input:-webkit-autofill:focus,
-    .row input:-webkit-autofill:active{
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:var(--text);
-      transition:background-color 5000s ease-in-out 0s;
-      box-shadow:inset 0 0 20px 20px #10151d;
+    .hero img.hero-logo{
+      width:220px; max-width:30vw; height:auto; flex-shrink:0; display:block;
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,.35));
     }
-    button{width:100%; padding:12px;border-radius:10px;border:0;background:var(--accent);color:#0d130f;font-weight:700; cursor:pointer; font-size:15px; margin-top:8px}
-    button:hover{filter:brightness(1.06)}
-    .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px;}
-    .error{color:#ff6b6b}
-    .tabs{display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:0}
-    .tab{padding:12px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
-    .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
-    .tab:hover{color:var(--text)}
+    .hero-copy{max-width:600px}
+    .hero p{
+      color:var(--muted); line-height:1.6; margin:0 0 16px;
+    }
+    .hero ul{
+      color:var(--muted); margin:0; padding-left:18px;
+    }
+    .hero li{margin:6px 0; line-height:1.5}
+
+    /* Mobile hero stack */
+    @media (max-width:899px){
+      .hero h1{font-size:28px; text-align:center}
+      .hero-row{flex-direction:column; align-items:center; gap:16px}
+      .hero img.hero-logo{width:120px}
+      .hero-copy{max-width:48ch}
+      .hero p{text-align:center; padding:0 8px}
+    }
+
+    /* AUTH CARD */
+    .card{
+      background:var(--card);
+      border:1px solid var(--card-border);
+      border-radius:16px;
+      padding:24px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    @media (min-width:900px){ .card{padding:28px} }
+    .tabs{
+      display:flex; gap:12px; border-bottom:1px solid var(--card-border);
+      margin:0 0 16px;
+    }
+    .tab{
+      appearance:none; background:none; border:none; color:var(--muted);
+      padding:12px 4px; margin:0; cursor:pointer; font:inherit; font-weight:600;
+      border-bottom:2px solid transparent;
+    }
+    .tab[aria-selected="true"]{
+      color:var(--accent); border-bottom-color:var(--accent);
+    }
     .form-section{display:none}
     .form-section.active{display:block}
-    .footer{margin-top:32px; text-align:center; color:var(--muted); font-size:12px;}
+
+    label{display:block; margin:10px 0 6px; color:var(--muted); font-size:14px}
+    input{
+      width:100%; padding:12px; border-radius:10px; border:1px solid var(--card-border);
+      background:var(--input-bg); color:var(--text); font-size:15px;
+      outline:none; transition:border-color .2s ease;
+    }
+    input:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(61,220,151,.15)}
+    input::placeholder{color:#6e7785}
+    button.primary{
+      width:100%; padding:12px; border-radius:10px; border:0; margin-top:10px;
+      background:var(--accent); color:#0d130f; font-weight:800; font-size:15px; cursor:pointer;
+    }
+    button.primary:hover{filter:brightness(1.06)}
+    .row{margin-top:8px}
+    .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px}
+    .status.error{color:#ff6b6b}
+
+    /* Footer mini-links */
+    .mini{margin-top:16px; text-align:center; color:#8691a1; font-size:12px}
+    .mini a{color:#9fdcc0; text-decoration:none}
+    .mini a:hover{text-decoration:underline}
   </style>
 </head>
 <body>
-  <div class="page-wrapper">
-    <!-- Left column for desktop -->
-    <div class="left-column">
-      <div class="left-logo-section">
-        <img src="/images/payfriends-logov2.png" alt="PayFriends logo" />
-        <h2 class="left-tagline">Pay friends, stay friends</h2>
-      </div>
-      <ul class="left-features">
-        <li>• Fair, trust-based loans between friends</li>
-        <li>• Automatic reminders and smart interest recalculation</li>
-        <li>• App handles chasing and negotiations — you stay friends</li>
-      </ul>
-      <section class="left-hero-section">
-        <!-- LEFT: logo -->
-        <img src="/logo-payfriends.svg" alt="PayFriends logo" />
-
-        <!-- RIGHT: text block -->
-        <div class="left-text-block">
-          <h1 class="left-tagline">PayFriends, stay friends</h1>
-
-          <p class="left-description">
-            PayFriends is a kind, smart fintech app — built to keep friends on good terms.<br />
-            It rewards early repayments, adjusts interest fairly, and finds solutions when paying gets hard.<br />
+  <div class="page">
+    <!-- HERO (single instance, responsive) -->
+    <section class="hero" aria-labelledby="pf-hero-title">
+      <h1 id="pf-hero-title">Pay friends, stay friends</h1>
+      <div class="hero-row">
+        <!-- Use YOUR existing PNG only -->
+        <img class="hero-logo" src="/images/payfriends-logov2.png" alt="PayFriends logo" />
+        <div class="hero-copy">
+          <p>
+            PayFriends is a kind, smart fintech app — built to keep friends on good terms.
+            It rewards early repayments, adjusts interest fairly, and finds solutions when paying gets hard.
             We handle the math and reminders — you keep the friendship.
           </p>
-
-          <ul class="left-features">
+          <ul>
             <li>Fair, trust-based loans between friends</li>
             <li>Automatic reminders and smart interest recalculation</li>
             <li>App handles chasing and negotiations — you stay friends</li>
           </ul>
         </div>
-      </section>
-    </div>
-
-    <!-- Right column / main content -->
-    <main class="container right-column">
-    <!-- Mobile: show left content above form -->
-    <div class="mobile-left-content">
-      <div class="left-logo-section">
-        <img src="/images/payfriends-logov2.png" alt="PayFriends logo" />
-        <h2 class="left-tagline">Pay friends, stay friends</h2>
       </div>
-      <img src="/logo-payfriends.svg" alt="PayFriends logo" />
-      <h1 class="left-tagline">PayFriends, stay friends</h1>
+    </section>
 
-      <p class="left-description">
-        PayFriends is a kind, smart fintech app — built to keep friends on good terms.<br />
-        It rewards early repayments, adjusts interest fairly, and finds solutions when paying gets hard.<br />
-        We handle the math and reminders — you keep the friendship.
+    <!-- AUTH CARD -->
+    <main class="card" aria-label="Authentication">
+      <div class="tabs" role="tablist" aria-label="Auth tabs">
+        <button class="tab" role="tab" aria-selected="true" aria-controls="login-section"
+                id="tab-login" data-target="login">Login</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="signup-section"
+                id="tab-signup" data-target="signup">Sign Up</button>
+      </div>
+
+      <!-- LOGIN -->
+      <section class="form-section active" id="login-section" role="tabpanel" aria-labelledby="tab-login">
+        <h2 style="margin:0 0 8px">Login</h2>
+        <form id="login-form" novalidate>
+          <div class="row">
+            <label for="login-email">Email</label>
+            <input id="login-email" name="email" type="email" placeholder="lender@example.com" required autocomplete="username" />
+          </div>
+          <div class="row">
+            <label for="login-password">Password</label>
+            <input id="login-password" name="password" type="password" placeholder="••••••••" required autocomplete="current-password" />
+          </div>
+          <button type="submit" class="primary">Login</button>
+          <p id="login-status" class="status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <!-- SIGNUP -->
+      <section class="form-section" id="signup-section" role="tabpanel" aria-labelledby="tab-signup">
+        <h2 style="margin:0 0 8px">Create your account</h2>
+        <form id="signup-form" novalidate>
+          <div class="row">
+            <label for="signup-fullname">Full legal name (as on passport)</label>
+            <input id="signup-fullname" name="fullName" type="text" placeholder="Jane Smith" required />
+          </div>
+          <div class="row">
+            <label for="signup-email">Email</label>
+            <input id="signup-email" name="email" type="email" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="row">
+            <label for="signup-password">Password</label>
+            <input id="signup-password" name="password" type="password" placeholder="Minimum 6 characters" required autocomplete="new-password" />
+          </div>
+          <button type="submit" class="primary">Create account</button>
+          <p id="signup-status" class="status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <p class="mini">
+        <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a>
       </p>
-
-      <ul class="left-features">
-        <li>• Fair, trust-based loans between friends</li>
-        <li>• Automatic reminders and smart interest recalculation</li>
-        <li>• App handles chasing and negotiations — you stay friends</li>
-      </ul>
-    </div>
-
-    <header class="header" style="display:none">
-      <img src="/images/payfriends-logov2.png" alt="PayFriends logo" style="height:56px; width:auto; margin-bottom:16px" />
-      <h1>PayFriends</h1>
-      <p class="tagline">Create simple agreements between friends.</p>
-    </header>
-
-    <div class="tabs">
-      <div class="tab active" onclick="showTab('login')">Login</div>
-      <div class="tab" onclick="showTab('signup')">Sign Up</div>
-    </div>
-
-    <section class="card form-section active" id="login-section">
-      <h2>Login</h2>
-      <form id="login-form">
-        <div class="row">
-          <label>Email</label>
-          <input id="login-email" type="email" placeholder="your@email.com" required />
-        </div>
-        <div class="row">
-          <label>Password</label>
-          <input id="login-password" type="password" placeholder="••••••••" required />
-        </div>
-        <button type="submit">Login</button>
-        <p id="login-status" class="status"></p>
-      </form>
-    </section>
-
-    <section class="card form-section" id="signup-section">
-      <h2>Sign Up</h2>
-      <form id="signup-form">
-        <div class="row">
-          <label>Full legal name (as on passport)</label>
-          <input id="signup-fullname" type="text" placeholder="Jane Smith" required />
-        </div>
-        <div class="row">
-          <label>Email</label>
-          <input id="signup-email" type="email" placeholder="your@email.com" required />
-        </div>
-        <div class="row">
-          <label>Password</label>
-          <input id="signup-password" type="password" placeholder="••••••••" required />
-        </div>
-        <p style="color:var(--muted); font-size:13px; margin:0 0 8px 0">Minimum 6 characters</p>
-        <button type="submit">Create Account</button>
-        <p id="signup-status" class="status"></p>
-      </form>
-    </section>
-  </main>
+    </main>
   </div>
 
   <script>
-    function showTab(tab) {
-      // Update tabs
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
+    // Accessible, reliable tabs (no global 'event' reliance)
+    (function(){
+      const tabs = document.querySelectorAll('.tab');
+      const panes = document.querySelectorAll('.form-section');
 
-      // Update sections
-      document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-      document.getElementById(tab + '-section').classList.add('active');
-    }
+      function activate(target){
+        tabs.forEach(btn=>{
+          const isActive = btn.dataset.target === target;
+          btn.setAttribute('aria-selected', String(isActive));
+        });
+        panes.forEach(pane=>{
+          pane.classList.toggle('active', pane.id === target + '-section');
+        });
+      }
 
-    // Login form
+      tabs.forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          e.preventDefault();
+          activate(btn.dataset.target);
+        });
+      });
+    })();
+
+    // LOGIN
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('login-email').value.trim();
@@ -228,22 +218,16 @@
           body: JSON.stringify({ email, password })
         });
         const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || 'Login failed');
-        }
-
+        if (!res.ok) throw new Error(data.error || 'Login failed');
         status.textContent = 'Success! Redirecting...';
-        setTimeout(() => {
-          window.location.href = '/app';
-        }, 500);
+        setTimeout(()=> window.location.href = '/app', 400);
       } catch (err) {
-        status.textContent = err.message;
+        status.textContent = err.message || 'Login failed';
         status.className = 'status error';
       }
     });
 
-    // Signup form
+    // SIGNUP
     document.getElementById('signup-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const fullName = document.getElementById('signup-fullname').value.trim();
@@ -251,18 +235,13 @@
       const password = document.getElementById('signup-password').value;
       const status = document.getElementById('signup-status');
 
-      if (!fullName) {
-        status.textContent = 'Full name is required';
-        status.className = 'status error';
-        return;
+      if (!fullName || fullName.split(/\s+/).length < 2){
+        status.textContent = 'Please enter your full name (first and last name).';
+        status.className = 'status error'; return;
       }
-
-      // Validate full name has at least 2 words
-      const nameParts = fullName.split(/\s+/);
-      if (nameParts.length < 2) {
-        status.textContent = 'Please enter your full name (first and last name), exactly as on your passport.';
-        status.className = 'status error';
-        return;
+      if (!password || password.length < 6){
+        status.textContent = 'Password must be at least 6 characters.';
+        status.className = 'status error'; return;
       }
 
       status.textContent = 'Creating account...';
@@ -275,17 +254,11 @@
           body: JSON.stringify({ email, password, fullName })
         });
         const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || 'Signup failed');
-        }
-
+        if (!res.ok) throw new Error(data.error || 'Signup failed');
         status.textContent = 'Account created! Redirecting...';
-        setTimeout(() => {
-          window.location.href = '/app';
-        }, 500);
+        setTimeout(()=> window.location.href = '/app', 400);
       } catch (err) {
-        status.textContent = err.message;
+        status.textContent = err.message || 'Signup failed';
         status.className = 'status error';
       }
     });
