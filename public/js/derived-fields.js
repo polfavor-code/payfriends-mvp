@@ -40,22 +40,50 @@ function getLoanDurationLabel(agreement) {
 
   // For one-time loans, calculate duration from money_sent_date to due_date
   if (agreement.repayment_type === 'one_time' && agreement.money_sent_date && agreement.due_date) {
-    const startDate = new Date(agreement.money_sent_date);
-    const dueDate = new Date(agreement.due_date);
+    // Parse dates and normalize to UTC midnight to avoid timezone/DST issues
+    const startDateObj = new Date(agreement.money_sent_date);
+    const dueDateObj = new Date(agreement.due_date);
 
-    // Calculate difference in months
-    const yearsDiff = dueDate.getFullYear() - startDate.getFullYear();
-    const monthsDiff = dueDate.getMonth() - startDate.getMonth();
-    const totalMonths = yearsDiff * 12 + monthsDiff;
+    const startUTC = Date.UTC(
+      startDateObj.getFullYear(),
+      startDateObj.getMonth(),
+      startDateObj.getDate()
+    );
+    const dueUTC = Date.UTC(
+      dueDateObj.getFullYear(),
+      dueDateObj.getMonth(),
+      dueDateObj.getDate()
+    );
+
+    // Calculate day difference using UTC timestamps
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const daysDiff = Math.round((dueUTC - startUTC) / msPerDay);
+
+    // Same day check
+    if (daysDiff === 0) {
+      return null;
+    }
+
+    // Calculate month difference accounting for partial months
+    const startYear = startDateObj.getFullYear();
+    const startMonth = startDateObj.getMonth();
+    const startDay = startDateObj.getDate();
+    const dueYear = dueDateObj.getFullYear();
+    const dueMonth = dueDateObj.getMonth();
+    const dueDay = dueDateObj.getDate();
+
+    let totalMonths = (dueYear - startYear) * 12 + (dueMonth - startMonth);
+
+    // If due day is before start day, we haven't completed the full month
+    if (dueDay < startDay) {
+      totalMonths -= 1;
+    }
 
     if (totalMonths < 0) {
       return null; // Invalid date range
     } else if (totalMonths === 0) {
-      // Less than a month - calculate days
-      const daysDiff = Math.round((dueDate - startDate) / (1000 * 60 * 60 * 24));
-      if (daysDiff === 0) {
-        return null; // Same day
-      } else if (daysDiff === 1) {
+      // Less than a month - use days/weeks
+      if (daysDiff === 1) {
         return '1 day';
       } else if (daysDiff < 7) {
         return `${daysDiff} days`;
@@ -63,7 +91,7 @@ function getLoanDurationLabel(agreement) {
         return '1 week';
       } else if (daysDiff < 28) {
         const weeks = Math.round(daysDiff / 7);
-        return `${weeks} weeks`;
+        return weeks === 1 ? '1 week' : `${weeks} weeks`;
       } else {
         return '1 month';
       }
@@ -73,7 +101,7 @@ function getLoanDurationLabel(agreement) {
       return '1 year';
     } else if (totalMonths % 12 === 0) {
       const years = totalMonths / 12;
-      return `${years} ${years === 1 ? 'year' : 'years'}`;
+      return years === 1 ? '1 year' : `${years} years`;
     } else {
       return `${totalMonths} months`;
     }

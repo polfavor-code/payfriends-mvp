@@ -5,6 +5,22 @@
  */
 
 /**
+ * Escape HTML to prevent XSS attacks
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string safe for HTML insertion
+ */
+function escapeHTML(str) {
+  if (str == null || str === '') return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
+/**
  * Summary item types:
  * - field: A label-value pair
  * - spacer: A blank line for visual spacing
@@ -236,8 +252,8 @@ function renderSummaryFields(wizardData, currentUser) {
       isFirstField = false;
 
       html += `<div class="summary-grid-row" style="${borderStyle}">
-        <span class="summary-grid-label">${item.label}</span>
-        <span class="summary-grid-value">${value || '—'}</span>
+        <span class="summary-grid-label">${escapeHTML(item.label)}</span>
+        <span class="summary-grid-value">${value ? escapeHTML(value) : '—'}</span>
       </div>`;
     } else if (item.kind === 'spacer') {
       // Render blank line as vertical spacing

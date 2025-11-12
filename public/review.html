@@ -757,7 +757,7 @@
       // Installment plan (only for installments)
       if (agreement.repayment_type === 'installments' && (agreement.number_of_installments || agreement.installment_count)) {
         const numInstallments = agreement.number_of_installments || agreement.installment_count;
-        const freqLabel = agreement.payment_frequency_label || 'monthly';
+        const freqLabel = formatRepaymentFrequency(agreement.payment_frequency || agreement.payment_frequency_label || 'monthly');
         const installmentAmt = formatEuro2(agreement.installment_amount || (principalEuros / numInstallments));
         const firstDate = formatISOToHuman(agreement.first_payment_date);
         const finalDate = formatISOToHuman(agreement.final_due_date);
