@@ -511,7 +511,7 @@
         <div id="custom-money-sent-date" class="hidden" style="margin:16px 0">
           <div class="row">
             <label>Pick a date</label>
-            <input id="money-sent-date" type="date" required />
+            <input id="money-sent-date" type="date" required onchange="onMoneySentDateChange()" />
           </div>
         </div>
         <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">When was or will the money be sent to the borrower? You can also choose a date in the past when adding an existing loan.</p>
@@ -533,10 +533,13 @@
           <div class="row">
             <label>Full repayment due</label>
             <select id="one-time-due-option" onchange="updateOneTimeDueOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="1month">In 1 month</option>
-              <option value="2months">In 2 months</option>
-              <option value="3months">In 3 months</option>
-              <option value="custom">Pick a date…</option>
+              <option value="in_1_week">In 1 week</option>
+              <option value="in_1_month">In 1 month</option>
+              <option value="in_3_months">In 3 months</option>
+              <option value="in_6_months">In 6 months</option>
+              <option value="in_1_year">in 1 year</option>
+              <option value="in_1_years">in 1 years</option>
+              <option value="pick_date">Pick a date</option>
             </select>
           </div>
           <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">Select when the borrower is expected to repay the full loan amount.</p>
@@ -1515,7 +1518,7 @@
         const dueDateInput = document.getElementById('due-date');
         if (!dueDateInput.value) {
           const oneTimeDueOption = document.getElementById('one-time-due-option');
-          oneTimeDueOption.value = '1month';
+          oneTimeDueOption.value = 'in_1_month';
           updateOneTimeDueOption();
         } else {
           updateOneTimeEstimate();
@@ -1544,6 +1547,12 @@
         if (option === 'on-acceptance') {
           // Store a special value, will be resolved later
           wizardData.moneySentDate = 'on-acceptance';
+          // Update due date calculation for one-time payments
+          const repaymentType = document.querySelector('input[name="repayment-type"]:checked')?.value;
+          const oneTimeDueOption = document.getElementById('one-time-due-option').value;
+          if (repaymentType === 'one_time' && oneTimeDueOption !== 'pick_date') {
+            updateOneTimeDueOption();
+          }
           return;
         } else if (option === 'today') {
           sentDate = new Date(today);
@@ -1561,6 +1570,26 @@
         // Set the date input value
         moneySentDateInput.value = sentDate.toISOString().split('T')[0];
         wizardData.moneySentDate = moneySentDateInput.value;
+
+        // Update due date calculation for one-time payments
+        const repaymentType = document.querySelector('input[name="repayment-type"]:checked')?.value;
+        const oneTimeDueOption = document.getElementById('one-time-due-option').value;
+        if (repaymentType === 'one_time' && oneTimeDueOption !== 'pick_date') {
+          updateOneTimeDueOption();
+        }
+      }
+    }
+
+    // Handle custom money sent date changes
+    function onMoneySentDateChange() {
+      const moneySentDateInput = document.getElementById('money-sent-date');
+      wizardData.moneySentDate = moneySentDateInput.value;
+
+      // Update due date calculation for one-time payments
+      const repaymentType = document.querySelector('input[name="repayment-type"]:checked')?.value;
+      const oneTimeDueOption = document.getElementById('one-time-due-option').value;
+      if (repaymentType === 'one_time' && oneTimeDueOption !== 'pick_date') {
+        updateOneTimeDueOption();
       }
     }
 
@@ -1569,28 +1598,46 @@
       const customDateField = document.getElementById('custom-one-time-due-date');
       const dueDateInput = document.getElementById('due-date');
 
-      if (option === 'custom') {
+      if (option === 'pick_date') {
         customDateField.classList.remove('hidden');
       } else {
         customDateField.classList.add('hidden');
 
-        // Calculate due date
-        const today = new Date();
+        // Get base date: use money transfer date if available, otherwise today
+        let baseDate;
+        const moneySentOption = document.getElementById('money-sent-option').value;
+        const moneySentDateInput = document.getElementById('money-sent-date');
+
+        if (moneySentOption === 'on-acceptance') {
+          // If "on acceptance", use today as base
+          baseDate = new Date();
+        } else if (moneySentDateInput.value) {
+          // Use the money sent date
+          baseDate = new Date(moneySentDateInput.value + 'T00:00:00');
+        } else {
+          // Fallback to today
+          baseDate = new Date();
+        }
+
+        // Calculate due date based on selected option
         let dueDate;
 
-        if (option === '1month') {
-          dueDate = new Date(today);
-          dueDate.setMonth(dueDate.getMonth() + 1);
-        } else if (option === '2months') {
-          dueDate = new Date(today);
-          dueDate.setMonth(dueDate.getMonth() + 2);
-        } else if (option === '3months') {
-          dueDate = new Date(today);
-          dueDate.setMonth(dueDate.getMonth() + 3);
+        if (option === 'in_1_week') {
+          dueDate = addWeeks(baseDate, 1);
+        } else if (option === 'in_1_month') {
+          dueDate = addMonthsKeepingDay(baseDate, 1);
+        } else if (option === 'in_3_months') {
+          dueDate = addMonthsKeepingDay(baseDate, 3);
+        } else if (option === 'in_6_months') {
+          dueDate = addMonthsKeepingDay(baseDate, 6);
+        } else if (option === 'in_1_year' || option === 'in_1_years') {
+          dueDate = addYears(baseDate, 1);
         }
 
         // Set the date input value
-        dueDateInput.value = dueDate.toISOString().split('T')[0];
+        if (dueDate) {
+          dueDateInput.value = dueDate.toISOString().split('T')[0];
+        }
       }
       // Always update the estimate when the option changes
       updateOneTimeEstimate();
@@ -1634,6 +1681,20 @@
         result.setDate(0); // Go to last day of previous month
       }
 
+      return result;
+    }
+
+    // Helper function to add weeks to a date
+    function addWeeks(date, weeks) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + (weeks * 7));
+      return result;
+    }
+
+    // Helper function to add years to a date
+    function addYears(date, years) {
+      const result = new Date(date);
+      result.setFullYear(result.getFullYear() + years);
       return result;
     }
 
