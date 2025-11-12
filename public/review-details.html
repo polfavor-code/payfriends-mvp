@@ -791,11 +791,11 @@
       // Generate human-readable summary line 2 (payment schedule)
       let summaryLine2 = '';
       if (repaymentType === 'installments' && agreement.installment_count) {
-        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
         summaryLine2 = `${agreement.installment_count} monthly payments, from ${firstDate} to ${finalDate}.`;
       } else {
-        const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const dueDate = new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
         summaryLine2 = `Due by ${dueDate}.`;
       }
       document.getElementById('agreement-summary-line2').textContent = summaryLine2;
@@ -838,7 +838,7 @@
         if (agreement.money_sent_date === 'on-acceptance') {
           moneySentDateText = 'Upon agreement acceptance';
         } else {
-          moneySentDateText = new Date(agreement.money_sent_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          moneySentDateText = new Date(agreement.money_sent_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
         }
         document.getElementById('money-sent-display').textContent = moneySentDateText;
         document.getElementById('money-sent-row').style.display = 'flex';
@@ -865,8 +865,8 @@
 
       // Due date (for one-time, this is the due date; for installments, this is the final due date)
       const dueDate = repaymentType === 'installments' && agreement.final_due_date
-        ? new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-        : new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        ? new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
+        : new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
       document.getElementById('due-date').textContent = dueDate;
 
       // Add due date countdown
@@ -1033,16 +1033,16 @@
       // Due dates
       if (agreement.repayment_type === 'installments') {
         if (agreement.first_repayment_date || agreement.first_payment_date) {
-          const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
           addTerm('First repayment date', firstDate);
         }
         if (agreement.final_due_date) {
-          const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          const finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
           addTerm('Final due date', finalDate);
         }
       } else {
         if (agreement.due_date) {
-          const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          const dueDate = new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
           addTerm('Full repayment due', dueDate);
         }
       }
@@ -2168,7 +2168,7 @@
           const inviteUrl = `${window.location.origin}/review?token=${inviteData.token}`;
           const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
           const borrowerEmail = agreement.borrower_email;
-          const createdDate = new Date(inviteData.created_at).toLocaleDateString('en-GB', {
+          const createdDate = new Date(inviteData.created_at).toLocaleDateString('nl-NL', {
             day: 'numeric',
             month: 'short',
             year: 'numeric',
