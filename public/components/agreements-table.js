@@ -86,10 +86,9 @@ function formatDueDate(agreement, isLender) {
     countdownText = `${diffDays} days left`;
   }
 
-  return `<div class="${className}">
-    <div>${dateStr}</div>
-    ${countdownText ? `<div class="due-date-countdown">${countdownText}</div>` : ''}
-  </div>`;
+  // Single-line format: "12 Dec 2026 (394 days left)"
+  const displayText = countdownText ? `${dateStr} (${countdownText})` : dateStr;
+  return `<div class="${className}" style="white-space:nowrap">${displayText}</div>`;
 }
 
 /**
