@@ -851,13 +851,12 @@
       document.getElementById('repayment-type-display').textContent = repaymentTypeText;
 
       // Installment info (show only if installments)
-      if (repaymentType === 'installments' && (agreement.number_of_installments || agreement.installment_count)) {
-        const numInstallments = agreement.number_of_installments || agreement.installment_count;
+      if (repaymentType === 'installments' && agreement.installment_count) {
         const freqLabel = agreement.payment_frequency_label || 'monthly';
         const installmentAmount = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
-        const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const installmentPlan = `${numInstallments} ${freqLabel} payments of ${installmentAmount} from ${firstDate} to ${finalDate}`;
+        const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        const installmentPlan = `${agreement.installment_count} ${freqLabel} payments of ${installmentAmount} from ${firstDate} to ${finalDate}`;
         document.getElementById('installment-info-display').textContent = installmentPlan;
         document.getElementById('installment-info-row').style.display = 'flex';
       } else {
@@ -1005,12 +1004,12 @@
       addTerm('Repayment type', repaymentType);
 
       // Installment plan (only for installments)
-      if (agreement.repayment_type === 'installments' && agreement.number_of_installments) {
+      if (agreement.repayment_type === 'installments' && agreement.installment_count) {
         const freqLabel = agreement.payment_frequency_label || 'monthly';
         const installmentAmt = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
-        const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const planText = `${agreement.number_of_installments} ${freqLabel} payments of ${installmentAmt} from ${firstDate} to ${finalDate}`;
+        const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        const planText = `${agreement.installment_count} ${freqLabel} payments of ${installmentAmt} from ${firstDate} to ${finalDate}`;
         addTerm('Installment plan', planText);
       }
 

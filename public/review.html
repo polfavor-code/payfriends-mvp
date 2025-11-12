@@ -785,12 +785,13 @@
       addTerm('Repayment type', repaymentType);
 
       // Installment plan (only for installments)
-      if (agreement.repayment_type === 'installments' && agreement.installment_count) {
+      if (agreement.repayment_type === 'installments' && (agreement.number_of_installments || agreement.installment_count)) {
+        const numInstallments = agreement.number_of_installments || agreement.installment_count;
         const freqLabel = agreement.payment_frequency_label || 'monthly';
-        const installmentAmt = formatEuro2(agreement.installment_amount || (principalEuros / agreement.installment_count));
+        const installmentAmt = formatEuro2(agreement.installment_amount || (principalEuros / numInstallments));
         const firstDate = formatISOToHuman(agreement.first_payment_date);
         const finalDate = formatISOToHuman(agreement.final_due_date);
-        const planText = `${agreement.installment_count} ${freqLabel} payments of ${installmentAmt} from ${firstDate} to ${finalDate}`;
+        const planText = `${numInstallments} ${freqLabel} payments of ${installmentAmt} from ${firstDate} to ${finalDate}`;
         addTerm('Installment plan', planText);
       }
 
