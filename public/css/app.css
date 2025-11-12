@@ -43,6 +43,16 @@
   justify-content: center;
 }
 
+/* Fully collapse loading card when hidden to prevent space at top of page */
+#loading-card.hidden {
+  display: none !important;
+  visibility: hidden;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 #loading-text {
   color: #cbd5e1;
   text-align: center;
