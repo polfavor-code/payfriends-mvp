@@ -457,8 +457,12 @@ app.post('/auth/signup', async (req, res) => {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  // Phone number is optional, but if provided, validate it
-  if (phoneNumber && !/\d/.test(phoneNumber)) {
+  if (!phoneNumber) {
+    return res.status(400).json({ error: 'Phone number is required' });
+  }
+
+  // Basic phone validation: must contain at least some digits
+  if (!/\d/.test(phoneNumber)) {
     return res.status(400).json({ error: 'Phone number must contain at least one digit' });
   }
 
