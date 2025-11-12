@@ -1566,7 +1566,7 @@ app.get('/api/agreements/:id/hardship-requests', requireAuth, (req, res) => {
 // Create a payment for an agreement
 app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (req, res) => {
   const { id } = req.params;
-  const { amount, method, note } = req.body || {};
+  const { amount, method, note, source } = req.body || {};
 
   if (!amount || amount <= 0) {
     return res.status(400).json({ error: 'Valid amount is required' });
@@ -1604,6 +1604,24 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
       return res.status(400).json({ error: 'Can only record payments for active agreements' });
     }
 
+    // Determine if user is borrower or lender
+    const isBorrower = agreement.borrower_user_id === req.user.id;
+    const isLender = agreement.lender_user_id === req.user.id;
+
+    // 🔒 ROLE-BASED VALIDATION: Enforce that borrowers can only report and lenders can only record
+    // If source is explicitly set, validate it matches the user's role
+    if (source === 'borrower_report' && !isBorrower) {
+      return res.status(403).json({
+        error: 'Forbidden: Only borrowers can submit repayment reports. Lenders should use the "Record payment" feature.'
+      });
+    }
+
+    if (source === 'lender_record' && !isLender) {
+      return res.status(403).json({
+        error: 'Forbidden: Only lenders can record received payments directly.'
+      });
+    }
+
     // Validate payment method is allowed by the agreement
     if (agreement.payment_preference_method) {
       const allowedMethods = agreement.payment_preference_method.split(',').map(m => m.trim());
@@ -1613,10 +1631,6 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
     }
 
     const now = new Date().toISOString();
-
-    // Determine if user is borrower or lender
-    const isBorrower = agreement.borrower_user_id === req.user.id;
-    const isLender = agreement.lender_user_id === req.user.id;
 
     // Set status based on who is recording
     // Borrowers report repayments → status 'pending' (requires lender confirmation)

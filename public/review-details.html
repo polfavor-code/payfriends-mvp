@@ -1122,6 +1122,7 @@
         const formData = new FormData();
         formData.append('amount_euro', amountEuro);
         formData.append('method', method);
+        formData.append('source', 'borrower_report'); // 🔒 Explicitly mark as borrower report
         if (note) formData.append('note', note);
         if (proofInput.files[0]) formData.append('proof', proofInput.files[0]);
 
@@ -2659,6 +2660,10 @@
         if (method) formData.append('method', method);
         if (note) formData.append('note', note);
         if (proofFile) formData.append('proof', proofFile);
+
+        // 🔒 Add source parameter based on user role
+        const isLender = agreement.lender_user_id === currentUser.id;
+        formData.append('source', isLender ? 'lender_record' : 'borrower_report');
 
         const res = await fetch(`/api/agreements/${agreementId}/payments`, {
           method: 'POST',
