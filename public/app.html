@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — My Agreements</title>
+  <!-- intl-tel-input library -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/css/intlTelInput.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
@@ -150,6 +153,112 @@
     .toggle-switch input:checked + .toggle-slider:before{transform:translateX(24px)}
     .toggle-switch input:disabled + .toggle-slider{opacity:0.5;cursor:not-allowed}
     .reminder-option-active{background:rgba(61,220,151,0.05) !important;border:1px solid rgba(61,220,151,0.15) !important;border-radius:12px !important}
+
+    /* intl-tel-input custom dark theme styling - scoped with .pf-phone-input wrapper */
+    .pf-phone-input .iti{width:100%}
+
+    /* Input field */
+    .pf-phone-input .iti__input{
+      width:100%;
+      padding:10px 12px 10px 52px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.08);
+      background:#10151d;
+      color:var(--text);
+      font-family:system-ui, -apple-system, sans-serif;
+      font-size:15px;
+    }
+
+    /* Flag container */
+    .pf-phone-input .iti__flag-container{
+      background:#111;
+      border-right:1px solid rgba(255,255,255,0.06);
+      border-radius:10px 0 0 10px;
+    }
+    .pf-phone-input .iti__selected-flag{
+      padding:0 10px;
+      background:transparent;
+    }
+
+    /* Dropdown container */
+    .pf-phone-input .iti__dropdown,
+    .pf-phone-input .iti__country-list{
+      background-color:#1a1a1a !important;
+      border:1px solid rgba(255,255,255,0.15) !important;
+      color:#f3f3f3 !important;
+      box-shadow:0 4px 16px rgba(0, 0, 0, 0.4);
+      border-radius:8px !important;
+      width:100%;
+      max-height:260px;
+      padding-top:4px;
+      padding-bottom:4px;
+      overflow-y:auto;
+      z-index:1000;
+      margin-top:4px;
+    }
+
+    /* Search input */
+    .pf-phone-input .iti__search-input{
+      background-color:#111 !important;
+      color:#f3f3f3 !important;
+      border:1px solid rgba(255,255,255,0.1) !important;
+      border-radius:8px !important;
+      padding:10px 12px !important;
+      font-size:15px !important;
+      font-family:system-ui, sans-serif !important;
+      margin:6px 10px 8px;
+      width:calc(100% - 20px);
+    }
+    .pf-phone-input .iti__search-input::placeholder{
+      color:rgba(255,255,255,0.5) !important;
+    }
+    .pf-phone-input .iti__search-input:focus{
+      outline:none;
+      border-color:rgba(61,220,151,0.4);
+    }
+
+    /* Country rows */
+    .pf-phone-input .iti__country{
+      padding:7px 12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:14px;
+      color:#f3f3f3;
+      border-left:3px solid transparent;
+      transition:all 0.1s ease;
+    }
+
+    /* Hover and keyboard focus (highlight) */
+    .pf-phone-input .iti__country.iti__highlight{
+      background-color:rgba(61,220,151,0.08) !important;
+      border-left:3px solid #3ddc97 !important;
+      cursor:pointer;
+    }
+
+    /* Currently selected/active entry */
+    .pf-phone-input .iti__country.iti__active{
+      background:rgba(61,220,151,0.06);
+    }
+
+    /* Text colors */
+    .pf-phone-input .iti__dial-code{color:rgba(255,255,255,0.6)}
+    .pf-phone-input .iti__country-name{color:#f3f3f3}
+
+    /* Divider */
+    .pf-phone-input .iti__divider{border-bottom:1px solid rgba(255,255,255,0.08)}
+
+    /* Custom scrollbar */
+    .pf-phone-input .iti__country-list::-webkit-scrollbar{
+      width:6px;
+    }
+    .pf-phone-input .iti__country-list::-webkit-scrollbar-thumb{
+      background-color:#333;
+      border-radius:4px;
+    }
+
+    /* Phone error message */
+    .phone-error{color:#ff6b6b;font-size:13px;margin-top:4px;display:none}
   </style>
 </head>
 <body>
@@ -283,6 +392,13 @@
             <input id="friend-email" type="email" placeholder="alex@example.com" required />
           </div>
           <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">They'll receive a link to review the agreement.</p>
+
+          <div class="row pf-phone-input">
+            <label>Phone number*</label>
+            <input id="agreement-phone" type="tel" required />
+            <div id="agreement-phone-error" class="phone-error">Please enter a valid phone number.</div>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); font-size:13px; margin:-6px 0 12px 172px">Your phone number is required to send reminder messages.</p>
 
           <div class="row">
             <label>Loan description*</label>
@@ -1186,6 +1302,10 @@
       const friendEmail = document.getElementById('friend-email').value.trim();
       const description = document.getElementById('description').value.trim();
       const status = document.getElementById('step1-status');
+      const phoneError = document.getElementById('agreement-phone-error');
+
+      // Hide phone error initially
+      phoneError.style.display = 'none';
 
       if (!role) {
         status.textContent = 'Please select a role (lend or borrow)';
@@ -1202,6 +1322,13 @@
         return false;
       }
 
+      // Validate phone number using intl-tel-input
+      if (!agreementPhoneInput.isValidNumber()) {
+        phoneError.style.display = 'block';
+        status.textContent = 'Please fix the errors above';
+        return false;
+      }
+
       if (!description) {
         status.textContent = 'Please enter loan description';
         return false;
@@ -1212,10 +1339,14 @@
         return false;
       }
 
+      // Get phone number in E.164 format
+      const phoneNumber = agreementPhoneInput.getNumber();
+
       // Store validated data
       wizardData.role = role;
       wizardData.friendFirstName = friendFirstName.charAt(0).toUpperCase() + friendFirstName.slice(1);
       wizardData.friendEmail = friendEmail;
+      wizardData.phoneNumber = phoneNumber;
       wizardData.description = description.charAt(0).toUpperCase() + description.slice(1);
 
       status.textContent = '';
@@ -2541,6 +2672,7 @@
         const payload = {
           friendFirstName: wizardData.friendFirstName,
           borrowerEmail: wizardData.friendEmail,
+          phoneNumber: wizardData.phoneNumber,
           description: wizardData.description,
           amount: wizardData.amount,
           moneySentDate: wizardData.moneySentDate,
@@ -3320,11 +3452,30 @@
     }
 
     // Initialize with shared header
+    // Initialize intl-tel-input for agreement phone
+    let agreementPhoneInput;
+
     document.addEventListener('DOMContentLoaded', async () => {
       // Initialize shared header with custom activity button handler
       await PayFriendsHeader.initialize({
         hasActivitySection: true,
         onActivityClick: toggleActivity
+      });
+
+      // Initialize phone input
+      const phoneInput = document.querySelector("#agreement-phone");
+      agreementPhoneInput = window.intlTelInput(phoneInput, {
+        initialCountry: "auto",
+        geoIpLookup: callback => {
+          fetch('https://ipapi.co/json')
+            .then(res => res.json())
+            .then(data => callback(data.country_code))
+            .catch(() => callback('es'));
+        },
+        nationalMode: false,
+        formatOnDisplay: true,
+        separateDialCode: false,
+        utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/utils.js"
       });
 
       // Load user and other data

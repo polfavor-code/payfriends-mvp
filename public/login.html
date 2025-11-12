@@ -4,9 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — Login</title>
-  <!-- intl-tel-input library -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/css/intlTelInput.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -64,112 +61,6 @@
     .form-section{display:none}
     .form-section.active{display:block}
     .footer{margin-top:32px; text-align:center; color:var(--muted); font-size:12px;}
-
-    /* intl-tel-input custom dark theme styling - scoped with .pf-phone-input wrapper */
-    .pf-phone-input .iti{width:100%}
-
-    /* Input field */
-    .pf-phone-input .iti__input{
-      width:100%;
-      padding:12px 12px 12px 52px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,0.08);
-      background:#10151d;
-      color:var(--text);
-      font-family:"Inter", system-ui, -apple-system, sans-serif;
-      font-size:15px;
-    }
-
-    /* Flag container */
-    .pf-phone-input .iti__flag-container{
-      background:#111;
-      border-right:1px solid rgba(255,255,255,0.06);
-      border-radius:10px 0 0 10px;
-    }
-    .pf-phone-input .iti__selected-flag{
-      padding:0 10px;
-      background:transparent;
-    }
-
-    /* Dropdown container */
-    .pf-phone-input .iti__dropdown,
-    .pf-phone-input .iti__country-list{
-      background-color:#111 !important;
-      border:1px solid rgba(255,255,255,0.1) !important;
-      color:#f3f3f3 !important;
-      box-shadow:0 4px 16px rgba(0, 0, 0, 0.6);
-      border-radius:8px !important;
-      width:100%;
-      max-height:260px;
-      padding-top:4px;
-      padding-bottom:4px;
-      overflow-y:auto;
-      z-index:1000;
-      margin-top:4px;
-    }
-
-    /* Search input */
-    .pf-phone-input .iti__search-input{
-      background-color:#1a1a1a !important;
-      color:#fff !important;
-      border:1px solid rgba(255,255,255,0.15) !important;
-      border-radius:6px !important;
-      padding:8px 12px !important;
-      font-size:15px !important;
-      font-family:Inter, sans-serif !important;
-      margin:6px 10px 8px;
-      width:calc(100% - 20px);
-    }
-    .pf-phone-input .iti__search-input::placeholder{
-      color:rgba(255,255,255,0.5) !important;
-    }
-    .pf-phone-input .iti__search-input:focus{
-      outline:none;
-      border-color:rgba(61,220,151,0.4);
-    }
-
-    /* Country rows */
-    .pf-phone-input .iti__country{
-      padding:7px 12px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      font-size:14px;
-      color:#f3f3f3;
-      border-left:3px solid transparent;
-      transition:all 0.1s ease;
-    }
-
-    /* Hover and keyboard focus (highlight) */
-    .pf-phone-input .iti__country.iti__highlight{
-      background-color:rgba(61,220,151,0.08) !important;
-      border-left:3px solid #3ddc97 !important;
-      cursor:pointer;
-    }
-
-    /* Currently selected/active entry */
-    .pf-phone-input .iti__country.iti__active{
-      background:rgba(61,220,151,0.06);
-    }
-
-    /* Text colors */
-    .pf-phone-input .iti__dial-code{color:rgba(255,255,255,0.6)}
-    .pf-phone-input .iti__country-name{color:#f3f3f3}
-
-    /* Divider */
-    .pf-phone-input .iti__divider{border-bottom:1px solid rgba(255,255,255,0.08)}
-
-    /* Custom scrollbar */
-    .pf-phone-input .iti__country-list::-webkit-scrollbar{
-      width:6px;
-    }
-    .pf-phone-input .iti__country-list::-webkit-scrollbar-thumb{
-      background-color:#333;
-      border-radius:4px;
-    }
-
-    /* Phone error message */
-    .phone-error{color:#ff6b6b;font-size:13px;margin-top:4px;display:none}
   </style>
 </head>
 <body>
@@ -240,11 +131,6 @@
           <label>Email</label>
           <input id="signup-email" type="email" placeholder="your@email.com" required />
         </div>
-        <div class="row pf-phone-input">
-          <label>Phone number*</label>
-          <input id="signup-phone" type="tel" required />
-          <div id="signup-phone-error" class="phone-error">Please enter a valid phone number.</div>
-        </div>
         <div class="row">
           <label>Password</label>
           <input id="signup-password" type="password" placeholder="••••••••" required />
@@ -300,25 +186,6 @@
       }
     });
 
-    // Initialize intl-tel-input for signup
-    let signupPhoneInput;
-    window.addEventListener('DOMContentLoaded', () => {
-      const input = document.querySelector("#signup-phone");
-      signupPhoneInput = window.intlTelInput(input, {
-        initialCountry: "auto",
-        geoIpLookup: callback => {
-          fetch('https://ipapi.co/json')
-            .then(res => res.json())
-            .then(data => callback(data.country_code))
-            .catch(() => callback('es'));
-        },
-        nationalMode: false,
-        formatOnDisplay: true,
-        separateDialCode: false,
-        utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/utils.js"
-      });
-    });
-
     // Signup form
     document.getElementById('signup-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -326,10 +193,6 @@
       const email = document.getElementById('signup-email').value.trim();
       const password = document.getElementById('signup-password').value;
       const status = document.getElementById('signup-status');
-      const phoneError = document.getElementById('signup-phone-error');
-
-      // Hide phone error initially
-      phoneError.style.display = 'none';
 
       if (!fullName) {
         status.textContent = 'Full name is required';
@@ -345,17 +208,6 @@
         return;
       }
 
-      // Validate phone number using intl-tel-input
-      if (!signupPhoneInput.isValidNumber()) {
-        phoneError.style.display = 'block';
-        status.textContent = 'Please fix the errors above';
-        status.className = 'status error';
-        return;
-      }
-
-      // Get phone number in E.164 format
-      const phoneNumber = signupPhoneInput.getNumber();
-
       status.textContent = 'Creating account...';
       status.className = 'status';
 
@@ -363,7 +215,7 @@
         const res = await fetch('/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, fullName, phoneNumber })
+          body: JSON.stringify({ email, password, fullName })
         });
         const data = await res.json();
 
