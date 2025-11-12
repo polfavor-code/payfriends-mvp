@@ -256,7 +256,11 @@ try {
 } catch (e) {
   // Column already exists, ignore
 }
-
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN fairness_accepted INTEGER DEFAULT 0;`);
+} catch (e) {
+  // Column already exists, ignore
+}
 // --- multer setup for file uploads ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -2134,6 +2138,7 @@ app.get('/api/invites/:token', (req, res) => {
 // Accept agreement
 app.post('/api/invites/:token/accept', requireAuth, (req, res) => {
   const { token } = req.params;
+  const { fairnessAccepted } = req.body;
 
   try {
     // Get invite and agreement
@@ -2164,9 +2169,9 @@ app.post('/api/invites/:token/accept', requireAuth, (req, res) => {
     // Update agreement status and borrower_user_id
     db.prepare(`
       UPDATE agreements
-      SET status = 'active', borrower_user_id = ?
+      SET status = 'active', borrower_user_id = ?, fairness_accepted = ?
       WHERE id = ?
-    `).run(req.user.id, invite.agreement_id);
+    `).run(req.user.id, fairnessAccepted ? 1 : 0, invite.agreement_id);
 
     // Mark invite as accepted
     db.prepare(`
