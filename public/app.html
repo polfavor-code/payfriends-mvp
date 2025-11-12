@@ -445,6 +445,23 @@
         </div>
         <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">When was or will the money be sent to the borrower? You can also choose a date in the past when adding an existing loan.</p>
 
+        <!-- Loan duration (moved up before Repayment type) -->
+        <div id="loan-duration-section" class="hidden">
+          <div class="row">
+            <label>Loan duration*</label>
+            <div style="flex:1; display:flex; gap:8px">
+              <input id="loan-duration-value" type="number" min="1" max="600" step="1" value="12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
+              <select id="loan-duration-unit" onchange="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+                <option value="days">Days</option>
+                <option value="weeks">Weeks</option>
+                <option value="months" selected>Months</option>
+                <option value="years">Years</option>
+              </select>
+            </div>
+          </div>
+          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">How long the loan lasts in total (for example 12 months or 3 years).</p>
+        </div>
+
         <div style="margin:16px 0 24px 0">
           <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">Repayment type*</label>
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:8px; transition:all 0.2s" id="repayment-onetime-card">
@@ -460,7 +477,7 @@
         <!-- One-time payment fields -->
         <div id="one-time-fields">
           <div class="row">
-            <label>First repayment due*</label>
+            <label>First payment due*</label>
             <select id="one-time-due-option" onchange="updateOneTimeDueOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
               <option value="1month">In 1 month</option>
               <option value="2months">In 2 months</option>
@@ -482,34 +499,22 @@
         <!-- Installment fields -->
         <div id="installment-fields" class="hidden">
           <div class="row">
-            <label>Loan duration*</label>
-            <div style="flex:1; display:flex; gap:8px">
-              <input id="loan-duration-value" type="number" min="1" max="600" step="1" value="12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
-              <select id="loan-duration-unit" onchange="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-                <option value="days">Days</option>
-                <option value="weeks">Weeks</option>
-                <option value="months" selected>Months</option>
-                <option value="years">Years</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row">
-            <label>Number of repayments*</label>
+            <label>Number of payments*</label>
             <input id="num-repayments" type="number" min="2" max="120" step="1" value="12" placeholder="e.g. 12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
           </div>
-          <p style="color:rgba(255,255,255,0.5); font-size:13px; margin:6px 0 0 172px">Enter between 2 and 120 repayments.</p>
-          <p id="num-repayments-error" class="hidden" style="color:#f87171; font-size:13px; margin:6px 0 0 172px"></p>
+          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">How many separate payments the borrower will make over this period.</p>
+          <p id="num-repayments-error" class="hidden" style="color:#f87171; font-size:13px; margin:-14px 0 20px 172px"></p>
 
           <div class="row">
-            <label>Repayment interval</label>
+            <label>Payment frequency*</label>
             <div id="repayment-interval-display" style="flex:1; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,0.02); color:var(--muted); font-size:14px">
               Every 1 month
             </div>
           </div>
+          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">Automatically calculated from the loan duration and number of payments.</p>
 
           <div class="row">
-            <label>First repayment due*</label>
+            <label>First payment due*</label>
             <select id="first-payment-option" onchange="updateFirstPaymentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
               <option value="3days">In 3 days</option>
               <option value="7days">In 7 days</option>
@@ -1354,12 +1359,14 @@
       const repaymentType = document.querySelector('input[name="repayment-type"]:checked').value;
       const oneTimeFields = document.getElementById('one-time-fields');
       const installmentFields = document.getElementById('installment-fields');
+      const loanDurationSection = document.getElementById('loan-duration-section');
       const oneTimeCard = document.getElementById('repayment-onetime-card');
       const installmentsCard = document.getElementById('repayment-installments-card');
 
       if (repaymentType === 'installments') {
         oneTimeFields.classList.add('hidden');
         installmentFields.classList.remove('hidden');
+        loanDurationSection.classList.remove('hidden');
         wizardData.repaymentType = 'installments';
 
         // Update card styling
@@ -1387,6 +1394,7 @@
       } else {
         oneTimeFields.classList.remove('hidden');
         installmentFields.classList.add('hidden');
+        loanDurationSection.classList.add('hidden');
         wizardData.repaymentType = 'one_time';
 
         // Update card styling
@@ -1552,6 +1560,40 @@
       }
     }
 
+    // Helper function to format payment frequency for summary text
+    function getFrequencyTextForSummary(loanDurationValue, loanDurationUnit, numRepayments) {
+      // Convert to days
+      let totalDays;
+      switch (loanDurationUnit) {
+        case 'days': totalDays = loanDurationValue; break;
+        case 'weeks': totalDays = loanDurationValue * 7; break;
+        case 'months': totalDays = loanDurationValue * 30; break;
+        case 'years': totalDays = loanDurationValue * 365; break;
+      }
+
+      const intervalDays = totalDays / numRepayments;
+
+      // Format based on interval size for summary context
+      if (intervalDays < 14) {
+        const days = Math.round(intervalDays);
+        return days === 1 ? 'every day' : `every ${days} days`;
+      } else if (intervalDays < 60) {
+        const weeks = Math.round(intervalDays / 7);
+        return weeks === 1 ? 'every week' : `every ${weeks} weeks`;
+      } else if (intervalDays < 730) {
+        const months = Math.round(intervalDays / 30);
+        if (months === 1) return 'every month';
+        if (months === 2) return 'every 2 months';
+        if (months === 3) return 'every 3 months';
+        if (months === 6) return 'every 6 months';
+        if (months === 12) return 'once a year';
+        return `every ${months} months`;
+      } else {
+        const years = Math.round(intervalDays / 365);
+        return years === 1 ? 'once a year' : `every ${years} years`;
+      }
+    }
+
 
     function updateFirstPaymentOption() {
       const option = document.getElementById('first-payment-option').value;
@@ -1616,7 +1658,7 @@
 
       // Validate input
       if (!numRepaymentsInput.value || isNaN(numRepayments) || numRepayments < 2 || numRepayments > 120) {
-        errorElement.textContent = 'Please enter a number between 2 and 120.';
+        errorElement.textContent = 'Please enter a number of payments between 2 and 120.';
         errorElement.classList.remove('hidden');
         planLengthSummary.textContent = '';
         installmentEstimate.textContent = '';
@@ -1748,12 +1790,13 @@
 
       // Display summary
       const installmentFormatted = new Intl.NumberFormat('de-DE').format(Math.round(installmentAmount));
+      const frequencyText = getFrequencyTextForSummary(loanDurationValue, loanDurationUnit, numRepayments);
 
       // Loan duration summary
       planLengthSummary.textContent = `Plan length: ${durationText} (from ${firstFormatted} to ${finalFormatted}).`;
 
-      // Payment summary
-      installmentEstimate.textContent = `${numRepayments} repayments of about €${installmentFormatted} each, excluding interest.`;
+      // Payment summary with frequency
+      installmentEstimate.textContent = `${numRepayments} payment${numRepayments === 1 ? '' : 's'} of about €${installmentFormatted} each, ${frequencyText}, excluding interest.`;
     }
 
     // Update due date helper text
@@ -1823,10 +1866,10 @@
           return false;
         }
 
-        // Validate number of repayments
+        // Validate number of payments
         const numRepayments = parseInt(numRepaymentsInput.value);
         if (!numRepaymentsInput.value || isNaN(numRepayments) || numRepayments < 2 || numRepayments > 120) {
-          status.textContent = 'Please enter a valid number of repayments (2-120)';
+          status.textContent = 'Please enter a valid number of payments (2-120)';
           return false;
         }
 
