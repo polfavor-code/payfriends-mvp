@@ -457,12 +457,9 @@ app.post('/auth/signup', async (req, res) => {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  if (!phoneNumber) {
-    return res.status(400).json({ error: 'Phone number is required' });
-  }
-
-  // Basic phone validation: must contain at least some digits
-  if (!/\d/.test(phoneNumber)) {
+  // Phone number is now optional during signup
+  // Basic phone validation if provided: must contain at least some digits
+  if (phoneNumber && !/\d/.test(phoneNumber)) {
     return res.status(400).json({ error: 'Phone number must contain at least one digit' });
   }
 
@@ -806,7 +803,7 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     planLength, planUnit, installmentCount, installmentAmount, firstPaymentDate, finalDueDate,
     interestRate, totalInterest, totalRepayAmount,
     paymentPreferenceMethod, paymentOtherDescription, reminderMode, reminderOffsets,
-    proofRequired, debtCollectionClause
+    proofRequired, debtCollectionClause, phoneNumber
   } = req.body || {};
 
   if (!borrowerEmail || !amount || !dueDate || !description) {
@@ -837,6 +834,16 @@ app.post('/api/agreements', requireAuth, (req, res) => {
   const finalLenderName = req.user.full_name || lenderName || req.user.email;
 
   try {
+    // Update user's phone number if provided
+    if (phoneNumber) {
+      // Basic phone validation: must contain at least some digits
+      if (!/\d/.test(phoneNumber)) {
+        return res.status(400).json({ error: 'Phone number must contain at least one digit' });
+      }
+      db.prepare('UPDATE users SET phone_number = ? WHERE id = ?')
+        .run(phoneNumber, req.user.id);
+    }
+
     // Create agreement
     const agreementStmt = db.prepare(`
       INSERT INTO agreements (
