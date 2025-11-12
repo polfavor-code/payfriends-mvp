@@ -581,10 +581,10 @@
         const rowClass = index % 2 === 0 ? '' : 'style="background:rgba(255,255,255,0.02)"';
         html += `<tr ${rowClass}>`;
         html += `<td>${formatScheduleDate(row.dateISO)}</td>`;
-        html += `<td class="text-right" style="font-weight:600">${formatCurrency2(row.paymentCents / 100)}</td>`;
-        html += `<td class="text-right">${formatCurrency2(row.principalCents / 100)}</td>`;
-        html += `<td class="text-right">${formatCurrency2(row.interestCents / 100)}</td>`;
-        html += `<td class="text-right">${formatCurrency2(row.remainingCents / 100)}</td>`;
+        html += `<td class="text-right" style="font-weight:600">${formatCurrency2(row.paymentCents)}</td>`;
+        html += `<td class="text-right">${formatCurrency2(row.principalCents)}</td>`;
+        html += `<td class="text-right">${formatCurrency2(row.interestCents)}</td>`;
+        html += `<td class="text-right">${formatCurrency2(row.remainingCents)}</td>`;
         html += '</tr>';
       });
 

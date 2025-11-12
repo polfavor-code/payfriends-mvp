@@ -761,7 +761,10 @@
       let summaryLine3 = `${outstanding} remains outstanding.`;
 
       if (hasInterest) {
-        const totalRepay = formatCurrency2(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
+        const totalRepayCents = agreement.total_repay_amount
+          ? Math.round(agreement.total_repay_amount * 100)
+          : agreement.amount_cents;
+        const totalRepay = formatCurrency2(totalRepayCents);
         summaryLine3 += ` Total to repay: ${totalRepay} (incl. ${agreement.interest_rate}% interest).`;
       }
       document.getElementById('agreement-summary-line3').textContent = summaryLine3;
@@ -835,7 +838,10 @@
         document.getElementById('interest-row').style.display = 'flex';
 
         // Total to repay
-        const totalRepay = formatCurrency2(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
+        const totalRepayCents = agreement.total_repay_amount
+          ? Math.round(agreement.total_repay_amount * 100)
+          : agreement.amount_cents;
+        const totalRepay = formatCurrency2(totalRepayCents);
         document.getElementById('total-repay-display').textContent = totalRepay;
         document.getElementById('total-repay-row').style.display = 'flex';
       } else {
@@ -1803,7 +1809,10 @@
       card.classList.remove('hidden');
 
       const totalInterest = formatCurrency2(Math.round((agreement.total_interest || 0) * 100));
-      const totalRepay = formatCurrency2(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
+      const totalRepayCents = agreement.total_repay_amount
+        ? Math.round(agreement.total_repay_amount * 100)
+        : agreement.amount_cents;
+      const totalRepay = formatCurrency2(totalRepayCents);
       const termText = agreement.repayment_type === 'installments' && agreement.installment_count
         ? `${agreement.installment_count} months`
         : 'one payment';

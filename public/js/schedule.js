@@ -3,19 +3,7 @@
  * Used across Step 3, Step 5, Review/Invite, and Manage pages
  */
 
-/**
- * Formats a numeric amount as EUR currency using the nl-NL locale with exactly two fraction digits.
- * @param {number} amount - Amount in euros; if `null` or `undefined`, it is treated as 0.
- * @returns {string} The formatted currency string (EUR, nl-NL) with two decimal places.
- */
-function formatCurrency2(amount) {
-  return new Intl.NumberFormat('nl-NL', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount ?? 0);
-}
+// Note: Currency formatters (formatCurrency0, formatCurrency2) are loaded from /js/formatters.js
 
 /**
  * Convert an ISO date string or Date object to a human-readable date in "dd MMM yyyy" format.
@@ -133,10 +121,10 @@ function generateScheduleTableHTML(rows) {
     const rowStyle = index % 2 === 0 ? 'background:rgba(12,16,21,1)' : 'background:rgba(10,13,17,1)';
     html += `<tr style="${rowStyle}">`;
     html += `<td style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)">${formatScheduleDate(row.dateISO)}</td>`;
-    html += `<td style="text-align:right; padding:10px 8px; font-weight:600; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.paymentCents / 100)}</td>`;
-    html += `<td style="text-align:right; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.principalCents / 100)}</td>`;
-    html += `<td style="text-align:right; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.interestCents / 100)}</td>`;
-    html += `<td style="text-align:right; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.remainingCents / 100)}</td>`;
+    html += `<td style="text-align:right; padding:10px 8px; font-weight:600; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.paymentCents)}</td>`;
+    html += `<td style="text-align:right; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.principalCents)}</td>`;
+    html += `<td style="text-align:right; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.interestCents)}</td>`;
+    html += `<td style="text-align:right; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.remainingCents)}</td>`;
     html += '</tr>';
   });
   html += '</tbody>';
@@ -187,6 +175,7 @@ function generateScheduleAccordionHTML(params) {
 // Export functions for use in other files
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    formatCurrency0,
     formatCurrency2,
     formatScheduleDate,
     buildRepaymentSchedule,
