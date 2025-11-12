@@ -1619,6 +1619,8 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
     const isLender = agreement.lender_user_id === req.user.id;
 
     // Set status based on who is recording
+    // Borrowers report repayments → status 'pending' (requires lender confirmation)
+    // Lenders record received payments → status 'approved' (immediately confirmed)
     const paymentStatus = isBorrower ? 'pending' : 'approved';
 
     // Handle proof of payment file if uploaded

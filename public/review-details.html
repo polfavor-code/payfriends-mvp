@@ -729,6 +729,10 @@
       await PayFriendsHeader.initialize();
       initializePage();
     });
+
+    // Add ESC key listener to close modal
+    document.addEventListener('keydown', handleModalKeydown);
+
     const pathParts = window.location.pathname.split('/');
     const agreementId = pathParts[2];
     const action = pathParts[3]; // 'review' or 'view'
@@ -785,10 +789,13 @@
 
     /**
      * Display next payment due card for borrowers
+     * 🔒 BORROWER-ONLY: This card and its "Report repayment" button are only shown to borrowers.
+     * Lenders will not see this card at all.
      */
     function displayNextPaymentCard() {
       const isBorrower = agreement.borrower_user_id === currentUser.id;
 
+      // Hide for lenders or non-active agreements
       if (!isBorrower || agreement.status !== 'active') {
         document.getElementById('next-payment-card').classList.add('hidden');
         return;
@@ -828,8 +835,17 @@
 
     /**
      * Open the report repayment modal
+     * 🔒 BORROWER-ONLY: This modal is only accessible to borrowers.
+     * Lenders use the separate "Record payment" form (showRecordPaymentForm).
+     * This function is only called from the "Next Payment Card" which is only shown to borrowers.
      */
     function openReportRepaymentModal() {
+      // Defensive check: Ensure current user is the borrower
+      if (agreement.borrower_user_id !== currentUser.id) {
+        console.error('Report repayment modal can only be opened by borrowers');
+        return;
+      }
+
       const modal = document.getElementById('report-repayment-modal');
       const amountInput = document.getElementById('modal-payment-amount');
       const methodSelect = document.getElementById('modal-payment-method');
@@ -911,6 +927,15 @@
      */
     function closeModalOnOverlayClick(event) {
       if (event.target.id === 'report-repayment-modal') {
+        closeReportRepaymentModal();
+      }
+    }
+
+    /**
+     * Handle ESC key to close modal
+     */
+    function handleModalKeydown(event) {
+      if (event.key === 'Escape' && !document.getElementById('report-repayment-modal').classList.contains('hidden')) {
         closeReportRepaymentModal();
       }
     }
