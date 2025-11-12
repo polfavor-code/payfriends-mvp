@@ -28,6 +28,9 @@
     button.secondary:hover{background:rgba(255,255,255,0.05)}
     button.tertiary{background:transparent; border:1px solid rgba(255,255,255,0.10); color:var(--muted); margin-top:8px}
     button.tertiary:hover{background:rgba(255,255,255,0.03)}
+    button.btn-danger{background:#7a1a1a; border:1px solid #a83232; color:#fff; margin-top:8px}
+    button.btn-danger:hover{background:#8a2020; border-color:#b84444}
+    button.btn-danger:disabled{opacity:0.5; cursor:not-allowed}
     .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px}
     .hidden{display:none}
     .error{color:#ff6b6b}
@@ -318,11 +321,7 @@
 
       <!-- Lender actions (only for pending agreements) -->
       <div id="lender-actions" class="hidden">
-        <button class="secondary" onclick="handleCancel()" style="width:100%">Cancel request</button>
-
-        <div class="note" style="background:rgba(255,107,107,0.1); border:1px solid rgba(255,107,107,0.2); margin-top:8px">
-          <p style="margin:0; font-size:14px">This will withdraw the agreement so your friend can no longer accept it.</p>
-        </div>
+        <button id="cancel-agreement-btn" class="btn-danger" onclick="openCancelModal()" style="width:100%">Cancel pending agreement</button>
       </div>
 
       <p class="status" id="action-status"></p>
@@ -990,10 +989,74 @@
       }
     }
 
-    async function handleCancel() {
-      if (!confirm('Are you sure you want to cancel this agreement request? Your friend will no longer be able to accept it.')) {
+    // Store the element that opened the modal for focus restoration
+    let cancelModalTrigger = null;
+
+    function openCancelModal() {
+      cancelModalTrigger = document.activeElement;
+      const modal = document.getElementById('cancel-modal');
+      modal.style.display = 'flex';
+
+      // Focus on the confirm button
+      setTimeout(() => {
+        const confirmBtn = document.getElementById('confirm-cancel-btn');
+        confirmBtn.focus();
+      }, 100);
+
+      // Add keyboard event listener for Esc key
+      document.addEventListener('keydown', handleCancelModalKeydown);
+    }
+
+    function closeCancelModal() {
+      const modal = document.getElementById('cancel-modal');
+      modal.style.display = 'none';
+
+      // Remove keyboard event listener
+      document.removeEventListener('keydown', handleCancelModalKeydown);
+
+      // Return focus to the trigger button
+      if (cancelModalTrigger) {
+        cancelModalTrigger.focus();
+        cancelModalTrigger = null;
+      }
+    }
+
+    function handleCancelModalKeydown(e) {
+      const modal = document.getElementById('cancel-modal');
+      if (modal.style.display === 'none') return;
+
+      // Handle Esc key
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeCancelModal();
         return;
       }
+
+      // Handle Tab key for focus trapping
+      if (e.key === 'Tab') {
+        const focusableElements = modal.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"])');
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          // Shift+Tab
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          // Tab
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    }
+
+    async function confirmCancel() {
+      // Close modal first
+      closeCancelModal();
 
       const status = document.getElementById('action-status');
       status.textContent = 'Cancelling...';
@@ -2136,6 +2199,26 @@
       <!-- Footer with download button -->
       <div style="display:flex; justify-content:flex-end; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1)">
         <a id="proof-modal-download" href="#" download style="display:inline-block; padding:10px 20px; background:#2a2a2a; color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:8px; text-decoration:none; font-weight:500; font-size:14px; cursor:pointer; transition:all 0.2s ease">Download</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel Agreement Confirmation Modal -->
+  <div id="cancel-modal" onclick="closeCancelModal()" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.85); align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="cancel-modal-title">
+    <div onclick="event.stopPropagation()" style="max-width:500px; width:90%; position:relative; background:#1a1f26; padding:24px; border-radius:12px; cursor:default; border:1px solid rgba(255,255,255,0.1);">
+      <!-- Close button -->
+      <span onclick="closeCancelModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeCancelModal();}" tabindex="0" role="button" style="position:absolute; top:10px; right:15px; color:#fff; font-size:28px; font-weight:bold; cursor:pointer; line-height:1;" aria-label="Close">&times;</span>
+
+      <!-- Title -->
+      <h3 id="cancel-modal-title" style="color:#fff; margin:0 0 16px 0; padding-right:35px; font-size:20px; font-weight:600;">Cancel this request?</h3>
+
+      <!-- Body text -->
+      <p style="color:var(--text); line-height:1.6; margin:0 0 24px 0; font-size:15px;">Are you sure you want to cancel this agreement request? This will withdraw the agreement so your friend can no longer accept it.</p>
+
+      <!-- Action buttons -->
+      <div style="display:flex; gap:12px; flex-direction:row-reverse;">
+        <button id="confirm-cancel-btn" class="btn-danger" onclick="confirmCancel()" style="width:auto; flex:1; margin-top:0;">Yes, cancel request</button>
+        <button class="secondary" onclick="closeCancelModal()" style="width:auto; flex:1; margin-top:0;">Keep agreement</button>
       </div>
     </div>
   </div>
