@@ -20,6 +20,115 @@ function formatScheduleDate(dateInput) {
 }
 
 /**
+ * Helper to add months while preserving day-of-month (or clamping to valid day).
+ * @param {Date} date - Starting date
+ * @param {number} months - Number of months to add
+ * @returns {Date} New date with months added
+ */
+function addMonthsKeepingDay(date, months) {
+  const result = new Date(date);
+  const targetMonth = result.getMonth() + months;
+  const targetYear = result.getFullYear() + Math.floor(targetMonth / 12);
+  const normalizedMonth = ((targetMonth % 12) + 12) % 12;
+
+  // Preserve day-of-month, clamping to valid day in target month
+  const originalDay = result.getDate();
+  result.setFullYear(targetYear, normalizedMonth, 1);
+  const daysInTargetMonth = new Date(targetYear, normalizedMonth + 1, 0).getDate();
+  const clampedDay = Math.min(originalDay, daysInTargetMonth);
+  result.setDate(clampedDay);
+
+  return result;
+}
+
+/**
+ * Add exactly one period to a date based on frequency.
+ * @param {Date|string} dateInput - Starting date (Date object or ISO string)
+ * @param {string} frequency - One of: "weekly", "biweekly", "every_4_weeks", "monthly", "quarterly", "yearly"
+ * @returns {Date} New date with one period added
+ */
+function addOnePeriod(dateInput, frequency) {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : new Date(dateInput);
+  date.setHours(0, 0, 0, 0);
+
+  switch (frequency) {
+    case 'weekly':
+      return new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
+    case 'biweekly':
+      return new Date(date.getTime() + 14 * 24 * 60 * 60 * 1000);
+    case 'every_4_weeks':
+      return new Date(date.getTime() + 28 * 24 * 60 * 60 * 1000);
+    case 'monthly':
+      return addMonthsKeepingDay(date, 1);
+    case 'quarterly':
+      return addMonthsKeepingDay(date, 3);
+    case 'yearly':
+      return addMonthsKeepingDay(date, 12);
+    default:
+      // Fallback to monthly if frequency unknown
+      console.warn(`Unknown frequency "${frequency}", defaulting to monthly`);
+      return addMonthsKeepingDay(date, 1);
+  }
+}
+
+/**
+ * Normalize first due date to ensure it's at least 1 period after transfer date.
+ * Business rule: Never allow zero-length first period (which would yield zero interest).
+ *
+ * @param {Date|string} transferDate - Money transfer date (start of interest accrual)
+ * @param {Date|string} firstDueDate - User-selected first due date
+ * @param {string} frequency - Payment frequency
+ * @returns {Date} Normalized first due date (guaranteed > transferDate by at least 1 period)
+ */
+function normalizeFirstDueDate(transferDate, firstDueDate, frequency) {
+  const transfer = typeof transferDate === 'string' ? new Date(transferDate) : new Date(transferDate);
+  const firstDue = typeof firstDueDate === 'string' ? new Date(firstDueDate) : new Date(firstDueDate);
+
+  transfer.setHours(0, 0, 0, 0);
+  firstDue.setHours(0, 0, 0, 0);
+
+  // If first due date is on or before transfer date, shift forward by exactly 1 period
+  if (firstDue <= transfer) {
+    return addOnePeriod(transfer, frequency);
+  }
+
+  return firstDue;
+}
+
+/**
+ * Generate payment dates based on frequency, count, first due date, and transfer date.
+ * Ensures first due date is normalized (at least 1 period after transfer).
+ *
+ * @param {Object} params - Date generation parameters
+ * @param {Date|string} params.transferDate - Money transfer date (start of interest accrual)
+ * @param {Date|string} params.firstDueDate - User-selected first due date (will be normalized)
+ * @param {string} params.frequency - Payment frequency
+ * @param {number} params.count - Number of payments
+ * @returns {Object} Object with { paymentDates: Date[], normalizedFirstDueDate: Date }
+ */
+function generatePaymentDates(params) {
+  const { transferDate, firstDueDate, frequency, count } = params;
+
+  // Normalize first due date to ensure minimum 1-period accrual
+  const normalizedFirst = normalizeFirstDueDate(transferDate, firstDueDate, frequency);
+
+  const paymentDates = [];
+  let currentDate = new Date(normalizedFirst);
+
+  for (let i = 0; i < count; i++) {
+    paymentDates.push(new Date(currentDate));
+    if (i < count - 1) {
+      currentDate = addOnePeriod(currentDate, frequency);
+    }
+  }
+
+  return {
+    paymentDates,
+    normalizedFirstDueDate: normalizedFirst
+  };
+}
+
+/**
  * Constructs an equal-principal repayment schedule and computes daily interest using the actual days between payments.
  *
  * @param {Object} input - Schedule parameters.
@@ -175,9 +284,11 @@ function generateScheduleAccordionHTML(params) {
 // Export functions for use in other files
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    formatCurrency0,
-    formatCurrency2,
     formatScheduleDate,
+    addMonthsKeepingDay,
+    addOnePeriod,
+    normalizeFirstDueDate,
+    generatePaymentDates,
     buildRepaymentSchedule,
     generateScheduleTableHTML,
     generateScheduleAccordionHTML
