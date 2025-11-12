@@ -262,6 +262,61 @@
           <button id="hardship-btn" class="warning" onclick="showHardshipForm()" style="width:100%; font-weight:500">Having trouble paying? Let's work on a solution.</button>
         </div>
       </div>
+
+      <!-- Inline Report Payment Form (collapsed by default) -->
+      <div id="inline-payment-form" class="hidden" style="margin-top:24px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1)">
+        <h3 style="font-size:18px; font-weight:600; margin:0 0 8px 0">Report a payment</h3>
+        <p id="inline-payment-subtitle" style="color:var(--muted); font-size:14px; margin:0 0 20px 0">
+          Confirm the payment you already made to <span id="inline-lender-name"></span>.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="inline-payment-amount">Amount (EUR)</label>
+          <div style="display:flex; gap:8px; align-items:center">
+            <input type="number" id="inline-payment-amount" placeholder="e.g. 200" min="0" step="0.01" style="flex:1">
+            <button id="autofill-amount-btn" class="secondary" style="white-space:nowrap; padding:10px 14px; font-size:13px" title="Autofill with your next scheduled payment">Use next payment amount</button>
+          </div>
+          <p id="amount-helper-text" style="color:var(--muted); font-size:13px; margin:8px 0 0 0; line-height:1.5"></p>
+        </div>
+
+        <!-- Live Impact Box (only visible for overpayments) -->
+        <div id="live-impact-box" class="hidden" style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.3); border-radius:8px; padding:14px 16px; margin:12px 0; font-size:13px">
+          <div id="impact-content" style="line-height:1.8"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inline-payment-method">Payment method</label>
+          <select id="inline-payment-method" required style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+            <option value="">Select method...</option>
+            <option value="bank">Bank transfer</option>
+            <option value="cash">Cash</option>
+            <option value="revolut">Revolut</option>
+            <option value="bizum">Bizum</option>
+            <option value="paypal">PayPal</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div id="inline-payment-proof-section" class="form-group">
+          <label class="form-label" id="inline-payment-proof-label" for="inline-payment-proof">Proof of repayment</label>
+          <p style="color:var(--muted); font-size:12px; margin-bottom:8px">
+            Upload a screenshot, photo, or document.
+          </p>
+          <input type="file" id="inline-payment-proof" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inline-payment-note">Note (optional)</label>
+          <textarea id="inline-payment-note" placeholder="Add a short note (e.g., paid in two parts — thanks!)" style="width:100%; min-height:80px; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px; resize:vertical"></textarea>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:20px">
+          <button id="inline-payment-submit" onclick="submitInlinePayment()" style="flex:1">Report repayment</button>
+          <button class="secondary" onclick="cancelInlinePaymentForm()" style="flex:0.5">Cancel</button>
+        </div>
+
+        <p class="status" id="inline-payment-status" style="margin-top:12px"></p>
+      </div>
     </div>
 
     <!-- Lender payment action button (for active agreements) -->
@@ -888,14 +943,326 @@
       document.getElementById('next-payment-amount').textContent = amountFormatted;
       document.getElementById('next-payment-date').textContent = dateFormatted;
 
-      // Set up the "Report payment" button text with lender's name
+      // Set up the "Report payment" button to toggle inline form
       const recordBtn = document.getElementById('borrower-record-payment-btn');
       const lenderName = (agreement.lender_full_name || agreement.lender_name || agreement.lender_email).split(' ')[0];
       recordBtn.textContent = `Report a payment to ${lenderName}`;
-      recordBtn.onclick = showRecordPaymentForm;
+      recordBtn.onclick = () => toggleInlinePaymentForm(lenderName, nextPaymentInfo);
 
       // Show the card
       document.getElementById('next-payment-card').classList.remove('hidden');
+    }
+
+    function toggleInlinePaymentForm(lenderName, nextPaymentInfo) {
+      const inlineForm = document.getElementById('inline-payment-form');
+      const isHidden = inlineForm.classList.contains('hidden');
+
+      if (isHidden) {
+        // Show the form
+        inlineForm.classList.remove('hidden');
+
+        // Set lender name in subtitle
+        document.getElementById('inline-lender-name').textContent = lenderName;
+
+        // Set proof requirement based on agreement
+        const proofInput = document.getElementById('inline-payment-proof');
+        const proofLabel = document.getElementById('inline-payment-proof-label');
+
+        if (agreement.proof_required) {
+          proofLabel.textContent = 'Proof of repayment*';
+          proofInput.required = true;
+        } else {
+          proofLabel.textContent = 'Proof of repayment (optional)';
+          proofInput.required = false;
+        }
+
+        // Set up autofill button
+        const autofillBtn = document.getElementById('autofill-amount-btn');
+        const amountInput = document.getElementById('inline-payment-amount');
+
+        autofillBtn.onclick = () => {
+          const amountInEuros = (nextPaymentInfo.amount_cents / 100).toFixed(2);
+          amountInput.value = amountInEuros;
+          // Trigger update of helper text and impact box
+          updatePaymentHelpers(nextPaymentInfo);
+        };
+
+        // Add input listener to amount field
+        amountInput.addEventListener('input', () => updatePaymentHelpers(nextPaymentInfo));
+
+        // Scroll to form
+        inlineForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        // Hide the form (same as cancel)
+        cancelInlinePaymentForm();
+      }
+    }
+
+    function updatePaymentHelpers(nextPaymentInfo) {
+      const amountInput = document.getElementById('inline-payment-amount');
+      const helperText = document.getElementById('amount-helper-text');
+      const impactBox = document.getElementById('live-impact-box');
+
+      const inputAmount = parseFloat(amountInput.value) || 0;
+      const inputCents = Math.round(inputAmount * 100);
+      const nextDueCents = nextPaymentInfo.amount_cents;
+      const nextDueAmount = (nextDueCents / 100).toFixed(2);
+      const nextDueDate = formatDate(nextPaymentInfo.due_date);
+
+      // Clear helper text and hide impact box initially
+      helperText.textContent = '';
+      impactBox.classList.add('hidden');
+
+      if (inputCents === 0) {
+        // No input yet
+        return;
+      }
+
+      if (inputCents === nextDueCents) {
+        // Regular payment
+        helperText.innerHTML = `You're reporting your scheduled payment.`;
+        helperText.style.color = 'var(--muted)';
+      } else if (inputCents < nextDueCents) {
+        // Partial payment
+        const remaining = ((nextDueCents - inputCents) / 100).toFixed(2);
+        helperText.innerHTML = `You're reporting <strong>less</strong> than the next due amount. <strong>€${remaining}</strong> remains due on <strong>${nextDueDate}</strong>.`;
+        helperText.style.color = 'var(--muted)';
+      } else {
+        // Overpayment
+        helperText.innerHTML = 'Great — paying more than scheduled reduces your total interest.';
+        const loanType = agreement.repayment_type;
+        if (loanType === 'installments') {
+          helperText.innerHTML += ' Your future <strong>repayment</strong> amounts will drop; interest will drop too.';
+        }
+        helperText.style.color = 'rgba(61,220,151,0.9)';
+
+        // Show live impact box
+        showLiveImpactBox(inputCents);
+      }
+    }
+
+    function showLiveImpactBox(paymentCents) {
+      const impactBox = document.getElementById('live-impact-box');
+      const impactContent = document.getElementById('impact-content');
+      const loanType = agreement.repayment_type;
+
+      // Calculate impact
+      const impact = calculatePaymentImpact(agreement, paymentCents);
+
+      if (!impact) {
+        impactBox.classList.add('hidden');
+        return;
+      }
+
+      let html = '';
+
+      if (loanType === 'installments') {
+        html = `
+          <div><strong>Interest saved:</strong> €${impact.interestSaved}</div>
+          <div><strong>Remaining balance:</strong> €${impact.balanceBefore} → €${impact.balanceAfter}</div>
+          <div><strong>Future repayment (excl. interest):</strong> €${impact.repaymentBefore} → €${impact.repaymentAfter}</div>
+          <div><strong>New total due projection:</strong> €${impact.newTotalDue}</div>
+        `;
+      } else {
+        // One-time loan
+        html = `
+          <div><strong>Remaining balance:</strong> €${impact.balanceBefore} → €${impact.balanceAfter}</div>
+          <div><strong>Total if you repay now:</strong> €${impact.totalToday}</div>
+          <div><strong>You save:</strong> €${impact.futureInterestSaved} in future interest</div>
+        `;
+      }
+
+      impactContent.innerHTML = html;
+      impactBox.classList.remove('hidden');
+    }
+
+    function calculatePaymentImpact(agreement, paymentCents) {
+      const loanType = agreement.repayment_type;
+      const principalCents = agreement.amount_cents || 0;
+      const totalPaidCents = agreement.total_paid_cents || 0;
+      const outstandingCents = principalCents - totalPaidCents;
+      const annualRate = agreement.interest_rate || 0;
+
+      if (annualRate === 0 || paymentCents <= 0) {
+        // No interest, can't show meaningful impact
+        return null;
+      }
+
+      const balanceBefore = (outstandingCents / 100).toFixed(2);
+      const balanceAfter = Math.max(0, (outstandingCents - paymentCents) / 100).toFixed(2);
+
+      if (loanType === 'installments') {
+        // Installment loan calculation
+        const installmentAmount = agreement.installment_amount || 0;
+        const installmentCents = Math.round(installmentAmount * 100);
+        const installmentCount = agreement.installment_count || 0;
+        const paymentFrequency = agreement.payment_frequency || 'monthly';
+
+        // Calculate periods per year
+        const periodsPerYear = {
+          'weekly': 52,
+          'biweekly': 26,
+          'every_4_weeks': 13,
+          'monthly': 12,
+          'quarterly': 4,
+          'yearly': 1
+        }[paymentFrequency] || 12;
+
+        const periodRate = annualRate / 100 / periodsPerYear;
+
+        // Current schedule (before overpayment)
+        const numPaymentsMade = Math.floor(totalPaidCents / installmentCents);
+        const remainingPeriods = Math.max(0, installmentCount - numPaymentsMade);
+
+        // Simple interest calculation for current schedule
+        const currentTotalInterest = outstandingCents * (annualRate / 100) * (remainingPeriods / periodsPerYear);
+        const currentRepaymentPerPeriod = installmentAmount;
+
+        // After overpayment
+        const excessPayment = paymentCents - installmentCents;
+        const newOutstanding = Math.max(0, outstandingCents - excessPayment);
+
+        // Recalculate interest on reduced principal
+        const newTotalInterest = newOutstanding * (annualRate / 100) * (remainingPeriods / periodsPerYear);
+        const newRepaymentPerPeriod = remainingPeriods > 0 ? newOutstanding / remainingPeriods / 100 : 0;
+
+        const interestSaved = ((currentTotalInterest - newTotalInterest) / 100).toFixed(2);
+        const repaymentBefore = currentRepaymentPerPeriod.toFixed(2);
+        const repaymentAfter = newRepaymentPerPeriod.toFixed(2);
+        const newTotalDue = ((newOutstanding + newTotalInterest) / 100).toFixed(2);
+
+        return {
+          interestSaved,
+          balanceBefore,
+          balanceAfter,
+          repaymentBefore,
+          repaymentAfter,
+          newTotalDue
+        };
+
+      } else {
+        // One-time loan
+        const dueDate = new Date(agreement.due_date);
+        const today = new Date();
+
+        // Calculate accrued interest to today
+        const startDate = new Date(agreement.start_date || agreement.created_at);
+        const daysElapsed = Math.max(0, Math.floor((today - startDate) / (1000 * 60 * 60 * 24)));
+        const accruedInterest = (outstandingCents * (annualRate / 100) * (daysElapsed / 365));
+
+        const totalToday = ((outstandingCents + accruedInterest) / 100).toFixed(2);
+
+        // Calculate remaining interest if paid at due date
+        const totalDays = Math.max(0, Math.floor((dueDate - startDate) / (1000 * 60 * 60 * 24)));
+        const fullInterest = (outstandingCents * (annualRate / 100) * (totalDays / 365));
+
+        // After this payment
+        const newPrincipal = Math.max(0, outstandingCents - paymentCents);
+        const remainingDays = Math.max(0, Math.floor((dueDate - today) / (1000 * 60 * 60 * 24)));
+        const newInterest = (newPrincipal * (annualRate / 100) * (remainingDays / 365));
+
+        const futureInterestSaved = ((fullInterest - newInterest) / 100).toFixed(2);
+
+        return {
+          balanceBefore,
+          balanceAfter,
+          totalToday,
+          futureInterestSaved
+        };
+      }
+    }
+
+    function cancelInlinePaymentForm() {
+      const inlineForm = document.getElementById('inline-payment-form');
+      inlineForm.classList.add('hidden');
+
+      // Clear form
+      document.getElementById('inline-payment-amount').value = '';
+      document.getElementById('inline-payment-method').value = '';
+      document.getElementById('inline-payment-note').value = '';
+      document.getElementById('inline-payment-proof').value = '';
+      document.getElementById('inline-payment-status').textContent = '';
+      document.getElementById('amount-helper-text').textContent = '';
+      document.getElementById('live-impact-box').classList.add('hidden');
+    }
+
+    async function submitInlinePayment() {
+      const status = document.getElementById('inline-payment-status');
+      const amount = parseFloat(document.getElementById('inline-payment-amount').value);
+      const method = document.getElementById('inline-payment-method').value || null;
+      const note = document.getElementById('inline-payment-note').value.trim() || null;
+      const proofInput = document.getElementById('inline-payment-proof');
+      const proofFile = proofInput?.files[0];
+
+      // Validate amount
+      if (!amount || amount <= 0) {
+        status.textContent = 'Please enter a valid amount';
+        status.className = 'status error';
+        return;
+      }
+
+      // Validate payment method
+      if (!method) {
+        status.textContent = 'Please select a payment method';
+        status.className = 'status error';
+        return;
+      }
+
+      // Validate proof of repayment if required
+      if (agreement.proof_required && !proofFile) {
+        status.textContent = 'This agreement requires proof of repayment. Please upload a screenshot, photo, or document.';
+        status.className = 'status error';
+        return;
+      }
+
+      // Validate file size if present
+      if (proofFile && proofFile.size > 10 * 1024 * 1024) {
+        status.textContent = 'File size must be less than 10MB';
+        status.className = 'status error';
+        return;
+      }
+
+      status.textContent = 'Reporting payment...';
+      status.className = 'status';
+
+      try {
+        // Use FormData to support file upload
+        const formData = new FormData();
+        formData.append('amount', amount);
+        if (method) formData.append('method', method);
+        if (note) formData.append('note', note);
+        if (proofFile) formData.append('proof', proofFile);
+
+        const res = await fetch(`/api/agreements/${agreementId}/payments`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          status.textContent = data.error || 'Failed to report payment';
+          status.className = 'status error';
+          return;
+        }
+
+        status.textContent = 'Payment reported successfully! Redirecting...';
+        status.className = 'status success';
+
+        // Update agreement data
+        agreement = data.agreement;
+
+        setTimeout(() => {
+          if (agreement.status === 'settled') {
+            window.location.href = '/app';
+          } else {
+            window.location.reload();
+          }
+        }, 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
     }
 
     async function populateDetails() {
