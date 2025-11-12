@@ -16,46 +16,90 @@
     /* Two-column layout for desktop */
     @media (min-width: 900px) {
       body{display:flex;align-items:center;justify-content:center;min-height:100vh;}
-      .page-wrapper{display:flex;max-width:1200px;width:100%;gap:64px;align-items:center;padding:32px;}
-      .left-column{flex:1;padding:32px;}
-      .right-column{flex:1;max-width:500px;}
+      .page-wrapper{display:flex;flex-direction:column;max-width:1200px;width:100%;gap:32px;padding:32px;}
+      .right-column{max-width:500px;margin:0 auto;}
       .container{max-width:none;padding:0;margin:0;}
-      .header{text-align:left;}
     }
 
-    /* Left column styling */
-    .left-column{display:none}
-    @media (min-width: 900px) {
-      .left-column{display:block}
+    /* ===== Auth Hero (Logo + Text) ===== */
+    .auth-hero {
+      padding: clamp(20px, 4vw, 36px) 0 8px;
     }
-    /* Horizontal layout: logo beside text block */
-    .left-hero-section{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:48px;margin-bottom:32px}
-    .left-hero-section img{width:144px;height:144px;flex-shrink:0;user-select:none;-webkit-user-drag:none;pointer-events:none}
-    @media (min-width: 1200px) {
-      .left-hero-section img{width:160px;height:160px}
-    }
-    .left-text-block{flex:1;space-y:12px}
-    .left-tagline{font-size:32px;font-weight:600;margin:0 0 12px 0;line-height:1.25;color:var(--text);letter-spacing:-0.02em}
-    @media (min-width: 1200px) {
-      .left-tagline{font-size:36px}
-    }
-    .left-description{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 16px 0;max-width:540px}
-    @media (min-width: 1200px) {
-      .left-description{font-size:15px}
-    }
-    .left-features{list-style:disc;list-style-position:inside;padding:0;margin:0;font-size:13px;color:var(--muted)}
-    .left-features li{margin:6px 0;line-height:1.5}
 
-    /* Mobile: show left content above form */
-    .mobile-left-content{display:block;margin-bottom:32px;text-align:center}
-    .mobile-left-content img{height:80px;width:80px;margin:0 auto 16px auto;user-select:none;-webkit-user-drag:none;pointer-events:none}
-    .mobile-left-content .left-tagline{font-size:22px;font-weight:600;margin:0 0 12px 0;line-height:1.3}
-    .mobile-left-content .left-description{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 16px 0;padding:0 16px}
-    .mobile-left-content .left-features{font-size:12px;text-align:left;max-width:360px;margin:0 auto}
-    .mobile-left-content .left-features li{margin:6px 0}
+    .auth-hero__inner {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: clamp(16px, 3vw, 32px);
+    }
 
-    @media (min-width: 900px) {
-      .mobile-left-content{display:none}
+    .auth-hero__logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .auth-hero__logo-img {
+      width: clamp(140px, 16vw, 220px);
+      height: auto;
+      /* soften edges without blur */
+      border-radius: 12px;
+      /* no drop shadow to keep it clean; add if desired */
+    }
+
+    .auth-hero__textcol {
+      max-width: clamp(520px, 52vw, 760px);
+    }
+
+    .auth-hero__title {
+      margin: 0 0 clamp(8px, 1.2vw, 12px);
+      font-weight: 700;
+      line-height: 1.1;
+      /* Large headline to match your screenshot proportion */
+      font-size: clamp(32px, 4.2vw, 56px);
+      color: #e6e6e6; /* bright on dark background */
+    }
+
+    .auth-hero__intro {
+      margin: 0 0 clamp(12px, 1.6vw, 16px);
+      font-size: clamp(15px, 1.2vw, 18px);
+      line-height: 1.6;
+      color: #a7adb3; /* muted foreground tone used elsewhere */
+      max-width: 48ch; /* keeps paragraph readable width */
+    }
+
+    .auth-hero__bullets {
+      margin: 0;
+      padding-left: 1.1em;
+      list-style: disc;
+      color: #a7adb3;
+      /* Slightly smaller so bullets fit comfortably below the intro text */
+      font-size: clamp(13.5px, 1vw, 15.5px);
+      line-height: 1.5;
+    }
+
+    .auth-hero__bullets li + li {
+      margin-top: 6px;
+    }
+
+    /* Responsive: stack on small screens */
+    @media (max-width: 900px) {
+      .auth-hero__inner {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .auth-hero__logo {
+        justify-content: start;
+      }
+
+      .auth-hero__logo-img {
+        width: clamp(120px, 26vw, 180px);
+      }
+
+      .auth-hero__textcol {
+        max-width: 100%;
+      }
     }
     h1{margin:0 0 8px 0;font-size:32px}
     .tagline{color:var(--muted)}
@@ -89,56 +133,41 @@
 </head>
 <body>
   <div class="page-wrapper">
-    <!-- Left column for desktop -->
-    <div class="left-column">
-      <section class="left-hero-section">
-        <!-- LEFT: logo -->
-        <img src="/logo-payfriends.svg" alt="PayFriends logo" />
+    <!-- Auth Hero Header (Logo + Text) -->
+    <section class="auth-hero">
+      <div class="auth-hero__inner">
+        <!-- LEFT: Big logo -->
+        <div class="auth-hero__logo">
+          <img
+            src="/images/payfriends-logov2.svg"
+            alt="PayFriends logo"
+            class="auth-hero__logo-img"
+            decoding="async"
+            fetchpriority="high"
+          />
+        </div>
 
-        <!-- RIGHT: text block -->
-        <div class="left-text-block">
-          <h1 class="left-tagline">Pay friends, stay friends</h1>
+        <!-- RIGHT: Text column -->
+        <div class="auth-hero__textcol">
+          <h1 class="auth-hero__title">Pay friends, stay friends</h1>
 
-          <p class="left-description">
-            PayFriends is a kind, smart fintech app, built to keep friends on good terms.
+          <p class="auth-hero__intro">
+            PayFriends is a kind, smart fintech app — built to keep friends on good terms.
             It motivates early repayments, adjusts interest fairly, and finds solutions when paying gets hard.
-            We handle the math and reminders, you keep the friendship.
+            We handle the math and reminders — you keep the friendship.
           </p>
 
-          <ul class="left-features">
+          <ul class="auth-hero__bullets">
             <li>Fair, trust-based loans between friends</li>
             <li>Automatic reminders and smart interest recalculation</li>
             <li>App handles chasing and negotiations — you stay friends</li>
           </ul>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
 
     <!-- Right column / main content -->
     <main class="container right-column">
-    <!-- Mobile: show left content above form -->
-    <div class="mobile-left-content">
-      <img src="/logo-payfriends.svg" alt="PayFriends logo" />
-      <h1 class="left-tagline">Pay friends, stay friends</h1>
-
-      <p class="left-description">
-        PayFriends is a kind, smart fintech app, built to keep friends on good terms.
-        It motivates early repayments, adjusts interest fairly, and finds solutions when paying gets hard.
-        We handle the math and reminders, you keep the friendship.
-      </p>
-
-      <ul class="left-features">
-        <li>Fair, trust-based loans between friends</li>
-        <li>Automatic reminders and smart interest recalculation</li>
-        <li>App handles chasing and negotiations — you stay friends</li>
-      </ul>
-    </div>
-
-    <header class="header" style="display:none">
-      <img src="/images/payfriends-logov2.png" alt="PayFriends logo" style="height:56px; width:auto; margin-bottom:16px" />
-      <h1>PayFriends</h1>
-      <p class="tagline">Create simple agreements between friends.</p>
-    </header>
 
     <div class="tabs">
       <div class="tab active" onclick="showTab('login')">Login</div>
