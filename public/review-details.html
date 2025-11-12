@@ -102,12 +102,12 @@
     .payment-meta-line{font-size:14px}
     .record-payment-btn{background:#3d7bdc; margin-top:0}
     .record-payment-btn:hover{filter:brightness(1.1)}
-    .next-payment-container{display:flex; flex-direction:column; gap:16px}
-    .next-payment-info{flex:1}
+    .next-payment-container{display:grid; grid-template-columns:minmax(0,1fr); gap:16px; align-items:center}
+    .next-payment-info{display:flex; flex-direction:column; gap:4px}
     .next-payment-actions{display:flex; flex-direction:column; gap:8px; width:100%}
     @media (min-width: 768px){
-      .next-payment-container{flex-direction:row; align-items:center; justify-content:space-between}
-      .next-payment-actions{width:auto; min-width:280px; max-width:400px}
+      .next-payment-container{grid-template-columns:minmax(0,1fr) auto; gap:32px}
+      .next-payment-actions{width:auto; min-width:224px}
     }
     select{appearance:none; background-image:url('data:image/svg+xml;utf8,<svg fill="%23a7b0bd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat:no-repeat; background-position:right 8px center}
     .payment-status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; margin-left:8px}
@@ -258,15 +258,15 @@
       <div class="next-payment-container">
         <!-- LEFT/TOP: Payment info -->
         <div class="next-payment-info">
-          <div style="color:var(--muted); font-size:14px; margin-bottom:8px">Next payment due</div>
-          <div id="next-payment-amount" style="font-size:28px; font-weight:600; color:var(--accent); margin-bottom:4px"></div>
-          <div style="color:var(--muted); font-size:14px">Due on <span id="next-payment-date"></span></div>
+          <div style="color:var(--muted); font-size:14px">Next payment due</div>
+          <div id="next-payment-amount" style="font-size:28px; font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums"></div>
+          <div style="color:var(--muted); font-size:14px; white-space:nowrap">Due on <span id="next-payment-date"></span></div>
         </div>
 
         <!-- RIGHT/BOTTOM: Action buttons -->
         <div class="next-payment-actions">
-          <button id="borrower-record-payment-btn" class="record-payment-btn" style="width:100%; font-weight:500">Report a payment</button>
-          <button id="hardship-btn" class="warning" onclick="showHardshipForm()" style="width:100%; font-weight:500">Having trouble paying? Let's work on a solution.</button>
+          <button id="borrower-record-payment-btn" class="record-payment-btn" style="width:100%; font-weight:500; white-space:nowrap" aria-label="Report a payment">Report a payment</button>
+          <button id="hardship-btn" class="warning" onclick="showHardshipForm()" style="width:100%; font-weight:500; white-space:nowrap" aria-label="Having trouble paying?">Having trouble paying?</button>
         </div>
       </div>
 
@@ -976,7 +976,6 @@
       // Set up the "Report payment" button to toggle inline form
       const recordBtn = document.getElementById('borrower-record-payment-btn');
       const lenderName = (agreement.lender_full_name || agreement.lender_name || agreement.lender_email).split(' ')[0];
-      recordBtn.textContent = `Report a payment to ${lenderName}`;
       recordBtn.onclick = () => toggleInlinePaymentForm(lenderName, nextPaymentInfo);
 
       // Show the card
@@ -2778,16 +2777,37 @@
         const planUnit = agreement.plan_unit || 'months';
 
         if (schedule.length > 0) {
-          html += '<div style="margin:16px 0; max-height:300px; overflow-y:auto">';
-          html += '<table style="width:100%; font-size:12px">';
-          html += '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">';
-          html += '<th style="text-align:left; padding:8px 4px">Due date</th>';
-          html += '<th style="text-align:right; padding:8px 4px">Payment total</th>';
-          html += '<th style="text-align:right; padding:8px 4px">Loan repayment</th>';
-          html += '<th style="text-align:right; padding:8px 4px">Interest</th>';
-          html += '<th style="text-align:right; padding:8px 4px">Outstanding</th>';
-          html += '</tr></thead><tbody>';
+          // Determine current period based on total paid
+          const totalPaid = agreement.total_paid_cents || 0;
+          let currentPeriodIndex = -1;
+          let cumulativePrincipal = 0;
 
+          for (let i = 0; i < schedule.length; i++) {
+            const row = schedule[i];
+            cumulativePrincipal += row.principal * 100; // Convert to cents for comparison
+
+            if (totalPaid < cumulativePrincipal) {
+              currentPeriodIndex = i;
+              break;
+            }
+          }
+
+          // Container with max-height and scroll
+          html += '<div style="margin:16px 0; max-height:400px; overflow-y:auto; border:1px solid rgba(55,65,81,0.5); border-radius:8px; background:rgba(12,16,21,1)">';
+
+          // Grid container
+          html += '<div style="display:grid; grid-template-columns:minmax(120px,1fr) minmax(120px,1fr) minmax(100px,1fr) minmax(120px,1fr) minmax(140px,1fr); font-size:13px">';
+
+          // Header row (sticky)
+          html += '<div style="display:contents; position:sticky; top:0; z-index:10">';
+          html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5)">Due date</div>';
+          html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Repayment (excl. interest)</div>';
+          html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Interest</div>';
+          html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Payment total</div>';
+          html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Balance</div>';
+          html += '</div>';
+
+          // Data rows
           for (let i = 0; i < installmentCount; i++) {
             const installmentDate = new Date(firstDate);
             if (planUnit === 'months') {
@@ -2803,18 +2823,23 @@
 
             const row = schedule[i];
             if (row) {
-              const rowStyle = i % 2 === 0 ? 'background:#0c1015' : 'background:#0a0d11';
-              html += `<tr style="${rowStyle}; border-bottom:1px solid rgba(255,255,255,0.05)">`;
-              html += `<td style="padding:8px 4px">${dateStr}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px; font-weight:600">${formatEuro2(row.payment)}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px">${formatEuro2(row.principal)}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px">${formatEuro2(row.interest)}</td>`;
-              html += `<td style="text-align:right; padding:8px 4px">${formatEuro2(row.remaining)}</td>`;
-              html += `</tr>`;
+              // Highlight current period
+              const isCurrentPeriod = i === currentPeriodIndex;
+              const rowBg = isCurrentPeriod ? 'rgba(61,124,220,0.15)' : (i % 2 === 0 ? 'rgba(12,16,21,1)' : 'rgba(10,13,17,1)');
+
+              // Row wrapper
+              html += '<div style="display:contents">';
+              html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); white-space:nowrap; color:rgba(156,163,175,1)">${dateStr}</div>`;
+              html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap">${formatEuro2(row.principal)}</div>`;
+              html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap">${formatEuro2(row.interest)}</div>`;
+              html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:600">${formatEuro2(row.payment)}</div>`;
+              html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap">${formatEuro2(row.remaining)}</div>`;
+              html += '</div>';
             }
           }
 
-          html += '</tbody></table></div>';
+          html += '</div>'; // Close grid container
+          html += '</div>'; // Close scroll container
         }
       }
 
