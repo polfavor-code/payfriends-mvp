@@ -384,6 +384,19 @@
         <!-- Installment fields -->
         <div id="installment-fields" class="hidden">
           <div class="row">
+            <label>Loan duration*</label>
+            <div style="flex:1; display:flex; gap:8px">
+              <input id="loan-duration-value" type="number" min="1" max="600" step="1" value="12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
+              <select id="loan-duration-unit" onchange="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+                <option value="days">Days</option>
+                <option value="weeks">Weeks</option>
+                <option value="months" selected>Months</option>
+                <option value="years">Years</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
             <label>Number of repayments*</label>
             <select id="num-repayments" onchange="handleNumRepaymentsChange()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
               <option value="3">3 repayments</option>
@@ -406,26 +419,24 @@
           </div>
 
           <div class="row">
-            <label>Interval between repayments*</label>
-            <select id="interval-months" onchange="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="1" selected>Every month</option>
-              <option value="2">Every 2 months</option>
-              <option value="3">Every 3 months</option>
-              <option value="6">Every 6 months</option>
-              <option value="12">Every 12 months</option>
-            </select>
+            <label>Repayment interval</label>
+            <div id="repayment-interval-display" style="flex:1; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,0.02); color:var(--muted); font-size:14px">
+              Every 1 month
+            </div>
           </div>
 
           <div class="row">
             <label>First repayment due*</label>
             <select id="first-payment-option" onchange="updateFirstPaymentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="today">Today</option>
-              <option value="tomorrow">Tomorrow</option>
               <option value="3days">In 3 days</option>
               <option value="7days">In 7 days</option>
               <option value="1month" selected>In 1 month from now</option>
               <option value="2months">In 2 months from now</option>
               <option value="3months">In 3 months from now</option>
+              <option value="6months">In 6 months from now</option>
+              <option value="12months">In 12 months from now</option>
+              <option value="today">Today</option>
+              <option value="tomorrow">Tomorrow</option>
               <option value="custom">Pick a date…</option>
             </select>
           </div>
@@ -1257,15 +1268,19 @@
         oneTimeCard.classList.remove('reminder-option-active');
         installmentsCard.classList.add('reminder-option-active');
 
-        // Set defaults for new hybrid fields
+        // Set defaults for loan duration fields
+        const loanDurationValue = document.getElementById('loan-duration-value');
+        const loanDurationUnit = document.getElementById('loan-duration-unit');
         const numRepaymentsSelect = document.getElementById('num-repayments');
-        const intervalMonthsSelect = document.getElementById('interval-months');
 
+        if (!loanDurationValue.value) {
+          loanDurationValue.value = '12';
+        }
+        if (!loanDurationUnit.value) {
+          loanDurationUnit.value = 'months';
+        }
         if (!numRepaymentsSelect.value) {
           numRepaymentsSelect.value = '12';
-        }
-        if (!intervalMonthsSelect.value) {
-          intervalMonthsSelect.value = '1';
         }
 
         // Set default first payment option
@@ -1406,6 +1421,39 @@
       return result;
     }
 
+    // Helper function to get interval text from loan duration and number of repayments
+    function getIntervalText(loanDurationValue, loanDurationUnit, numRepayments) {
+      // Convert to days
+      let totalDays;
+      switch (loanDurationUnit) {
+        case 'days': totalDays = loanDurationValue; break;
+        case 'weeks': totalDays = loanDurationValue * 7; break;
+        case 'months': totalDays = loanDurationValue * 30; break;
+        case 'years': totalDays = loanDurationValue * 365; break;
+      }
+
+      const intervalDays = totalDays / numRepayments;
+
+      // Format based on interval size
+      if (intervalDays < 14) {
+        const days = Math.round(intervalDays);
+        return days === 1 ? 'daily' : `every ${days} days`;
+      } else if (intervalDays < 60) {
+        const weeks = Math.round(intervalDays / 7);
+        return weeks === 1 ? 'weekly' : `every ${weeks} weeks`;
+      } else if (intervalDays < 730) {
+        const months = Math.round(intervalDays / 30);
+        if (months === 1) return 'monthly';
+        if (months === 2) return 'bi-monthly';
+        if (months === 3) return 'quarterly';
+        if (months === 6) return 'semi-annually';
+        return `every ${months} months`;
+      } else {
+        const years = Math.round(intervalDays / 365);
+        return years === 1 ? 'annually' : `every ${years} years`;
+      }
+    }
+
     // Handle number of repayments change (preset vs custom)
     function handleNumRepaymentsChange() {
       const select = document.getElementById('num-repayments');
@@ -1456,6 +1504,10 @@
           firstDate = addMonthsKeepingDay(today, 2);
         } else if (option === '3months') {
           firstDate = addMonthsKeepingDay(today, 3);
+        } else if (option === '6months') {
+          firstDate = addMonthsKeepingDay(today, 6);
+        } else if (option === '12months') {
+          firstDate = addMonthsKeepingDay(today, 12);
         }
 
         // Set the date input value
@@ -1464,16 +1516,18 @@
       }
     }
 
-    // Calculate installment details using hybrid schedule system
+    // Calculate installment details using loan duration and repayments
     function calculateInstallments() {
       const amount = document.getElementById('amount').value;
+      const loanDurationValue = parseInt(document.getElementById('loan-duration-value').value);
+      const loanDurationUnit = document.getElementById('loan-duration-unit').value;
       const numRepaymentsSelect = document.getElementById('num-repayments');
       const customNumRepaymentsInput = document.getElementById('custom-num-repayments');
-      const intervalMonths = parseInt(document.getElementById('interval-months').value);
       const firstPaymentDate = document.getElementById('first-payment-date').value;
       const errorElement = document.getElementById('custom-num-repayments-error');
       const planLengthSummary = document.getElementById('plan-length-summary');
       const installmentEstimate = document.getElementById('installment-estimate');
+      const intervalDisplay = document.getElementById('repayment-interval-display');
 
       // Clear error
       errorElement.classList.add('hidden');
@@ -1495,9 +1549,10 @@
         numRepayments = parseInt(numRepaymentsSelect.value);
       }
 
-      if (!amount || !numRepayments || !intervalMonths || !firstPaymentDate) {
+      if (!loanDurationValue || !loanDurationUnit || !amount || !numRepayments || !firstPaymentDate) {
         planLengthSummary.textContent = '';
         installmentEstimate.textContent = '';
+        intervalDisplay.textContent = 'Every 1 month';
         return;
       }
 
@@ -1511,28 +1566,79 @@
         return;
       }
 
-      // Calculate plan length in months
-      const planLengthMonths = numRepayments * intervalMonths;
-
-      // Validate maximum plan length (50 years = 600 months)
-      if (planLengthMonths > 600) {
-        errorElement.textContent = 'Please choose a shorter plan. Maximum allowed length is 50 years.';
-        errorElement.classList.remove('hidden');
-        planLengthSummary.textContent = '';
-        installmentEstimate.textContent = '';
-        return;
+      // Convert loan duration to days
+      let totalDays;
+      switch (loanDurationUnit) {
+        case 'days':
+          totalDays = loanDurationValue;
+          break;
+        case 'weeks':
+          totalDays = loanDurationValue * 7;
+          break;
+        case 'months':
+          totalDays = loanDurationValue * 30;
+          break;
+        case 'years':
+          totalDays = loanDurationValue * 365;
+          break;
       }
 
-      // Build installment schedule
+      // Calculate interval for display (total duration / number of repayments)
+      const intervalDays = totalDays / numRepayments;
+
+      // Format interval for display with appropriate units
+      let intervalText;
+      if (intervalDays < 14) {
+        const days = Math.round(intervalDays);
+        intervalText = `Every ${days} ${days === 1 ? 'day' : 'days'}`;
+      } else if (intervalDays < 60) {
+        const weeks = Math.round(intervalDays / 7);
+        intervalText = `Every ${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
+      } else if (intervalDays < 730) {
+        const months = Math.round(intervalDays / 30);
+        intervalText = `Every ${months} ${months === 1 ? 'month' : 'months'}`;
+      } else {
+        const years = Math.round(intervalDays / 365);
+        intervalText = `Every ${years} ${years === 1 ? 'year' : 'years'}`;
+      }
+      intervalDisplay.textContent = intervalText;
+
+      // Calculate final end date from first payment + loan duration
       const firstDate = new Date(firstPaymentDate);
+      let finalDate = new Date(firstDate);
+
+      switch (loanDurationUnit) {
+        case 'days':
+          finalDate.setDate(finalDate.getDate() + loanDurationValue);
+          break;
+        case 'weeks':
+          finalDate.setDate(finalDate.getDate() + (loanDurationValue * 7));
+          break;
+        case 'months':
+          finalDate = addMonthsKeepingDay(firstDate, loanDurationValue);
+          break;
+        case 'years':
+          finalDate = addMonthsKeepingDay(firstDate, loanDurationValue * 12);
+          break;
+      }
+
+      // Generate installment schedule - evenly spread dates from first to final
       const installmentSchedule = [];
+      const totalDurationMs = finalDate - firstDate;
 
       for (let i = 0; i < numRepayments; i++) {
-        const dueDate = addMonthsKeepingDay(firstDate, i * intervalMonths);
-        installmentSchedule.push(dueDate.toISOString().split('T')[0]);
+        let paymentDate;
+        if (i === 0) {
+          paymentDate = new Date(firstDate);
+        } else if (i === numRepayments - 1) {
+          paymentDate = new Date(finalDate);
+        } else {
+          // Evenly space intermediate payments
+          const progressRatio = i / (numRepayments - 1);
+          paymentDate = new Date(firstDate.getTime() + (totalDurationMs * progressRatio));
+        }
+        installmentSchedule.push(paymentDate.toISOString().split('T')[0]);
       }
-
-      const finalDate = new Date(installmentSchedule[installmentSchedule.length - 1]);
 
       // Calculate installment amount
       const installmentAmount = (amountNum / numRepayments).toFixed(2);
@@ -1541,11 +1647,24 @@
       const firstFormatted = firstDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
       const finalFormatted = finalDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
+      // Format duration for display
+      let durationText;
+      if (loanDurationUnit === 'days') {
+        durationText = `${loanDurationValue} ${loanDurationValue === 1 ? 'day' : 'days'}`;
+      } else if (loanDurationUnit === 'weeks') {
+        durationText = `${loanDurationValue} ${loanDurationValue === 1 ? 'week' : 'weeks'}`;
+      } else if (loanDurationUnit === 'months') {
+        durationText = `${loanDurationValue} ${loanDurationValue === 1 ? 'month' : 'months'}`;
+      } else {
+        durationText = `${loanDurationValue} ${loanDurationValue === 1 ? 'year' : 'years'}`;
+      }
+
       // Store in wizard data
+      wizardData.loanDurationValue = loanDurationValue;
+      wizardData.loanDurationUnit = loanDurationUnit;
       wizardData.numRepayments = numRepayments;
-      wizardData.intervalMonths = intervalMonths;
-      wizardData.planLength = planLengthMonths;
-      wizardData.planUnit = 'months'; // Always use months for internal calculations
+      wizardData.planLength = loanDurationValue;
+      wizardData.planUnit = loanDurationUnit;
       wizardData.installmentCount = numRepayments;
       wizardData.installmentAmount = parseFloat(installmentAmount);
       wizardData.firstPaymentDate = firstPaymentDate;
@@ -1556,7 +1675,7 @@
       const installmentFormatted = new Intl.NumberFormat('de-DE').format(Math.round(installmentAmount));
 
       // Loan duration summary
-      planLengthSummary.textContent = `Loan duration: ${planLengthMonths} months (from ${firstFormatted} to ${finalFormatted}).`;
+      planLengthSummary.textContent = `Plan length: ${durationText} (from ${firstFormatted} to ${finalFormatted}).`;
 
       // Payment summary
       installmentEstimate.textContent = `${numRepayments} repayments of about €${installmentFormatted} each, excluding interest.`;
@@ -1618,10 +1737,17 @@
         wizardData.installmentCount = 1;
       } else {
         // Validate installment fields
+        const loanDurationValue = parseInt(document.getElementById('loan-duration-value').value);
+        const loanDurationUnit = document.getElementById('loan-duration-unit').value;
         const numRepaymentsSelect = document.getElementById('num-repayments');
         const customNumRepaymentsInput = document.getElementById('custom-num-repayments');
-        const intervalMonths = parseInt(document.getElementById('interval-months').value);
         const firstPaymentDate = document.getElementById('first-payment-date').value;
+
+        // Validate loan duration
+        if (!loanDurationValue || loanDurationValue <= 0) {
+          status.textContent = 'Please enter a valid loan duration';
+          return false;
+        }
 
         // Validate number of repayments
         let numRepayments;
@@ -1635,21 +1761,25 @@
           numRepayments = parseInt(numRepaymentsSelect.value);
         }
 
-        // Validate interval
-        if (!intervalMonths || intervalMonths <= 0) {
-          status.textContent = 'Please select an interval between repayments';
-          return false;
-        }
-
         // Validate first payment date
         if (!firstPaymentDate) {
           status.textContent = 'Please select a first payment date';
           return false;
         }
 
-        // Validate maximum plan length
-        const planLengthMonths = numRepayments * intervalMonths;
-        if (planLengthMonths > 600) {
+        // Validate maximum plan length (50 years in any unit)
+        let planLengthInMonths;
+        if (loanDurationUnit === 'days') {
+          planLengthInMonths = loanDurationValue / 30;
+        } else if (loanDurationUnit === 'weeks') {
+          planLengthInMonths = loanDurationValue / 4.33;
+        } else if (loanDurationUnit === 'months') {
+          planLengthInMonths = loanDurationValue;
+        } else if (loanDurationUnit === 'years') {
+          planLengthInMonths = loanDurationValue * 12;
+        }
+
+        if (planLengthInMonths > 600) {
           status.textContent = 'Please choose a shorter plan. Maximum allowed length is 50 years';
           return false;
         }
@@ -2071,12 +2201,7 @@
       } else {
         const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const intervalText = wizardData.intervalMonths === 1 ? 'monthly' :
-                            wizardData.intervalMonths === 2 ? 'bi-monthly' :
-                            wizardData.intervalMonths === 3 ? 'quarterly' :
-                            wizardData.intervalMonths === 6 ? 'semi-annually' :
-                            wizardData.intervalMonths === 12 ? 'annually' :
-                            `every ${wizardData.intervalMonths} months`;
+        const intervalText = getIntervalText(wizardData.loanDurationValue, wizardData.loanDurationUnit, wizardData.installmentCount);
         summaryLine2 = `To be repaid in ${wizardData.installmentCount} ${intervalText} payments, from ${firstDate} to ${finalDate}.`;
       }
 
@@ -2155,12 +2280,18 @@
       </div>`;
 
       if (wizardData.repaymentType === 'installments') {
-        const intervalText = wizardData.intervalMonths === 1 ? 'monthly' :
-                            wizardData.intervalMonths === 2 ? 'every 2 months' :
-                            wizardData.intervalMonths === 3 ? 'every 3 months' :
-                            wizardData.intervalMonths === 6 ? 'every 6 months' :
-                            wizardData.intervalMonths === 12 ? 'yearly' :
-                            `every ${wizardData.intervalMonths} months`;
+        const intervalText = getIntervalText(wizardData.loanDurationValue, wizardData.loanDurationUnit, wizardData.numRepayments || wizardData.installmentCount);
+
+        const durationText = wizardData.planUnit === 'days' ? `${wizardData.planLength} ${wizardData.planLength === 1 ? 'day' : 'days'}` :
+                             wizardData.planUnit === 'weeks' ? `${wizardData.planLength} ${wizardData.planLength === 1 ? 'week' : 'weeks'}` :
+                             wizardData.planUnit === 'months' ? `${wizardData.planLength} ${wizardData.planLength === 1 ? 'month' : 'months'}` :
+                             wizardData.planUnit === 'years' ? `${wizardData.planLength} ${wizardData.planLength === 1 ? 'year' : 'years'}` :
+                             `${wizardData.planLength} months`;
+
+        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span style="color:var(--muted)">Loan duration</span>
+          <span style="font-weight:600">${durationText}</span>
+        </div>`;
 
         html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
           <span style="color:var(--muted)">Number of repayments</span>
@@ -2168,13 +2299,8 @@
         </div>`;
 
         html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-          <span style="color:var(--muted)">Interval</span>
+          <span style="color:var(--muted)">Repayment interval</span>
           <span style="font-weight:600">${intervalText}</span>
-        </div>`;
-
-        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
-          <span style="color:var(--muted)">Loan duration</span>
-          <span style="font-weight:600">${wizardData.planLength} months</span>
         </div>`;
 
         const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -2592,9 +2718,10 @@
       document.querySelector('input[name="repayment-type"][value="one_time"]').checked = true;
       document.getElementById('due-date').value = '';
       document.getElementById('first-payment-date').value = '';
-      document.getElementById('plan-length').value = '';
-      document.getElementById('plan-unit').value = 'months';
-      document.querySelector('input[name="first-payment-option"][value="1month"]').checked = true;
+      document.getElementById('loan-duration-value').value = '12';
+      document.getElementById('loan-duration-unit').value = 'months';
+      document.getElementById('num-repayments').value = '12';
+      document.getElementById('first-payment-option').value = '1month';
 
       // Reset Step 3 fields
       document.getElementById('interest-rate').value = '';
