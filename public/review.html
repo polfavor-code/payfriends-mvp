@@ -66,6 +66,15 @@
     .top-header-user-info{color:var(--text); font-size:14px; text-align:right}
     .top-header-actions{display:flex; gap:12px; align-items:center}
     .inbox-count{color:var(--accent);font-weight:700}
+    @media (max-width: 768px) {
+      .summary-grid-row{grid-template-columns:1fr !important}
+    }
+    .payment-schedule-table{width:100%; border-collapse:collapse; font-size:13px}
+    .payment-schedule-table thead{background:rgba(255,255,255,0.03)}
+    .payment-schedule-table th{padding:10px 8px; text-align:left; font-weight:600; color:var(--muted); border-bottom:1px solid rgba(255,255,255,0.08)}
+    .payment-schedule-table td{padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)}
+    .payment-schedule-table tbody tr:nth-child(odd){background:rgba(255,255,255,0.02)}
+    .payment-schedule-table th.text-right,.payment-schedule-table td.text-right{text-align:right}
   </style>
 </head>
 <body>
@@ -119,56 +128,32 @@
     <div class="card">
       <h2>Agreement Details</h2>
 
-      <!-- Details section -->
-      <div style="margin:16px 0">
-        <div class="detail-row">
-          <span class="detail-label">Lender</span>
-          <span class="detail-value" id="lender-name"></span>
+      <!-- Review summary section -->
+      <section aria-labelledby="review-summary" style="margin:16px 0">
+        <h3 id="review-summary" style="font-size:16px; font-weight:600; margin:0 0 12px 0; color:var(--text)">Review summary</h3>
+        <div style="display:grid; grid-template-columns:1fr; gap:12px">
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Description</span>
+            <span style="color:var(--text)" id="description-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Money transfer date</span>
+            <span style="color:var(--text)" id="money-sent-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Installment plan</span>
+            <span style="color:var(--text)" id="installment-plan-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Interest</span>
+            <span style="color:var(--text)" id="interest-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Total to repay</span>
+            <span style="color:var(--text); font-weight:600" id="total-repay-display">—</span>
+          </div>
         </div>
-        <div class="detail-row">
-          <span class="detail-label">Borrower</span>
-          <span class="detail-value" id="borrower-name"></span>
-        </div>
-        <div class="detail-row" id="description-row" style="display:none">
-          <span class="detail-label">Description</span>
-          <span class="detail-value" id="description-display"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Amount</span>
-          <span class="detail-value" id="amount-display"></span>
-        </div>
-        <div class="detail-row" id="money-sent-row" style="display:none">
-          <span class="detail-label">Money transfer date</span>
-          <span class="detail-value" id="money-sent-display"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Payment type</span>
-          <span class="detail-value" id="repayment-type"></span>
-        </div>
-        <div class="detail-row" id="installment-info-row" style="display:none">
-          <span class="detail-label">Installment plan</span>
-          <span class="detail-value" id="installment-info-display"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Due date</span>
-          <span class="detail-value">
-            <span id="due-date"></span>
-            <span id="due-date-countdown" style="color:var(--muted); margin-left:8px"></span>
-          </span>
-        </div>
-        <div class="detail-row" id="interest-row" style="display:none">
-          <span class="detail-label">Interest</span>
-          <span class="detail-value" id="interest-display"></span>
-        </div>
-        <div class="detail-row" id="total-repay-row" style="display:none">
-          <span class="detail-label">Total to repay</span>
-          <span class="detail-value" id="total-repay-display"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Status</span>
-          <span class="detail-value" id="status-display">Pending review</span>
-        </div>
-      </div>
+      </section>
 
       <!-- Interest, payment calculation & installment schedule (collapsible) -->
       <div id="interest-calc-card" class="hidden" style="margin:16px 0">
@@ -231,6 +216,28 @@
     function formatAmount(cents) {
       const euros = Math.round(cents / 100);
       return new Intl.NumberFormat('de-DE').format(euros);
+    }
+
+    // Format currency with € symbol using nl-NL locale
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount);
+    }
+
+    // Format ISO date to human-readable format (dd MMM yyyy)
+    function formatISOToHuman(isoDate) {
+      if (!isoDate) return '—';
+      const date = new Date(isoDate);
+      const day = date.getDate();
+      const month = date.toLocaleDateString('en-GB', { month: 'short' });
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    }
+
+    // Helper to calculate days between two dates
+    function daysBetween(date1, date2) {
+      const d1 = new Date(date1);
+      const d2 = new Date(date2);
+      return Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
     }
 
     async function loadInviteData() {
@@ -366,80 +373,72 @@
       }
 
       const agreement = inviteData.agreement;
-      const amount = formatAmount(agreement.amount_cents);
+      const principalEuros = agreement.amount_cents / 100;
 
-      // Use lender's full_name if available, fallback to lender_name
-      const lenderName = (inviteData.lender && inviteData.lender.full_name) || agreement.lender_name;
-      document.getElementById('lender-name').textContent = lenderName;
+      // (1) Description
+      document.getElementById('description-display').textContent = agreement.description || '—';
 
-      const borrowerName = currentUser.full_name || agreement.friend_first_name || inviteData.invite.email;
-      document.getElementById('borrower-name').textContent = borrowerName;
-
-      // Description (show if available)
-      if (agreement.description) {
-        document.getElementById('description-display').textContent = agreement.description;
-        document.getElementById('description-row').style.display = 'flex';
-      }
-
-      // Amount
-      document.getElementById('amount-display').textContent = `€ ${amount}`;
-
-      // Money transfer date (show if available)
+      // (2) Money transfer date
+      let moneySentDateText = '—';
       if (agreement.money_sent_date) {
-        let moneySentDateText;
         if (agreement.money_sent_date === 'on-acceptance') {
           moneySentDateText = 'Upon agreement acceptance';
         } else {
-          moneySentDateText = new Date(agreement.money_sent_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          moneySentDateText = formatISOToHuman(agreement.money_sent_date);
         }
-        document.getElementById('money-sent-display').textContent = moneySentDateText;
-        document.getElementById('money-sent-row').style.display = 'flex';
       }
+      document.getElementById('money-sent-display').textContent = moneySentDateText;
 
-      // Repayment type
-      const repaymentType = agreement.repayment_type === 'one_time' ? 'One-time payment' : 'Installments';
-      document.getElementById('repayment-type').textContent = repaymentType;
-
-      // Installment info (show only if installments)
+      // (3) Installment plan - human-readable summary
+      let installmentPlanText = '—';
       if (agreement.repayment_type === 'installments' && agreement.installment_count) {
-        const installmentAmount = formatAmount(Math.round((agreement.installment_amount || 0) * 100));
-        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        document.getElementById('installment-info-display').innerHTML =
-          `<div style="text-align:right">${agreement.installment_count} monthly payments of €${installmentAmount}</div><div style="text-align:right">from ${firstDate} to ${finalDate}</div>`;
-        document.getElementById('installment-info-row').style.display = 'flex';
+        const count = agreement.installment_count;
+        const firstDate = formatISOToHuman(agreement.first_payment_date);
+        const finalDate = formatISOToHuman(agreement.final_due_date);
+
+        // Calculate interval for readable format
+        const totalDays = daysBetween(agreement.first_payment_date, agreement.final_due_date);
+        const intervalDays = totalDays / count;
+
+        let intervalText;
+        if (intervalDays < 14) {
+          const days = Math.round(intervalDays);
+          intervalText = `${days} day${days === 1 ? '' : 's'}`;
+        } else if (intervalDays < 60) {
+          const weeks = Math.round(intervalDays / 7);
+          intervalText = `${weeks} week${weeks === 1 ? '' : 's'}`;
+        } else if (intervalDays < 730) {
+          const months = Math.round(intervalDays / 30);
+          intervalText = `${months} month${months === 1 ? '' : 's'}`;
+        } else {
+          const years = Math.round(intervalDays / 365);
+          intervalText = `${years} year${years === 1 ? '' : 's'}`;
+        }
+
+        installmentPlanText = `${count} payment${count > 1 ? 's' : ''}, every ${intervalText}, from ${firstDate} to ${finalDate}`;
+      } else if (agreement.repayment_type === 'one_time') {
+        const dueDate = formatISOToHuman(agreement.due_date);
+        installmentPlanText = `One-time payment on ${dueDate}`;
       }
+      document.getElementById('installment-plan-display').textContent = installmentPlanText;
 
-      // Due date
-      const dueDate = agreement.repayment_type === 'installments' && agreement.final_due_date
-        ? new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-        : new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-      document.getElementById('due-date').textContent = dueDate;
-
-      // Add due date countdown
-      const dueDateForCountdown = agreement.repayment_type === 'installments' && agreement.final_due_date
-        ? agreement.final_due_date
-        : agreement.due_date;
-      document.getElementById('due-date-countdown').textContent = getDueDateCountdown(dueDateForCountdown);
-
-      // Interest info (show only if interest > 0)
+      // (4) Interest - APR format
+      let interestText = '—';
       if (agreement.interest_rate && agreement.interest_rate > 0) {
-        const totalInterest = formatAmount(Math.round((agreement.total_interest || 0) * 100));
-        document.getElementById('interest-display').textContent = `${agreement.interest_rate}% per year (total interest: €${totalInterest})`;
-        document.getElementById('interest-row').style.display = 'flex';
+        interestText = `${agreement.interest_rate}% per year`;
+      } else {
+        interestText = '0% (no interest)';
+      }
+      document.getElementById('interest-display').textContent = interestText;
 
-        // Total to repay
-        const totalRepay = formatAmount(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
-        document.getElementById('total-repay-display').textContent = `€${totalRepay}`;
-        document.getElementById('total-repay-row').style.display = 'flex';
+      // (5) Total to repay
+      const totalToRepay = agreement.total_repay_amount || principalEuros;
+      document.getElementById('total-repay-display').textContent = formatCurrency(totalToRepay);
 
-        // Show interest calculation card
+      // Show interest calculation card with schedule if interest > 0
+      if (agreement.interest_rate && agreement.interest_rate > 0) {
         populateInterestCalcDetail();
       }
-
-      // Status
-      const borrowerFirstName = borrowerName.split(' ')[0];
-      document.getElementById('status-display').textContent = `Pending review by ${borrowerFirstName}`;
 
       // Populate payments & reminders section
       populatePaymentsReminders();
@@ -456,33 +455,112 @@
 
       card.classList.remove('hidden');
 
-      const totalInterest = formatAmount(Math.round((agreement.total_interest || 0) * 100));
-      const totalRepay = formatAmount(Math.round((agreement.total_repay_amount || agreement.amount_cents / 100) * 100));
-      const termText = agreement.repayment_type === 'installments' && agreement.installment_count
-        ? `${agreement.installment_count} months`
-        : 'one payment';
+      const principal = agreement.amount_cents / 100;
+      const annualRate = agreement.interest_rate / 100;
+      const dailyRate = annualRate / 365;
 
-      let html = '<div style="display:flex; flex-direction:column; gap:12px">';
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0">
-        <span style="color:var(--muted)">Loan amount</span>
-        <span style="font-weight:600">€${formatAmount(agreement.amount_cents)}</span>
-      </div>`;
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0">
-        <span style="color:var(--muted)">Term</span>
-        <span style="font-weight:600">${termText}</span>
-      </div>`;
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0">
-        <span style="color:var(--muted)">Interest rate</span>
-        <span style="font-weight:600">${agreement.interest_rate}% per year</span>
-      </div>`;
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid rgba(255,255,255,0.08); margin-top:8px; padding-top:12px">
-        <span style="color:var(--muted)">Total interest</span>
-        <span style="font-weight:600">€${totalInterest}</span>
-      </div>`;
-      html += `<div style="display:flex; justify-content:space-between; padding:8px 0">
-        <span style="color:var(--muted); font-weight:600">Total to repay</span>
-        <span style="font-weight:700; color:var(--accent)">€${totalRepay}</span>
-      </div>`;
+      // Determine start date for interest calculation
+      let startDate;
+      if (agreement.money_sent_date && agreement.money_sent_date !== 'on-acceptance') {
+        startDate = new Date(agreement.money_sent_date);
+      } else {
+        // Use first payment date or today as fallback
+        startDate = agreement.first_payment_date ? new Date(agreement.first_payment_date) : new Date();
+      }
+      startDate.setHours(0, 0, 0, 0);
+
+      // Build payment schedule
+      let schedule = [];
+      let n = 1;
+      let paymentDates = [];
+
+      if (agreement.repayment_type === 'installments' && agreement.installment_count) {
+        n = agreement.installment_count;
+
+        // Generate evenly-spaced payment dates from first to final
+        const firstDate = new Date(agreement.first_payment_date);
+        const finalDate = new Date(agreement.final_due_date);
+        const totalDurationMs = finalDate - firstDate;
+
+        for (let i = 0; i < n; i++) {
+          let paymentDate;
+          if (i === 0) {
+            paymentDate = new Date(firstDate);
+          } else if (i === n - 1) {
+            paymentDate = new Date(finalDate);
+          } else {
+            const progressRatio = i / (n - 1);
+            paymentDate = new Date(firstDate.getTime() + (totalDurationMs * progressRatio));
+          }
+          paymentDates.push(paymentDate);
+        }
+      } else if (agreement.repayment_type === 'one_time' && agreement.due_date) {
+        n = 1;
+        paymentDates.push(new Date(agreement.due_date));
+      }
+
+      // Calculate schedule using equal principal + daily interest
+      const principalPerPayment = principal / n;
+      let totalInterest = 0;
+      let previousDate = startDate;
+
+      for (let i = 1; i <= n; i++) {
+        const outstandingBefore = principal - principalPerPayment * (i - 1);
+        const currentPaymentDate = paymentDates[i - 1] || new Date();
+        const daysBetweenPayments = Math.round((currentPaymentDate - previousDate) / (1000 * 60 * 60 * 24));
+        const interestForPeriod = outstandingBefore * dailyRate * daysBetweenPayments;
+        const payment = principalPerPayment + interestForPeriod;
+        const remainingAfter = outstandingBefore - principalPerPayment;
+
+        totalInterest += interestForPeriod;
+
+        schedule.push({
+          period: i,
+          date: currentPaymentDate,
+          payment: payment,
+          principal: principalPerPayment,
+          interest: interestForPeriod,
+          remaining: remainingAfter > 0.01 ? remainingAfter : 0
+        });
+
+        previousDate = currentPaymentDate;
+      }
+
+      const totalRepayAmount = principal + totalInterest;
+
+      // Lead-in sentence
+      const countText = n === 1 ? '1 repayment' : `${n} repayments`;
+      const leadInSentence = `At ${agreement.interest_rate}% interest per year over ${countText}, total interest is about ${formatCurrency(totalInterest)} and total to repay is ${formatCurrency(totalRepayAmount)}.`;
+
+      // Build HTML
+      let html = `<p style="margin-bottom:16px; font-size:14px; color:var(--muted); line-height:1.5">${leadInSentence}</p>`;
+
+      html += '<div style="overflow-x:auto; border:1px solid rgba(255,255,255,0.08); border-radius:8px">';
+      html += '<table class="payment-schedule-table">';
+      html += '<thead><tr>';
+      html += '<th>#</th>';
+      html += '<th>Date</th>';
+      html += '<th class="text-right">Remaining</th>';
+      html += '<th class="text-right">Principal</th>';
+      html += '<th class="text-right">Interest</th>';
+      html += '<th class="text-right">Payment</th>';
+      html += '</tr></thead>';
+      html += '<tbody>';
+
+      for (let i = 0; i < schedule.length; i++) {
+        const row = schedule[i];
+        html += '<tr>';
+        html += `<td>${row.period}</td>`;
+        html += `<td>${formatISOToHuman(row.date.toISOString())}</td>`;
+        html += `<td class="text-right">${formatCurrency(row.remaining)}</td>`;
+        html += `<td class="text-right">${formatCurrency(row.principal)}</td>`;
+        html += `<td class="text-right">${formatCurrency(row.interest)}</td>`;
+        html += `<td class="text-right" style="font-weight:600">${formatCurrency(row.payment)}</td>`;
+        html += '</tr>';
+      }
+
+      html += '</tbody>';
+      html += '</table>';
       html += '</div>';
 
       content.innerHTML = html;
