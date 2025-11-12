@@ -718,6 +718,29 @@
           <p style="margin:12px 0 0 0; color:var(--muted); font-size:12px; line-height:1.5">Interest is calculated only on the remaining balance — fair and transparent.</p>
         </div>
 
+        <!-- Fairness Between Friends (collapsible) -->
+        <div style="margin:20px 0">
+          <button onclick="toggleSection('fairness-step3-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+            <span>Fairness Between Friends</span>
+            <span id="fairness-step3-toggle">▼</span>
+          </button>
+          <div id="fairness-step3-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+            <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
+              PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
+              Interest is calculated dynamically on the outstanding balance and the time elapsed.
+            </p>
+            <ul style="margin:0 0 12px 0; padding-left:20px; font-size:14px; line-height:1.6">
+              <li style="margin-bottom:8px"><strong>Early or higher payments</strong> reduce the total interest and, where applicable, lower future installment amounts.</li>
+              <li style="margin-bottom:8px"><strong>Late or smaller payments</strong> increase the total interest for the period the amount remains outstanding.</li>
+              <li style="margin-bottom:8px">These recalculations happen automatically and are reflected instantly in the agreement for both lender and borrower.</li>
+            </ul>
+            <p style="margin:0; font-size:14px; line-height:1.6">
+              Each repayment entry in the payment history clearly notes when a payment caused a change in the total interest, outstanding balance, or future installments.
+              This ensures both parties always see the current, fair value of the loan.
+            </p>
+          </div>
+        </div>
+
         <div style="margin:20px 0">
           <button onclick="toggleBreakdown()" class="secondary" style="padding:8px 16px; font-size:14px">
             <span id="breakdown-toggle-text">Show payment breakdown</span>
@@ -911,6 +934,29 @@
           </button>
           <div id="payments-reminders-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
             <div id="payments-reminders-content"></div>
+          </div>
+        </div>
+
+        <!-- Expandable: Fairness Between Friends -->
+        <div style="margin:16px 0">
+          <button onclick="toggleSection('fairness-step5-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+            <span>Fairness Between Friends</span>
+            <span id="fairness-step5-toggle">▼</span>
+          </button>
+          <div id="fairness-step5-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+            <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
+              PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
+              Interest is calculated dynamically on the outstanding balance and the time elapsed.
+            </p>
+            <ul style="margin:0 0 12px 0; padding-left:20px; font-size:14px; line-height:1.6">
+              <li style="margin-bottom:8px"><strong>Early or higher payments</strong> reduce the total interest and, where applicable, lower future installment amounts.</li>
+              <li style="margin-bottom:8px"><strong>Late or smaller payments</strong> increase the total interest for the period the amount remains outstanding.</li>
+              <li style="margin-bottom:8px">These recalculations happen automatically and are reflected instantly in the agreement for both lender and borrower.</li>
+            </ul>
+            <p style="margin:0; font-size:14px; line-height:1.6">
+              Each repayment entry in the payment history clearly notes when a payment caused a change in the total interest, outstanding balance, or future installments.
+              This ensures both parties always see the current, fair value of the loan.
+            </p>
           </div>
         </div>
 
