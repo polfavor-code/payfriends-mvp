@@ -34,3 +34,32 @@
 .summary-grid-label {
   font-weight: 500 !important;
 }
+
+/* Loading and error states */
+#loading-card {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#loading-text {
+  color: #cbd5e1;
+  text-align: center;
+}
+
+#error-section {
+  min-height: 120px;
+}
+
+#error-message {
+  color: #fca5a5;
+  margin: 16px 0;
+}
+
+/* Retry button hover effect */
+#retry-load-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}

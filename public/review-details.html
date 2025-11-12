@@ -581,7 +581,10 @@
     <div id="error-section" class="card hidden">
       <h2>Error</h2>
       <p id="error-message">Unable to load agreement details.</p>
-      <a href="/app" style="display:inline-block; margin-top:16px; padding:10px 20px; background:var(--accent); color:#0d130f; border-radius:10px; text-decoration:none; font-weight:600">Go to Dashboard</a>
+      <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap">
+        <button id="retry-load-btn" onclick="retryLoad()" style="padding:10px 20px; background:var(--accent); color:#0d130f; border:none; border-radius:10px; font-weight:600; cursor:pointer; font-size:14px">Retry</button>
+        <a href="/app" style="display:inline-block; padding:10px 20px; background:#374151; color:#cbd5e1; border-radius:10px; text-decoration:none; font-weight:600">Return to My agreements</a>
+      </div>
     </div>
   </div>
 
@@ -636,10 +639,34 @@
         // Fetch agreement
         const res = await fetch(`/api/agreements/${agreementId}`);
         if (!res.ok) {
-          showError('Agreement not found or you do not have access to it.');
+          // Try to parse error message from response
+          let errorMsg = 'Agreement not found or you do not have access to it.';
+          try {
+            const errorData = await res.json();
+            if (errorData.error) {
+              errorMsg = errorData.error;
+            }
+          } catch (e) {
+            // Use default error message if response is not JSON
+          }
+
+          if (res.status === 404) {
+            errorMsg = 'Agreement not found. It may have been deleted or you may not have access to it.';
+          } else if (res.status === 403) {
+            errorMsg = 'You do not have permission to view this agreement.';
+          } else if (res.status >= 500) {
+            errorMsg = 'Server error. Please try again later.';
+          }
+
+          showError(errorMsg);
           return;
         }
         agreement = await res.json();
+
+        if (!agreement || typeof agreement !== 'object') {
+          showError('Invalid agreement data received.');
+          return;
+        }
 
         // Determine mode based on URL and user role
         const isLender = agreement.lender_user_id === currentUser.id;
@@ -654,7 +681,7 @@
         }
       } catch (err) {
         console.error('Error loading agreement:', err);
-        showError('An error occurred while loading the agreement.');
+        showError('An error occurred while loading the agreement. Please check your connection and try again.');
       }
     }
 
@@ -1091,6 +1118,14 @@
       document.getElementById('loading-card').classList.add('hidden');
       document.getElementById('error-section').classList.remove('hidden');
       document.getElementById('error-message').textContent = message;
+    }
+
+    function retryLoad() {
+      // Hide error section and show loading
+      document.getElementById('error-section').classList.add('hidden');
+      document.getElementById('loading-card').classList.remove('hidden');
+      // Retry loading the agreement
+      loadAgreementData();
     }
 
     function handleAccept() {
