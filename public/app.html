@@ -54,6 +54,7 @@
     table{width:100%;border-collapse:collapse;margin-top:8px}
     th,td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; vertical-align:middle}
     th{color:var(--muted); font-weight:600; font-size:13px}
+    th:nth-child(5), td:nth-child(5){text-align:center; width:80px}
     .status{color:var(--muted); margin-top:8px; min-height:1.2em;}
     .status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600}
     .status-badge.pending{background:#4a4a4a; color:#fff}
@@ -75,14 +76,17 @@
     .status-indicator--overdue{background:#f87171}
     .status-indicator--cancelled{background:#9ca3af}
     .status-indicator--declined{background:#f87171}
-    .status-dot{display:inline-block; width:22px; height:22px; border-radius:9999px; cursor:help; position:relative}
+    .status-dot{display:inline-block; width:16px; height:16px; border-radius:9999px; cursor:help; position:relative}
     .status-dot--active{background:#22c55e}
     .status-dot--pending{background:#facc15}
     .status-dot--settled{background:#9ca3af}
     .status-dot--overdue{background:#f87171}
     .status-dot--cancelled{background:#9ca3af}
     .status-dot--declined{background:#f87171}
-    .status-dot-wrapper{display:flex;align-items:center;justify-content:center;height:100%}
+    .status-dot-wrapper{display:inline-flex;align-items:center;justify-content:center;position:relative}
+    .status-dot-wrapper::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.2s ease;border:1px solid rgba(255,255,255,0.1);z-index:1000}
+    .status-dot-wrapper::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1f2937;opacity:0;pointer-events:none;transition:opacity 0.2s ease;z-index:1000}
+    .status-dot-wrapper:hover::after,.status-dot-wrapper:hover::before{opacity:1}
     .actions-column{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; width:100%}
     .actions-column button{flex:0 0 auto; padding:8px 12px; font-size:14px; white-space:nowrap; width:auto}
     .btn-confirm-payment{background:#f97316; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px}
@@ -3218,8 +3222,10 @@
           tooltipText = 'Cancelled';
         } else if (statusText === 'declined') {
           tooltipText = 'Declined';
+        } else if (statusText === 'overdue') {
+          tooltipText = 'Overdue';
         }
-        let statusBadge = `<div class="status-dot-wrapper"><span class="status-dot status-dot--${statusText}" role="img" aria-label="${capitalizedStatus}" title="${tooltipText}"></span></div>`;
+        let statusBadge = `<div class="status-dot-wrapper" data-tooltip="${tooltipText}"><span class="status-dot status-dot--${statusText}" role="img" aria-label="${tooltipText}"></span></div>`;
 
         // Determine role
         const isLender = a.lender_user_id === currentUser.id;
