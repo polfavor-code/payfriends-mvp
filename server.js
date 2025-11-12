@@ -1566,7 +1566,7 @@ app.get('/api/agreements/:id/hardship-requests', requireAuth, (req, res) => {
 // Create a payment for an agreement
 app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (req, res) => {
   const { id } = req.params;
-  const { amount, method, note } = req.body || {};
+  const { amount, method, note, reportType } = req.body || {};
 
   if (!amount || amount <= 0) {
     return res.status(400).json({ error: 'Valid amount is required' });
@@ -1617,6 +1617,14 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
     // Determine if user is borrower or lender
     const isBorrower = agreement.borrower_user_id === req.user.id;
     const isLender = agreement.lender_user_id === req.user.id;
+
+    // STRICT GUARD: Borrower repayment reports can ONLY be submitted by borrowers
+    if (reportType === 'borrower_report' && !isBorrower) {
+      return res.status(403).json({
+        error: 'Forbidden: Only borrowers can submit repayment reports',
+        reason: 'This endpoint is for borrower-initiated repayment reports only. Lenders should use the separate payment recording interface.'
+      });
+    }
 
     // Set status based on who is recording
     const paymentStatus = isBorrower ? 'pending' : 'approved';
