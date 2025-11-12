@@ -15,6 +15,8 @@
   <script src="/js/formatters.js"></script>
   <!-- Derived field utilities -->
   <script src="/js/derived-fields.js"></script>
+  <!-- Repayment calculation utilities -->
+  <script src="/js/repayment-calculator.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -173,6 +175,54 @@
     .status-dot-wrapper::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.2s ease;border:1px solid rgba(255,255,255,0.1);z-index:1000}
     .status-dot-wrapper::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1f2937;opacity:0;pointer-events:none;transition:opacity 0.2s ease;z-index:1000}
     .status-dot-wrapper:hover::after,.status-dot-wrapper:hover::before{opacity:1}
+
+    /* Next payment summary card */
+    .next-payment-card{background:rgba(61,220,151,0.08); border:1px solid rgba(61,220,151,0.25); border-radius:12px; padding:20px; margin:16px 0}
+    .next-payment-title{font-size:14px; color:var(--muted); font-weight:600; margin-bottom:6px}
+    .next-payment-amount{font-size:28px; font-weight:700; color:var(--accent); margin-bottom:4px}
+    .next-payment-due{font-size:14px; color:var(--text); margin-bottom:16px}
+    .next-payment-overdue{color:#ff6b6b}
+    .report-repayment-btn{width:100%; background:var(--accent); color:#0d130f; font-weight:700; padding:12px; border-radius:10px; border:none; cursor:pointer; font-size:14px}
+    .report-repayment-btn:hover{filter:brightness(1.06)}
+
+    /* Modal overlay */
+    .modal-overlay{position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(4px)}
+    .modal-content{background:var(--card); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:28px; max-width:540px; width:90%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 50px rgba(0,0,0,0.5)}
+    .modal-header{margin-bottom:20px}
+    .modal-title{font-size:20px; font-weight:700; color:var(--text); margin-bottom:8px}
+    .modal-subtitle{font-size:14px; color:var(--muted); line-height:1.5}
+    .modal-footer{margin-top:24px; display:flex; gap:12px}
+    .modal-footer button{flex:1; padding:12px}
+
+    /* Calculation feedback box */
+    .calc-feedback{background:rgba(61,220,151,0.08); border:1px solid rgba(61,220,151,0.2); border-radius:10px; padding:16px; margin:16px 0; animation:fadeIn 0.3s ease}
+    .calc-feedback.partial{background:rgba(59,130,246,0.08); border-color:rgba(59,130,246,0.2)}
+    .calc-feedback-title{font-size:14px; font-weight:600; color:var(--text); margin-bottom:10px; display:flex; align-items:center; gap:6px}
+    .calc-feedback-row{font-size:14px; color:var(--text); margin:6px 0; line-height:1.5}
+    .calc-feedback-label{color:var(--muted)}
+    .calc-feedback-value{color:var(--accent); font-weight:600}
+    .calc-savings{color:#3ddc97}
+    @keyframes fadeIn{from{opacity:0; transform:translateY(-10px)} to{opacity:1; transform:translateY(0)}}
+
+    /* Payment tabs */
+    .payment-tabs{display:flex; gap:0; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08); margin-top:8px}
+    .payment-tab{padding:12px 20px; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-1px; font-weight:600; font-size:14px; transition:all 0.2s}
+    .payment-tab.active{color:var(--accent); border-bottom-color:var(--accent)}
+    .payment-tab:hover{color:var(--text); background:rgba(255,255,255,0.03)}
+    .payment-tab-content{display:none}
+    .payment-tab-content.active{display:block}
+
+    /* Upcoming payment item */
+    .upcoming-payment-item{background:#10151d; border-radius:8px; padding:14px; margin:12px 0; border:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center}
+    .upcoming-payment-item.overdue{border-color:rgba(255,107,107,0.3); background:rgba(255,107,107,0.05)}
+    .upcoming-payment-left{display:flex; flex-direction:column; gap:4px}
+    .upcoming-payment-number{font-size:12px; color:var(--muted); font-weight:600}
+    .upcoming-payment-amount{font-size:18px; font-weight:700; color:var(--accent)}
+    .upcoming-payment-date{font-size:13px; color:var(--muted)}
+    .upcoming-payment-status{font-size:12px; padding:4px 8px; border-radius:6px; font-weight:600}
+    .upcoming-payment-status.due{background:rgba(255,152,0,0.2); color:#ff9800}
+    .upcoming-payment-status.overdue{background:rgba(255,107,107,0.2); color:#ff6b6b}
+    .upcoming-payment-status.upcoming{background:rgba(107,114,128,0.2); color:#9ca3af}
   </style>
 </head>
 <body>
@@ -239,7 +289,15 @@
       </div>
     </div>
 
-    <!-- Primary payment action button (for active agreements) - moved up -->
+    <!-- Next payment due card (for borrowers on active agreements) -->
+    <div id="next-payment-card" class="card next-payment-card hidden">
+      <div class="next-payment-title">Next payment due</div>
+      <div class="next-payment-amount" id="next-payment-amount">€0.00</div>
+      <div class="next-payment-due" id="next-payment-due">Due on —</div>
+      <button class="report-repayment-btn" onclick="openReportRepaymentModal()">Report repayment</button>
+    </div>
+
+    <!-- Primary payment action button (for active agreements) - fallback for lenders -->
     <div id="payment-action-section" class="hidden" style="margin:16px 0">
       <button id="record-payment-btn" class="record-payment-btn" style="width:100%">Report Payment</button>
     </div>
@@ -415,9 +473,26 @@
 
     <!-- Payment history (for active and settled agreements) -->
     <div id="payment-history" class="card hidden">
-      <h2>Payment History</h2>
-      <div id="payments-list">
-        <p style="color:var(--muted); font-size:14px">No payments recorded yet.</p>
+      <h2 id="payment-history-title">Payments</h2>
+
+      <!-- Tabs for Upcoming vs Completed (only shown for borrowers with installments) -->
+      <div id="payment-tabs" class="payment-tabs hidden">
+        <div class="payment-tab active" data-tab="upcoming" onclick="switchPaymentTab('upcoming')">Upcoming</div>
+        <div class="payment-tab" data-tab="completed" onclick="switchPaymentTab('completed')">Completed</div>
+      </div>
+
+      <!-- Upcoming payments (installment schedule) -->
+      <div id="upcoming-payments-content" class="payment-tab-content active">
+        <div id="upcoming-payments-list">
+          <p style="color:var(--muted); font-size:14px">No upcoming payments.</p>
+        </div>
+      </div>
+
+      <!-- Completed payments (payment history) -->
+      <div id="completed-payments-content" class="payment-tab-content">
+        <div id="payments-list">
+          <p style="color:var(--muted); font-size:14px">No payments recorded yet.</p>
+        </div>
       </div>
     </div>
 
@@ -581,6 +656,55 @@
       <p class="status" id="hardship-status"></p>
     </div>
 
+    <!-- Report Repayment Modal -->
+    <div id="report-repayment-modal" class="modal-overlay hidden" onclick="closeModalOnOverlayClick(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">Report repayment</h2>
+          <p class="modal-subtitle" id="modal-subtitle">Report the payment you already made to your lender.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modal-payment-amount">Amount to report</label>
+          <input type="number" id="modal-payment-amount" placeholder="0.00" min="0" step="0.01" oninput="handleAmountChange()">
+        </div>
+
+        <!-- Dynamic calculation feedback -->
+        <div id="calc-feedback-box" class="hidden"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="modal-payment-method">Payment method</label>
+          <select id="modal-payment-method" required style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+            <option value="">Select method...</option>
+            <option value="cash">Cash</option>
+            <option value="bank">Bank transfer</option>
+            <option value="crypto">Crypto</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div id="modal-proof-section" class="form-group" style="display:none">
+          <label class="form-label" id="modal-proof-label" for="modal-payment-proof">Proof of repayment</label>
+          <p id="modal-proof-helper" style="color:var(--muted); font-size:12px; margin-bottom:8px">
+            Upload a screenshot, photo or PDF that shows this repayment.
+          </p>
+          <input type="file" id="modal-payment-proof" accept="image/*,.pdf" style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modal-payment-note">Note (optional)</label>
+          <textarea id="modal-payment-note" placeholder="Add any details about this repayment..."></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button onclick="closeReportRepaymentModal()" class="secondary">Cancel</button>
+          <button onclick="submitRepaymentFromModal()" id="modal-submit-btn">Report repayment</button>
+        </div>
+
+        <p class="status" id="modal-payment-status"></p>
+      </div>
+    </div>
+
     <!-- Error state -->
     <div id="error-section" class="card hidden">
       <h2>Error</h2>
@@ -596,6 +720,9 @@
     let agreement = null;
     let currentUser = null;
     let mode = 'view'; // 'review' or 'view'
+    let paymentSchedule = null; // For installment loans
+    let allPayments = []; // All payments for this agreement
+    let nextPaymentInfo = null; // Next payment due information
 
     // Initialize shared header
     document.addEventListener('DOMContentLoaded', async () => {
@@ -629,6 +756,457 @@
       const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       return `color-${(hash % 7) + 1}`;
     }
+
+    // ============================================
+    // BORROWER REPAYMENT FLOW FUNCTIONS
+    // ============================================
+
+    /**
+     * Switch between payment tabs (Upcoming vs Completed)
+     */
+    function switchPaymentTab(tabName) {
+      // Update tab active states
+      document.querySelectorAll('.payment-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelector(`.payment-tab[data-tab="${tabName}"]`).classList.add('active');
+
+      // Update content active states
+      document.querySelectorAll('.payment-tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+
+      if (tabName === 'upcoming') {
+        document.getElementById('upcoming-payments-content').classList.add('active');
+      } else {
+        document.getElementById('completed-payments-content').classList.add('active');
+      }
+    }
+
+    /**
+     * Display next payment due card for borrowers
+     */
+    function displayNextPaymentCard() {
+      const isBorrower = agreement.borrower_user_id === currentUser.id;
+
+      if (!isBorrower || agreement.status !== 'active') {
+        document.getElementById('next-payment-card').classList.add('hidden');
+        return;
+      }
+
+      // Calculate next payment due
+      nextPaymentInfo = getNextPaymentDue(agreement, allPayments, paymentSchedule);
+
+      if (!nextPaymentInfo) {
+        // Fully paid
+        document.getElementById('next-payment-card').classList.add('hidden');
+        return;
+      }
+
+      // Display the card
+      const card = document.getElementById('next-payment-card');
+      const amountEl = document.getElementById('next-payment-amount');
+      const dueEl = document.getElementById('next-payment-due');
+
+      amountEl.textContent = formatCurrency2(nextPaymentInfo.amountCents);
+
+      const dueDate = new Date(nextPaymentInfo.dueDate);
+      const dueDateStr = dueDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+      if (nextPaymentInfo.isOverdue) {
+        dueEl.innerHTML = `<span class="next-payment-overdue">⚠️ Overdue since ${dueDateStr}</span>`;
+        card.style.background = 'rgba(255,107,107,0.08)';
+        card.style.borderColor = 'rgba(255,107,107,0.25)';
+      } else {
+        dueEl.textContent = `Due on ${dueDateStr}`;
+        card.style.background = 'rgba(61,220,151,0.08)';
+        card.style.borderColor = 'rgba(61,220,151,0.25)';
+      }
+
+      card.classList.remove('hidden');
+    }
+
+    /**
+     * Open the report repayment modal
+     */
+    function openReportRepaymentModal() {
+      const modal = document.getElementById('report-repayment-modal');
+      const amountInput = document.getElementById('modal-payment-amount');
+      const methodSelect = document.getElementById('modal-payment-method');
+      const proofSection = document.getElementById('modal-proof-section');
+      const proofInput = document.getElementById('modal-payment-proof');
+      const proofLabel = document.getElementById('modal-proof-label');
+      const proofHelper = document.getElementById('modal-proof-helper');
+      const noteInput = document.getElementById('modal-payment-note');
+      const subtitle = document.getElementById('modal-subtitle');
+
+      // Pre-fill amount with next payment due
+      if (nextPaymentInfo) {
+        amountInput.value = (nextPaymentInfo.amountCents / 100).toFixed(2);
+      }
+
+      // Set subtitle
+      const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
+      subtitle.textContent = `Report the payment you already made to ${lenderName}.`;
+
+      // Populate payment methods
+      const allowedMethods = agreement.payment_preference_method
+        ? agreement.payment_preference_method.split(',').map(m => m.trim())
+        : [];
+
+      const methodMap = {
+        'bank': 'Bank transfer',
+        'cash': 'Cash',
+        'paypal': 'PayPal / mobile payment',
+        'crypto': 'Crypto',
+        'other': 'Other'
+      };
+
+      if (allowedMethods.length > 0 && !allowedMethods.includes('any')) {
+        methodSelect.innerHTML = '<option value="">Select method...</option>';
+        allowedMethods.forEach(method => {
+          const option = document.createElement('option');
+          option.value = method;
+          option.textContent = methodMap[method] || method;
+          methodSelect.appendChild(option);
+        });
+      }
+
+      // Show/hide proof upload based on agreement setting
+      if (agreement.proof_required) {
+        proofSection.style.display = 'block';
+        proofLabel.textContent = 'Proof of repayment*';
+        proofHelper.textContent = 'Upload a screenshot, photo or PDF that shows this repayment.';
+        proofInput.required = true;
+      } else {
+        proofSection.style.display = 'block';
+        proofLabel.textContent = 'Proof of repayment (optional)';
+        proofHelper.textContent = 'Upload a screenshot, photo or PDF of your repayment if you have it.';
+        proofInput.required = false;
+      }
+
+      // Clear previous values (except amount)
+      methodSelect.value = '';
+      proofInput.value = '';
+      noteInput.value = '';
+      document.getElementById('calc-feedback-box').classList.add('hidden');
+      document.getElementById('modal-payment-status').textContent = '';
+
+      // Show modal
+      modal.classList.remove('hidden');
+
+      // Trigger initial calculation
+      handleAmountChange();
+    }
+
+    /**
+     * Close the modal
+     */
+    function closeReportRepaymentModal() {
+      document.getElementById('report-repayment-modal').classList.add('hidden');
+    }
+
+    /**
+     * Close modal when clicking on overlay
+     */
+    function closeModalOnOverlayClick(event) {
+      if (event.target.id === 'report-repayment-modal') {
+        closeReportRepaymentModal();
+      }
+    }
+
+    /**
+     * Handle amount input changes and show dynamic calculations
+     */
+    function handleAmountChange() {
+      const amountInput = document.getElementById('modal-payment-amount');
+      const feedbackBox = document.getElementById('calc-feedback-box');
+
+      const amountEntered = parseFloat(amountInput.value) || 0;
+      const amountEnteredCents = Math.round(amountEntered * 100);
+
+      if (amountEnteredCents <= 0) {
+        feedbackBox.classList.add('hidden');
+        return;
+      }
+
+      if (!nextPaymentInfo) {
+        feedbackBox.classList.add('hidden');
+        return;
+      }
+
+      const nextDueCents = nextPaymentInfo.amountCents;
+
+      // If amount equals next due, no special feedback needed
+      if (Math.abs(amountEnteredCents - nextDueCents) < 100) {
+        feedbackBox.classList.add('hidden');
+        return;
+      }
+
+      // Calculate total paid so far
+      const totalPaidSoFarCents = allPayments
+        .filter(p => p.status === 'approved')
+        .reduce((sum, p) => sum + p.amount_cents, 0);
+
+      let feedbackHTML = '';
+
+      if (agreement.repayment_type === 'one_time') {
+        // One-time loan calculations
+        const result = calculateOneTimeRepaymentImpact({
+          principalCents: agreement.amount_cents,
+          aprPercent: agreement.interest_rate || 0,
+          startDate: agreement.money_sent_date,
+          dueDate: agreement.due_date,
+          amountPaidCents: amountEnteredCents,
+          totalPaidSoFarCents: totalPaidSoFarCents
+        });
+
+        if (result.remainingBalanceCents === 0) {
+          // Full repayment
+          feedbackHTML = `
+            <div class="calc-feedback">
+              <div class="calc-feedback-title">✅ Full repayment</div>
+              <div class="calc-feedback-row">
+                <span class="calc-feedback-label">Includes all interest up to today: </span>
+                <span class="calc-feedback-value">${formatCurrency2(result.interestAccruedToDateCents)}</span>
+              </div>
+              ${result.interestSavedCents > 0 ? `
+              <div class="calc-feedback-row">
+                <span class="calc-feedback-label">Interest saved by paying early: </span>
+                <span class="calc-savings">+${formatCurrency2(result.interestSavedCents)}</span>
+              </div>` : ''}
+            </div>
+          `;
+        } else {
+          // Partial repayment
+          feedbackHTML = `
+            <div class="calc-feedback partial">
+              <div class="calc-feedback-title">💡 Partial repayment reported</div>
+              ${result.interestSavedCents > 0 ? `
+              <div class="calc-feedback-row">
+                <span class="calc-feedback-label">Interest saved: </span>
+                <span class="calc-savings">+${formatCurrency2(result.interestSavedCents)}</span>
+              </div>` : ''}
+              <div class="calc-feedback-row">
+                <span class="calc-feedback-label">Remaining total balance: </span>
+                <span class="calc-feedback-value">${formatCurrency2(result.remainingBalanceCents)}</span>
+              </div>
+              <div style="font-size:12px; color:var(--muted); margin-top:8px">
+                (Principal + remaining interest)
+              </div>
+            </div>
+          `;
+        }
+      } else if (agreement.repayment_type === 'installments' && paymentSchedule) {
+        // Installment loan calculations
+        if (amountEnteredCents > nextDueCents) {
+          // Overpayment
+          const result = calculateInstallmentRepaymentImpact({
+            agreement: agreement,
+            paymentSchedule: paymentSchedule,
+            amountPaidCents: amountEnteredCents,
+            totalPaidSoFarCents: totalPaidSoFarCents
+          });
+
+          feedbackHTML = `
+            <div class="calc-feedback">
+              <div class="calc-feedback-title">✨ Extra payment</div>
+              ${result.interestSavedCents > 0 ? `
+              <div class="calc-feedback-row">
+                <span class="calc-feedback-label">Interest saved: </span>
+                <span class="calc-savings">+${formatCurrency2(result.interestSavedCents)}</span>
+              </div>` : ''}
+              <div class="calc-feedback-row">
+                <span class="calc-feedback-label">Remaining balance: </span>
+                <span class="calc-feedback-value">${formatCurrency2(result.remainingBalanceCents)}</span>
+              </div>
+              ${result.additionalInstallmentsPaid > 0 ? `
+              <div class="calc-feedback-row">
+                <span class="calc-feedback-label">Installments covered: </span>
+                <span class="calc-feedback-value">+${result.additionalInstallmentsPaid}</span>
+              </div>` : ''}
+              ${result.newInstallmentAmountCents ? `
+              <div class="calc-feedback-row">
+                <span class="calc-feedback-label">Future installments adjust to: </span>
+                <span class="calc-feedback-value">${formatCurrency2(result.newInstallmentAmountCents)}</span>
+              </div>` : ''}
+            </div>
+          `;
+        } else {
+          // Partial payment (less than installment)
+          feedbackHTML = `
+            <div class="calc-feedback partial">
+              <div class="calc-feedback-title">💡 Partial installment payment</div>
+              <div class="calc-feedback-row">
+                <span class="calc-feedback-label">This covers part of installment ${nextPaymentInfo.installmentNumber || ''}</span>
+              </div>
+              <div class="calc-feedback-row">
+                <span class="calc-feedback-label">Remaining for this installment: </span>
+                <span class="calc-feedback-value">${formatCurrency2(nextDueCents - amountEnteredCents)}</span>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      feedbackBox.innerHTML = feedbackHTML;
+      feedbackBox.classList.remove('hidden');
+    }
+
+    /**
+     * Submit repayment from modal
+     */
+    async function submitRepaymentFromModal() {
+      const amountInput = document.getElementById('modal-payment-amount');
+      const methodSelect = document.getElementById('modal-payment-method');
+      const proofInput = document.getElementById('modal-payment-proof');
+      const noteInput = document.getElementById('modal-payment-note');
+      const statusEl = document.getElementById('modal-payment-status');
+      const submitBtn = document.getElementById('modal-submit-btn');
+
+      const amountEuro = parseFloat(amountInput.value);
+      const method = methodSelect.value;
+      const note = noteInput.value.trim();
+
+      // Validation
+      if (!amountEuro || amountEuro <= 0) {
+        statusEl.textContent = 'Please enter a valid amount.';
+        statusEl.className = 'status error';
+        return;
+      }
+
+      if (!method) {
+        statusEl.textContent = 'Please select a payment method.';
+        statusEl.className = 'status error';
+        return;
+      }
+
+      if (agreement.proof_required && !proofInput.files[0]) {
+        statusEl.textContent = 'Proof of repayment is required.';
+        statusEl.className = 'status error';
+        return;
+      }
+
+      // Disable submit button
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+      statusEl.textContent = 'Submitting repayment...';
+      statusEl.className = 'status';
+
+      try {
+        const formData = new FormData();
+        formData.append('amount_euro', amountEuro);
+        formData.append('method', method);
+        if (note) formData.append('note', note);
+        if (proofInput.files[0]) formData.append('proof', proofInput.files[0]);
+
+        const res = await fetch(`/api/agreements/${agreementId}/payments`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to record payment');
+        }
+
+        statusEl.textContent = 'Repayment reported successfully!';
+        statusEl.className = 'status success';
+
+        // Close modal and reload data
+        setTimeout(() => {
+          closeReportRepaymentModal();
+          window.location.reload();
+        }, 1500);
+
+      } catch (err) {
+        console.error('Error submitting repayment:', err);
+        statusEl.textContent = err.message || 'Failed to submit repayment. Please try again.';
+        statusEl.className = 'status error';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Report repayment';
+      }
+    }
+
+    /**
+     * Display upcoming payments (for installment loans)
+     */
+    function displayUpcomingPayments() {
+      const upcomingList = document.getElementById('upcoming-payments-list');
+      const isBorrower = agreement.borrower_user_id === currentUser.id;
+
+      if (agreement.repayment_type !== 'installments' || !paymentSchedule || !isBorrower) {
+        upcomingList.innerHTML = '<p style="color:var(--muted); font-size:14px">No upcoming payments.</p>';
+        return;
+      }
+
+      // Calculate total paid so far
+      const totalPaidCents = allPayments
+        .filter(p => p.status === 'approved')
+        .reduce((sum, p) => sum + p.amount_cents, 0);
+
+      let cumulativePaid = totalPaidCents;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let upcomingHTML = '';
+
+      for (let i = 0; i < paymentSchedule.rows.length; i++) {
+        const installment = paymentSchedule.rows[i];
+        const installmentDate = new Date(installment.dateISO);
+        installmentDate.setHours(0, 0, 0, 0);
+
+        if (cumulativePaid >= installment.paymentCents) {
+          // This installment is fully paid
+          cumulativePaid -= installment.paymentCents;
+          continue;
+        }
+
+        // Determine status
+        const amountRemaining = installment.paymentCents - cumulativePaid;
+        const isOverdue = installmentDate < today;
+        const isDueSoon = !isOverdue && installmentDate <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+        let statusBadge = '';
+        let itemClass = 'upcoming-payment-item';
+
+        if (isOverdue) {
+          statusBadge = '<span class="upcoming-payment-status overdue">Overdue</span>';
+          itemClass += ' overdue';
+        } else if (isDueSoon) {
+          statusBadge = '<span class="upcoming-payment-status due">Due soon</span>';
+        } else {
+          statusBadge = '<span class="upcoming-payment-status upcoming">Upcoming</span>';
+        }
+
+        const dateStr = installmentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        upcomingHTML += `
+          <div class="${itemClass}">
+            <div class="upcoming-payment-left">
+              <div class="upcoming-payment-number">Installment ${i + 1} of ${paymentSchedule.rows.length}</div>
+              <div class="upcoming-payment-amount">${formatCurrency2(amountRemaining)}</div>
+              <div class="upcoming-payment-date">Due: ${dateStr}</div>
+            </div>
+            <div>
+              ${statusBadge}
+            </div>
+          </div>
+        `;
+
+        cumulativePaid = 0; // Only show unpaid installments
+      }
+
+      if (upcomingHTML === '') {
+        upcomingList.innerHTML = '<p style="color:var(--muted); font-size:14px">All installments paid! 🎉</p>';
+      } else {
+        upcomingList.innerHTML = upcomingHTML;
+      }
+    }
+
+    // ============================================
+    // END BORROWER REPAYMENT FLOW FUNCTIONS
+    // ============================================
 
     async function loadAgreementData() {
       try {
@@ -1688,6 +2266,8 @@
     // Payment functions
     async function loadPaymentData() {
       try {
+        const isBorrower = agreement.borrower_user_id === currentUser.id;
+
         // Show payment summary
         document.getElementById('payment-summary').classList.remove('hidden');
         document.getElementById('original-amount').textContent = formatCurrency2(agreement.amount_cents);
@@ -1697,13 +2277,50 @@
         // Load payment history
         const res = await fetch(`/api/agreements/${agreementId}/payments`);
         if (res.ok) {
-          const payments = await res.json();
-          displayPayments(payments);
+          allPayments = await res.json(); // Store globally
+          displayPayments(allPayments);
         }
 
-        // Show "Record payment" button for active agreements
+        // Build payment schedule for installment loans
+        if (agreement.repayment_type === 'installments' && agreement.money_sent_date) {
+          const dateResult = generatePaymentDates({
+            transferDate: agreement.money_sent_date,
+            firstDueDate: agreement.first_payment_date,
+            frequency: agreement.payment_frequency,
+            count: agreement.installment_count
+          });
+
+          paymentSchedule = buildRepaymentSchedule({
+            principalCents: agreement.amount_cents,
+            aprPercent: agreement.interest_rate || 0,
+            count: agreement.installment_count,
+            paymentDates: dateResult.paymentDates,
+            startDate: agreement.money_sent_date
+          });
+
+          // Display upcoming payments for borrowers
+          if (isBorrower) {
+            displayUpcomingPayments();
+
+            // Show tabs for installment loans
+            document.getElementById('payment-tabs').classList.remove('hidden');
+          }
+        }
+
+        // Display next payment card for borrowers
+        if (agreement.status === 'active' && isBorrower) {
+          displayNextPaymentCard();
+        }
+
+        // Show "Record payment" button for active agreements (fallback for lenders)
         if (agreement.status === 'active') {
-          addRecordPaymentButton();
+          if (isBorrower) {
+            // Borrowers use the next payment card instead
+            document.getElementById('payment-action-section').classList.add('hidden');
+          } else {
+            // Lenders use the traditional button
+            addRecordPaymentButton();
+          }
         }
       } catch (err) {
         console.error('Error loading payment data:', err);
