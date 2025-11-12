@@ -7,10 +7,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- Shared control styles -->
   <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- App-wide styles -->
+  <link rel="stylesheet" href="/css/app.css" />
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
   <!-- Centralized currency formatters -->
   <script src="/js/formatters.js"></script>
+  <!-- Derived field utilities -->
+  <script src="/js/derived-fields.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -178,8 +182,8 @@
     <!-- Page top bar (for manage/view mode) -->
     <div id="page-topbar-container"></div>
 
-    <!-- My Agreements section -->
-    <section class="card" id="list-section">
+    <!-- My Agreements section (hidden by default when viewing specific agreement) -->
+    <section class="card hidden" id="list-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
         <h2 style="margin:0">My Agreements</h2>
       </div>
@@ -215,7 +219,7 @@
       </div>
     </section>
 
-    <div class="card hidden" id="loading-card">
+    <div class="card" id="loading-card">
       <h1 id="page-title">Agreement Details</h1>
       <p id="loading-text">Loading agreement details...</p>
     </div>
@@ -889,15 +893,15 @@
         document.getElementById('money-sent-row').style.display = 'none';
       }
 
-      // Loan duration (show if available)
-      if (agreement.plan_length && agreement.plan_unit) {
-        const unitLabel = agreement.plan_unit === 'days' ? (agreement.plan_length === 1 ? 'day' : 'days') :
-                          agreement.plan_unit === 'weeks' ? (agreement.plan_length === 1 ? 'week' : 'weeks') :
-                          agreement.plan_unit === 'months' ? (agreement.plan_length === 1 ? 'month' : 'months') :
-                          agreement.plan_unit === 'years' ? (agreement.plan_length === 1 ? 'year' : 'years') :
-                          agreement.plan_unit;
-        document.getElementById('loan-duration-display').textContent = `${agreement.plan_length} ${unitLabel}`;
+      // Loan duration (show if available) - using helper function
+      const loanDurationLabel = getLoanDurationLabel(agreement);
+      if (loanDurationLabel) {
+        document.getElementById('loan-duration-display').textContent = loanDurationLabel;
         document.getElementById('loan-duration-row').style.display = 'flex';
+      } else {
+        document.getElementById('loan-duration-row').style.display = 'none';
+      }
+
       // Repayment type
       const repaymentTypeText = repaymentType === 'installments' ? 'Installments' : 'One-time payment';
       document.getElementById('repayment-type-display').textContent = repaymentTypeText;
@@ -972,18 +976,9 @@
         document.getElementById('installment-count-display').textContent = agreement.installment_count;
         document.getElementById('installment-count-row').style.display = 'flex';
 
-        // Payment frequency
+        // Payment frequency - using helper function
         const frequency = agreement.payment_frequency || 'monthly';
-        let frequencyText = frequency;
-        if (frequency === 'weekly') frequencyText = 'Weekly';
-        else if (frequency === 'biweekly') frequencyText = 'Every 2 weeks';
-        else if (frequency === 'monthly') frequencyText = 'Monthly';
-        else if (frequency === 'quarterly') frequencyText = 'Every 3 months';
-        else if (frequency === 'yearly') frequencyText = 'Yearly';
-        else if (frequency.startsWith('every_')) {
-          const days = frequency.replace('every_', '').replace('_days', '');
-          frequencyText = `Every ${days} days`;
-        }
+        const frequencyText = formatRepaymentFrequency(frequency);
         document.getElementById('payment-frequency-display').textContent = frequencyText;
         document.getElementById('payment-frequency-row').style.display = 'flex';
 
@@ -1146,9 +1141,10 @@
         addTerm('Installment plan', planText);
       }
 
-      // Loan duration
-      if (agreement.loan_duration_label) {
-        addTerm('Loan duration', agreement.loan_duration_label);
+      // Loan duration - using helper function
+      const loanDurationLabelForModal = getLoanDurationLabel(agreement);
+      if (loanDurationLabelForModal) {
+        addTerm('Loan duration', loanDurationLabelForModal);
       }
 
       // Interest rate
@@ -2451,11 +2447,16 @@
     // Create initializePage wrapper for DOMContentLoaded
     function initializePage() {
       if (!agreementId) {
-        showError('Invalid agreement ID.');
-      } else {
-        // Load both the specific agreement and all agreements
-        loadAgreementData();
+        // No agreement ID - show list section
+        document.getElementById('list-section').classList.remove('hidden');
+        document.getElementById('loading-card').classList.add('hidden');
         loadAllAgreements();
+      } else {
+        // Has agreement ID - hide list section immediately and show loading
+        document.getElementById('list-section').classList.add('hidden');
+        document.getElementById('loading-card').classList.remove('hidden');
+        // Load the specific agreement
+        loadAgreementData();
       }
     }
   </script>

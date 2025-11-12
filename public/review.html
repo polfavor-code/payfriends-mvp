@@ -6,10 +6,14 @@
   <title>PayFriends — Review Agreement</title>
   <!-- Shared control styles -->
   <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- App-wide styles -->
+  <link rel="stylesheet" href="/css/app.css" />
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
   <!-- Centralized currency formatters -->
   <script src="/js/formatters.js"></script>
+  <!-- Derived field utilities -->
+  <script src="/js/derived-fields.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -504,42 +508,8 @@
       // (7) Amount
       document.getElementById('amount-display').textContent = formatEuro2(principalEuros);
 
-      // (8) Loan duration
-      let loanDurationText = '—';
-      if (agreement.repayment_type === 'installments' && agreement.installment_count) {
-        const totalDays = daysBetween(agreement.first_payment_date, agreement.final_due_date);
-        const intervalDays = totalDays / agreement.installment_count;
-
-        if (intervalDays < 14) {
-          const days = Math.round(totalDays);
-          loanDurationText = `${days} day${days === 1 ? '' : 's'}`;
-        } else if (intervalDays < 60) {
-          const weeks = Math.round(totalDays / 7);
-          loanDurationText = `${weeks} week${weeks === 1 ? '' : 's'}`;
-        } else if (intervalDays < 730) {
-          const months = Math.round(totalDays / 30);
-          loanDurationText = `${months} month${months === 1 ? '' : 's'}`;
-        } else {
-          const years = Math.round(totalDays / 365);
-          loanDurationText = `${years} year${years === 1 ? '' : 's'}`;
-        }
-      } else if (agreement.repayment_type === 'one_time' && agreement.money_sent_date && agreement.due_date) {
-        const startDate = agreement.money_sent_date === 'on-acceptance' ? new Date() : new Date(agreement.money_sent_date);
-        const totalDays = daysBetween(startDate, agreement.due_date);
-
-        if (totalDays < 14) {
-          loanDurationText = `${totalDays} day${totalDays === 1 ? '' : 's'}`;
-        } else if (totalDays < 60) {
-          const weeks = Math.round(totalDays / 7);
-          loanDurationText = `${weeks} week${weeks === 1 ? '' : 's'}`;
-        } else if (totalDays < 730) {
-          const months = Math.round(totalDays / 30);
-          loanDurationText = `${months} month${months === 1 ? '' : 's'}`;
-        } else {
-          const years = Math.round(totalDays / 365);
-          loanDurationText = `${years} year${years === 1 ? '' : 's'}`;
-        }
-      }
+      // (8) Loan duration - using helper function
+      const loanDurationText = getLoanDurationLabel(agreement) || '—';
       document.getElementById('loan-duration-display').textContent = loanDurationText;
 
       // Show interest calculation card with schedule if interest > 0
@@ -787,7 +757,7 @@
       // Installment plan (only for installments)
       if (agreement.repayment_type === 'installments' && (agreement.number_of_installments || agreement.installment_count)) {
         const numInstallments = agreement.number_of_installments || agreement.installment_count;
-        const freqLabel = agreement.payment_frequency_label || 'monthly';
+        const freqLabel = formatRepaymentFrequency(agreement.payment_frequency || agreement.payment_frequency_label || 'monthly');
         const installmentAmt = formatEuro2(agreement.installment_amount || (principalEuros / numInstallments));
         const firstDate = formatISOToHuman(agreement.first_payment_date);
         const finalDate = formatISOToHuman(agreement.final_due_date);
@@ -795,9 +765,10 @@
         addTerm('Installment plan', planText);
       }
 
-      // Loan duration
-      if (agreement.loan_duration_label) {
-        addTerm('Loan duration', agreement.loan_duration_label);
+      // Loan duration - using helper function
+      const loanDurationLabelForModal = getLoanDurationLabel(agreement);
+      if (loanDurationLabelForModal) {
+        addTerm('Loan duration', loanDurationLabelForModal);
       }
 
       // Interest rate
