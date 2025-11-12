@@ -9,9 +9,12 @@
  * @param {string} options.title - Main title (e.g., "Manage agreement")
  * @param {string} [options.subtitle] - Optional subtitle (e.g., "For new bicycle — Bob")
  * @param {string} [options.href="/app"] - Return link destination
+ * @param {Object} [options.statusBadge] - Optional status badge config
+ * @param {string} [options.statusBadge.text] - Badge text
+ * @param {string} [options.statusBadge.className] - Badge CSS classes
  * @returns {HTMLElement} The top bar container element
  */
-export function renderPageTopbar({ title, subtitle, href = "/app" }) {
+export function renderPageTopbar({ title, subtitle, href = "/app", statusBadge }) {
   const container = document.createElement("div");
   container.className = "page-topbar-container";
   container.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 24px 0; margin-bottom: 16px;";
@@ -20,10 +23,30 @@ export function renderPageTopbar({ title, subtitle, href = "/app" }) {
   const left = document.createElement("div");
   left.style.cssText = "flex: 1;";
 
+  // Title row with optional badge
+  const titleRow = document.createElement("div");
+  titleRow.style.cssText = "display: flex; align-items: center; gap: 12px; margin: 0 0 8px 0;";
+
   const titleEl = document.createElement("h1");
   titleEl.textContent = title;
-  titleEl.style.cssText = "margin: 0 0 8px 0; font-size: 24px; font-weight: 600; color: var(--text);";
-  left.appendChild(titleEl);
+  titleEl.style.cssText = "margin: 0; font-size: 24px; font-weight: 600; color: var(--text);";
+  titleRow.appendChild(titleEl);
+
+  // Add status badge if provided
+  if (statusBadge && statusBadge.text) {
+    const badge = document.createElement("span");
+    badge.textContent = statusBadge.text;
+    // Use inline style if provided, otherwise fall back to className
+    if (statusBadge.style) {
+      badge.style.cssText = statusBadge.style;
+    } else if (statusBadge.className) {
+      badge.className = statusBadge.className;
+      badge.style.cssText = "font-size: 12px; font-weight: 500; padding: 4px 10px; height: 24px; border-radius: 6px; display: inline-flex; align-items: center;";
+    }
+    titleRow.appendChild(badge);
+  }
+
+  left.appendChild(titleRow);
 
   if (subtitle) {
     const subtitleEl = document.createElement("div");
