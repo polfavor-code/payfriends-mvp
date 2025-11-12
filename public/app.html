@@ -492,7 +492,7 @@
 
         <div class="row">
           <label>Loan amount (€)</label>
-          <input id="amount" type="text" placeholder="e.g. 6.000" required onblur="formatAmountInput(); validateAmountField();" onfocus="unformatAmountInput()" oninput="updateOneTimeEstimate()" />
+          <input id="amount" type="text" placeholder="e.g. 6.000" required onblur="formatAmountInput(); validateAmountField();" onfocus="unformatAmountInput()" oninput="updateLoanEstimates()" />
         </div>
         <p style="color:var(--muted); font-size:12px; margin:6px 0 4px 172px">Enter the amount in euros.</p>
         <p id="amount-error" class="hidden" style="color:#f87171; font-size:13px; margin:0 0 16px 172px"></p>
@@ -1666,6 +1666,22 @@
 
       document.getElementById('one-time-estimate').textContent =
         `1 payment of about €${amountFormatted} on ${dateFormatted}, excluding interest.`;
+    }
+
+    // Wrapper function to update loan estimates based on current repayment type
+    function updateLoanEstimates() {
+      const repaymentTypeInput = document.querySelector('input[name="repayment-type"]:checked');
+
+      // If no repayment type selected yet, default to one-time
+      const repaymentType = repaymentTypeInput ? repaymentTypeInput.value : 'one_time';
+
+      if (repaymentType === 'installments') {
+        // Update installment summary when in installments mode
+        calculateInstallments();
+      } else {
+        // Update one-time estimate when in one-time mode
+        updateOneTimeEstimate();
+      }
     }
 
     // Helper function to add months while keeping day-of-month (or last valid day)
