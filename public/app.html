@@ -4,12 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — My Agreements</title>
-  <!-- intl-tel-input library -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/css/intlTelInput.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/intlTelInput.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
+  <!-- Phone input component -->
+  <script src="/js/phone-input.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -154,108 +153,131 @@
     .toggle-switch input:disabled + .toggle-slider{opacity:0.5;cursor:not-allowed}
     .reminder-option-active{background:rgba(61,220,151,0.05) !important;border:1px solid rgba(61,220,151,0.15) !important;border-radius:12px !important}
 
-    /* intl-tel-input custom dark theme styling - scoped with .pf-phone-input wrapper */
-    .pf-phone-input .iti{width:100%}
+    /* Custom Phone Input Widget */
+    .phone-input-wrapper{position:relative}
+    .phone-input-row{display:flex;gap:8px;align-items:stretch}
 
-    /* Input field */
-    .pf-phone-input .iti__input{
-      width:100%;
-      padding:10px 12px 10px 52px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,0.08);
+    /* Country button */
+    .phone-country-button{
+      display:flex;align-items:center;gap:8px;
+      padding:0 12px;
       background:#10151d;
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:10px;
       color:var(--text);
-      font-family:system-ui, -apple-system, sans-serif;
       font-size:15px;
+      cursor:pointer;
+      transition:all 0.2s;
+      white-space:nowrap;
+      min-width:180px;
+    }
+    .phone-country-button:hover,
+    .phone-country-button:focus{
+      border-color:rgba(61,220,151,0.4);
+      outline:none;
+    }
+    .phone-country-flag{font-size:18px}
+    .phone-country-name{flex:1}
+    .phone-caret{font-size:10px;color:var(--muted)}
+
+    /* Prefix display */
+    .phone-prefix{
+      display:flex;align-items:center;
+      padding:0 12px;
+      background:#10151d;
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:10px;
+      color:var(--muted);
+      font-size:15px;
+      min-width:60px;
+      justify-content:center;
     }
 
-    /* Flag container */
-    .pf-phone-input .iti__flag-container{
-      background:#111;
-      border-right:1px solid rgba(255,255,255,0.06);
-      border-radius:10px 0 0 10px;
+    /* Local number input */
+    .phone-number-input{
+      flex:1;
+      padding:12px;
+      background:#10151d;
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:10px;
+      color:var(--text);
+      font-size:15px;
+      font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
     }
-    .pf-phone-input .iti__selected-flag{
-      padding:0 10px;
-      background:transparent;
-    }
-
-    /* Dropdown container */
-    .pf-phone-input .iti__dropdown,
-    .pf-phone-input .iti__country-list{
-      background-color:#1a1a1a !important;
-      border:1px solid rgba(255,255,255,0.15) !important;
-      color:#f3f3f3 !important;
-      box-shadow:0 4px 16px rgba(0, 0, 0, 0.4);
-      border-radius:8px !important;
-      width:100%;
-      max-height:260px;
-      padding-top:4px;
-      padding-bottom:4px;
-      overflow-y:auto;
-      z-index:1000;
-      margin-top:4px;
-    }
-
-    /* Search input */
-    .pf-phone-input .iti__search-input{
-      background-color:#111 !important;
-      color:#f3f3f3 !important;
-      border:1px solid rgba(255,255,255,0.1) !important;
-      border-radius:8px !important;
-      padding:10px 12px !important;
-      font-size:15px !important;
-      font-family:system-ui, sans-serif !important;
-      margin:6px 10px 8px;
-      width:calc(100% - 20px);
-    }
-    .pf-phone-input .iti__search-input::placeholder{
-      color:rgba(255,255,255,0.5) !important;
-    }
-    .pf-phone-input .iti__search-input:focus{
+    .phone-number-input:focus{
       outline:none;
       border-color:rgba(61,220,151,0.4);
     }
+    .phone-number-input.phone-input-invalid{
+      border-color:#ff6b6b;
+    }
 
-    /* Country rows */
-    .pf-phone-input .iti__country{
-      padding:7px 12px;
+    /* Hidden full number field */
+    .phone-number-full{display:none}
+
+    /* Dropdown */
+    .phone-dropdown{
+      display:none;
+      position:absolute;
+      top:100%;
+      left:0;
+      right:0;
+      margin-top:4px;
+      background:#151a21;
+      border:1px solid rgba(255,255,255,0.15);
+      border-radius:10px;
+      box-shadow:0 4px 16px rgba(0,0,0,0.4);
+      z-index:1000;
+      max-height:320px;
+      overflow:hidden;
+    }
+
+    /* Dropdown search */
+    .phone-dropdown-search{
+      width:calc(100% - 24px);
+      margin:12px;
+      padding:10px 12px;
+      background:#10151d;
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:8px;
+      color:var(--text);
+      font-size:15px;
+      font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+    }
+    .phone-dropdown-search:focus{
+      outline:none;
+      border-color:rgba(61,220,151,0.4);
+    }
+    .phone-dropdown-search::placeholder{
+      color:var(--muted);
+    }
+
+    /* Country list */
+    .phone-country-list{
+      max-height:220px;
+      overflow-y:auto;
+      padding:4px 0;
+    }
+    .phone-country-list::-webkit-scrollbar{width:6px}
+    .phone-country-list::-webkit-scrollbar-thumb{background-color:#333;border-radius:4px}
+
+    /* Country item */
+    .phone-country-item{
       display:flex;
       align-items:center;
-      gap:8px;
-      font-size:14px;
-      color:#f3f3f3;
-      border-left:3px solid transparent;
-      transition:all 0.1s ease;
-    }
-
-    /* Hover and keyboard focus (highlight) */
-    .pf-phone-input .iti__country.iti__highlight{
-      background-color:rgba(61,220,151,0.08) !important;
-      border-left:3px solid #3ddc97 !important;
+      gap:10px;
+      padding:10px 16px;
       cursor:pointer;
+      transition:all 0.15s;
+      border-left:3px solid transparent;
     }
-
-    /* Currently selected/active entry */
-    .pf-phone-input .iti__country.iti__active{
-      background:rgba(61,220,151,0.06);
+    .phone-country-item:hover{
+      background:rgba(61,220,151,0.08);
+      border-left-color:var(--accent);
     }
-
-    /* Text colors */
-    .pf-phone-input .iti__dial-code{color:rgba(255,255,255,0.6)}
-    .pf-phone-input .iti__country-name{color:#f3f3f3}
-
-    /* Divider */
-    .pf-phone-input .iti__divider{border-bottom:1px solid rgba(255,255,255,0.08)}
-
-    /* Custom scrollbar */
-    .pf-phone-input .iti__country-list::-webkit-scrollbar{
-      width:6px;
-    }
-    .pf-phone-input .iti__country-list::-webkit-scrollbar-thumb{
-      background-color:#333;
-      border-radius:4px;
-    }
+    .phone-country-item .phone-country-flag{font-size:18px}
+    .phone-country-item .phone-country-name{flex:1;color:var(--text);font-size:14px}
+    .phone-country-item .phone-country-dial{color:var(--muted);font-size:14px}
 
     /* Phone error message */
     .phone-error{color:#ff6b6b;font-size:13px;margin-top:4px;display:none}
@@ -393,9 +415,20 @@
           </div>
           <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">They'll receive a link to review the agreement.</p>
 
-          <div class="row pf-phone-input">
+          <div class="row">
             <label>Phone number*</label>
-            <input id="agreement-phone" type="tel" required />
+            <div class="phone-input-wrapper" data-phone-id="agreement-phone">
+              <div class="phone-input-row">
+                <button type="button" class="phone-country-button"></button>
+                <span class="phone-prefix"></span>
+                <input type="tel" class="phone-number-input" placeholder="612345678" />
+                <input type="hidden" id="agreement-phone" name="agreement-phone" class="phone-number-full" />
+              </div>
+              <div class="phone-dropdown">
+                <input type="text" class="phone-dropdown-search" placeholder="Search country or code…" />
+                <div class="phone-country-list"></div>
+              </div>
+            </div>
             <div id="agreement-phone-error" class="phone-error">Please enter a valid phone number.</div>
           </div>
           <p style="color:rgba(255,255,255,0.5); font-size:13px; margin:-6px 0 12px 172px">Your phone number is required to send reminder messages.</p>
@@ -1307,12 +1340,17 @@
         return false;
       }
 
-      // Validate phone number using intl-tel-input
-      if (!agreementPhoneInput.isValidNumber()) {
+      // Validate phone number
+      if (!agreementPhoneInput || !agreementPhoneInput.isValidNumber()) {
         phoneError.style.display = 'block';
+        if (agreementPhoneInput) {
+          agreementPhoneInput.setInvalid(true);
+        }
         status.textContent = 'Please fix the errors above';
         return false;
       }
+      // Clear invalid state if valid
+      agreementPhoneInput.setInvalid(false);
 
       if (!description) {
         status.textContent = 'Please enter loan description';
@@ -3418,21 +3456,9 @@
         onActivityClick: toggleActivity
       });
 
-      // Initialize phone input
-      const phoneInput = document.querySelector("#agreement-phone");
-      agreementPhoneInput = window.intlTelInput(phoneInput, {
-        initialCountry: "auto",
-        geoIpLookup: callback => {
-          fetch('https://ipapi.co/json')
-            .then(res => res.json())
-            .then(data => callback(data.country_code))
-            .catch(() => callback('es'));
-        },
-        nationalMode: false,
-        formatOnDisplay: true,
-        separateDialCode: false,
-        utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.4/build/js/utils.js"
-      });
+      // Phone input is auto-initialized by PhoneInputManager
+      // Get reference to the instance
+      agreementPhoneInput = window.PhoneInputManager.getInstance('agreement-phone');
 
       // Load user and other data
       loadUser();
