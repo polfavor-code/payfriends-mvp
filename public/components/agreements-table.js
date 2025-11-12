@@ -3,10 +3,9 @@
  * Single-source component for rendering "My Agreements" table across all pages
  */
 
-// Shared utility functions
-function formatAmount(cents) {
-  return (Math.round(cents || 0) / 100).toFixed(2);
-}
+// Note: Currency formatters are loaded from /js/formatters.js
+// formatCurrency0() - for compact displays (no decimals, nl-NL locale)
+// formatCurrency2() - for detailed displays (2 decimals, nl-NL locale)
 
 function getInitials(name) {
   if (!name) return '?';
@@ -264,10 +263,11 @@ function renderAgreementsTable(agreements, currentUser, currentFilter = 'all', c
     const description = agreement.description || '<span style="color:var(--muted); font-style:italic">(No description)</span>';
 
     // Calculate outstanding amount with original amount tooltip
+    // Use formatCurrency0 for compact display (no decimals, nl-NL locale: € 3.000)
     const outstandingCents = agreement.outstanding_cents || agreement.amount_cents;
-    const outstanding = formatAmount(outstandingCents);
-    const originalAmount = formatAmount(agreement.amount_cents);
-    const outstandingDisplay = `<span title="Original: € ${originalAmount}">€ ${outstanding} / € ${originalAmount}</span>`;
+    const outstanding = formatCurrency0(outstandingCents);
+    const originalAmount = formatCurrency0(agreement.amount_cents);
+    const outstandingDisplay = `<span title="Original: ${originalAmount}">${outstanding} / ${originalAmount}</span>`;
 
     // Format due date with countdown
     const dueDateDisplay = formatDueDate(agreement, isLender);
