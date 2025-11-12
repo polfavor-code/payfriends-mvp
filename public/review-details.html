@@ -430,6 +430,17 @@
         </div>
       </div>
 
+      <!-- Repayment details & reminders (collapsible) -->
+      <div id="payments-reminders-card" class="hidden" style="margin:16px 0">
+        <button onclick="toggleReviewSection('payments-reminders-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+          <span>Repayment details & reminders</span>
+          <span id="payments-reminders-detail-toggle">▼</span>
+        </button>
+        <div id="payments-reminders-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <div id="payments-reminders-detail-content"></div>
+        </div>
+      </div>
+
       <!-- Fairness Between Friends (collapsible) -->
       <div id="fairness-card" style="margin:16px 0">
         <button onclick="toggleReviewSection('fairness-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
@@ -450,17 +461,6 @@
             Each repayment entry in the payment history clearly notes when a payment caused a change in the total interest, outstanding balance, or future installments.
             This ensures both parties always see the current, fair value of the loan.
           </p>
-        </div>
-      </div>
-
-      <!-- Repayment details & reminders (collapsible) -->
-      <div id="payments-reminders-card" class="hidden" style="margin:16px 0">
-        <button onclick="toggleReviewSection('payments-reminders-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-          <span>Repayment details & reminders</span>
-          <span id="payments-reminders-detail-toggle">▼</span>
-        </button>
-        <div id="payments-reminders-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
-          <div id="payments-reminders-detail-content"></div>
         </div>
       </div>
 
