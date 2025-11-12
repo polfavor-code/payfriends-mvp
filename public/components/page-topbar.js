@@ -23,16 +23,23 @@ export function renderPageTopbar({ title, subtitle, href = "/app", statusBadge }
   const left = document.createElement("div");
   left.style.cssText = "flex: 1;";
 
-  // Title row with optional badge
-  const titleRow = document.createElement("div");
-  titleRow.style.cssText = "display: flex; align-items: center; gap: 12px; margin: 0 0 8px 0;";
-
   const titleEl = document.createElement("h1");
   titleEl.textContent = title;
-  titleEl.style.cssText = "margin: 0; font-size: 24px; font-weight: 600; color: var(--text);";
-  titleRow.appendChild(titleEl);
+  titleEl.style.cssText = "margin: 0 0 8px 0; font-size: 24px; font-weight: 600; color: var(--text);";
+  left.appendChild(titleEl);
 
-  // Add status badge if provided
+  if (subtitle) {
+    const subtitleEl = document.createElement("div");
+    subtitleEl.textContent = subtitle;
+    subtitleEl.style.cssText = "margin: 0; font-size: 16px; color: var(--muted);";
+    left.appendChild(subtitleEl);
+  }
+
+  // Right side: Status badge and Return button
+  const right = document.createElement("div");
+  right.style.cssText = "display: flex; align-items: center; gap: 16px;";
+
+  // Add status badge on the right if provided
   if (statusBadge && statusBadge.text) {
     const badge = document.createElement("span");
     badge.textContent = statusBadge.text;
@@ -43,23 +50,14 @@ export function renderPageTopbar({ title, subtitle, href = "/app", statusBadge }
       badge.className = statusBadge.className;
       badge.style.cssText = "font-size: 12px; font-weight: 500; padding: 4px 10px; height: 24px; border-radius: 6px; display: inline-flex; align-items: center;";
     }
-    titleRow.appendChild(badge);
+    right.appendChild(badge);
   }
 
-  left.appendChild(titleRow);
-
-  if (subtitle) {
-    const subtitleEl = document.createElement("div");
-    subtitleEl.textContent = subtitle;
-    subtitleEl.style.cssText = "margin: 0; font-size: 16px; color: var(--muted);";
-    left.appendChild(subtitleEl);
-  }
-
-  // Right side: Return button
-  const right = document.createElement("a");
-  right.href = href;
-  right.className = "return-button";
-  right.style.cssText = `
+  // Return button
+  const returnButton = document.createElement("a");
+  returnButton.href = href;
+  returnButton.className = "return-button";
+  returnButton.style.cssText = `
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -89,16 +87,18 @@ export function renderPageTopbar({ title, subtitle, href = "/app", statusBadge }
   const text = document.createElement("span");
   text.textContent = "Return to My agreements";
 
-  right.appendChild(icon);
-  right.appendChild(text);
+  returnButton.appendChild(icon);
+  returnButton.appendChild(text);
 
   // Hover effect
-  right.addEventListener("mouseenter", () => {
-    right.style.filter = "brightness(1.06)";
+  returnButton.addEventListener("mouseenter", () => {
+    returnButton.style.filter = "brightness(1.06)";
   });
-  right.addEventListener("mouseleave", () => {
-    right.style.filter = "brightness(1)";
+  returnButton.addEventListener("mouseleave", () => {
+    returnButton.style.filter = "brightness(1)";
   });
+
+  right.appendChild(returnButton);
 
   container.appendChild(left);
   container.appendChild(right);

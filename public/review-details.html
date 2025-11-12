@@ -29,7 +29,7 @@
     .detail-row{display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08)}
     .detail-row:last-child{border-bottom:none}
     .detail-label{color:var(--muted); font-weight:500}
-    .detail-value{color:var(--text); font-weight:600}
+    .detail-value{color:var(--text); font-weight:normal}
     button{padding:12px 20px; border-radius:10px; border:0; background:var(--accent); color:#0d130f; font-weight:700; cursor:pointer; font-size:14px; width:100%}
     button:hover{filter:brightness(1.06)}
     button.secondary{background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-top:8px}
@@ -256,11 +256,11 @@
       <!-- Details section -->
       <div style="margin:16px 0">
         <div class="detail-row">
-          <span class="detail-label">Lender</span>
+          <span class="detail-label">Lender name</span>
           <span class="detail-value" id="lender-name"></span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">Borrower</span>
+          <span class="detail-label">Borrower name</span>
           <span class="detail-value" id="borrower-name"></span>
         </div>
         <div class="detail-row" id="description-row">
@@ -272,32 +272,28 @@
           <span class="detail-value" id="amount-display"></span>
         </div>
         <div class="detail-row" id="money-sent-row" style="display:none">
-          <span class="detail-label">Money transfer date</span>
+          <span class="detail-label">Money transfer date (loan start date)</span>
           <span class="detail-value" id="money-sent-display"></span>
         </div>
         <div class="detail-row" id="loan-duration-row" style="display:none">
           <span class="detail-label">Loan duration</span>
           <span class="detail-value" id="loan-duration-display"></span>
         </div>
+        <div class="detail-row" id="repayment-type-row" style="display:none">
+          <span class="detail-label">Repayment type</span>
+          <span class="detail-value" id="repayment-type-display"></span>
+        </div>
+        <div class="detail-row" id="installment-plan-row" style="display:none">
+          <span class="detail-label">Installment plan</span>
+          <span class="detail-value" id="installment-plan-display"></span>
+        </div>
         <div class="detail-row" id="interest-rate-row" style="display:none">
           <span class="detail-label">Interest rate</span>
           <span class="detail-value" id="interest-rate-display"></span>
         </div>
-        <div class="detail-row" id="total-interest-row" style="display:none">
-          <span class="detail-label">Total interest</span>
-          <span class="detail-value" id="total-interest-display"></span>
-        </div>
         <div class="detail-row" id="total-repay-row" style="display:none">
           <span class="detail-label">Total to repay</span>
           <span class="detail-value" id="total-repay-display"></span>
-        </div>
-
-        <!-- Spacer before repayment type section -->
-        <div id="repayment-type-spacer" style="height:16px; display:none"></div>
-
-        <div class="detail-row" id="repayment-type-row">
-          <span class="detail-label">Repayment type</span>
-          <span class="detail-value" id="repayment-type-display"></span>
         </div>
         <div class="detail-row" id="installment-count-row" style="display:none">
           <span class="detail-label">Number of payment installments</span>
@@ -318,6 +314,14 @@
             <span id="final-due-countdown" style="color:var(--muted); margin-left:8px"></span>
           </span>
         </div>
+
+        <!-- Spacer before one-time payment section (for one-time loans) -->
+        <div id="onetime-spacer-before" style="height:16px; display:none"></div>
+
+        <div class="detail-row" id="repayment-type-onetime-row" style="display:none">
+          <span class="detail-label">Repayment type</span>
+          <span class="detail-value" id="repayment-type-onetime-display"></span>
+        </div>
         <div class="detail-row" id="full-due-row" style="display:none">
           <span class="detail-label">Full repayment due date</span>
           <span class="detail-value">
@@ -326,8 +330,8 @@
           </span>
         </div>
 
-        <!-- Spacer before status section -->
-        <div id="status-spacer" style="height:16px; display:none"></div>
+        <!-- Spacer after one-time payment section -->
+        <div id="onetime-spacer-after" style="height:16px; display:none"></div>
 
         <div class="detail-row">
           <span class="detail-label">Status</span>
@@ -686,7 +690,9 @@
     }
 
     async function showReviewSection() {
+      // Hide loading card and clear loading text
       document.getElementById('loading-card').classList.add('hidden');
+      document.getElementById('loading-text').textContent = '';
       document.getElementById('details-section').classList.remove('hidden');
 
       // Hide My Agreements section when in review mode
@@ -738,7 +744,9 @@
     }
 
     async function showViewSection() {
+      // Hide loading card and clear loading text
       document.getElementById('loading-card').classList.add('hidden');
+      document.getElementById('loading-text').textContent = '';
       document.getElementById('details-section').classList.remove('hidden');
 
       // Hide My Agreements section when viewing a specific agreement
@@ -850,6 +858,7 @@
       // Determine repayment details
       const repaymentType = agreement.repayment_type || 'one_time';
       const hasInterest = agreement.interest_rate && agreement.interest_rate > 0;
+      const isInstallments = repaymentType === 'installments';
 
       // Generate human-readable summary line 1
       let summaryLine1 = '';
@@ -864,7 +873,7 @@
 
       // Generate human-readable summary line 2 (payment schedule)
       let summaryLine2 = '';
-      if (repaymentType === 'installments' && agreement.installment_count) {
+      if (isInstallments && agreement.installment_count) {
         const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
         const finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
         summaryLine2 = `${agreement.installment_count} monthly payments, from ${firstDate} to ${finalDate}.`;
@@ -901,12 +910,25 @@
       // Show summary section
       document.getElementById('summary-section').classList.remove('hidden');
 
-      // Populate details section
-      document.getElementById('amount-display').textContent = `€ ${amount}`;
+      // Populate details section in the order specified by the spec
+      // 1. Lender name
       document.getElementById('lender-name').textContent = lenderName;
+
+      // 2. Borrower name
       document.getElementById('borrower-name').textContent = borrowerName;
 
-      // Money transfer date (show if available)
+      // 3. Description (show if available)
+      if (agreement.description) {
+        document.getElementById('description-display').textContent = agreement.description;
+        document.getElementById('description-row').style.display = 'flex';
+      } else {
+        document.getElementById('description-row').style.display = 'none';
+      }
+
+      // 4. Amount
+      document.getElementById('amount-display').textContent = amount;
+
+      // 5. Money transfer date (show if available)
       if (agreement.money_sent_date) {
         let moneySentDateText;
         if (agreement.money_sent_date === 'on-acceptance') {
@@ -920,7 +942,7 @@
         document.getElementById('money-sent-row').style.display = 'none';
       }
 
-      // Loan duration (show if available) - using helper function
+      // 6. Loan duration (show if available) - using helper function
       const loanDurationLabel = getLoanDurationLabel(agreement);
       if (loanDurationLabel) {
         document.getElementById('loan-duration-display').textContent = loanDurationLabel;
@@ -929,117 +951,121 @@
         document.getElementById('loan-duration-row').style.display = 'none';
       }
 
-      // Repayment type
-      const repaymentTypeText = repaymentType === 'installments' ? 'Installments' : 'One-time payment';
-      document.getElementById('repayment-type-display').textContent = repaymentTypeText;
+      // Handle installment loans vs one-time payment differently
+      if (isInstallments && agreement.installment_count) {
+        // INSTALLMENTS PATH
+        // 7. Repayment type
+        document.getElementById('repayment-type-display').textContent = 'Installments';
+        document.getElementById('repayment-type-row').style.display = 'flex';
 
-      // Installment info (show only if installments)
-      if (repaymentType === 'installments' && agreement.installment_count) {
-        const freqLabel = agreement.payment_frequency_label || 'monthly';
+        // 8. Installment plan
+        const frequency = agreement.payment_frequency || 'monthly';
+        const frequencyText = formatRepaymentFrequency(frequency);
         const installmentAmount = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
         const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
         const finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
-        const installmentPlan = `${agreement.installment_count} ${freqLabel} payments of ${installmentAmount} from ${firstDate} to ${finalDate}`;
-        document.getElementById('installment-info-display').textContent = installmentPlan;
-        document.getElementById('installment-info-row').style.display = 'flex';
-      } else {
-        document.getElementById('installment-info-row').style.display = 'none';
-      }
+        const installmentPlan = `${agreement.installment_count} ${frequencyText.toLowerCase()} payments of ${installmentAmount} from ${firstDate} to ${finalDate}`;
+        document.getElementById('installment-plan-display').textContent = installmentPlan;
+        document.getElementById('installment-plan-row').style.display = 'flex';
 
-      // Due date (for one-time, this is the due date; for installments, this is the final due date)
-      const isInstallments = repaymentType === 'installments' && agreement.final_due_date;
-      const dueDate = isInstallments
-        ? new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-        : new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        // 9. Interest rate (with total interest if > 0)
+        if (hasInterest) {
+          const interestRate = agreement.interest_rate;
+          const totalInterestCents = Math.round((agreement.total_interest || 0) * 100);
+          const totalInterest = formatCurrency2(totalInterestCents);
+          document.getElementById('interest-rate-display').textContent = `${interestRate}% per year (total interest: ${totalInterest})`;
+          document.getElementById('interest-rate-row').style.display = 'flex';
+        } else {
+          document.getElementById('interest-rate-row').style.display = 'none';
+        }
 
-      // Update label text based on repayment type
-      document.getElementById('due-date-label').textContent = isInstallments ? 'Final due date' : 'Due date';
-      document.getElementById('due-date').textContent = dueDate;
+        // 10. Total to repay
+        if (hasInterest) {
+          const totalRepayCents = agreement.total_repay_amount
+            ? Math.round(agreement.total_repay_amount * 100)
+            : agreement.amount_cents;
+          const totalRepay = formatCurrency2(totalRepayCents);
+          document.getElementById('total-repay-display').textContent = totalRepay;
+          document.getElementById('total-repay-row').style.display = 'flex';
+        } else {
+          document.getElementById('total-repay-row').style.display = 'none';
+        }
 
-      // Add due date countdown
-      const dueDateForCountdown = isInstallments
-        ? agreement.final_due_date
-        : agreement.due_date;
-      document.getElementById('due-date-countdown').textContent = getDueDateCountdown(dueDateForCountdown);
-
-      // Interest info (show only if interest > 0)
-      if (hasInterest) {
-        const interestRate = agreement.interest_rate;
-        const totalInterest = formatCurrency2(Math.round((agreement.total_interest || 0) * 100));
-
-        document.getElementById('interest-rate-display').textContent = `${interestRate}% per year`;
-        document.getElementById('interest-rate-row').style.display = 'flex';
-
-        document.getElementById('total-interest-display').textContent = totalInterest;
-        document.getElementById('total-interest-row').style.display = 'flex';
-
-        // Total to repay
-        const totalRepayCents = agreement.total_repay_amount
-          ? Math.round(agreement.total_repay_amount * 100)
-          : agreement.amount_cents;
-        const totalRepay = formatCurrency2(totalRepayCents);
-        document.getElementById('total-repay-display').textContent = totalRepay;
-        document.getElementById('total-repay-row').style.display = 'flex';
-      } else {
-        document.getElementById('interest-rate-row').style.display = 'none';
-        document.getElementById('total-interest-row').style.display = 'none';
-        document.getElementById('total-repay-row').style.display = 'none';
-      }
-
-      // Show spacer before repayment type section if interest section is shown
-      document.getElementById('repayment-type-spacer').style.display = hasInterest ? 'block' : 'none';
-
-      // Installment-specific fields (show only if installments)
-      if (repaymentType === 'installments' && agreement.installment_count) {
-        // Number of payment installments
+        // 11. Number of payment installments
         document.getElementById('installment-count-display').textContent = agreement.installment_count;
         document.getElementById('installment-count-row').style.display = 'flex';
 
-        // Payment frequency - using helper function
-        const frequency = agreement.payment_frequency || 'monthly';
-        const frequencyText = formatRepaymentFrequency(frequency);
+        // 12. Payment frequency
         document.getElementById('payment-frequency-display').textContent = frequencyText;
         document.getElementById('payment-frequency-row').style.display = 'flex';
 
-        // First repayment date
-        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        document.getElementById('first-payment-display').textContent = firstDate;
+        // 13. First repayment date
+        const firstPaymentDate = new Date(agreement.first_payment_date || agreement.first_repayment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        document.getElementById('first-payment-display').textContent = firstPaymentDate;
         document.getElementById('first-payment-row').style.display = 'flex';
 
-        // Final due date
-        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        document.getElementById('final-due-display').textContent = finalDate;
+        // 14. Final due date
+        const finalDueDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        document.getElementById('final-due-display').textContent = finalDueDate;
         document.getElementById('final-due-countdown').textContent = getDueDateCountdown(agreement.final_due_date);
         document.getElementById('final-due-row').style.display = 'flex';
 
-        // Hide one-time due date
+        // Hide one-time specific fields
+        document.getElementById('onetime-spacer-before').style.display = 'none';
+        document.getElementById('repayment-type-onetime-row').style.display = 'none';
         document.getElementById('full-due-row').style.display = 'none';
+        document.getElementById('onetime-spacer-after').style.display = 'none';
       } else {
+        // ONE-TIME PAYMENT PATH
+        // 6. Interest rate (with total interest if > 0)
+        if (hasInterest) {
+          const interestRate = agreement.interest_rate;
+          const totalInterestCents = Math.round((agreement.total_interest || 0) * 100);
+          const totalInterest = formatCurrency2(totalInterestCents);
+          document.getElementById('interest-rate-display').textContent = `${interestRate}% per year (total interest: ${totalInterest})`;
+          document.getElementById('interest-rate-row').style.display = 'flex';
+        } else {
+          document.getElementById('interest-rate-row').style.display = 'none';
+        }
+
+        // 7. Total to repay
+        if (hasInterest) {
+          const totalRepayCents = agreement.total_repay_amount
+            ? Math.round(agreement.total_repay_amount * 100)
+            : agreement.amount_cents;
+          const totalRepay = formatCurrency2(totalRepayCents);
+          document.getElementById('total-repay-display').textContent = totalRepay;
+          document.getElementById('total-repay-row').style.display = 'flex';
+        } else {
+          document.getElementById('total-repay-row').style.display = 'none';
+        }
+
+        // Spacer before one-time section
+        document.getElementById('onetime-spacer-before').style.display = 'block';
+
+        // 8. Repayment type
+        document.getElementById('repayment-type-onetime-display').textContent = 'One-time payment';
+        document.getElementById('repayment-type-onetime-row').style.display = 'flex';
+
+        // 9. Full repayment due date
+        const dueDate = new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        document.getElementById('full-due-display').textContent = dueDate;
+        document.getElementById('full-due-countdown').textContent = getDueDateCountdown(agreement.due_date);
+        document.getElementById('full-due-row').style.display = 'flex';
+
+        // Spacer after one-time section
+        document.getElementById('onetime-spacer-after').style.display = 'block';
+
         // Hide installment-specific fields
+        document.getElementById('repayment-type-row').style.display = 'none';
+        document.getElementById('installment-plan-row').style.display = 'none';
         document.getElementById('installment-count-row').style.display = 'none';
         document.getElementById('payment-frequency-row').style.display = 'none';
         document.getElementById('first-payment-row').style.display = 'none';
         document.getElementById('final-due-row').style.display = 'none';
-
-        // Show one-time due date
-        const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        document.getElementById('full-due-display').textContent = dueDate;
-        document.getElementById('full-due-countdown').textContent = getDueDateCountdown(agreement.due_date);
-        document.getElementById('full-due-row').style.display = 'flex';
       }
 
-      // Show spacer before status
-      document.getElementById('status-spacer').style.display = 'block';
-
-      // Show description if available
-      if (agreement.description) {
-        document.getElementById('description-display').textContent = agreement.description;
-        document.getElementById('description-row').style.display = 'flex';
-      } else {
-        document.getElementById('description-row').style.display = 'none';
-      }
-
-      // Status badge with secondary badges - using helper functions
+      // 15. Status badge with secondary badges - using helper functions
       const statusText = agreement.status || 'pending';
 
       // Import status label helper and generate status text
@@ -1107,7 +1133,9 @@
     }
 
     function showError(message) {
+      // Hide loading card and clear loading text
       document.getElementById('loading-card').classList.add('hidden');
+      document.getElementById('loading-text').textContent = '';
       document.getElementById('error-section').classList.remove('hidden');
       document.getElementById('error-message').textContent = message;
     }
@@ -1116,6 +1144,7 @@
       // Hide error section and show loading
       document.getElementById('error-section').classList.add('hidden');
       document.getElementById('loading-card').classList.remove('hidden');
+      document.getElementById('loading-text').textContent = 'Loading agreement details...';
       // Retry loading the agreement
       loadAgreementData();
     }
