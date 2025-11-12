@@ -3,10 +3,7 @@
  * Single-source component for rendering "My Agreements" table across all pages
  */
 
-// Shared utility functions
-function formatAmount(cents) {
-  return (Math.round(cents || 0) / 100).toFixed(2);
-}
+// Note: formatCurrency0 is imported from schedule.js (loaded before this file)
 
 function getInitials(name) {
   if (!name) return '?';
@@ -87,10 +84,9 @@ function formatDueDate(agreement, isLender) {
     countdownText = `${diffDays} days left`;
   }
 
-  return `<div class="${className}">
-    <div>${dateStr}</div>
-    ${countdownText ? `<div class="due-date-countdown">${countdownText}</div>` : ''}
-  </div>`;
+  // Single-line format: "12 Dec 2026 (394 days left)"
+  const displayText = countdownText ? `${dateStr} (${countdownText})` : dateStr;
+  return `<div class="${className}" style="white-space:nowrap">${displayText}</div>`;
 }
 
 /**
@@ -263,11 +259,11 @@ function renderAgreementsTable(agreements, currentUser, currentFilter = 'all', c
     // Get description or show fallback
     const description = agreement.description || '<span style="color:var(--muted); font-style:italic">(No description)</span>';
 
-    // Calculate outstanding amount with original amount tooltip
+    // Calculate outstanding amount with original amount tooltip (nl-NL, no decimals)
     const outstandingCents = agreement.outstanding_cents || agreement.amount_cents;
-    const outstanding = formatAmount(outstandingCents);
-    const originalAmount = formatAmount(agreement.amount_cents);
-    const outstandingDisplay = `<span title="Original: € ${originalAmount}">€ ${outstanding} / € ${originalAmount}</span>`;
+    const outstanding = formatCurrency0(outstandingCents);
+    const originalAmount = formatCurrency0(agreement.amount_cents);
+    const outstandingDisplay = `<span title="Original: ${originalAmount}">${outstanding} / ${originalAmount}</span>`;
 
     // Format due date with countdown
     const dueDateDisplay = formatDueDate(agreement, isLender);
