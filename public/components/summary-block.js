@@ -27,7 +27,6 @@ const SUMMARY_ORDER_INSTALLMENTS = [
   // Section 2: Loan terms
   { kind: "field", label: "Money transfer date (loan start date)", key: "moneyTransferDate" },
   { kind: "field", label: "Amount", key: "amount" },
-  { kind: "field", label: "Repayment type", key: "repaymentType" },
   { kind: "field", label: "Loan duration", key: "loanDuration" },
   { kind: "field", label: "Interest rate", key: "interestRate" },
   { kind: "field", label: "Total interest", key: "totalInterest" },
@@ -36,6 +35,7 @@ const SUMMARY_ORDER_INSTALLMENTS = [
   { kind: "spacer" },
 
   // Section 3: Installment details
+  { kind: "field", label: "Repayment type", key: "repaymentType" },
   { kind: "field", label: "Number of payment installments", key: "numberOfInstallments" },
   { kind: "field", label: "Payment frequency", key: "paymentFrequency" },
   { kind: "field", label: "First repayment date", key: "firstRepaymentDate" },
@@ -73,12 +73,15 @@ const SUMMARY_ORDER_ONETIME = [
   // Section 2: Loan terms (one-time specific)
   { kind: "field", label: "Money transfer date (loan start date)", key: "moneyTransferDate" },
   { kind: "field", label: "Amount", key: "amount" },
-  { kind: "field", label: "Repayment type", key: "repaymentType" },
   { kind: "field", label: "Loan duration", key: "loanDuration" },
-  { kind: "field", label: "Full repayment due date", key: "fullRepaymentDueDate" },
   { kind: "field", label: "Interest rate", key: "interestRate" },
   { kind: "field", label: "Total interest", key: "totalInterest" },
   { kind: "field", label: "Total to repay", key: "totalToRepay" },
+
+  { kind: "spacer" },
+
+  { kind: "field", label: "Repayment type", key: "repaymentType" },
+  { kind: "field", label: "Full repayment due date", key: "fullRepaymentDueDate" },
 
   { kind: "spacer" },
 

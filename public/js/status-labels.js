@@ -59,7 +59,7 @@ export function getStatusBadgeStyle(status) {
   const baseStyle = "display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;";
   switch (status) {
     case "pending":
-      return `${baseStyle} background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(202, 138, 4, 0.4);`;
+      return `${baseStyle} background: rgba(250, 204, 21, 0.15); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.4);`;
     case "active":
       return `${baseStyle} background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(22, 163, 74, 0.4);`;
     case "overdue":
