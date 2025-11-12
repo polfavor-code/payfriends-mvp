@@ -455,9 +455,10 @@
 
         <div class="row">
           <label>Loan amount (€)*</label>
-          <input id="amount" type="text" placeholder="6000" required onblur="formatAmountInput()" onfocus="unformatAmountInput()" oninput="updateOneTimeEstimate()" />
+          <input id="amount" type="text" placeholder="e.g. 6.000" required onblur="formatAmountInput(); validateAmountField();" onfocus="unformatAmountInput()" oninput="updateOneTimeEstimate()" />
         </div>
-        <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">Enter the amount in euros.</p>
+        <p style="color:var(--muted); font-size:12px; margin:6px 0 4px 172px">Enter the amount in euros.</p>
+        <p id="amount-error" class="hidden" style="color:#f87171; font-size:13px; margin:0 0 16px 172px"></p>
 
         <div class="row">
           <label>Money transfer date*</label>
@@ -478,8 +479,8 @@
         </div>
         <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">When was or will the money be sent to the borrower? You can also choose a date in the past when adding an existing loan.</p>
 
-        <!-- Loan duration (moved up before Repayment type) -->
-        <div id="loan-duration-section" class="hidden">
+        <!-- Loan duration (always visible) -->
+        <div id="loan-duration-section">
           <div class="row">
             <label>Loan duration*</label>
             <div style="flex:1; display:flex; gap:8px">
@@ -518,6 +519,7 @@
               <option value="custom">Pick a date…</option>
             </select>
           </div>
+          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">When will the borrower start paying you back?</p>
 
           <div id="custom-one-time-due-date" class="hidden" style="margin:16px 0">
             <div class="row">
@@ -561,6 +563,7 @@
               <option value="custom">Pick a date…</option>
             </select>
           </div>
+          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">When will the borrower start paying you back?</p>
 
           <div id="custom-first-payment-date" class="hidden" style="margin:16px 0">
             <div class="row">
@@ -1070,6 +1073,35 @@
       }
     }
 
+    // Validate amount field and show error if needed
+    function validateAmountField() {
+      const input = document.getElementById('amount');
+      const errorElement = document.getElementById('amount-error');
+      const value = input.value.trim();
+
+      if (!value) {
+        input.style.border = '1px solid #f87171';
+        errorElement.textContent = 'Please enter a loan amount.';
+        errorElement.classList.remove('hidden');
+        return false;
+      }
+
+      const cleanValue = value.replace(/[.,]/g, '');
+      const num = parseFloat(cleanValue);
+
+      if (isNaN(num) || num <= 0) {
+        input.style.border = '1px solid #f87171';
+        errorElement.textContent = 'Please enter a valid loan amount.';
+        errorElement.classList.remove('hidden');
+        return false;
+      }
+
+      // Clear error state
+      input.style.border = '';
+      errorElement.classList.add('hidden');
+      return true;
+    }
+
     // Capitalize first letter of description
     function capitalizeDescription() {
       const input = document.getElementById('description');
@@ -1397,14 +1429,12 @@
       const repaymentType = document.querySelector('input[name="repayment-type"]:checked').value;
       const oneTimeFields = document.getElementById('one-time-fields');
       const installmentFields = document.getElementById('installment-fields');
-      const loanDurationSection = document.getElementById('loan-duration-section');
       const oneTimeCard = document.getElementById('repayment-onetime-card');
       const installmentsCard = document.getElementById('repayment-installments-card');
 
       if (repaymentType === 'installments') {
         oneTimeFields.classList.add('hidden');
         installmentFields.classList.remove('hidden');
-        loanDurationSection.classList.remove('hidden');
         wizardData.repaymentType = 'installments';
 
         // Update card styling
@@ -1432,7 +1462,6 @@
       } else {
         oneTimeFields.classList.remove('hidden');
         installmentFields.classList.add('hidden');
-        loanDurationSection.classList.add('hidden');
         wizardData.repaymentType = 'one_time';
 
         // Update card styling
@@ -1542,11 +1571,11 @@
       }
 
       const date = new Date(dueDate);
-      const dateFormatted = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const dateFormatted = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
       const amountFormatted = new Intl.NumberFormat('de-DE').format(Math.round(amountNum));
 
-      document.getElementById('one-time-estimate').innerHTML =
-        `Estimated final repayment date: ${dateFormatted}<br>1 repayment of €${amountFormatted}, excluding interest.`;
+      document.getElementById('one-time-estimate').textContent =
+        `1 payment of about €${amountFormatted} on ${dateFormatted}, excluding interest.`;
     }
 
     // Helper function to add months while keeping day-of-month (or last valid day)
@@ -1844,22 +1873,20 @@
 
     // Validate step 2 (Terms)
     function validateStep2() {
-      const amount = document.getElementById('amount').value;
+      const amountInput = document.getElementById('amount');
       const repaymentType = document.querySelector('input[name="repayment-type"]:checked').value;
       const status = document.getElementById('step2-status');
 
-      if (!amount) {
-        status.textContent = 'Please enter a loan amount';
+      // Validate amount field with enhanced UX
+      if (!validateAmountField()) {
+        amountInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        amountInput.focus();
         return false;
       }
 
-      // Validate amount
+      const amount = amountInput.value;
       const cleanAmount = amount.replace(/[.,]/g, '');
       const amountNum = parseFloat(cleanAmount);
-      if (isNaN(amountNum) || amountNum <= 0) {
-        status.textContent = 'Please enter a valid amount';
-        return false;
-      }
 
       // Validate money sent date
       const moneySentOption = document.getElementById('money-sent-option').value;
