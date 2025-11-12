@@ -516,10 +516,6 @@
 
       card.classList.remove('hidden');
 
-      const principal = agreement.amount_cents / 100;
-      const annualRate = agreement.interest_rate / 100;
-      const dailyRate = annualRate / 365;
-
       // Determine start date for interest calculation
       let startDate;
       if (agreement.money_sent_date && agreement.money_sent_date !== 'on-acceptance') {
@@ -530,8 +526,7 @@
       }
       startDate.setHours(0, 0, 0, 0);
 
-      // Build payment schedule
-      let schedule = [];
+      // Build payment dates array
       let n = 1;
       let paymentDates = [];
 
@@ -560,43 +555,27 @@
         paymentDates.push(new Date(agreement.due_date));
       }
 
-      // Calculate schedule using equal principal + daily interest
-      const principalPerPayment = principal / n;
-      let totalInterest = 0;
-      let previousDate = startDate;
+      // Use shared buildRepaymentSchedule function
+      const schedule = buildRepaymentSchedule({
+        principalCents: agreement.amount_cents,
+        aprPercent: agreement.interest_rate,
+        count: n,
+        paymentDates: paymentDates,
+        startDate: startDate
+      });
 
-      for (let i = 1; i <= n; i++) {
-        const outstandingBefore = principal - principalPerPayment * (i - 1);
-        const currentPaymentDate = paymentDates[i - 1] || new Date();
-        const daysBetweenPayments = Math.round((currentPaymentDate - previousDate) / (1000 * 60 * 60 * 24));
-        const interestForPeriod = outstandingBefore * dailyRate * daysBetweenPayments;
-        const payment = principalPerPayment + interestForPeriod;
-        const remainingAfter = outstandingBefore - principalPerPayment;
-
-        totalInterest += interestForPeriod;
-
-        schedule.push({
-          period: i,
-          date: currentPaymentDate,
-          payment: payment,
-          principal: principalPerPayment,
-          interest: interestForPeriod,
-          remaining: remainingAfter > 0.01 ? remainingAfter : 0
-        });
-
-        previousDate = currentPaymentDate;
-      }
-
-      const totalRepayAmount = principal + totalInterest;
+      // Format totals for display (no decimals for summary)
+      const totalInterestDisplay = new Intl.NumberFormat('de-DE').format(Math.round(schedule.totalInterestCents / 100));
+      const totalToRepayDisplay = new Intl.NumberFormat('de-DE').format(Math.round(schedule.totalToRepayCents / 100));
 
       // Lead-in sentence
       const countText = n === 1 ? '1 repayment' : `${n} repayments`;
-      const leadInSentence = `At ${agreement.interest_rate}% interest per year over ${countText}, total interest is about ${formatCurrency(totalInterest)} and total to repay is ${formatCurrency(totalRepayAmount)}.`;
+      const leadInSentence = `At ${agreement.interest_rate}% interest per year over ${countText}, total interest is about €${totalInterestDisplay} and total to repay is €${totalToRepayDisplay}.`;
 
       // Build HTML
       let html = `<p style="margin-bottom:16px; font-size:14px; color:var(--muted); line-height:1.5">${leadInSentence}</p>`;
 
-      html += '<div style="overflow-x:auto; border:1px solid rgba(255,255,255,0.08); border-radius:8px">';
+      html += '<div style="overflow-x:auto; border:1px solid #374151; border-radius:8px">';
       html += '<table class="payment-schedule-table">';
       html += '<thead><tr>';
       html += '<th>Due date</th>';
@@ -607,16 +586,16 @@
       html += '</tr></thead>';
       html += '<tbody>';
 
-      for (let i = 0; i < schedule.length; i++) {
-        const row = schedule[i];
-        html += '<tr>';
-        html += `<td>${formatISOToHuman(row.date.toISOString())}</td>`;
-        html += `<td class="text-right" style="font-weight:600">${formatCurrency2(row.payment)}</td>`;
-        html += `<td class="text-right">${formatCurrency2(row.principal)}</td>`;
-        html += `<td class="text-right">${formatCurrency2(row.interest)}</td>`;
-        html += `<td class="text-right">${formatCurrency2(row.remaining)}</td>`;
+      schedule.rows.forEach((row, index) => {
+        const rowClass = index % 2 === 0 ? '' : 'style="background:rgba(255,255,255,0.02)"';
+        html += `<tr ${rowClass}>`;
+        html += `<td>${formatScheduleDate(row.dateISO)}</td>`;
+        html += `<td class="text-right" style="font-weight:600">${formatCurrency2(row.paymentCents / 100)}</td>`;
+        html += `<td class="text-right">${formatCurrency2(row.principalCents / 100)}</td>`;
+        html += `<td class="text-right">${formatCurrency2(row.interestCents / 100)}</td>`;
+        html += `<td class="text-right">${formatCurrency2(row.remainingCents / 100)}</td>`;
         html += '</tr>';
-      }
+      });
 
       html += '</tbody>';
       html += '</table>';
@@ -840,5 +819,8 @@
       loadInviteData();
     }
   </script>
+
+  <!-- Shared Schedule Calculation Utility -->
+  <script src="/js/schedule.js"></script>
 </body>
 </html>

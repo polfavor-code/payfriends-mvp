@@ -1742,41 +1742,56 @@
         return [];
       }
 
-      const principal = agreement.amount_cents / 100;
       const n = agreement.repayment_type === 'installments' ? agreement.installment_count : 1;
-      const annualRate = agreement.interest_rate / 100;
 
-      // Determine periods per year based on plan unit
-      let periodsPerYear = 12;
-      const planUnit = agreement.plan_unit || 'months';
-      if (planUnit === 'weeks') {
-        periodsPerYear = 52;
-      } else if (planUnit === 'days') {
-        periodsPerYear = 365;
-      } else if (planUnit === 'years') {
-        periodsPerYear = 1;
+      // Build payment dates
+      let paymentDates = [];
+      if (agreement.repayment_type === 'installments' && agreement.first_payment_date) {
+        const firstDate = new Date(agreement.first_payment_date);
+        const planUnit = agreement.plan_unit || 'months';
+
+        for (let i = 0; i < n; i++) {
+          const installmentDate = new Date(firstDate);
+          if (planUnit === 'months') {
+            installmentDate.setMonth(installmentDate.getMonth() + i);
+          } else if (planUnit === 'weeks') {
+            installmentDate.setDate(installmentDate.getDate() + (i * 7));
+          } else if (planUnit === 'days') {
+            installmentDate.setDate(installmentDate.getDate() + i);
+          } else if (planUnit === 'years') {
+            installmentDate.setFullYear(installmentDate.getFullYear() + i);
+          }
+          paymentDates.push(installmentDate);
+        }
+      } else if (agreement.repayment_type === 'one_time' && agreement.due_date) {
+        paymentDates.push(new Date(agreement.due_date));
       }
 
-      const periodRate = annualRate / periodsPerYear;
-      const principalPerInstallment = principal / n;
-
-      const schedule = [];
-      for (let i = 1; i <= n; i++) {
-        const outstandingBefore = principal - principalPerInstallment * (i - 1);
-        const interestForPeriod = outstandingBefore * periodRate;
-        const payment = principalPerInstallment + interestForPeriod;
-        const remainingAfter = outstandingBefore - principalPerInstallment;
-
-        schedule.push({
-          period: i,
-          payment: payment,
-          principal: principalPerInstallment,
-          interest: interestForPeriod,
-          remaining: remainingAfter > 0.01 ? remainingAfter : 0
-        });
+      // Determine start date
+      let startDate;
+      if (agreement.money_sent_date && agreement.money_sent_date !== 'on-acceptance') {
+        startDate = new Date(agreement.money_sent_date);
+      } else {
+        startDate = agreement.first_payment_date ? new Date(agreement.first_payment_date) : new Date();
       }
 
-      return schedule;
+      // Use shared buildRepaymentSchedule function
+      const schedule = buildRepaymentSchedule({
+        principalCents: agreement.amount_cents,
+        aprPercent: agreement.interest_rate,
+        count: n,
+        paymentDates: paymentDates,
+        startDate: startDate
+      });
+
+      // Convert to old format for compatibility
+      return schedule.rows.map((row, index) => ({
+        period: index + 1,
+        payment: row.paymentCents / 100,
+        principal: row.principalCents / 100,
+        interest: row.interestCents / 100,
+        remaining: row.remainingCents / 100
+      }));
     }
 
     // Populate interest calculation detail for borrower review
@@ -1828,11 +1843,12 @@
             } else if (planUnit === 'years') {
               installmentDate.setFullYear(installmentDate.getFullYear() + i);
             }
-            const dateStr = installmentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            const dateStr = formatScheduleDate(installmentDate.toISOString());
 
             const row = schedule[i];
             if (row) {
-              html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">`;
+              const rowStyle = i % 2 === 0 ? 'background:#0c1015' : 'background:#0a0d11';
+              html += `<tr style="${rowStyle}; border-bottom:1px solid rgba(255,255,255,0.05)">`;
               html += `<td style="padding:8px 4px">${dateStr}</td>`;
               html += `<td style="text-align:right; padding:8px 4px; font-weight:600">${formatCurrency2(row.payment)}</td>`;
               html += `<td style="text-align:right; padding:8px 4px">${formatCurrency2(row.principal)}</td>`;
@@ -2085,6 +2101,9 @@
       }
     }
   </script>
+
+  <!-- Shared Schedule Calculation Utility -->
+  <script src="/js/schedule.js"></script>
 
   <!-- Shared Agreements Table Component -->
   <script src="/components/agreements-table.js"></script>

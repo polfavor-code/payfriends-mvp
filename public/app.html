@@ -2389,30 +2389,33 @@
       document.getElementById('total-interest-display').textContent = new Intl.NumberFormat('de-DE').format(Math.round(totalInterest));
       document.getElementById('total-repay-display').textContent = new Intl.NumberFormat('de-DE').format(Math.round(totalRepayAmount));
 
-      // Generate breakdown table
+      // Generate breakdown table using shared schedule utility
       const tbody = document.getElementById('breakdown-tbody');
       tbody.innerHTML = '';
 
-      for (let i = 0; i < schedule.length; i++) {
-        const row = schedule[i];
+      // Use shared buildRepaymentSchedule function
+      const sharedSchedule = buildRepaymentSchedule({
+        principalCents: principal * 100,
+        aprPercent: interestRate,
+        count: n,
+        paymentDates: paymentDates,
+        startDate: startDate
+      });
 
-        // Use the date from the schedule
-        let dateStr = '—';
-        if (row.dueDate) {
-          dateStr = row.dueDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        }
-
+      // Render rows
+      sharedSchedule.rows.forEach((row, index) => {
         const tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        const rowStyle = index % 2 === 0 ? 'background:rgba(12,16,21,0.3)' : 'background:rgba(10,13,17,0.3)';
+        tr.style = rowStyle + '; border-bottom:1px solid rgba(255,255,255,0.05)';
         tr.innerHTML = `
-          <td style="padding:8px 4px">${dateStr}</td>
-          <td style="text-align:right; padding:8px 4px; font-weight:600">${formatCurrency2(row.payment)}</td>
-          <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.principal)}</td>
-          <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.interest)}</td>
-          <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.remaining)}</td>
+          <td style="padding:8px 4px">${formatScheduleDate(row.dateISO)}</td>
+          <td style="text-align:right; padding:8px 4px; font-weight:600">${formatCurrency2(row.paymentCents / 100)}</td>
+          <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.principalCents / 100)}</td>
+          <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.interestCents / 100)}</td>
+          <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.remainingCents / 100)}</td>
         `;
         tbody.appendChild(tr);
-      }
+      });
     }
 
     // Navigate to payment preferences
@@ -2678,69 +2681,57 @@
 
         let html = `<p style="margin:0 0 12px 0; font-size:14px">At ${wizardData.interestRate}% interest per year over ${termText}, total interest is about €${totalInterest} and total to repay is €${totalRepay}.</p>`;
 
-        // Build unified breakdown table with dates
-        const breakdownTbody = document.getElementById('breakdown-tbody');
-        const rows = breakdownTbody?.getElementsByTagName('tr') || [];
+        // Build unified breakdown table using shared schedule utility
+        const n = wizardData.repaymentType === 'installments' ? wizardData.installmentCount : 1;
 
-        if (rows.length > 0) {
-          html += `<div id="summary-payment-breakdown" style="margin:16px 0; max-height:300px; overflow-y:auto">`;
-          html += `<table style="width:100%; font-size:12px">`;
-          html += `<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">`;
-          html += `<th style="text-align:left; padding:6px 4px; font-size:12px">№</th>`;
-          html += `<th style="text-align:left; padding:6px 4px; font-size:12px">Date</th>`;
-          html += `<th style="text-align:right; padding:6px 4px; font-size:12px">Payment</th>`;
-          html += `<th style="text-align:right; padding:6px 4px; font-size:12px">Loan repayment</th>`;
-          html += `<th style="text-align:right; padding:6px 4px; font-size:12px">Interest</th>`;
-          html += `<th style="text-align:right; padding:6px 4px; font-size:12px">Remaining</th>`;
+        // Get payment dates
+        let paymentDates = [];
+        if (wizardData.repaymentType === 'installments' && wizardData.installmentSchedule) {
+          paymentDates = wizardData.installmentSchedule.map(dateStr => new Date(dateStr));
+        } else if (wizardData.repaymentType === 'one_time' && wizardData.dueDate) {
+          paymentDates = [new Date(wizardData.dueDate)];
+        }
+
+        // Determine start date
+        let startDate;
+        if (wizardData.moneySentDate && wizardData.moneySentDate !== 'on-acceptance') {
+          startDate = new Date(wizardData.moneySentDate);
+        } else {
+          startDate = new Date();
+        }
+
+        if (paymentDates.length > 0) {
+          const schedule = buildRepaymentSchedule({
+            principalCents: wizardData.amount * 100,
+            aprPercent: wizardData.interestRate,
+            count: n,
+            paymentDates: paymentDates,
+            startDate: startDate
+          });
+
+          html += `<div style="margin:16px 0; max-height:300px; overflow-y:auto">`;
+          html += `<div style="overflow-x:auto; border:1px solid #374151; border-radius:8px">`;
+          html += `<table style="width:100%; font-size:12px; border-collapse:collapse">`;
+          html += `<thead><tr style="background:#1f2937; color:#9ca3af">`;
+          html += `<th style="text-align:left; padding:8px; font-weight:600">Due date</th>`;
+          html += `<th style="text-align:right; padding:8px; font-weight:600">Payment total</th>`;
+          html += `<th style="text-align:right; padding:8px; font-weight:600">Loan repayment</th>`;
+          html += `<th style="text-align:right; padding:8px; font-weight:600">Interest</th>`;
+          html += `<th style="text-align:right; padding:8px; font-weight:600">Outstanding</th>`;
           html += `</tr></thead><tbody>`;
 
-          const rowCount = wizardData.repaymentType === 'installments' ? wizardData.installmentCount : 1;
-          for (let i = 0; i < rowCount; i++) {
-            let dateStr = '—';
-            if (wizardData.repaymentType === 'one_time' && wizardData.dueDate) {
-              const dueDate = new Date(wizardData.dueDate);
-              dateStr = dueDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-            } else if (wizardData.repaymentType === 'installments' && wizardData.firstPaymentDate) {
-              const firstDate = new Date(wizardData.firstPaymentDate);
-              const planUnit = wizardData.planUnit || 'months';
-              const installmentDate = new Date(firstDate);
-              if (planUnit === 'months') {
-                installmentDate.setMonth(installmentDate.getMonth() + i);
-              } else if (planUnit === 'weeks') {
-                installmentDate.setDate(installmentDate.getDate() + (i * 7));
-              } else if (planUnit === 'days') {
-                installmentDate.setDate(installmentDate.getDate() + i);
-              } else if (planUnit === 'years') {
-                installmentDate.setFullYear(installmentDate.getFullYear() + i);
-              }
-              dateStr = installmentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-            }
-
-            // Get corresponding values from the breakdown table
-            let numVal = '', paymentVal = '', interestVal = '', principalVal = '', remainingVal = '';
-            if (rows[i]) {
-              const cells = rows[i].getElementsByTagName('td');
-              if (cells.length >= 6) {
-                numVal = cells[0].textContent;
-                // cells[1] is Date, which we calculate separately
-                paymentVal = cells[2].textContent;
-                principalVal = cells[3].textContent;
-                interestVal = cells[4].textContent;
-                remainingVal = cells[5].textContent;
-              }
-            }
-
-            html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">`;
-            html += `<td style="padding:8px 4px">${numVal}</td>`;
-            html += `<td style="padding:8px 4px">${dateStr}</td>`;
-            html += `<td style="text-align:right; padding:8px 4px">${paymentVal}</td>`;
-            html += `<td style="text-align:right; padding:8px 4px">${principalVal}</td>`;
-            html += `<td style="text-align:right; padding:8px 4px">${interestVal}</td>`;
-            html += `<td style="text-align:right; padding:8px 4px">${remainingVal}</td>`;
+          schedule.rows.forEach((row, index) => {
+            const rowStyle = index % 2 === 0 ? 'background:#0c1015' : 'background:#0a0d11';
+            html += `<tr style="${rowStyle}">`;
+            html += `<td style="padding:8px">${formatScheduleDate(row.dateISO)}</td>`;
+            html += `<td style="text-align:right; padding:8px; font-weight:600">${formatCurrency2(row.paymentCents / 100)}</td>`;
+            html += `<td style="text-align:right; padding:8px">${formatCurrency2(row.principalCents / 100)}</td>`;
+            html += `<td style="text-align:right; padding:8px">${formatCurrency2(row.interestCents / 100)}</td>`;
+            html += `<td style="text-align:right; padding:8px">${formatCurrency2(row.remainingCents / 100)}</td>`;
             html += `</tr>`;
-          }
+          });
 
-          html += `</tbody></table></div>`;
+          html += `</tbody></table></div></div>`;
         }
 
         content.innerHTML = html;
@@ -3569,6 +3560,9 @@
       goToStep(1);
     });
   </script>
+
+  <!-- Shared Schedule Calculation Utility -->
+  <script src="/js/schedule.js"></script>
 
   <!-- Shared Agreements Table Component -->
   <script src="/components/agreements-table.js"></script>
