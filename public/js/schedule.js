@@ -205,41 +205,42 @@ function buildRepaymentSchedule(input) {
 }
 
 /**
- * Produce an HTML table rendering of a repayment schedule.
+ * Produce an HTML grid rendering of a repayment schedule.
  * @param {Array<Object>} rows - Schedule rows as produced by buildRepaymentSchedule. Each row should contain `dateISO` (ISO date string), `paymentCents`, `principalCents`, `interestCents`, and `remainingCents` (all amounts in cents).
- * @returns {string} An HTML string containing a styled table representing the provided schedule rows.
+ * @returns {string} An HTML string containing a styled grid representing the provided schedule rows.
  */
 function generateScheduleTableHTML(rows) {
-  let html = '<div style="overflow-x:auto; border:1px solid rgba(55,65,81,1); border-radius:8px">';
-  html += '<table style="width:100%; font-size:13px; border-collapse:collapse">';
+  // Container with max-height and scroll
+  let html = '<div style="margin:16px 0; max-height:400px; overflow-y:auto; border:1px solid rgba(55,65,81,0.5); border-radius:8px; background:rgba(12,16,21,1)">';
 
-  // Table header
-  html += '<thead>';
-  html += '<tr style="background:rgba(31,41,55,1); color:rgba(156,163,175,1)">';
-  html += '<th style="text-align:left; padding:10px 8px; font-weight:600; border-bottom:1px solid rgba(55,65,81,0.5)">Due date</th>';
-  html += '<th style="text-align:right; padding:10px 8px; font-weight:600; border-bottom:1px solid rgba(55,65,81,0.5)">Payment total</th>';
-  html += '<th style="text-align:right; padding:10px 8px; font-weight:600; border-bottom:1px solid rgba(55,65,81,0.5)">Loan repayment</th>';
-  html += '<th style="text-align:right; padding:10px 8px; font-weight:600; border-bottom:1px solid rgba(55,65,81,0.5)">Interest</th>';
-  html += '<th style="text-align:right; padding:10px 8px; font-weight:600; border-bottom:1px solid rgba(55,65,81,0.5)">Outstanding</th>';
-  html += '</tr>';
-  html += '</thead>';
+  // Grid container
+  html += '<div style="display:grid; grid-template-columns:minmax(120px,1fr) minmax(120px,1fr) minmax(100px,1fr) minmax(120px,1fr) minmax(140px,1fr); font-size:13px">';
 
-  // Table body
-  html += '<tbody>';
-  rows.forEach((row, index) => {
-    const rowStyle = index % 2 === 0 ? 'background:rgba(12,16,21,1)' : 'background:rgba(10,13,17,1)';
-    html += `<tr style="${rowStyle}">`;
-    html += `<td style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)">${formatScheduleDate(row.dateISO)}</td>`;
-    html += `<td style="text-align:right; padding:10px 8px; font-weight:600; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.paymentCents)}</td>`;
-    html += `<td style="text-align:right; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.principalCents)}</td>`;
-    html += `<td style="text-align:right; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.interestCents)}</td>`;
-    html += `<td style="text-align:right; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.04)">${formatCurrency2(row.remainingCents)}</td>`;
-    html += '</tr>';
-  });
-  html += '</tbody>';
-
-  html += '</table>';
+  // Header row (sticky)
+  html += '<div style="display:contents; position:sticky; top:0; z-index:10">';
+  html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5)">Due date</div>';
+  html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Repayment (excl. interest)</div>';
+  html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Interest</div>';
+  html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Payment total</div>';
+  html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Balance</div>';
   html += '</div>';
+
+  // Data rows
+  rows.forEach((row, index) => {
+    const rowBg = index % 2 === 0 ? 'rgba(12,16,21,1)' : 'rgba(10,13,17,1)';
+
+    // Row wrapper
+    html += '<div style="display:contents">';
+    html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); white-space:nowrap; color:rgba(156,163,175,1)">${formatScheduleDate(row.dateISO)}</div>`;
+    html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap">${formatCurrency2(row.principalCents)}</div>`;
+    html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap">${formatCurrency2(row.interestCents)}</div>`;
+    html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:600">${formatCurrency2(row.paymentCents)}</div>`;
+    html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap">${formatCurrency2(row.remainingCents)}</div>`;
+    html += '</div>';
+  });
+
+  html += '</div>'; // Close grid container
+  html += '</div>'; // Close scroll container
 
   return html;
 }

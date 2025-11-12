@@ -148,9 +148,9 @@ function formatRepaymentFrequency(frequency) {
 }
 
 /**
- * Calculate next payment information for an agreement
+ * Calculate next payment information for an agreement using the amortization engine
  * @param {Object} agreement - Agreement object with repayment details and payment totals
- * @returns {Object|null} Object with { amount_cents, due_date } or null if no payment due
+ * @returns {Object|null} Object with { amount_cents, due_date, schedule_row } or null if no payment due
  */
 function getNextPaymentInfo(agreement) {
   if (!agreement) {
@@ -171,88 +171,162 @@ function getNextPaymentInfo(agreement) {
     return null;
   }
 
-  // For one-time repayment
+  // For one-time repayment (no amortization needed)
   if (agreement.repayment_type === 'one_time') {
     return {
       amount_cents: outstanding,
-      due_date: agreement.due_date
+      due_date: agreement.due_date,
+      schedule_row: null
     };
   }
 
-  // For installment repayment
+  // For installment repayment - use amortization engine
   if (agreement.repayment_type === 'installments') {
-    const installmentAmount = agreement.installment_amount;
     const installmentCount = agreement.installment_count || 0;
 
-    if (!installmentAmount || installmentCount === 0) {
+    if (installmentCount === 0) {
       return null;
     }
 
-    // Convert installment amount from euros to cents
-    const installmentCents = Math.round(installmentAmount * 100);
+    // Build the full amortization schedule using the engine
+    // Check if buildRepaymentSchedule and generatePaymentDates are available
+    if (typeof buildRepaymentSchedule !== 'function' || typeof generatePaymentDates !== 'function') {
+      // Fallback to simple calculation if engine not available
+      return getNextPaymentInfoSimple(agreement);
+    }
 
-    // Next payment amount is the installment amount (or remaining if less)
-    const nextAmount = Math.min(installmentCents, outstanding);
+    // Determine start date
+    let startDate;
+    if (agreement.money_sent_date && agreement.money_sent_date !== 'on-acceptance') {
+      startDate = new Date(agreement.money_sent_date);
+    } else {
+      startDate = agreement.first_payment_date ? new Date(agreement.first_payment_date) : new Date();
+    }
 
-    // Calculate which installment number is next (1-based)
-    const numPaymentsMade = Math.floor(totalPaid / installmentCents);
-    const nextInstallmentNumber = numPaymentsMade + 1;
+    // Build payment dates
+    let paymentDates = [];
+    if (agreement.first_payment_date) {
+      const frequency = agreement.payment_frequency || 'monthly';
+      const dateResult = generatePaymentDates({
+        transferDate: startDate,
+        firstDueDate: agreement.first_payment_date,
+        frequency: frequency,
+        count: installmentCount
+      });
+      paymentDates = dateResult.paymentDates;
+    }
 
-    // If all installments paid, no next payment
-    if (nextInstallmentNumber > installmentCount) {
+    // Build the complete amortization schedule
+    const schedule = buildRepaymentSchedule({
+      principalCents: agreement.amount_cents,
+      aprPercent: agreement.interest_rate || 0,
+      count: installmentCount,
+      paymentDates: paymentDates,
+      startDate: startDate
+    });
+
+    // Determine which payment is next based on total paid
+    // We compare cumulative principal paid vs total paid
+    let cumulativePrincipal = 0;
+    let nextRowIndex = 0;
+
+    for (let i = 0; i < schedule.rows.length; i++) {
+      const row = schedule.rows[i];
+      cumulativePrincipal += row.principalCents;
+
+      // If total paid is less than cumulative principal, this is the next payment
+      if (totalPaid < cumulativePrincipal) {
+        nextRowIndex = i;
+        break;
+      }
+    }
+
+    // Get the next payment row
+    const nextRow = schedule.rows[nextRowIndex];
+
+    if (!nextRow) {
       return null;
-    }
-
-    // Calculate next due date based on first payment date and frequency
-    const firstPaymentDate = agreement.first_payment_date;
-    const frequency = agreement.payment_frequency || 'monthly';
-
-    if (!firstPaymentDate) {
-      // Fallback to final due date if first payment date not set
-      return {
-        amount_cents: nextAmount,
-        due_date: agreement.final_due_date || agreement.due_date
-      };
-    }
-
-    // Calculate next due date based on installment number and frequency
-    const baseDate = new Date(firstPaymentDate);
-    let nextDate = new Date(baseDate);
-
-    // Add periods based on installment number (0-indexed for calculation)
-    const periodsToAdd = nextInstallmentNumber - 1;
-
-    switch (frequency) {
-      case 'weekly':
-        nextDate.setDate(nextDate.getDate() + (periodsToAdd * 7));
-        break;
-      case 'biweekly':
-        nextDate.setDate(nextDate.getDate() + (periodsToAdd * 14));
-        break;
-      case 'every_4_weeks':
-        nextDate.setDate(nextDate.getDate() + (periodsToAdd * 28));
-        break;
-      case 'monthly':
-        nextDate.setMonth(nextDate.getMonth() + periodsToAdd);
-        break;
-      case 'quarterly':
-        nextDate.setMonth(nextDate.getMonth() + (periodsToAdd * 3));
-        break;
-      case 'yearly':
-        nextDate.setFullYear(nextDate.getFullYear() + periodsToAdd);
-        break;
-      default:
-        // For custom frequencies, default to monthly
-        nextDate.setMonth(nextDate.getMonth() + periodsToAdd);
     }
 
     return {
-      amount_cents: nextAmount,
-      due_date: nextDate.toISOString().split('T')[0]
+      amount_cents: nextRow.paymentCents,
+      due_date: new Date(nextRow.dateISO).toISOString().split('T')[0],
+      schedule_row: nextRow,
+      row_index: nextRowIndex
     };
   }
 
   return null;
+}
+
+/**
+ * Simple fallback calculation when amortization engine is not available
+ * @param {Object} agreement - Agreement object
+ * @returns {Object|null} Next payment info
+ */
+function getNextPaymentInfoSimple(agreement) {
+  const installmentAmount = agreement.installment_amount;
+  const installmentCount = agreement.installment_count || 0;
+  const totalPaid = agreement.total_paid_cents || 0;
+  const totalOwed = agreement.amount_cents || 0;
+  const outstanding = totalOwed - totalPaid;
+
+  if (!installmentAmount || installmentCount === 0) {
+    return null;
+  }
+
+  const installmentCents = Math.round(installmentAmount * 100);
+  const nextAmount = Math.min(installmentCents, outstanding);
+  const numPaymentsMade = Math.floor(totalPaid / installmentCents);
+  const nextInstallmentNumber = numPaymentsMade + 1;
+
+  if (nextInstallmentNumber > installmentCount) {
+    return null;
+  }
+
+  const firstPaymentDate = agreement.first_payment_date;
+  const frequency = agreement.payment_frequency || 'monthly';
+
+  if (!firstPaymentDate) {
+    return {
+      amount_cents: nextAmount,
+      due_date: agreement.final_due_date || agreement.due_date,
+      schedule_row: null
+    };
+  }
+
+  const baseDate = new Date(firstPaymentDate);
+  let nextDate = new Date(baseDate);
+  const periodsToAdd = nextInstallmentNumber - 1;
+
+  switch (frequency) {
+    case 'weekly':
+      nextDate.setDate(nextDate.getDate() + (periodsToAdd * 7));
+      break;
+    case 'biweekly':
+      nextDate.setDate(nextDate.getDate() + (periodsToAdd * 14));
+      break;
+    case 'every_4_weeks':
+      nextDate.setDate(nextDate.getDate() + (periodsToAdd * 28));
+      break;
+    case 'monthly':
+      nextDate.setMonth(nextDate.getMonth() + periodsToAdd);
+      break;
+    case 'quarterly':
+      nextDate.setMonth(nextDate.getMonth() + (periodsToAdd * 3));
+      break;
+    case 'yearly':
+      nextDate.setFullYear(nextDate.getFullYear() + periodsToAdd);
+      break;
+    default:
+      nextDate.setMonth(nextDate.getMonth() + periodsToAdd);
+  }
+
+  return {
+    amount_cents: nextAmount,
+    due_date: nextDate.toISOString().split('T')[0],
+    schedule_row: null
+  };
 }
 
 // Export functions for use in other files
