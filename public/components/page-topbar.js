@@ -17,9 +17,9 @@
 export function renderPageTopbar({ title, subtitle, href = "/app", statusBadge }) {
   const container = document.createElement("div");
   container.className = "page-topbar-container";
-  container.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 24px 0; margin-bottom: 16px;";
+  container.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 0; margin-bottom: 16px;";
 
-  // Left side: Title and subtitle
+  // Left side: Title and subtitle with badge
   const left = document.createElement("div");
   left.style.cssText = "flex: 1;";
 
@@ -28,30 +28,36 @@ export function renderPageTopbar({ title, subtitle, href = "/app", statusBadge }
   titleEl.style.cssText = "margin: 0 0 8px 0; font-size: 24px; font-weight: 600; color: var(--text);";
   left.appendChild(titleEl);
 
+  // Subtitle row with badge
   if (subtitle) {
-    const subtitleEl = document.createElement("div");
+    const subtitleRow = document.createElement("div");
+    subtitleRow.style.cssText = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;";
+
+    const subtitleEl = document.createElement("span");
     subtitleEl.textContent = subtitle;
-    subtitleEl.style.cssText = "margin: 0; font-size: 16px; color: var(--muted);";
-    left.appendChild(subtitleEl);
+    subtitleEl.style.cssText = "font-size: 16px; color: var(--muted);";
+    subtitleRow.appendChild(subtitleEl);
+
+    // Add status badge next to subtitle if provided
+    if (statusBadge && statusBadge.text) {
+      const badge = document.createElement("span");
+      badge.textContent = statusBadge.text;
+      // Use inline style if provided, otherwise fall back to className
+      if (statusBadge.style) {
+        badge.style.cssText = statusBadge.style;
+      } else if (statusBadge.className) {
+        badge.className = statusBadge.className;
+        badge.style.cssText = "font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 12px; display: inline-flex; align-items: center;";
+      }
+      subtitleRow.appendChild(badge);
+    }
+
+    left.appendChild(subtitleRow);
   }
 
-  // Right side: Status badge and Return button
+  // Right side: Return button
   const right = document.createElement("div");
   right.style.cssText = "display: flex; align-items: center; gap: 16px;";
-
-  // Add status badge on the right if provided
-  if (statusBadge && statusBadge.text) {
-    const badge = document.createElement("span");
-    badge.textContent = statusBadge.text;
-    // Use inline style if provided, otherwise fall back to className
-    if (statusBadge.style) {
-      badge.style.cssText = statusBadge.style;
-    } else if (statusBadge.className) {
-      badge.className = statusBadge.className;
-      badge.style.cssText = "font-size: 12px; font-weight: 500; padding: 4px 10px; height: 24px; border-radius: 6px; display: inline-flex; align-items: center;";
-    }
-    right.appendChild(badge);
-  }
 
   // Return button
   const returnButton = document.createElement("a");

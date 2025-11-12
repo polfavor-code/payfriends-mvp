@@ -12,9 +12,7 @@
 export function getStatusLabel(status, borrowerFirstName) {
   switch (status) {
     case "pending":
-      return borrowerFirstName
-        ? `Pending review by ${borrowerFirstName}`
-        : "Pending review";
+      return "Pending review";
     case "active":
       return "Active";
     case "overdue":
