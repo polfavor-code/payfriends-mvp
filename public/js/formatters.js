@@ -56,3 +56,20 @@ function formatEuro0(euros, locale = EUR_LOCALE) {
 function formatEuro2(euros, locale = EUR_LOCALE) {
   return formatCurrency2((euros ?? 0) * 100, locale);
 }
+
+/**
+ * Format date for display
+ * @param {string|Date} isoDate - ISO date string or Date object
+ * @returns {string} Formatted date string (e.g., "Jan 15, 2025")
+ */
+function formatDate(isoDate) {
+  if (!isoDate) return '—';
+  const date = new Date(isoDate);
+  if (isNaN(date.getTime())) return '—';
+
+  return new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit'
+  }).format(date);
+}
