@@ -1,0 +1,36 @@
+/**
+ * App-wide CSS overrides and enhancements
+ * Provides compact and unified styling for agreement details across pages
+ */
+
+/* Compact agreement detail rows */
+.detail-row {
+  padding: 8px 0 !important;
+  line-height: 1.4;
+}
+
+/* Make detail values normal weight instead of bold */
+.detail-value {
+  font-weight: 400 !important;
+}
+
+/* Keep labels at medium weight */
+.detail-label {
+  font-weight: 500 !important;
+}
+
+/* Compact summary grid rows (for Step 5) */
+.summary-grid-row {
+  padding: 6px 0 !important;
+  line-height: 1.4;
+}
+
+/* Make summary grid values normal weight */
+.summary-grid-value {
+  font-weight: 400 !important;
+}
+
+/* Keep summary grid labels at normal weight */
+.summary-grid-label {
+  font-weight: 500 !important;
+}

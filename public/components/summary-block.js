@@ -130,16 +130,21 @@ function buildSummaryDataMap(wizardData, currentUser) {
                        wizardData.planUnit === 'years' ? `${wizardData.planLength} ${wizardData.planLength === 1 ? 'year' : 'years'}` :
                        `${wizardData.planLength} months`;
 
-  // Format payment frequency
+  // Format payment frequency - Note: uses inline logic for wizard data
+  // (Cannot use formatRepaymentFrequency helper since it expects "every_4_weeks" but wizard has "every_X_days")
   let paymentFrequency = '';
   if (wizardData.paymentFrequency) {
     const freq = wizardData.paymentFrequency;
     if (freq === 'weekly') paymentFrequency = 'Weekly';
     else if (freq === 'biweekly') paymentFrequency = 'Every 2 weeks';
+    else if (freq === 'every_4_weeks') paymentFrequency = 'Every 4 weeks';
     else if (freq === 'monthly') paymentFrequency = 'Monthly';
     else if (freq === 'quarterly') paymentFrequency = 'Every 3 months';
     else if (freq === 'yearly') paymentFrequency = 'Yearly';
-    else if (freq.startsWith('every_')) {
+    else if (freq.startsWith('every_') && freq.endsWith('_weeks')) {
+      const weeks = freq.replace('every_', '').replace('_weeks', '');
+      paymentFrequency = `Every ${weeks} weeks`;
+    } else if (freq.startsWith('every_') && freq.endsWith('_days')) {
       const days = freq.replace('every_', '').replace('_days', '');
       paymentFrequency = `Every ${days} days`;
     } else {
@@ -230,9 +235,9 @@ function renderSummaryFields(wizardData, currentUser) {
       const borderStyle = isFirstField ? '' : 'border-top:1px solid rgba(255,255,255,0.05);';
       isFirstField = false;
 
-      html += `<div class="summary-grid-row" style="padding:8px 0;${borderStyle}">
+      html += `<div class="summary-grid-row" style="${borderStyle}">
         <span class="summary-grid-label">${item.label}</span>
-        <span class="summary-grid-value" style="font-weight:600">${value || '—'}</span>
+        <span class="summary-grid-value">${value || '—'}</span>
       </div>`;
     } else if (item.kind === 'spacer') {
       // Render blank line as vertical spacing
