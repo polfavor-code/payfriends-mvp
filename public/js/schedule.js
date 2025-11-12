@@ -4,9 +4,9 @@
  */
 
 /**
- * Format currency with 2 decimal places (EUR, nl-NL locale)
- * @param {number} amount - Amount in euros (not cents)
- * @returns {string} Formatted currency string
+ * Formats a numeric amount as EUR currency using the nl-NL locale with exactly two fraction digits.
+ * @param {number} amount - Amount in euros; if `null` or `undefined`, it is treated as 0.
+ * @returns {string} The formatted currency string (EUR, nl-NL) with two decimal places.
  */
 function formatCurrency2(amount) {
   return new Intl.NumberFormat('nl-NL', {
@@ -18,9 +18,9 @@ function formatCurrency2(amount) {
 }
 
 /**
- * Format ISO date to human-readable format (dd MMM yyyy)
- * @param {string|Date} dateInput - ISO date string or Date object
- * @returns {string} Formatted date string
+ * Convert an ISO date string or Date object to a human-readable date in "dd MMM yyyy" format.
+ * @param {string|Date} dateInput - ISO date string or Date object; falsy values return '—'.
+ * @returns {string} Formatted date (e.g., "5 Apr 2025") or '—' when input is falsy.
  */
 function formatScheduleDate(dateInput) {
   if (!dateInput) return '—';
@@ -32,16 +32,18 @@ function formatScheduleDate(dateInput) {
 }
 
 /**
- * Build repayment schedule using equal principal + daily interest calculation
- * This is the single source of truth for schedule calculations across the app
+ * Constructs an equal-principal repayment schedule and computes daily interest using the actual days between payments.
  *
- * @param {Object} input - Schedule parameters
- * @param {number} input.principalCents - Loan amount in cents
- * @param {number} input.aprPercent - Annual interest rate as percentage (e.g., 5 for 5%)
- * @param {number} input.count - Number of repayments
- * @param {Array<Date|string>} input.paymentDates - Array of payment dates (Date objects or ISO strings)
- * @param {Date|string} input.startDate - Start date for interest calculation (money sent date)
- * @returns {Object} Schedule with rows and totals
+ * @param {Object} input - Schedule parameters.
+ * @param {number} input.principalCents - Loan amount in cents.
+ * @param {number} input.aprPercent - Annual interest rate as a percentage (e.g., 5 for 5%).
+ * @param {number} input.count - Number of repayments.
+ * @param {Array<Date|string>} input.paymentDates - Payment dates as Date objects or ISO strings, one per repayment.
+ * @param {Date|string} input.startDate - Start date for interest calculation (money sent date) as a Date or ISO string.
+ * @returns {Object} An object containing the repayment rows and totals in cents:
+ *   - rows: Array of objects with fields `dateISO` (ISO string), `paymentCents`, `principalCents`, `interestCents`, `remainingCents`.
+ *   - totalInterestCents: Total interest across all payments in cents.
+ *   - totalToRepayCents: Sum of principal and total interest in cents.
  */
 function buildRepaymentSchedule(input) {
   const {
@@ -106,9 +108,9 @@ function buildRepaymentSchedule(input) {
 }
 
 /**
- * Generate HTML for the schedule table
- * @param {Array} rows - Schedule rows from buildRepaymentSchedule
- * @returns {string} HTML string for the table
+ * Produce an HTML table rendering of a repayment schedule.
+ * @param {Array<Object>} rows - Schedule rows as produced by buildRepaymentSchedule. Each row should contain `dateISO` (ISO date string), `paymentCents`, `principalCents`, `interestCents`, and `remainingCents` (all amounts in cents).
+ * @returns {string} An HTML string containing a styled table representing the provided schedule rows.
  */
 function generateScheduleTableHTML(rows) {
   let html = '<div style="overflow-x:auto; border:1px solid rgba(55,65,81,1); border-radius:8px">';
@@ -146,14 +148,14 @@ function generateScheduleTableHTML(rows) {
 }
 
 /**
- * Generate complete HTML for the schedule accordion (lead-in + table)
- * @param {Object} params - Parameters for schedule generation
- * @param {number} params.principalCents - Loan amount in cents
- * @param {number} params.aprPercent - Annual interest rate
- * @param {number} params.count - Number of repayments
- * @param {Array<Date|string>} params.paymentDates - Payment dates
- * @param {Date|string} params.startDate - Start date for interest calculation
- * @returns {string} Complete HTML for schedule section
+ * Produce HTML for a repayment schedule accordion including a lead-in summary and the schedule table.
+ * @param {Object} params - Parameters for schedule generation.
+ * @param {number} params.principalCents - Loan amount in cents.
+ * @param {number} params.aprPercent - Annual interest rate as a percent (e.g., 5 for 5%).
+ * @param {number} params.count - Number of repayments.
+ * @param {Array<Date|string>} params.paymentDates - Array of payment dates (Date objects or ISO strings).
+ * @param {Date|string} params.startDate - Start date for interest calculation (Date or ISO string).
+ * @returns {string} HTML string containing the lead-in summary sentence and the schedule table.
  */
 function generateScheduleAccordionHTML(params) {
   const { principalCents, aprPercent, count, paymentDates, startDate } = params;
