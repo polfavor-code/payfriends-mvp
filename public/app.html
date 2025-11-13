@@ -764,23 +764,40 @@
         </div>
         <h3 style="margin-top:0">Interest & payment calculation</h3>
 
-        <div class="row" style="margin-top:20px; align-items:center">
-          <label>Interest rate</label>
-          <div style="flex:1; display:flex; align-items:center; gap:12px; justify-content:space-between">
-            <div style="display:flex; align-items:center; gap:8px">
-              <input id="interest-rate" type="number" min="0" max="100" step="0.1" placeholder="4" oninput="calculateInterest()" style="width:100px; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
-              <span style="color:var(--text); font-size:14px">% per year</span>
-            </div>
-            <span id="interest-rate-badge" style="display:inline-block; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; white-space:nowrap"></span>
+        <!-- Interest Mode Toggle -->
+        <div style="margin-top:20px; margin-bottom:24px">
+          <div id="interest-mode-toggle" style="display:inline-flex; background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:4px; gap:4px">
+            <button id="mode-rate" onclick="setInterestMode('rate')" style="padding:10px 20px; border-radius:8px; border:none; background:var(--accent); color:#000; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
+              Set interest rate
+            </button>
+            <button id="mode-none" onclick="setInterestMode('none')" style="padding:10px 20px; border-radius:8px; border:none; background:transparent; color:var(--text); font-weight:500; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
+              No interest
+            </button>
           </div>
         </div>
-        <p id="interest-rate-helper" style="color:var(--muted); font-size:12px; margin:4px 0 12px 172px"></p>
 
-        <div style="margin:12px 0 20px 172px">
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer">
-            <input type="checkbox" id="no-interest-checkbox" onchange="toggleNoInterest()" />
-            <span style="font-size:14px">No interest</span>
-          </label>
+        <!-- Interest Input Row -->
+        <div style="margin-top:20px; display:flex; align-items:center; gap:12px">
+          <input id="interest-rate" type="number" min="0" max="99" step="0.1" placeholder="6" oninput="handleInterestInput()" style="width:80px; height:44px; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-size:16px; text-align:center" />
+          <span style="color:var(--text); font-size:16px; font-weight:500">% per year</span>
+          <button id="interest-rate-badge" onclick="toggleFairnessExplanation()" aria-expanded="false" aria-controls="fairness-explanation" style="display:inline-flex; align-items:center; gap:6px; height:44px; padding:0 16px; border-radius:22px; font-size:13px; font-weight:600; white-space:nowrap; border:none; cursor:pointer; transition:all 0.2s ease">
+            <span id="interest-rate-badge-text"></span>
+            <svg style="width:14px; height:14px; opacity:0.8" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+              <circle cx="8" cy="8" r="6.5" stroke-width="1.5"/>
+              <path d="M8 7.5v4M8 5v0.5" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Expandable Fairness Explanation -->
+        <div id="fairness-explanation" class="hidden" style="margin-top:12px; background:rgba(61,220,151,0.08); border:1px solid rgba(61,220,151,0.2); border-radius:10px; padding:16px; transition:all 0.2s ease">
+          <p style="margin:0 0 12px 0; font-size:13px; font-weight:600; color:var(--text)">Why this rate?</p>
+          <ul style="margin:0 0 12px 0; padding-left:20px; font-size:13px; line-height:1.6; color:var(--text)">
+            <li style="margin-bottom:6px">Larger loan amounts increase risk ↑</li>
+            <li style="margin-bottom:6px">Longer durations increase uncertainty ↑</li>
+            <li style="margin-bottom:6px">More installments reduce repayment risk ↓</li>
+          </ul>
+          <p id="fairness-explanation-summary" style="margin:0; font-size:13px; color:var(--muted); line-height:1.6"></p>
         </div>
 
         <div id="interest-summary-card" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin:24px 0">
@@ -2393,46 +2410,103 @@
       // Set the interest rate and trigger calculation
       document.getElementById('interest-rate').value = recommendedRate;
       wizardData.hasInterest = true;
-
-      // Ensure no-interest checkbox is unchecked
-      document.getElementById('no-interest-checkbox').checked = false;
+      wizardData.interestMode = 'rate';
 
       goToStep(3);
+
+      // Initialize interest mode toggle to "rate" mode
+      setInterestMode('rate');
       calculateInterest();
     }
 
     // Toggle no interest checkbox
-    function toggleNoInterest() {
-      const checkbox = document.getElementById('no-interest-checkbox');
+    // Store the last user-entered interest rate
+    let lastInterestRate = null;
+
+    // Set interest mode (rate or none)
+    function setInterestMode(mode) {
+      const modeRateBtn = document.getElementById('mode-rate');
+      const modeNoneBtn = document.getElementById('mode-none');
       const interestRateInput = document.getElementById('interest-rate');
 
-      if (checkbox.checked) {
-        // Disable interest rate input
-        interestRateInput.disabled = true;
-        interestRateInput.style.opacity = '0.5';
-        interestRateInput.value = '0';
-        wizardData.hasInterest = false;
-        wizardData.interestRate = 0;
-        wizardData.totalInterest = 0;
-        wizardData.totalRepayAmount = wizardData.amount;
+      if (mode === 'rate') {
+        // Style toggle buttons
+        modeRateBtn.style.background = 'var(--accent)';
+        modeRateBtn.style.color = '#000';
+        modeRateBtn.style.fontWeight = '600';
+        modeNoneBtn.style.background = 'transparent';
+        modeNoneBtn.style.color = 'var(--text)';
+        modeNoneBtn.style.fontWeight = '500';
 
-        // Hide badge
-        document.getElementById('interest-rate-badge').style.display = 'none';
+        // Restore last interest rate or use default
+        if (lastInterestRate !== null && lastInterestRate > 0) {
+          interestRateInput.value = lastInterestRate;
+        } else if (!interestRateInput.value || interestRateInput.value === '0') {
+          // Use center of fair range as default
+          const fairRangeMin = wizardData.fairRangeMin || 4;
+          const fairRangeMax = wizardData.fairRangeMax || 7;
+          interestRateInput.value = Math.round((fairRangeMin + fairRangeMax) / 2);
+        }
 
-        // Update summary
-        calculateInterest();
-      } else {
-        // Enable interest rate input
-        interestRateInput.disabled = false;
-        interestRateInput.style.opacity = '1';
-        interestRateInput.value = '6';
         wizardData.hasInterest = true;
+        wizardData.interestMode = 'rate';
+      } else {
+        // Style toggle buttons
+        modeNoneBtn.style.background = 'var(--accent)';
+        modeNoneBtn.style.color = '#000';
+        modeNoneBtn.style.fontWeight = '600';
+        modeRateBtn.style.background = 'transparent';
+        modeRateBtn.style.color = 'var(--text)';
+        modeRateBtn.style.fontWeight = '500';
 
-        // Show badge
-        document.getElementById('interest-rate-badge').style.display = 'inline-block';
+        // Save current rate and set to 0
+        const currentRate = parseFloat(interestRateInput.value);
+        if (currentRate > 0) {
+          lastInterestRate = currentRate;
+        }
 
-        // Recalculate
-        calculateInterest();
+        wizardData.hasInterest = false;
+        wizardData.interestMode = 'none';
+      }
+
+      // Recalculate with new mode
+      calculateInterest();
+    }
+
+    // Handle interest input with clamping
+    function handleInterestInput() {
+      const interestRateInput = document.getElementById('interest-rate');
+      let value = parseFloat(interestRateInput.value);
+
+      // Clamp to 0-99
+      if (value < 0) {
+        value = 0;
+        interestRateInput.value = 0;
+      } else if (value > 99) {
+        value = 99;
+        interestRateInput.value = 99;
+      }
+
+      // Save the value if > 0
+      if (value > 0) {
+        lastInterestRate = value;
+      }
+
+      // Recalculate
+      calculateInterest();
+    }
+
+    // Toggle fairness explanation panel
+    function toggleFairnessExplanation() {
+      const panel = document.getElementById('fairness-explanation');
+      const badge = document.getElementById('interest-rate-badge');
+
+      if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        badge.setAttribute('aria-expanded', 'true');
+      } else {
+        panel.classList.add('hidden');
+        badge.setAttribute('aria-expanded', 'false');
       }
     }
 
@@ -2452,11 +2526,16 @@
 
     // Calculate interest using fair amortization (equal principal payments)
     function calculateInterest() {
-      const interestRate = parseFloat(document.getElementById('interest-rate').value) || 0;
+      let interestRate = parseFloat(document.getElementById('interest-rate').value) || 0;
       const principal = wizardData.amount;
 
       if (!principal || principal <= 0) {
         return;
+      }
+
+      // If we're in "no interest" mode, force rate to 0 for calculations
+      if (wizardData.interestMode === 'none' || !wizardData.hasInterest) {
+        interestRate = 0;
       }
 
       // Calculate duration in months for fair range and period rate
@@ -2507,30 +2586,49 @@
         fairRangeMax = 10;
       }
 
-      // Update badge and helper text based on rate
-      const badge = document.getElementById('interest-rate-badge');
-      const helper = document.getElementById('interest-rate-helper');
+      // Store fair range in wizardData for use in mode switching
+      wizardData.fairRangeMin = fairRangeMin;
+      wizardData.fairRangeMax = fairRangeMax;
 
-      if (document.getElementById('no-interest-checkbox').checked || interestRate === 0) {
-        badge.style.display = 'none';
-        helper.textContent = '';
+      // Update badge based on rate and mode
+      const badge = document.getElementById('interest-rate-badge');
+      const badgeText = document.getElementById('interest-rate-badge-text');
+      const explanationSummary = document.getElementById('fairness-explanation-summary');
+
+      // Check if we're in "no interest" mode
+      const isNoInterestMode = wizardData.interestMode === 'none' || (!wizardData.hasInterest && interestRate === 0);
+
+      if (isNoInterestMode) {
+        // In "no interest" mode, show neutral badge
+        badge.style.display = 'inline-flex';
+        badgeText.textContent = 'No interest set';
+        badge.style.background = 'rgba(156,163,175,0.15)';
+        badge.style.color = '#9ca3af';
+        explanationSummary.textContent = `For this amount and duration (${durationLabel.toLowerCase()}), a fair interest range would typically be ${fairRangeMin}–${fairRangeMax}% per year, but you've chosen not to charge interest.`;
+      } else if (interestRate === 0) {
+        // Rate is 0 but in rate mode
+        badge.style.display = 'inline-flex';
+        badgeText.textContent = 'No interest (0%)';
+        badge.style.background = 'rgba(156,163,175,0.15)';
+        badge.style.color = '#9ca3af';
+        explanationSummary.textContent = `For this amount and duration (${durationLabel.toLowerCase()}), a fair interest range would typically be ${fairRangeMin}–${fairRangeMax}% per year.`;
       } else {
-        badge.style.display = 'inline-block';
+        badge.style.display = 'inline-flex';
         if (interestRate >= fairRangeMin && interestRate <= fairRangeMax) {
-          badge.textContent = `🟢 Fair range (${fairRangeMin}–${fairRangeMax}%)`;
+          badgeText.textContent = `Fair range (${fairRangeMin}–${fairRangeMax}%)`;
           badge.style.background = 'rgba(61,220,151,0.15)';
           badge.style.color = 'var(--accent)';
-          helper.textContent = `For this amount and term, a rate of ${fairRangeMin}–${fairRangeMax}% per year is considered fair.`;
+          explanationSummary.textContent = `Together, these factors suggest a fair range like ${fairRangeMin}–${fairRangeMax}% for this loan. Your rate of ${interestRate}% falls within this range.`;
         } else if (interestRate > fairRangeMax) {
-          badge.textContent = `🟠 Above typical (>${fairRangeMax}%)`;
+          badgeText.textContent = `Above typical (>${fairRangeMax}%)`;
           badge.style.background = 'rgba(249,115,22,0.15)';
           badge.style.color = '#f97316';
-          helper.textContent = `For this amount and term, a rate of ${fairRangeMin}–${fairRangeMax}% per year is considered fair.`;
+          explanationSummary.textContent = `Together, these factors suggest a fair range like ${fairRangeMin}–${fairRangeMax}% for this loan. Your rate of ${interestRate}% is higher than typical.`;
         } else {
-          badge.textContent = `🔵 Generous (<${fairRangeMin}%)`;
+          badgeText.textContent = `Generous (<${fairRangeMin}%)`;
           badge.style.background = 'rgba(59,130,246,0.15)';
           badge.style.color = '#3b82f6';
-          helper.textContent = `For this amount and term, a rate of ${fairRangeMin}–${fairRangeMax}% per year is considered fair.`;
+          explanationSummary.textContent = `Together, these factors suggest a fair range like ${fairRangeMin}–${fairRangeMax}% for this loan. Your rate of ${interestRate}% is quite generous.`;
         }
       }
 
@@ -2651,7 +2749,7 @@
     // Navigate to payment preferences
     function goToPayments() {
       // Update interest data if no interest selected
-      if (!wizardData.hasInterest || document.getElementById('no-interest-checkbox').checked) {
+      if (!wizardData.hasInterest || wizardData.interestMode === 'none') {
         wizardData.interestRate = 0;
         wizardData.totalInterest = 0;
         wizardData.totalRepayAmount = wizardData.amount;
@@ -3211,9 +3309,9 @@
 
       // Reset Step 3 fields
       document.getElementById('interest-rate').value = '';
-      document.getElementById('interest-rate').disabled = false;
-      document.getElementById('interest-rate').style.opacity = '1';
-      document.getElementById('no-interest-checkbox').checked = false;
+      wizardData.interestMode = 'rate';
+      wizardData.hasInterest = true;
+      lastInterestRate = null;
 
       // Reset Step 4 fields
       document.querySelectorAll('.payment-method-checkbox').forEach(cb => {
