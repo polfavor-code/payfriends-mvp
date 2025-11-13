@@ -695,7 +695,7 @@
         </div>
 
         <!-- Interest Input Row -->
-        <div style="margin-top:20px; display:flex; align-items:center; gap:12px">
+        <div id="interest-input-container" style="margin-top:20px; display:flex; align-items:center; gap:12px">
           <input id="interest-rate" type="number" min="0" max="99" step="0.1" placeholder="6" oninput="handleInterestInput()" style="width:80px; height:44px; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-size:16px; text-align:center" />
           <span style="color:var(--text); font-size:16px; font-weight:500">% per year</span>
           <button id="interest-rate-badge" onclick="toggleFairnessExplanation()" aria-expanded="false" aria-controls="fairness-explanation" style="display:inline-flex; align-items:center; gap:6px; height:44px; padding:0 16px; border-radius:22px; font-size:13px; font-weight:600; white-space:nowrap; border:none; cursor:pointer; transition:all 0.2s ease">
@@ -2311,6 +2311,8 @@
       const modeRateBtn = document.getElementById('mode-rate');
       const modeNoneBtn = document.getElementById('mode-none');
       const interestRateInput = document.getElementById('interest-rate');
+      const interestInputContainer = document.getElementById('interest-input-container');
+      const fairnessExplanation = document.getElementById('fairness-explanation');
 
       if (mode === 'rate') {
         // Style toggle buttons
@@ -2320,6 +2322,9 @@
         modeNoneBtn.style.background = 'transparent';
         modeNoneBtn.style.color = 'var(--text)';
         modeNoneBtn.style.fontWeight = '500';
+
+        // Show interest input row
+        interestInputContainer.style.display = 'flex';
 
         // Restore last interest rate or use default
         if (lastInterestRate !== null && lastInterestRate > 0) {
@@ -2341,6 +2346,12 @@
         modeRateBtn.style.background = 'transparent';
         modeRateBtn.style.color = 'var(--text)';
         modeRateBtn.style.fontWeight = '500';
+
+        // Hide interest input row
+        interestInputContainer.style.display = 'none';
+
+        // Hide fairness explanation panel
+        fairnessExplanation.classList.add('hidden');
 
         // Save current rate and set to 0
         const currentRate = parseFloat(interestRateInput.value);
