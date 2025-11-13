@@ -158,6 +158,9 @@
     .user-avatar-initials.color-5{background:#10b981}
     .user-avatar-initials.color-6{background:#3b82f6}
     .user-avatar-initials.color-7{background:#14b8a6}
+    /* Override avatar margins inside summary section to allow overlap */
+    #summary-section #summary-avatar-lender > *,
+    #summary-section #summary-avatar-borrower > * {margin:0 !important}
     .counterparty-cell{display:flex; align-items:center; gap:10px}
     .due-date-overdue{color:#f87171}
     .due-date-upcoming{color:var(--muted)}
