@@ -677,88 +677,6 @@
 
       <!-- Step 3: Interest & Calculation -->
       <div id="wizard-step-3" class="wizard-content hidden">
-        <!-- SVG Icon Definitions -->
-        <svg style="display:none">
-          <!-- Variant A: FairnessIconHeart (default) -->
-          <symbol id="fairness-icon-heart" viewBox="0 0 16 16">
-            <path d="M14.5 8.5 A6.5 6.5 0 1 1 12 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <polygon points="14.5,8.5 13,10 12.5,8" fill="currentColor"/>
-            <path d="M8 12 L6.5 10.5 C5.5 9.5 5.5 8.5 6 8 C6.5 7.5 7 7.5 7.5 8 L8 8.5 L8.5 8 C9 7.5 9.5 7.5 10 8 C10.5 8.5 10.5 9.5 9.5 10.5 Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-          </symbol>
-
-          <!-- Variant B: FairnessIconDots -->
-          <symbol id="fairness-icon-dots" viewBox="0 0 16 16">
-            <path d="M14.5 8.5 A6.5 6.5 0 1 1 12 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <polygon points="14.5,8.5 13,10 12.5,8" fill="currentColor"/>
-            <circle cx="6.5" cy="8.5" r="1.5" fill="currentColor"/>
-            <circle cx="9.5" cy="8.5" r="1.5" fill="currentColor"/>
-          </symbol>
-
-          <!-- Variant C: FairnessIconHands -->
-          <symbol id="fairness-icon-hands" viewBox="0 0 16 16">
-            <path d="M4 11 L6 9 L8 10 L10 9 L12 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M3 7 A5.5 5.5 0 0 1 13 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </symbol>
-
-          <!-- Heart-Handshake Icon Variants (design exploration) -->
-
-          <!-- V1: Classic heart shape with handshake gesture at base -->
-          <symbol id="fairness-heart-v1" viewBox="0 0 16 16">
-            <path d="M8 13.5 L4.5 10 C3 8.5 3 6.5 4 5.5 C4.8 4.7 6 4.5 7 5.2 L8 6 L9 5.2 C10 4.5 11.2 4.7 12 5.5 C13 6.5 13 8.5 11.5 10 L8 13.5 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6 9.5 L7 8.5 M10 9.5 L9 8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </symbol>
-
-          <!-- V2: Geometric heart with minimal handshake lines -->
-          <symbol id="fairness-heart-v2" viewBox="0 0 16 16">
-            <path d="M8 13 L4 9 C2.5 7.5 2.5 5.5 4 4 C5 3 6.5 3 7.5 4 L8 4.5 L8.5 4 C9.5 3 11 3 12 4 C13.5 5.5 13.5 7.5 12 9 L8 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="6" y1="8" x2="7.5" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="10" y1="8" x2="8.5" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </symbol>
-
-          <!-- V3: Rounded heart with finger grip detail -->
-          <symbol id="fairness-heart-v3" viewBox="0 0 16 16">
-            <path d="M8 13 C8 13 3.5 9.5 3.5 6.5 C3.5 4.5 5 3 6.5 3 C7.3 3 8 3.5 8 3.5 C8 3.5 8.7 3 9.5 3 C11 3 12.5 4.5 12.5 6.5 C12.5 9.5 8 13 8 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6.5 7.5 L7 8 L8 8 L9 8 L9.5 7.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </symbol>
-
-          <!-- V4: Angular heart with crossed hands -->
-          <symbol id="fairness-heart-v4" viewBox="0 0 16 16">
-            <path d="M8 13.5 L4 9.5 L4 6 C4 4.5 5 3.5 6.2 3.5 C7 3.5 7.5 4 8 4.5 C8.5 4 9 3.5 9.8 3.5 C11 3.5 12 4.5 12 6 L12 9.5 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6 8 L8 9 L10 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </symbol>
-
-          <!-- V5: Soft curved heart with subtle clasp -->
-          <symbol id="fairness-heart-v5" viewBox="0 0 16 16">
-            <path d="M8 13.5 C8 13.5 3 10 3 6.5 C3 4.5 4.5 3 6 3 C7 3 7.8 3.5 8 4.2 C8.2 3.5 9 3 10 3 C11.5 3 13 4.5 13 6.5 C13 10 8 13.5 8 13.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <ellipse cx="8" cy="8.5" rx="2" ry="1" fill="none" stroke="currentColor" stroke-width="1.5"/>
-          </symbol>
-
-          <!-- V6: Pointed heart with握手 symbol -->
-          <symbol id="fairness-heart-v6" viewBox="0 0 16 16">
-            <path d="M8 3.5 L8 4.5 M8 3.5 C7.5 3 6.5 2.5 5.5 3 C4 3.8 3.5 5.5 4 7.5 C4.5 9.5 8 13 8 13 M8 3.5 C8.5 3 9.5 2.5 10.5 3 C12 3.8 12.5 5.5 12 7.5 C11.5 9.5 8 13 8 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6 7 L7 8 L8 7.5 L9 8 L10 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </symbol>
-
-          <!-- V7: Asymmetric heart with one-sided handshake -->
-          <symbol id="fairness-heart-v7" viewBox="0 0 16 16">
-            <path d="M8 13.2 L4.2 9.5 C3 8.2 3 6.2 4 5.2 C5 4.2 6.5 4.2 7.5 5 L8 5.5 L8.5 5 C9.5 4.2 11 4.2 12 5.2 C13 6.2 13 8.2 11.8 9.5 L8 13.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6.5 8.5 L8 9.5 L9.5 8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </symbol>
-
-          <!-- V8: Compact heart with interlocked fingers -->
-          <symbol id="fairness-heart-v8" viewBox="0 0 16 16">
-            <path d="M8 12.5 L4.5 9 C3.5 8 3.5 6.5 4.2 5.5 C5 4.8 6 4.5 7 5 L8 5.8 L9 5 C10 4.5 11 4.8 11.8 5.5 C12.5 6.5 12.5 8 11.5 9 L8 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6.5 8 L7.5 8.8 L8.5 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9.5 8 L8.5 8.8 L7.5 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </symbol>
-
-          <!-- V9: Minimalist heart with single handshake line -->
-          <symbol id="fairness-heart-v9" viewBox="0 0 16 16">
-            <path d="M8 13 L4 9 C2.5 7.5 2.5 5 4 3.5 C5.5 2 7 2.5 8 3.5 C9 2.5 10.5 2 12 3.5 C13.5 5 13.5 7.5 12 9 L8 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="5.5" y1="7.5" x2="10.5" y2="7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </symbol>
-        </svg>
-
         <div id="readonly-banner-3" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
           ⚠️ This agreement has already been sent to <span id="readonly-name-3"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
         </div>
@@ -818,19 +736,19 @@
             <span style="color:var(--muted)">Total interest</span>
             <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px">
               <span style="font-weight:600" id="total-interest-display">€ 0,00</span>
-              <svg style="width:16px; height:16px; opacity:0.8"><use href="#fairness-icon-heart"/></svg>
+              <img src="/images/payfriends-handshake.svg" alt="Fairness Between Friends" style="width:16px; height:16px; opacity:0.8" />
             </div>
           </div>
           <div style="display:flex; justify-content:space-between; padding:8px 0">
             <span style="color:var(--muted); font-weight:600">Total to repay</span>
             <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px">
               <span style="font-weight:700; font-size:18px; color:var(--accent)" id="total-repay-display">€ 0,00</span>
-              <svg style="width:16px; height:16px; opacity:0.8"><use href="#fairness-icon-heart"/></svg>
+              <img src="/images/payfriends-handshake.svg" alt="Fairness Between Friends" style="width:16px; height:16px; opacity:0.8" />
             </div>
           </div>
           <p style="margin:12px 0 0 0; color:var(--muted); font-size:12px; line-height:1.5; display:flex; align-items:center; gap:4px">
             <span>Amounts marked with</span>
-            <svg style="width:14px; height:14px; flex-shrink:0"><use href="#fairness-icon-heart"/></svg>
+            <img src="/images/payfriends-handshake.svg" alt="Fairness Between Friends" style="width:14px; height:14px; flex-shrink:0; opacity:0.8" />
             <span>are calculated using the Fairness Between Friends rules.</span>
           </p>
         </div>
@@ -839,7 +757,7 @@
         <div style="margin:20px 0">
           <button onclick="toggleSection('fairness-step3-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
             <div style="display:flex; align-items:center; gap:8px">
-              <svg style="width:16px; height:16px"><use href="#fairness-icon-heart"/></svg>
+              <img src="/images/payfriends-handshake.svg" alt="Fairness Between Friends" style="width:16px; height:16px; opacity:0.8" />
               <span>Fairness Between Friends (How it Works)</span>
             </div>
             <span id="fairness-step3-toggle">▼</span>
@@ -854,45 +772,10 @@
               <li style="margin-bottom:8px"><strong>Late or smaller payments</strong> increase the total interest for the period the amount remains outstanding.</li>
               <li style="margin-bottom:8px">These recalculations happen automatically and are reflected instantly in the agreement for both lender and borrower.</li>
             </ul>
-            <p style="margin:0 0 16px 0; font-size:14px; line-height:1.6">
+            <p style="margin:0; font-size:14px; line-height:1.6">
               Each repayment entry in the payment history clearly notes when a payment caused a change in the total interest, outstanding balance, or future installments.
               This ensures both parties always see the current, fair value of the loan.
             </p>
-
-            <!-- Icon design preview (temporary) -->
-            <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:16px; margin-top:16px">
-              <p style="margin:0 0 12px 0; font-size:12px; color:var(--muted)">Icon options for Fairness Between Friends (for design review only):</p>
-              <div style="display:flex; align-items:center; gap:24px">
-                <div style="display:flex; align-items:center; gap:6px">
-                  <svg style="width:24px; height:24px"><use href="#fairness-icon-heart"/></svg>
-                  <span style="font-size:12px; color:var(--muted)">A</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:6px">
-                  <svg style="width:24px; height:24px"><use href="#fairness-icon-dots"/></svg>
-                  <span style="font-size:12px; color:var(--muted)">B</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:6px">
-                  <svg style="width:24px; height:24px"><use href="#fairness-icon-hands"/></svg>
-                  <span style="font-size:12px; color:var(--muted)">C</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Heart-Handshake Icon Variants (design exploration) -->
-            <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:16px; margin-top:16px">
-              <p style="margin:0 0 12px 0; font-size:12px; color:var(--muted)">New Heart–Handshake Icon Options (design review only):</p>
-              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; place-items:center; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
-                <svg style="width:24px; height:24px"><use href="#fairness-heart-v1"/></svg>
-                <svg style="width:24px; height:24px"><use href="#fairness-heart-v2"/></svg>
-                <svg style="width:24px; height:24px"><use href="#fairness-heart-v3"/></svg>
-                <svg style="width:24px; height:24px"><use href="#fairness-heart-v4"/></svg>
-                <svg style="width:24px; height:24px"><use href="#fairness-heart-v5"/></svg>
-                <svg style="width:24px; height:24px"><use href="#fairness-heart-v6"/></svg>
-                <svg style="width:24px; height:24px"><use href="#fairness-heart-v7"/></svg>
-                <svg style="width:24px; height:24px"><use href="#fairness-heart-v8"/></svg>
-                <svg style="width:24px; height:24px"><use href="#fairness-heart-v9"/></svg>
-              </div>
-            </div>
           </div>
         </div>
 
