@@ -2319,7 +2319,8 @@ app.get('/profile', (req, res) => {
   }
 });
 
-// Review: serve review page for agreement invites
+// Review: redirect token-based reviews to canonical review page
+// Note: /agreements/:id/review is now the single source of truth for borrower review
 app.get('/review', (req, res) => {
   const { token } = req.query;
 
@@ -2327,23 +2328,41 @@ app.get('/review', (req, res) => {
     return res.sendFile(path.join(__dirname, 'public', 'review-invalid.html'));
   }
 
-  // Verify token exists
+  // Verify token exists and get agreement ID
   const invite = db.prepare(`
-    SELECT id FROM agreement_invites WHERE token = ?
+    SELECT agreement_id FROM agreement_invites WHERE token = ?
   `).get(token);
 
   if (!invite) {
     return res.sendFile(path.join(__dirname, 'public', 'review-invalid.html'));
   }
 
-  res.sendFile(path.join(__dirname, 'public', 'review.html'));
+  // Redirect to canonical review page with token parameter
+  return res.redirect(302, `/agreements/${invite.agreement_id}/review?token=${encodeURIComponent(token)}`);
 });
 
-// Review agreement (logged-in borrower)
+// Review agreement (logged-in borrower or token-based access)
 app.get('/agreements/:id/review', (req, res) => {
-  if (!req.user) {
+  const { token } = req.query;
+
+  // Allow access if:
+  // 1. User is logged in, OR
+  // 2. A valid token is provided
+  if (!req.user && !token) {
     return res.redirect('/');
   }
+
+  // If token is provided, verify it matches the agreement
+  if (token) {
+    const invite = db.prepare(`
+      SELECT agreement_id FROM agreement_invites WHERE token = ? AND agreement_id = ?
+    `).get(token, req.params.id);
+
+    if (!invite) {
+      return res.status(403).send('Invalid or expired token');
+    }
+  }
+
   res.sendFile(path.join(__dirname, 'public', 'review-details.html'));
 });
 
