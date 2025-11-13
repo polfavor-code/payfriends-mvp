@@ -2327,15 +2327,21 @@ app.get('/review', (req, res) => {
     return res.sendFile(path.join(__dirname, 'public', 'review-invalid.html'));
   }
 
-  // Verify token exists
+  // Verify token exists and get agreement_id
   const invite = db.prepare(`
-    SELECT id FROM agreement_invites WHERE token = ?
+    SELECT id, agreement_id FROM agreement_invites WHERE token = ?
   `).get(token);
 
   if (!invite) {
     return res.sendFile(path.join(__dirname, 'public', 'review-invalid.html'));
   }
 
+  // If user is logged in, redirect to the canonical review page
+  if (req.user) {
+    return res.redirect(302, `/agreements/${invite.agreement_id}/review`);
+  }
+
+  // If user is NOT logged in, serve the token-based review/signup page
   res.sendFile(path.join(__dirname, 'public', 'review.html'));
 });
 
