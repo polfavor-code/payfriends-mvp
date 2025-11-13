@@ -703,7 +703,6 @@
     let agreement = null;
     let currentUser = null;
     let mode = 'view'; // 'review' or 'view'
-    let inviteToken = null; // Token for invite-based access
 
     // Initialize shared header
     document.addEventListener('DOMContentLoaded', async () => {
@@ -713,10 +712,6 @@
     const pathParts = window.location.pathname.split('/');
     const agreementId = pathParts[2];
     const action = pathParts[3]; // 'review' or 'view'
-
-    // Check for token parameter in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    inviteToken = urlParams.get('token');
 
     // For agreements list
     let allAgreements = [];
@@ -747,88 +742,52 @@
         // Get current user from shared header
         currentUser = PayFriendsHeader.getCurrentUser();
 
-        // For token-based access, user might not be logged in yet
-        if (!currentUser && !inviteToken) {
+        if (!currentUser) {
           window.location.href = '/';
           return;
         }
 
-        // Fetch agreement - use token-based endpoint if token is present
-        let res;
-        if (inviteToken) {
-          // Token-based access (borrower invite link)
-          res = await fetch(`/api/invites/${inviteToken}`);
-          if (!res.ok) {
-            if (res.status === 404) {
-              window.location.href = '/review-invalid.html';
-            } else {
-              showError('Invalid or expired invite link.');
+        // Fetch agreement
+        const res = await fetch(`/api/agreements/${agreementId}`);
+        if (!res.ok) {
+          // Try to parse error message from response
+          let errorMsg = 'Agreement not found or you do not have access to it.';
+          try {
+            const errorData = await res.json();
+            if (errorData.error) {
+              errorMsg = errorData.error;
             }
-            return;
-          }
-          const inviteData = await res.json();
-          agreement = inviteData.agreement;
-
-          // Check if already processed or cancelled
-          if (agreement.status === 'cancelled') {
-            showError('This agreement is no longer available. The lender cancelled the request.');
-            return;
-          }
-          if (inviteData.invite.accepted_at || agreement.status !== 'pending') {
-            showError('This agreement has already been accepted or declined.');
-            return;
+          } catch (e) {
+            // Use default error message if response is not JSON
           }
 
-          // For token-based access, always show review mode for borrower
-          mode = 'review';
-        } else {
-          // Regular authenticated access
-          res = await fetch(`/api/agreements/${agreementId}`);
-          if (!res.ok) {
-            // Try to parse error message from response
-            let errorMsg = 'Agreement not found or you do not have access to it.';
-            try {
-              const errorData = await res.json();
-              if (errorData.error) {
-                errorMsg = errorData.error;
-              }
-            } catch (e) {
-              // Use default error message if response is not JSON
-            }
-
-            if (res.status === 404) {
-              errorMsg = 'Agreement not found. It may have been deleted or you may not have access to it.';
-            } else if (res.status === 403) {
-              errorMsg = 'You do not have permission to view this agreement.';
-            } else if (res.status >= 500) {
-              errorMsg = 'Server error. Please try again later.';
-            }
-
-            showError(errorMsg);
-            return;
-          }
-          agreement = await res.json();
-
-          if (!agreement || typeof agreement !== 'object') {
-            showError('Invalid agreement data received.');
-            return;
+          if (res.status === 404) {
+            errorMsg = 'Agreement not found. It may have been deleted or you may not have access to it.';
+          } else if (res.status === 403) {
+            errorMsg = 'You do not have permission to view this agreement.';
+          } else if (res.status >= 500) {
+            errorMsg = 'Server error. Please try again later.';
           }
 
-          // Determine mode based on URL and user role
-          const isLender = agreement.lender_user_id === currentUser.id;
-          const isBorrower = agreement.borrower_user_id === currentUser.id;
+          showError(errorMsg);
+          return;
+        }
+        agreement = await res.json();
 
-          if (action === 'review' && isBorrower && agreement.status === 'pending') {
-            mode = 'review';
-          } else {
-            mode = 'view';
-          }
+        if (!agreement || typeof agreement !== 'object') {
+          showError('Invalid agreement data received.');
+          return;
         }
 
-        // Show appropriate section based on mode
-        if (mode === 'review') {
+        // Determine mode based on URL and user role
+        const isLender = agreement.lender_user_id === currentUser.id;
+        const isBorrower = agreement.borrower_user_id === currentUser.id;
+
+        if (action === 'review' && isBorrower && agreement.status === 'pending') {
+          mode = 'review';
           showReviewSection();
         } else {
+          mode = 'view';
           showViewSection();
         }
       } catch (err) {
@@ -1737,8 +1696,7 @@
       // Reset modal state
       document.getElementById('accept-confirm-terms').checked = false;
       document.getElementById('accept-confirm-reminders').checked = false;
-      document.getElementById('accept-confirm-worstcase').checked = false;
-      document.getElementById('accept-confirm-fairness').checked = false;
+      document.getElementById('accept-confirm-proof').checked = false;
       document.getElementById('accept-signature').value = '';
       document.getElementById('accept-modal-status').textContent = '';
       document.getElementById('accept-signature-error').classList.add('hidden');
@@ -1825,9 +1783,6 @@
         addTerm('Repayment method(s)', methods.join(', '));
       }
 
-      // Fairness between friends
-      addTerm('Fairness between friends', 'If payments are made earlier, later or in different amounts than planned, PayFriends will recalculate interest and instalments fairly so neither side pays or receives more than they should.');
-
       // Proof required
       addTerm('Require proof of payment', agreement.proof_required ? 'Yes' : 'No');
 
@@ -1853,13 +1808,13 @@
         reminderContainer.style.display = 'none';
       }
 
-      const worstCaseContainer = document.getElementById('accept-confirm-worstcase-container');
-      if (agreement.debt_collection_clause) {
-        worstCaseContainer.classList.remove('hidden');
-        worstCaseContainer.style.display = 'flex';
+      const proofContainer = document.getElementById('accept-confirm-proof-container');
+      if (agreement.proof_required) {
+        proofContainer.classList.remove('hidden');
+        proofContainer.style.display = 'flex';
       } else {
-        worstCaseContainer.classList.add('hidden');
-        worstCaseContainer.style.display = 'none';
+        proofContainer.classList.add('hidden');
+        proofContainer.style.display = 'none';
       }
 
       // Reset and disable confirm button
@@ -1876,43 +1831,26 @@
 
     function validateAcceptModal() {
       const termsChecked = document.getElementById('accept-confirm-terms').checked;
-      const fairnessChecked = document.getElementById('accept-confirm-fairness').checked;
       const signature = document.getElementById('accept-signature').value.trim();
       const confirmBtn = document.getElementById('accept-modal-confirm-btn');
       const signatureError = document.getElementById('accept-signature-error');
-      const signatureInput = document.getElementById('accept-signature');
 
       // Check conditional checkboxes
       const hasReminders = agreement.reminder_mode && agreement.reminder_mode !== 'off';
       const remindersChecked = !hasReminders || document.getElementById('accept-confirm-reminders').checked;
 
-      const hasWorstCase = agreement.debt_collection_clause;
-      const worstCaseChecked = !hasWorstCase || document.getElementById('accept-confirm-worstcase').checked;
+      const proofRequired = agreement.proof_required;
+      const proofChecked = !proofRequired || document.getElementById('accept-confirm-proof').checked;
 
       // Validate all required fields
-      const allCheckboxesValid = termsChecked && fairnessChecked && remindersChecked && worstCaseChecked;
+      const allCheckboxesValid = termsChecked && remindersChecked && proofChecked;
+      const signatureValid = signature.length > 0;
 
-      // Validate name matches borrower name on the agreement
-      // Legal note: we require the typed name to match the borrower name on the agreement.
-      // If the legal name changes, it should be updated via Profile so the agreement data stays consistent.
-      const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || (currentUser ? currentUser.full_name : '') || '';
-      const canonicalName = borrowerName.trim().replace(/\s+/g, ' ').toLowerCase();
-      const typedName = signature.replace(/\s+/g, ' ').toLowerCase();
-      const nameMatches = typedName === canonicalName && signature.length > 0;
-
-      if (signature.length > 0 && !nameMatches) {
-        signatureError.textContent = "The name you entered doesn't match the borrower name on the agreement. Please type your full legal name as it appears on your passport. If your name needs updating, you can change it in your profile and it will update the agreement automatically.";
-        signatureError.classList.remove('hidden');
-        signatureInput.style.borderColor = '#ef4444';
-      } else {
-        signatureError.classList.add('hidden');
-        signatureInput.style.borderColor = 'rgba(255,255,255,0.15)';
-      }
-
-      if (allCheckboxesValid && nameMatches) {
+      if (allCheckboxesValid && signatureValid) {
         confirmBtn.disabled = false;
         confirmBtn.style.opacity = '1';
         confirmBtn.style.cursor = 'pointer';
+        signatureError.classList.add('hidden');
       } else {
         confirmBtn.disabled = true;
         confirmBtn.style.opacity = '0.5';
@@ -1923,8 +1861,6 @@
     async function confirmAccept() {
       const status = document.getElementById('accept-modal-status');
       const confirmBtn = document.getElementById('accept-modal-confirm-btn');
-      const fairnessChecked = document.getElementById('accept-confirm-fairness') ?
-        document.getElementById('accept-confirm-fairness').checked : false;
 
       status.textContent = 'Accepting agreement...';
       status.className = 'status';
@@ -1932,15 +1868,9 @@
       confirmBtn.style.opacity = '0.5';
 
       try {
-        // Use token-based endpoint if token is present, otherwise use regular endpoint
-        const endpoint = inviteToken
-          ? `/api/invites/${inviteToken}/accept`
-          : `/api/agreements/${agreementId}/accept`;
-
-        const res = await fetch(endpoint, {
+        const res = await fetch(`/api/agreements/${agreementId}/accept`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fairnessAccepted: fairnessChecked })
+          headers: { 'Content-Type': 'application/json' }
         });
 
         const data = await res.json();
@@ -1957,11 +1887,7 @@
         status.className = 'status success';
 
         setTimeout(() => {
-          if (inviteToken) {
-            window.location.href = '/app';
-          } else {
-            window.location.reload();
-          }
+          window.location.reload();
         }, 1000);
       } catch (err) {
         status.textContent = 'Error: ' + err.message;
@@ -1981,12 +1907,7 @@
       status.className = 'status';
 
       try {
-        // Use token-based endpoint if token is present, otherwise use regular endpoint
-        const endpoint = inviteToken
-          ? `/api/invites/${inviteToken}/decline`
-          : `/api/agreements/${agreementId}/decline`;
-
-        const res = await fetch(endpoint, {
+        const res = await fetch(`/api/agreements/${agreementId}/decline`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -2017,12 +1938,7 @@
       status.className = 'status';
 
       try {
-        // Use token-based endpoint if token is present, otherwise use regular endpoint
-        const endpoint = inviteToken
-          ? `/api/invites/${inviteToken}/review-later`
-          : `/api/agreements/${agreementId}/review-later`;
-
-        const res = await fetch(endpoint, {
+        const res = await fetch(`/api/agreements/${agreementId}/review-later`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -3252,25 +3168,12 @@
             <span style="color:var(--text); font-size:13px; line-height:1.5;">I agree to the reminder schedule for upcoming and late payments.</span>
           </label>
 
-          <!-- Worst case scenario checkbox (conditional) -->
-          <label id="accept-confirm-worstcase-container" class="hidden" style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
-            <input type="checkbox" id="accept-confirm-worstcase" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
-            <span style="color:var(--text); font-size:13px; line-height:1.5;">I agree with the worst case scenario as described above.</span>
-          </label>
-
-          <!-- Fairness principle checkbox (always required) -->
-          <label style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
-            <input type="checkbox" id="accept-confirm-fairness" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
-            <span style="color:var(--text); font-size:13px; line-height:1.5;">
-              <strong>I understand and agree that if my repayment timing or amount changes, the interest will be recalculated automatically.</strong>
-              Paying earlier or more will lower my interest, while paying later or less may increase it.
-            </span>
+          <!-- Proof of payment checkbox (conditional) -->
+          <label id="accept-confirm-proof-container" class="hidden" style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+            <input type="checkbox" id="accept-confirm-proof" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
+            <span style="color:var(--text); font-size:13px; line-height:1.5;">I will provide proof of payment when requested.</span>
           </label>
         </div>
-        <!-- Optional explainer below confirmations -->
-        <p style="color:var(--muted); font-size:12px; margin:8px 0 0 0; line-height:1.5; font-style:italic;">
-          PayFriends automatically keeps the agreement fair for both sides — adjusting interest based on real repayment behavior.
-        </p>
       </div>
 
       <!-- Signature section -->
