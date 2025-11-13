@@ -245,7 +245,11 @@
 
     <!-- Agreement summary block (above details card) -->
     <div id="summary-section" class="hidden" style="background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px; padding:20px; margin:20px 0; display:flex; align-items:center; gap:16px">
-      <div id="summary-avatar" style="flex-shrink:0"></div>
+      <!-- Both avatars: Lender (left) + Borrower (right) with slight overlap -->
+      <div style="flex-shrink:0; position:relative; display:flex; align-items:center">
+        <div id="summary-avatar-lender" style="position:relative; z-index:1"></div>
+        <div id="summary-avatar-borrower" style="position:relative; margin-left:-12px; z-index:0"></div>
+      </div>
       <div style="flex:1">
         <p id="agreement-summary-line1" style="margin:0 0 12px 0; font-size:15px; line-height:1.6; color:var(--accent)"></p>
         <p id="agreement-summary-line2" style="margin:0 0 12px 0; font-size:15px; line-height:1.6; color:var(--accent)"></p>
@@ -1401,43 +1405,43 @@
       }
       document.getElementById('agreement-summary-line2').textContent = summaryLine2;
 
-      // Generate human-readable summary line 3 (outstanding and total)
+      // Generate human-readable summary line 3 (outstanding amount with interest)
+      // Calculate outstanding = total to repay - confirmed payments
       const outstanding = formatCurrency2(agreement.outstanding_cents || agreement.amount_cents);
-      let summaryLine3 = `${outstanding} remains outstanding.`;
+      let summaryLine3 = `${outstanding} remains outstanding`;
 
+      // Add interest rate information if applicable
       if (hasInterest) {
-        const totalRepayCents = agreement.total_repay_amount
-          ? Math.round(agreement.total_repay_amount * 100)
-          : agreement.amount_cents;
-        const totalRepay = formatCurrency2(totalRepayCents);
-        summaryLine3 += ` Total to repay: ${totalRepay} (incl. ${agreement.interest_rate}% interest).`;
+        summaryLine3 += ` (incl. ${agreement.interest_rate}% interest)`;
       }
+      summaryLine3 += '.';
+
       document.getElementById('agreement-summary-line3').textContent = summaryLine3;
 
-      // Create and insert counterparty avatar (lender for borrower, borrower for lender)
-      let avatarHtml = '';
-      let counterpartyName, counterpartyUserId, counterpartyHasProfilePicture;
+      // Create and insert both avatars (lender left, borrower right) with consistent order
+      // Always show lender on left, borrower on right, regardless of who is viewing
 
-      if (isBorrower) {
-        // Borrower is viewing → show lender avatar
-        counterpartyName = lenderName;
-        counterpartyUserId = agreement.lender_user_id;
-        counterpartyHasProfilePicture = agreement.lender_profile_picture;
+      // Create lender avatar (always left)
+      let lenderAvatarHtml = '';
+      if (agreement.lender_profile_picture && agreement.lender_user_id) {
+        lenderAvatarHtml = `<div class="user-avatar size-xl" style="box-shadow: 0 0 0 2px rgba(61,220,151,0.4)"><img src="/api/profile/picture/${agreement.lender_user_id}" class="user-avatar-image" /></div>`;
       } else {
-        // Lender is viewing (or fallback) → show borrower avatar
-        counterpartyName = borrowerName;
-        counterpartyUserId = agreement.borrower_user_id;
-        counterpartyHasProfilePicture = agreement.borrower_profile_picture;
+        const lenderInitials = getInitials(lenderName);
+        const lenderColorClass = getAvatarColor(lenderName);
+        lenderAvatarHtml = `<div class="user-avatar size-xl" style="box-shadow: 0 0 0 2px rgba(61,220,151,0.4)"><div class="user-avatar-initials ${lenderColorClass}">${lenderInitials}</div></div>`;
       }
+      document.getElementById('summary-avatar-lender').innerHTML = lenderAvatarHtml;
 
-      if (counterpartyHasProfilePicture && counterpartyUserId) {
-        avatarHtml = `<div class="user-avatar size-xl"><img src="/api/profile/picture/${counterpartyUserId}" class="user-avatar-image" /></div>`;
+      // Create borrower avatar (always right)
+      let borrowerAvatarHtml = '';
+      if (agreement.borrower_profile_picture && agreement.borrower_user_id) {
+        borrowerAvatarHtml = `<div class="user-avatar size-xl" style="box-shadow: 0 0 0 2px rgba(61,220,151,0.4)"><img src="/api/profile/picture/${agreement.borrower_user_id}" class="user-avatar-image" /></div>`;
       } else {
-        const initials = getInitials(counterpartyName);
-        const colorClass = getAvatarColor(counterpartyName);
-        avatarHtml = `<div class="user-avatar size-xl"><div class="user-avatar-initials ${colorClass}">${initials}</div></div>`;
+        const borrowerInitials = getInitials(borrowerName);
+        const borrowerColorClass = getAvatarColor(borrowerName);
+        borrowerAvatarHtml = `<div class="user-avatar size-xl" style="box-shadow: 0 0 0 2px rgba(61,220,151,0.4)"><div class="user-avatar-initials ${borrowerColorClass}">${borrowerInitials}</div></div>`;
       }
-      document.getElementById('summary-avatar').innerHTML = avatarHtml;
+      document.getElementById('summary-avatar-borrower').innerHTML = borrowerAvatarHtml;
 
       // Show summary section
       document.getElementById('summary-section').classList.remove('hidden');
