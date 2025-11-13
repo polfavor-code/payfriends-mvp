@@ -20,6 +20,10 @@
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+      --danger:#ef4444;
+      --danger-ink:#fca5a5;
+      --danger-border:rgba(239,68,68,.28);
+      --danger-bg:rgba(239,68,68,.06);
     }
     *{box-sizing:border-box}
     body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
@@ -117,6 +121,10 @@
     .message-subject{font-weight:600; margin-bottom:4px}
     .message-date{color:var(--muted); font-size:12px}
     .empty-state{text-align:center; color:var(--muted); padding:32px; font-size:14px}
+    /* Payment issue variant - red theme for activity items */
+    .activity-item--issue,.message-item.activity-item--issue{background:var(--danger-bg) !important; border-color:var(--danger-border) !important}
+    .activity-item--issue .message-date,.message-item.activity-item--issue .message-date{color:var(--danger-ink)}
+    .activity-item--issue .unread-indicator,.message-item.activity-item--issue .unread-indicator{color:var(--danger) !important; text-shadow:0 0 8px rgba(239,68,68,.3)}
     .wizard-steps{display:flex; gap:16px; margin-bottom:24px; align-items:center}
     .wizard-step{flex:1; padding:8px 16px; background:#10151d; border-radius:8px; text-align:center; font-size:14px; border:2px solid transparent; cursor:pointer; transition:all 0.2s ease}
     .wizard-step:hover{background:#1a2028; border-color:rgba(61,220,151,0.3)}
@@ -3224,8 +3232,11 @@
             const isPaymentDifficulty = msg.event_type === 'HARDSHIP_REQUEST_LENDER';
             const warningIcon = isPaymentDifficulty ? '<span style="color:#f59e0b; font-weight:700; margin-right:8px" title="Payment issue requires attention">⚠</span>' : '';
 
+            // Apply issue modifier class for payment issues
+            const issueClass = isPaymentDifficulty ? 'activity-item--issue' : '';
+
             return `
-              <div class="message-item ${unreadClass} ${clickableClass}" ${onclickAttr}>
+              <div class="message-item ${unreadClass} ${clickableClass} ${issueClass}" ${onclickAttr}>
                 <div style="display:flex; justify-content:space-between; align-items:center">
                   <div class="message-date">${timestamp} (${relativeTime})</div>
                   ${isUnread ? '<span class="unread-indicator">●</span>' : ''}
