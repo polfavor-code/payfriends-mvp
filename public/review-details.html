@@ -1414,13 +1414,27 @@
       }
       document.getElementById('agreement-summary-line3').textContent = summaryLine3;
 
-      // Create and insert borrower avatar (always show borrower)
+      // Create and insert counterparty avatar (lender for borrower, borrower for lender)
       let avatarHtml = '';
-      if (agreement.borrower_profile_picture && agreement.borrower_user_id) {
-        avatarHtml = `<div class="user-avatar size-xl"><img src="/api/profile/picture/${agreement.borrower_user_id}" class="user-avatar-image" /></div>`;
+      let counterpartyName, counterpartyUserId, counterpartyHasProfilePicture;
+
+      if (isBorrower) {
+        // Borrower is viewing → show lender avatar
+        counterpartyName = lenderName;
+        counterpartyUserId = agreement.lender_user_id;
+        counterpartyHasProfilePicture = agreement.lender_profile_picture;
       } else {
-        const initials = getInitials(borrowerName);
-        const colorClass = getAvatarColor(borrowerName);
+        // Lender is viewing (or fallback) → show borrower avatar
+        counterpartyName = borrowerName;
+        counterpartyUserId = agreement.borrower_user_id;
+        counterpartyHasProfilePicture = agreement.borrower_profile_picture;
+      }
+
+      if (counterpartyHasProfilePicture && counterpartyUserId) {
+        avatarHtml = `<div class="user-avatar size-xl"><img src="/api/profile/picture/${counterpartyUserId}" class="user-avatar-image" /></div>`;
+      } else {
+        const initials = getInitials(counterpartyName);
+        const colorClass = getAvatarColor(counterpartyName);
         avatarHtml = `<div class="user-avatar size-xl"><div class="user-avatar-initials ${colorClass}">${initials}</div></div>`;
       }
       document.getElementById('summary-avatar').innerHTML = avatarHtml;
