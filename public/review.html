@@ -271,10 +271,10 @@
             <span style="color:var(--text); font-size:13px; line-height:1.5;">I agree to the reminder schedule for upcoming and late payments.</span>
           </label>
 
-          <!-- Proof of payment checkbox (conditional) -->
-          <label id="accept-confirm-proof-container" class="hidden" style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
-            <input type="checkbox" id="accept-confirm-proof" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
-            <span style="color:var(--text); font-size:13px; line-height:1.5;">I will provide proof of payment when requested.</span>
+          <!-- Worst case scenario checkbox (conditional) -->
+          <label id="accept-confirm-worstcase-container" class="hidden" style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+            <input type="checkbox" id="accept-confirm-worstcase" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
+            <span style="color:var(--text); font-size:13px; line-height:1.5;">I agree with the worst case scenario as described above.</span>
           </label>
 
           <!-- Fairness principle checkbox (always required) -->
@@ -774,7 +774,7 @@
       // Reset modal state
       document.getElementById('accept-confirm-terms').checked = false;
       document.getElementById('accept-confirm-reminders').checked = false;
-      document.getElementById('accept-confirm-proof').checked = false;
+      document.getElementById('accept-confirm-worstcase').checked = false;
       document.getElementById('accept-signature').value = '';
       document.getElementById('accept-modal-status').textContent = '';
       document.getElementById('accept-signature-error').classList.add('hidden');
@@ -861,6 +861,9 @@
         addTerm('Repayment method(s)', methods.join(', '));
       }
 
+      // Fairness between friends
+      addTerm('Fairness between friends', 'If payments are made earlier, later or in different amounts than planned, PayFriends will recalculate interest and instalments fairly so neither side pays or receives more than they should.');
+
       // Proof required
       addTerm('Require proof of payment', agreement.proof_required ? 'Yes' : 'No');
 
@@ -886,13 +889,13 @@
         reminderContainer.style.display = 'none';
       }
 
-      const proofContainer = document.getElementById('accept-confirm-proof-container');
-      if (agreement.proof_required) {
-        proofContainer.classList.remove('hidden');
-        proofContainer.style.display = 'flex';
+      const worstCaseContainer = document.getElementById('accept-confirm-worstcase-container');
+      if (agreement.debt_collection_clause) {
+        worstCaseContainer.classList.remove('hidden');
+        worstCaseContainer.style.display = 'flex';
       } else {
-        proofContainer.classList.add('hidden');
-        proofContainer.style.display = 'none';
+        worstCaseContainer.classList.add('hidden');
+        worstCaseContainer.style.display = 'none';
       }
 
       // Reset and disable confirm button
@@ -914,23 +917,39 @@
       const signature = document.getElementById('accept-signature').value.trim();
       const confirmBtn = document.getElementById('accept-modal-confirm-btn');
       const signatureError = document.getElementById('accept-signature-error');
+      const signatureInput = document.getElementById('accept-signature');
 
       // Check conditional checkboxes
       const hasReminders = agreement.reminder_mode && agreement.reminder_mode !== 'off';
       const remindersChecked = !hasReminders || document.getElementById('accept-confirm-reminders').checked;
 
-      const proofRequired = agreement.proof_required;
-      const proofChecked = !proofRequired || document.getElementById('accept-confirm-proof').checked;
+      const hasWorstCase = agreement.debt_collection_clause;
+      const worstCaseChecked = !hasWorstCase || document.getElementById('accept-confirm-worstcase').checked;
 
       // Validate all required fields
-      const allCheckboxesValid = termsChecked && fairnessChecked && remindersChecked && proofChecked;
-      const signatureValid = signature.length > 0;
+      const allCheckboxesValid = termsChecked && fairnessChecked && remindersChecked && worstCaseChecked;
 
-      if (allCheckboxesValid && signatureValid) {
+      // Validate name matches borrower name on the agreement
+      // Note: This validation ensures the typed name matches the borrower's legal name for agreement validity.
+      // If the name needs updating, users should update it in their profile first.
+      const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || currentUser?.full_name || '';
+      const canonicalName = borrowerName.trim().replace(/\s+/g, ' ').toLowerCase();
+      const typedName = signature.replace(/\s+/g, ' ').toLowerCase();
+      const nameMatches = typedName === canonicalName && signature.length > 0;
+
+      if (signature.length > 0 && !nameMatches) {
+        signatureError.textContent = "The name you entered doesn't match the borrower name on the agreement. Please type your full legal name as it appears on your passport. If your name needs updating, you can change it in your profile and it will update the agreement automatically.";
+        signatureError.classList.remove('hidden');
+        signatureInput.style.borderColor = '#ef4444';
+      } else {
+        signatureError.classList.add('hidden');
+        signatureInput.style.borderColor = 'rgba(255,255,255,0.15)';
+      }
+
+      if (allCheckboxesValid && nameMatches) {
         confirmBtn.disabled = false;
         confirmBtn.style.opacity = '1';
         confirmBtn.style.cursor = 'pointer';
-        signatureError.classList.add('hidden');
       } else {
         confirmBtn.disabled = true;
         confirmBtn.style.opacity = '0.5';
