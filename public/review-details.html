@@ -1424,22 +1424,22 @@
       // Create lender avatar (always left)
       let lenderAvatarHtml = '';
       if (agreement.lender_profile_picture && agreement.lender_user_id) {
-        lenderAvatarHtml = `<div class="user-avatar size-xl" style="box-shadow: 0 0 0 2px rgba(61,220,151,0.4)"><img src="/api/profile/picture/${agreement.lender_user_id}" class="user-avatar-image" /></div>`;
+        lenderAvatarHtml = `<div class="user-avatar size-xl"><img src="/api/profile/picture/${agreement.lender_user_id}" class="user-avatar-image" /></div>`;
       } else {
         const lenderInitials = getInitials(lenderName);
         const lenderColorClass = getAvatarColor(lenderName);
-        lenderAvatarHtml = `<div class="user-avatar size-xl" style="box-shadow: 0 0 0 2px rgba(61,220,151,0.4)"><div class="user-avatar-initials ${lenderColorClass}">${lenderInitials}</div></div>`;
+        lenderAvatarHtml = `<div class="user-avatar size-xl"><div class="user-avatar-initials ${lenderColorClass}">${lenderInitials}</div></div>`;
       }
       document.getElementById('summary-avatar-lender').innerHTML = lenderAvatarHtml;
 
       // Create borrower avatar (always right)
       let borrowerAvatarHtml = '';
       if (agreement.borrower_profile_picture && agreement.borrower_user_id) {
-        borrowerAvatarHtml = `<div class="user-avatar size-xl" style="box-shadow: 0 0 0 2px rgba(61,220,151,0.4)"><img src="/api/profile/picture/${agreement.borrower_user_id}" class="user-avatar-image" /></div>`;
+        borrowerAvatarHtml = `<div class="user-avatar size-xl"><img src="/api/profile/picture/${agreement.borrower_user_id}" class="user-avatar-image" /></div>`;
       } else {
         const borrowerInitials = getInitials(borrowerName);
         const borrowerColorClass = getAvatarColor(borrowerName);
-        borrowerAvatarHtml = `<div class="user-avatar size-xl" style="box-shadow: 0 0 0 2px rgba(61,220,151,0.4)"><div class="user-avatar-initials ${borrowerColorClass}">${borrowerInitials}</div></div>`;
+        borrowerAvatarHtml = `<div class="user-avatar size-xl"><div class="user-avatar-initials ${borrowerColorClass}">${borrowerInitials}</div></div>`;
       }
       document.getElementById('summary-avatar-borrower').innerHTML = borrowerAvatarHtml;
 
