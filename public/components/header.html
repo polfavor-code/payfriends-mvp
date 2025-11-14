@@ -41,17 +41,149 @@
   .user-avatar-initials.color-6 { background: #3b82f6; }
   .user-avatar-initials.color-7 { background: #14b8a6; }
 
-  /* Header user info with avatar */
-  .top-header-user-info {
-    display: inline-flex !important;
+  /* Header user menu container */
+  .header-user-menu {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Avatar button in header */
+  .user-avatar-button {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-  }
-  .header-user-name {
+    height: 40px;
+    min-height: 40px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
     color: var(--text);
     font-size: 14px;
-    line-height: 1;
+    font-weight: 500;
     white-space: nowrap;
+  }
+
+  .user-avatar-button:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .user-avatar-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(61, 220, 151, 0.5);
+  }
+
+  .user-avatar-button[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .avatar-loading {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .user-avatar-button .header-user-name {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  /* User dropdown menu */
+  .user-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    min-width: 240px;
+    background: #0f1419;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    padding: 8px 0;
+    z-index: 50;
+    animation: dropdownFadeIn 0.15s ease-out;
+  }
+
+  @keyframes dropdownFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .user-dropdown.hidden {
+    display: none;
+  }
+
+  .user-dropdown-card {
+    padding-inline: 8px;
+  }
+
+  .user-dropdown-header {
+    padding: 10px 10px 8px 10px;
+  }
+
+  .user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 3px;
+  }
+
+  .user-email {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.3;
+  }
+
+  .dropdown-divider {
+    margin: 6px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dropdown-item {
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    padding: 8px 10px;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+    font-weight: 500;
+  }
+
+  .dropdown-item:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .dropdown-item:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .dropdown-item-disabled {
+    color: var(--muted);
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  .dropdown-item-danger {
+    color: #ff6b6b;
+  }
+
+  .dropdown-item-danger:hover {
+    background: rgba(255, 107, 107, 0.1);
   }
 </style>
 
@@ -66,11 +198,45 @@
     </a>
   </div>
   <div class="top-header-right">
-    <div class="top-header-user-info" id="user-info-display">Loading...</div>
     <div class="pf-btn-header" id="activity-button">
       Activity (<span class="inbox-count" id="activity-count">0</span>)
     </div>
-    <a href="/profile" class="pf-btn-header">My Profile</a>
-    <button class="pf-btn-header" id="logout-btn">Logout</button>
+    <!-- Avatar dropdown menu -->
+    <div class="header-user-menu">
+      <button
+        id="user-avatar-button"
+        class="user-avatar-button"
+        aria-haspopup="true"
+        aria-expanded="false"
+        title="User menu"
+      >
+        <span class="avatar-loading">Loading...</span>
+      </button>
+
+      <div id="user-dropdown" class="user-dropdown hidden" role="menu" aria-labelledby="user-avatar-button">
+        <div class="user-dropdown-card">
+          <div class="user-dropdown-header">
+            <div class="user-name" id="user-dropdown-name">Loading...</div>
+            <div class="user-email" id="user-dropdown-email"></div>
+          </div>
+
+          <div class="dropdown-divider"></div>
+
+          <button class="dropdown-item" id="user-menu-profile" role="menuitem">
+            My Profile
+          </button>
+
+          <button class="dropdown-item dropdown-item-disabled" id="user-menu-security" role="menuitem" disabled>
+            Security (coming soon)
+          </button>
+
+          <div class="dropdown-divider"></div>
+
+          <button class="dropdown-item dropdown-item-danger" id="user-menu-logout" role="menuitem">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </header>
