@@ -134,17 +134,27 @@
       const data = await res.json();
       currentUser = data.user;
 
-      // Update user info display with avatar and first name
-      const userInfoEl = document.getElementById('user-info-display');
-      if (userInfoEl) {
+      // Update avatar button with avatar and first name
+      const avatarButton = document.getElementById('user-avatar-button');
+      if (avatarButton) {
         const firstName = getFirstNameFromUser(currentUser);
         const avatarHTML = generateAvatarHTML(currentUser, 'small');
 
-        userInfoEl.innerHTML = `
+        avatarButton.innerHTML = `
           ${avatarHTML}
           <span class="header-user-name">${firstName}</span>
         `;
       }
+
+      // Update dropdown with full user info
+      const fullName = currentUser.full_name || currentUser.name || '';
+      const email = currentUser.email || '';
+
+      const nameEl = document.getElementById('user-dropdown-name');
+      const emailEl = document.getElementById('user-dropdown-email');
+
+      if (nameEl) nameEl.textContent = fullName;
+      if (emailEl) emailEl.textContent = email;
     } catch (err) {
       console.error('Error loading user:', err);
       window.location.href = '/';
@@ -198,12 +208,6 @@
    * @param {Object} options - Configuration options
    */
   function setupEventListeners(options) {
-    // Logout button
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', handleLogout);
-    }
-
     // Activity button
     const activityButton = document.getElementById('activity-button');
     if (activityButton) {
@@ -218,6 +222,86 @@
         });
         activityButton.style.cursor = 'pointer';
       }
+    }
+
+    // Avatar dropdown toggle
+    const avatarButton = document.getElementById('user-avatar-button');
+    const dropdown = document.getElementById('user-dropdown');
+
+    if (avatarButton && dropdown) {
+      // Toggle dropdown on avatar button click
+      avatarButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = !dropdown.classList.contains('hidden');
+        if (isOpen) {
+          closeDropdown();
+        } else {
+          openDropdown();
+        }
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!dropdown.classList.contains('hidden') && !dropdown.contains(e.target)) {
+          closeDropdown();
+        }
+      });
+
+      // Close dropdown on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !dropdown.classList.contains('hidden')) {
+          closeDropdown();
+        }
+      });
+
+      // Prevent dropdown from closing when clicking inside it
+      dropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    // Dropdown menu item actions
+    const profileItem = document.getElementById('user-menu-profile');
+    const logoutItem = document.getElementById('user-menu-logout');
+
+    if (profileItem) {
+      profileItem.addEventListener('click', () => {
+        window.location.href = '/profile';
+      });
+    }
+
+    if (logoutItem) {
+      logoutItem.addEventListener('click', handleLogout);
+    }
+  }
+
+  /**
+   * Open the user dropdown menu
+   */
+  function openDropdown() {
+    const dropdown = document.getElementById('user-dropdown');
+    const avatarButton = document.getElementById('user-avatar-button');
+
+    if (dropdown) {
+      dropdown.classList.remove('hidden');
+    }
+    if (avatarButton) {
+      avatarButton.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  /**
+   * Close the user dropdown menu
+   */
+  function closeDropdown() {
+    const dropdown = document.getElementById('user-dropdown');
+    const avatarButton = document.getElementById('user-avatar-button');
+
+    if (dropdown) {
+      dropdown.classList.add('hidden');
+    }
+    if (avatarButton) {
+      avatarButton.setAttribute('aria-expanded', 'false');
     }
   }
 
