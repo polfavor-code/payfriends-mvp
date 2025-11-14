@@ -264,32 +264,7 @@
             <input type="checkbox" id="accept-confirm-terms" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
             <span style="color:var(--text); font-size:13px; line-height:1.5;">I confirm the above terms are correct and I agree to repay as stated.</span>
           </label>
-
-          <!-- Reminders checkbox (conditional) -->
-          <label id="accept-confirm-reminders-container" class="hidden" style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
-            <input type="checkbox" id="accept-confirm-reminders" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
-            <span style="color:var(--text); font-size:13px; line-height:1.5;">I agree to the reminder schedule for upcoming and late payments.</span>
-          </label>
-
-          <!-- Worst case scenario checkbox (conditional) -->
-          <label id="accept-confirm-worstcase-container" class="hidden" style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
-            <input type="checkbox" id="accept-confirm-worstcase" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
-            <span style="color:var(--text); font-size:13px; line-height:1.5;">I agree with the worst case scenario as described above.</span>
-          </label>
-
-          <!-- Fairness principle checkbox (always required) -->
-          <label style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
-            <input type="checkbox" id="accept-confirm-fairness" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
-            <span style="color:var(--text); font-size:13px; line-height:1.5;">
-              <strong>I understand and agree that if my repayment timing or amount changes, the interest will be recalculated automatically.</strong>
-              Paying earlier or more will lower my interest, while paying later or less may increase it.
-            </span>
-          </label>
         </div>
-        <!-- Optional explainer below confirmations -->
-        <p style="color:var(--muted); font-size:12px; margin:8px 0 0 0; line-height:1.5; font-style:italic;">
-          PayFriends automatically keeps the agreement fair for both sides — adjusting interest based on real repayment behavior.
-        </p>
       </div>
 
       <!-- Signature section -->
@@ -773,8 +748,6 @@
 
       // Reset modal state
       document.getElementById('accept-confirm-terms').checked = false;
-      document.getElementById('accept-confirm-reminders').checked = false;
-      document.getElementById('accept-confirm-worstcase').checked = false;
       document.getElementById('accept-signature').value = '';
       document.getElementById('accept-modal-status').textContent = '';
       document.getElementById('accept-signature-error').classList.add('hidden');
@@ -868,7 +841,14 @@
       addTerm('Require proof of payment', agreement.proof_required ? 'Yes' : 'No');
 
       // Reminders
-      const reminderMode = agreement.reminder_mode === 'auto' ? 'On (auto)' : agreement.reminder_mode === 'custom' ? 'On (custom)' : 'Off';
+      let reminderMode;
+      if (agreement.reminder_mode === 'auto') {
+        reminderMode = 'Automatic – sent before the due date, on the due date and if payments are late.';
+      } else if (agreement.reminder_mode === 'custom') {
+        reminderMode = 'Custom – uses the schedule agreed in this plan.';
+      } else {
+        reminderMode = 'Off';
+      }
       addTerm('Reminders', reminderMode);
 
       // Worst case scenario (only if enabled)
@@ -877,26 +857,6 @@
       }
 
       termsContainer.innerHTML = termsHTML;
-
-      // Show/hide conditional checkboxes
-      const hasReminders = agreement.reminder_mode && agreement.reminder_mode !== 'off';
-      const reminderContainer = document.getElementById('accept-confirm-reminders-container');
-      if (hasReminders) {
-        reminderContainer.classList.remove('hidden');
-        reminderContainer.style.display = 'flex';
-      } else {
-        reminderContainer.classList.add('hidden');
-        reminderContainer.style.display = 'none';
-      }
-
-      const worstCaseContainer = document.getElementById('accept-confirm-worstcase-container');
-      if (agreement.debt_collection_clause) {
-        worstCaseContainer.classList.remove('hidden');
-        worstCaseContainer.style.display = 'flex';
-      } else {
-        worstCaseContainer.classList.add('hidden');
-        worstCaseContainer.style.display = 'none';
-      }
 
       // Reset and disable confirm button
       validateAcceptModal();
@@ -913,21 +873,13 @@
     function validateAcceptModal() {
       const agreement = inviteData.agreement;
       const termsChecked = document.getElementById('accept-confirm-terms').checked;
-      const fairnessChecked = document.getElementById('accept-confirm-fairness').checked;
       const signature = document.getElementById('accept-signature').value.trim();
       const confirmBtn = document.getElementById('accept-modal-confirm-btn');
       const signatureError = document.getElementById('accept-signature-error');
       const signatureInput = document.getElementById('accept-signature');
 
-      // Check conditional checkboxes
-      const hasReminders = agreement.reminder_mode && agreement.reminder_mode !== 'off';
-      const remindersChecked = !hasReminders || document.getElementById('accept-confirm-reminders').checked;
-
-      const hasWorstCase = agreement.debt_collection_clause;
-      const worstCaseChecked = !hasWorstCase || document.getElementById('accept-confirm-worstcase').checked;
-
-      // Validate all required fields
-      const allCheckboxesValid = termsChecked && fairnessChecked && remindersChecked && worstCaseChecked;
+      // Validate all required fields (only terms checkbox now)
+      const allCheckboxesValid = termsChecked;
 
       // Validate name matches borrower name on the agreement
       // Note: This validation ensures the typed name matches the borrower's legal name for agreement validity.
@@ -938,7 +890,7 @@
       const nameMatches = typedName === canonicalName && signature.length > 0;
 
       if (signature.length > 0 && !nameMatches) {
-        signatureError.textContent = "The name you entered doesn't match the borrower name on the agreement. Please type your full legal name as it appears on your passport. If your name needs updating, you can change it in your profile and it will update the agreement automatically.";
+        signatureError.textContent = "Please type your full name exactly as in this agreement. If your name is wrong, update it in your profile first. We recommend using the name as in your passport.";
         signatureError.classList.remove('hidden');
         signatureInput.style.borderColor = '#ef4444';
       } else {
@@ -960,7 +912,6 @@
     async function confirmAccept() {
       const status = document.getElementById('accept-modal-status');
       const confirmBtn = document.getElementById('accept-modal-confirm-btn');
-      const fairnessChecked = document.getElementById('accept-confirm-fairness').checked;
 
       status.textContent = 'Accepting agreement...';
       status.className = 'status';
@@ -971,7 +922,7 @@
         const res = await fetch(`/api/invites/${token}/accept`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fairnessAccepted: fairnessChecked })
+          body: JSON.stringify({ fairnessAccepted: true })
         });
 
         const data = await res.json();
