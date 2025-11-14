@@ -73,3 +73,28 @@
   transform: translateY(-1px);
   transition: all 0.2s ease;
 }
+
+/* Hero card animation */
+@keyframes hero-card-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-card-animate {
+  animation: hero-card-fade-up 600ms ease-out;
+}
+
+.hero-card-hover {
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+}
+
+.hero-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
