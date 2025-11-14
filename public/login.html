@@ -24,35 +24,68 @@
       .page{grid-template-columns:1.1fr .9fr; gap:64px; padding:48px;}
     }
 
-    /* HERO */
-    .hero h1{
-      margin:0 0 16px; font-size:40px; line-height:1.15; font-weight:700;
-      letter-spacing:-0.02em;
+    /* HERO FLOATING CARD */
+    .hero-card{
+      background:#16181C;
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:12px;
+      padding:32px;
+      box-shadow:0 8px 24px rgba(0,0,0,.3);
     }
-    .hero-row{
-      display:flex; gap:40px; align-items:flex-start;
+    .hero-content{
+      display:flex;
+      gap:24px;
+      align-items:flex-start;
     }
     .hero img.hero-logo{
-      width:220px; max-width:30vw; height:auto; flex-shrink:0; display:block;
-      filter: drop-shadow(0 6px 14px rgba(0,0,0,.35));
-      margin-left:24px; margin-top:24px;
+      width:112px;
+      height:112px;
+      flex-shrink:0;
+      display:block;
     }
-    .hero-copy{max-width:600px}
+    .hero-text{
+      flex:1;
+      min-width:0;
+    }
+    .hero h1{
+      margin:0 0 12px;
+      font-size:28px;
+      line-height:1.2;
+      font-weight:600;
+      letter-spacing:-0.01em;
+      color:#f1f5f9;
+    }
     .hero p{
-      color:var(--muted); line-height:1.6; margin:0 0 16px;
+      color:#cbd5e1;
+      line-height:1.6;
+      margin:0 0 20px;
+      font-size:14px;
+      max-width:540px;
     }
     .hero ul{
-      color:var(--muted); margin:0; padding-left:18px; font-size:14px;
+      color:#cbd5e1;
+      margin:0;
+      padding:0;
+      list-style:none;
+      font-size:14px;
     }
-    .hero li{margin:6px 0; line-height:1.5; font-size:14px}
+    .hero li{
+      margin:8px 0;
+      line-height:1.5;
+    }
+    .hero li::before{
+      content:"• ";
+      margin-right:8px;
+    }
 
     /* Mobile hero stack */
     @media (max-width:899px){
-      .hero h1{font-size:28px; text-align:center}
-      .hero-row{flex-direction:column; align-items:center; gap:16px}
-      .hero img.hero-logo{width:120px}
-      .hero-copy{max-width:48ch}
-      .hero p{text-align:center; padding:0 8px}
+      .hero-card{padding:24px}
+      .hero h1{font-size:24px}
+      .hero-content{flex-direction:column; align-items:center; gap:20px}
+      .hero img.hero-logo{width:96px; height:96px}
+      .hero-text{text-align:center}
+      .hero p{max-width:100%}
     }
 
     /* AUTH CARD */
@@ -113,23 +146,22 @@
 </head>
 <body>
   <div class="page">
-    <!-- HERO (single instance, responsive) -->
+    <!-- HERO FLOATING CARD -->
     <section class="hero" aria-labelledby="pf-hero-title">
-      <h1 id="pf-hero-title">Pay friends, stay friends</h1>
-      <div class="hero-row">
-        <!-- Use YOUR existing PNG only -->
-        <img class="hero-logo" src="/images/payfriends-logov2.png" alt="PayFriends logo" />
-        <div class="hero-copy">
-          <p>
-            PayFriends is a kind, smart fintech app — built to keep friends on good terms.
-            It rewards early repayments, adjusts interest fairly, and finds solutions when paying gets hard.
-            We handle the math and reminders — you keep the friendship.
-          </p>
-          <ul>
-            <li>Fair, trust-based loans between friends</li>
-            <li>Automatic reminders and smart interest recalculation</li>
-            <li>App handles chasing and negotiations — you stay friends</li>
-          </ul>
+      <div class="hero-card">
+        <div class="hero-content">
+          <img class="hero-logo" src="/images/payfriends-logov2.png" alt="PayFriends logo" />
+          <div class="hero-text">
+            <h1 id="pf-hero-title">Pay friends, stay friends</h1>
+            <p>
+              PayFriends is a kind and smart lending app that helps friends keep good relationships. We handle the calculations, reminders, and adjustments.
+            </p>
+            <ul>
+              <li>Clear written agreements between friends</li>
+              <li>Automatic recalculation when payments change</li>
+              <li>Helpful reminders and an easy way to adjust plans</li>
+            </ul>
+          </div>
         </div>
       </div>
     </section>
