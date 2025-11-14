@@ -15,11 +15,11 @@
  *
  * Icon Types:
  * - Green Smileys: Custom-drawn green circles with smiley faces (happy, grin, cool, love, wink, cute)
- * - PayFriends Themes: Fairness icon (SVG), Handshake (SVG), ✓, 💸, 💚
+ * - PayFriends Themes: Handshake (SVG), 💸, 💚, ❤️
  * - Currency: €, $, £, ¥, ₿, CHF, R$, ₹, ₺, ₩, 💰, 🪙
  *
  * Visual Design:
- * - All icons are 40% larger than original for better visibility
+ * - All icons are 2x larger than original for better visibility (roughly doubled)
  * - All icons rendered at 33% opacity for subtle background effect
  * - Green color scheme (#22c55e) matching PayFriends brand
  *
@@ -42,7 +42,7 @@
   // Icon sets
   // Green smiley variants (rendered as custom green circles)
   const GREEN_SMILEYS = ['happy', 'grin', 'cool', 'love', 'wink', 'cute'];
-  const PAYFRIENDS_ICONS = ['✓', '💸', '💚', 'fairness', 'handshake'];
+  const PAYFRIENDS_ICONS = ['💸', '💚', 'handshake', '❤️'];
   const CURRENCY = ['€', '$', '£', '¥', '₿', 'CHF', 'R$', '₹', '₺', '₩', '💰', '🪙'];
 
   // Physics constants
@@ -137,15 +137,15 @@
       if (roll < 0.4) { // 40% green smileys
         type = 'smiley';
         content = GREEN_SMILEYS[Math.floor(Math.random() * GREEN_SMILEYS.length)];
-        size = 52 + Math.random() * 38; // 52-90px (40% larger)
+        size = 104 + Math.random() * 76; // 104-180px (roughly doubled from 52-90px)
       } else if (roll < 0.7) { // 30% currency
         type = 'currency';
         content = CURRENCY[Math.floor(Math.random() * CURRENCY.length)];
-        size = 42 + Math.random() * 30; // 42-72px (40% larger)
+        size = 84 + Math.random() * 60; // 84-144px (roughly doubled from 42-72px)
       } else { // 30% PayFriends icons
         type = 'payfriends';
         content = PAYFRIENDS_ICONS[Math.floor(Math.random() * PAYFRIENDS_ICONS.length)];
-        size = 47 + Math.random() * 37; // 47-84px (40% larger)
+        size = 94 + Math.random() * 74; // 94-168px (roughly doubled from 47-84px)
       }
 
       // Random position (avoid edges)
@@ -194,7 +194,7 @@
       if (from === to) return;
 
       // Create particle
-      const particleTypes = ['€', '✓', '💸'];
+      const particleTypes = ['€', '💸', '💰'];
       const content = particleTypes[Math.floor(Math.random() * particleTypes.length)];
 
       this.particles.push({
@@ -450,7 +450,7 @@
       if (type === 'smiley') {
         // Draw custom green smiley
         this.drawGreenSmiley(content, size);
-      } else if (type === 'payfriends' && (content === 'handshake' || content === 'fairness')) {
+      } else if (type === 'payfriends' && content === 'handshake') {
         // Draw SVG icon
         this.drawSVGIcon(content, size);
       } else {
