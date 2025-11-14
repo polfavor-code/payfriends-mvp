@@ -126,8 +126,8 @@
       overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0;
     }
 
-    /* Matrix rain background */
-    #matrix-canvas{
+    /* Bouncy background canvas */
+    #bouncy-canvas{
       position:fixed;
       top:0;
       left:0;
@@ -143,8 +143,8 @@
   </style>
 </head>
 <body>
-  <!-- Matrix Rain Background -->
-  <canvas id="matrix-canvas"></canvas>
+  <!-- Bouncy Smiley Money Gang Background -->
+  <canvas id="bouncy-canvas"></canvas>
   <div class="page">
     <!-- HERO (single instance, responsive) -->
     <section class="hero" aria-labelledby="pf-hero-title">
@@ -225,25 +225,24 @@
     </main>
   </div>
 
-  <!-- Matrix Rain Component -->
-  <script src="/components/payfriends-matrix-rain.js"></script>
+  <!-- Bouncy Smiley Money Gang Component -->
+  <script src="/components/payfriends-bouncy-background.js"></script>
 
   <script>
-    // Initialize Matrix rain background
+    // Initialize Bouncy background
     (function(){
-      const canvas = document.getElementById('matrix-canvas');
-      if (canvas && window.PayFriendsMatrixRain) {
-        const matrixRain = new window.PayFriendsMatrixRain(canvas, {
-          density: 1,
-          speed: 1,
-          blur: true,
-          colorMode: 'mint'
+      const canvas = document.getElementById('bouncy-canvas');
+      if (canvas && window.PayFriendsBouncyBackground) {
+        const bouncyBg = new window.PayFriendsBouncyBackground(canvas, {
+          iconCount: 36,
+          particleFrequency: 0.4,
+          speed: 1
         });
-        matrixRain.start();
+        bouncyBg.start();
 
         // Clean up on page unload
         window.addEventListener('beforeunload', () => {
-          matrixRain.destroy();
+          bouncyBg.destroy();
         });
       }
     })();
