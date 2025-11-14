@@ -108,6 +108,27 @@ db.exec(`
     FOREIGN KEY (borrower_user_id) REFERENCES users(id)
   );
 
+  CREATE TABLE IF NOT EXISTS renegotiation_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agreement_id INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open',
+    stage TEXT NOT NULL,
+    initiated_by TEXT NOT NULL DEFAULT 'borrower',
+    loan_type TEXT NOT NULL,
+    selected_type TEXT NOT NULL,
+    lender_suggested_type TEXT,
+    agreed_type TEXT,
+    can_pay_now_cents INTEGER,
+    borrower_note TEXT,
+    borrower_values_proposal TEXT,
+    lender_values_proposal TEXT,
+    lender_response_note TEXT,
+    history TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (agreement_id) REFERENCES agreements(id)
+  );
+
   CREATE TABLE IF NOT EXISTS payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     agreement_id INTEGER NOT NULL,
@@ -1571,6 +1592,787 @@ app.get('/api/agreements/:id/hardship-requests', requireAuth, (req, res) => {
   } catch (err) {
     console.error('Error fetching hardship requests:', err);
     res.status(500).json({ error: 'Server error fetching hardship requests' });
+  }
+});
+
+// ===== Renegotiation Routes =====
+
+// Create renegotiation request (borrower initiates - Step 0 & 1)
+app.post('/api/agreements/:id/renegotiation', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { selectedType, canPayNowCents, borrowerNote } = req.body || {};
+
+  if (!selectedType) {
+    return res.status(400).json({ error: 'Solution type is required' });
+  }
+
+  try {
+    // Get agreement and verify user is borrower
+    const agreement = db.prepare(`
+      SELECT id, borrower_user_id, lender_user_id, repayment_type, status,
+             lender_name, friend_first_name
+      FROM agreements
+      WHERE id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    if (agreement.borrower_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the borrower can initiate renegotiation' });
+    }
+
+    if (agreement.status !== 'active') {
+      return res.status(400).json({ error: 'Can only renegotiate active agreements' });
+    }
+
+    // Check if there's already an open renegotiation
+    const existingRenegotiation = db.prepare(`
+      SELECT id FROM renegotiation_requests
+      WHERE agreement_id = ? AND status = 'open'
+    `).get(id);
+
+    if (existingRenegotiation) {
+      return res.status(400).json({ error: 'There is already an open renegotiation request for this agreement' });
+    }
+
+    const now = new Date().toISOString();
+    const loanType = agreement.repayment_type === 'installments' ? 'installment' : 'one_time';
+
+    // Create history event
+    const history = JSON.stringify([{
+      timestamp: now,
+      actor: 'borrower',
+      type: 'initiated',
+      message: `Borrower initiated renegotiation. Selected type: ${selectedType}.`
+    }]);
+
+    // Create renegotiation request
+    const result = db.prepare(`
+      INSERT INTO renegotiation_requests (
+        agreement_id, status, stage, initiated_by, loan_type, selected_type,
+        can_pay_now_cents, borrower_note, history, created_at, updated_at
+      )
+      VALUES (?, 'open', 'type_pending_lender_response', 'borrower', ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      loanType,
+      selectedType,
+      canPayNowCents || null,
+      borrowerNote || null,
+      history,
+      now,
+      now
+    );
+
+    // Create notification message for lender
+    const lenderName = agreement.friend_first_name || agreement.lender_name;
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.lender_user_id,
+      id,
+      'Renegotiation requested',
+      `The borrower has requested to renegotiate the payment plan.`,
+      now,
+      'renegotiation_requested'
+    );
+
+    res.status(201).json({
+      success: true,
+      renegotiationId: result.lastInsertRowid
+    });
+  } catch (err) {
+    console.error('Error creating renegotiation request:', err);
+    res.status(500).json({ error: 'Server error creating renegotiation request' });
+  }
+});
+
+// Get active renegotiation for an agreement
+app.get('/api/agreements/:id/renegotiation', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Verify user has access to this agreement
+    const agreement = db.prepare(`
+      SELECT id, lender_user_id, borrower_user_id
+      FROM agreements
+      WHERE id = ? AND (lender_user_id = ? OR borrower_user_id = ?)
+    `).get(id, req.user.id, req.user.id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    // Get active renegotiation (open status only)
+    const renegotiation = db.prepare(`
+      SELECT * FROM renegotiation_requests
+      WHERE agreement_id = ? AND status = 'open'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(id);
+
+    if (!renegotiation) {
+      return res.json(null);
+    }
+
+    // Parse JSON fields
+    renegotiation.history = JSON.parse(renegotiation.history);
+    if (renegotiation.borrower_values_proposal) {
+      renegotiation.borrower_values_proposal = JSON.parse(renegotiation.borrower_values_proposal);
+    }
+    if (renegotiation.lender_values_proposal) {
+      renegotiation.lender_values_proposal = JSON.parse(renegotiation.lender_values_proposal);
+    }
+
+    res.json(renegotiation);
+  } catch (err) {
+    console.error('Error fetching renegotiation:', err);
+    res.status(500).json({ error: 'Server error fetching renegotiation' });
+  }
+});
+
+// Lender responds to solution type (approve/suggest alternative/decline)
+app.post('/api/agreements/:id/renegotiation/respond-type', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { action, suggestedType, responseNote } = req.body || {};
+
+  if (!action || !['approve', 'suggest', 'decline'].includes(action)) {
+    return res.status(400).json({ error: 'Valid action is required (approve, suggest, decline)' });
+  }
+
+  if (action === 'suggest' && !suggestedType) {
+    return res.status(400).json({ error: 'Suggested type is required when suggesting alternative' });
+  }
+
+  try {
+    // Get agreement and verify user is lender
+    const agreement = db.prepare(`
+      SELECT id, lender_user_id, borrower_user_id
+      FROM agreements
+      WHERE id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    if (agreement.lender_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the lender can respond to renegotiation' });
+    }
+
+    // Get active renegotiation
+    const renegotiation = db.prepare(`
+      SELECT * FROM renegotiation_requests
+      WHERE agreement_id = ? AND status = 'open' AND stage = 'type_pending_lender_response'
+    `).get(id);
+
+    if (!renegotiation) {
+      return res.status(404).json({ error: 'No pending renegotiation found' });
+    }
+
+    const now = new Date().toISOString();
+    const history = JSON.parse(renegotiation.history);
+
+    if (action === 'approve') {
+      // Lender approves the borrower's selected type
+      history.push({
+        timestamp: now,
+        actor: 'lender',
+        type: 'type_approved',
+        message: `Lender approved solution type: ${renegotiation.selected_type}.`
+      });
+
+      db.prepare(`
+        UPDATE renegotiation_requests
+        SET stage = 'values_to_be_set',
+            agreed_type = ?,
+            lender_response_note = ?,
+            history = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(
+        renegotiation.selected_type,
+        responseNote || null,
+        JSON.stringify(history),
+        now,
+        renegotiation.id
+      );
+
+      // Notify borrower
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.borrower_user_id,
+        id,
+        'Solution type approved',
+        `Your lender approved the renegotiation approach. Now propose the specific amounts and dates.`,
+        now,
+        'renegotiation_type_approved'
+      );
+
+    } else if (action === 'suggest') {
+      // Lender suggests alternative type
+      history.push({
+        timestamp: now,
+        actor: 'lender',
+        type: 'type_counter_proposed',
+        message: `Lender suggested solution type: ${suggestedType} instead of ${renegotiation.selected_type}.`
+      });
+
+      db.prepare(`
+        UPDATE renegotiation_requests
+        SET stage = 'type_counter_proposed_to_borrower',
+            lender_suggested_type = ?,
+            lender_response_note = ?,
+            history = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(
+        suggestedType,
+        responseNote || null,
+        JSON.stringify(history),
+        now,
+        renegotiation.id
+      );
+
+      // Notify borrower
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.borrower_user_id,
+        id,
+        'Alternative solution suggested',
+        `Your lender suggested a different approach. Check the renegotiation to see their proposal.`,
+        now,
+        'renegotiation_type_suggested'
+      );
+
+    } else if (action === 'decline') {
+      // Lender declines renegotiation
+      history.push({
+        timestamp: now,
+        actor: 'lender',
+        type: 'declined',
+        message: `Lender declined renegotiation request.${responseNote ? ' Reason: ' + responseNote : ''}`
+      });
+
+      db.prepare(`
+        UPDATE renegotiation_requests
+        SET status = 'closed_declined',
+            stage = 'closed_declined',
+            lender_response_note = ?,
+            history = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(
+        responseNote || null,
+        JSON.stringify(history),
+        now,
+        renegotiation.id
+      );
+
+      // Notify borrower
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.borrower_user_id,
+        id,
+        'Renegotiation declined',
+        `Your lender declined the renegotiation request. The original payment plan remains active.`,
+        now,
+        'renegotiation_declined'
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error responding to renegotiation type:', err);
+    res.status(500).json({ error: 'Server error responding to renegotiation' });
+  }
+});
+
+// Borrower responds to lender's suggested type (accept/decline)
+app.post('/api/agreements/:id/renegotiation/respond-suggested-type', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { action } = req.body || {};
+
+  if (!action || !['accept', 'decline'].includes(action)) {
+    return res.status(400).json({ error: 'Valid action is required (accept, decline)' });
+  }
+
+  try {
+    // Get agreement and verify user is borrower
+    const agreement = db.prepare(`
+      SELECT id, lender_user_id, borrower_user_id
+      FROM agreements
+      WHERE id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    if (agreement.borrower_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the borrower can respond to suggested type' });
+    }
+
+    // Get active renegotiation
+    const renegotiation = db.prepare(`
+      SELECT * FROM renegotiation_requests
+      WHERE agreement_id = ? AND status = 'open' AND stage = 'type_counter_proposed_to_borrower'
+    `).get(id);
+
+    if (!renegotiation) {
+      return res.status(404).json({ error: 'No pending type counter-proposal found' });
+    }
+
+    const now = new Date().toISOString();
+    const history = JSON.parse(renegotiation.history);
+
+    if (action === 'accept') {
+      // Borrower accepts lender's suggested type
+      history.push({
+        timestamp: now,
+        actor: 'borrower',
+        type: 'type_counter_accepted',
+        message: `Borrower accepted lender's suggested solution type: ${renegotiation.lender_suggested_type}.`
+      });
+
+      db.prepare(`
+        UPDATE renegotiation_requests
+        SET stage = 'values_to_be_set',
+            agreed_type = ?,
+            history = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(
+        renegotiation.lender_suggested_type,
+        JSON.stringify(history),
+        now,
+        renegotiation.id
+      );
+
+      // Notify lender
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.lender_user_id,
+        id,
+        'Solution type accepted',
+        `The borrower accepted your suggested solution. They will now propose specific values.`,
+        now,
+        'renegotiation_type_accepted'
+      );
+
+    } else {
+      // Borrower declines lender's suggestion - close renegotiation
+      history.push({
+        timestamp: now,
+        actor: 'borrower',
+        type: 'declined',
+        message: `Borrower declined lender's suggested solution type. Renegotiation closed.`
+      });
+
+      db.prepare(`
+        UPDATE renegotiation_requests
+        SET status = 'closed_declined',
+            stage = 'closed_declined',
+            history = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(
+        JSON.stringify(history),
+        now,
+        renegotiation.id
+      );
+
+      // Notify lender
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.lender_user_id,
+        id,
+        'Renegotiation closed',
+        `The borrower declined the suggested solution. The original payment plan remains active.`,
+        now,
+        'renegotiation_closed'
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error responding to suggested type:', err);
+    res.status(500).json({ error: 'Server error responding to suggested type' });
+  }
+});
+
+// Borrower proposes values (Step 2)
+app.post('/api/agreements/:id/renegotiation/propose-values', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { values } = req.body || {};
+
+  if (!values || typeof values !== 'object') {
+    return res.status(400).json({ error: 'Values object is required' });
+  }
+
+  try {
+    // Get agreement and verify user is borrower
+    const agreement = db.prepare(`
+      SELECT id, lender_user_id, borrower_user_id
+      FROM agreements
+      WHERE id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    if (agreement.borrower_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the borrower can propose values' });
+    }
+
+    // Get active renegotiation
+    const renegotiation = db.prepare(`
+      SELECT * FROM renegotiation_requests
+      WHERE agreement_id = ? AND status = 'open' AND stage = 'values_to_be_set'
+    `).get(id);
+
+    if (!renegotiation) {
+      return res.status(404).json({ error: 'No renegotiation at values stage found' });
+    }
+
+    const now = new Date().toISOString();
+    const history = JSON.parse(renegotiation.history);
+
+    history.push({
+      timestamp: now,
+      actor: 'borrower',
+      type: 'values_proposed',
+      message: `Borrower proposed new values for agreed type: ${renegotiation.agreed_type}.`
+    });
+
+    db.prepare(`
+      UPDATE renegotiation_requests
+      SET stage = 'values_pending_lender_response',
+          borrower_values_proposal = ?,
+          history = ?,
+          updated_at = ?
+      WHERE id = ?
+    `).run(
+      JSON.stringify(values),
+      JSON.stringify(history),
+      now,
+      renegotiation.id
+    );
+
+    // Notify lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.lender_user_id,
+      id,
+      'New payment plan proposed',
+      `The borrower has proposed specific amounts and dates. Review and respond to the proposal.`,
+      now,
+      'renegotiation_values_proposed'
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error proposing values:', err);
+    res.status(500).json({ error: 'Server error proposing values' });
+  }
+});
+
+// Lender responds to values (approve/counter/decline)
+app.post('/api/agreements/:id/renegotiation/respond-values', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { action, counterValues, responseNote } = req.body || {};
+
+  if (!action || !['approve', 'counter', 'decline'].includes(action)) {
+    return res.status(400).json({ error: 'Valid action is required (approve, counter, decline)' });
+  }
+
+  if (action === 'counter' && !counterValues) {
+    return res.status(400).json({ error: 'Counter values are required when countering' });
+  }
+
+  try {
+    // Get agreement and verify user is lender
+    const agreement = db.prepare(`
+      SELECT id, lender_user_id, borrower_user_id
+      FROM agreements
+      WHERE id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    if (agreement.lender_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the lender can respond to values' });
+    }
+
+    // Get active renegotiation
+    const renegotiation = db.prepare(`
+      SELECT * FROM renegotiation_requests
+      WHERE agreement_id = ? AND status = 'open' AND stage = 'values_pending_lender_response'
+    `).get(id);
+
+    if (!renegotiation) {
+      return res.status(404).json({ error: 'No pending values proposal found' });
+    }
+
+    const now = new Date().toISOString();
+    const history = JSON.parse(renegotiation.history);
+
+    if (action === 'approve') {
+      // Lender approves values - renegotiation is complete
+      history.push({
+        timestamp: now,
+        actor: 'lender',
+        type: 'accepted',
+        message: `Lender accepted renegotiation with proposed values.`
+      });
+
+      db.prepare(`
+        UPDATE renegotiation_requests
+        SET status = 'accepted',
+            stage = 'accepted',
+            lender_response_note = ?,
+            history = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(
+        responseNote || null,
+        JSON.stringify(history),
+        now,
+        renegotiation.id
+      );
+
+      // Notify borrower
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.borrower_user_id,
+        id,
+        'Payment plan accepted!',
+        `Your lender accepted the new payment plan. The agreement schedule will be updated shortly.`,
+        now,
+        'renegotiation_accepted'
+      );
+
+      // TODO: Apply renegotiation to agreement (recalculate schedule, update dates, etc.)
+      // This would be implemented in a separate function that handles schedule recalculation
+
+    } else if (action === 'counter') {
+      // Lender proposes counter values
+      history.push({
+        timestamp: now,
+        actor: 'lender',
+        type: 'values_counter_proposed',
+        message: `Lender counter-proposed different values.`
+      });
+
+      db.prepare(`
+        UPDATE renegotiation_requests
+        SET stage = 'values_counter_proposed_to_borrower',
+            lender_values_proposal = ?,
+            lender_response_note = ?,
+            history = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(
+        JSON.stringify(counterValues),
+        responseNote || null,
+        JSON.stringify(history),
+        now,
+        renegotiation.id
+      );
+
+      // Notify borrower
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.borrower_user_id,
+        id,
+        'Alternative values proposed',
+        `Your lender proposed different amounts or dates. Review their counter-proposal.`,
+        now,
+        'renegotiation_values_countered'
+      );
+
+    } else if (action === 'decline') {
+      // Lender declines values proposal
+      history.push({
+        timestamp: now,
+        actor: 'lender',
+        type: 'declined',
+        message: `Lender declined renegotiation after reviewing values.${responseNote ? ' Reason: ' + responseNote : ''}`
+      });
+
+      db.prepare(`
+        UPDATE renegotiation_requests
+        SET status = 'closed_declined',
+            stage = 'closed_declined',
+            lender_response_note = ?,
+            history = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(
+        responseNote || null,
+        JSON.stringify(history),
+        now,
+        renegotiation.id
+      );
+
+      // Notify borrower
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.borrower_user_id,
+        id,
+        'Renegotiation declined',
+        `Your lender declined the proposed payment plan. The original schedule remains active.`,
+        now,
+        'renegotiation_declined'
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error responding to values:', err);
+    res.status(500).json({ error: 'Server error responding to values' });
+  }
+});
+
+// Borrower responds to lender's counter values (accept/decline)
+app.post('/api/agreements/:id/renegotiation/respond-counter-values', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { action } = req.body || {};
+
+  if (!action || !['accept', 'decline'].includes(action)) {
+    return res.status(400).json({ error: 'Valid action is required (accept, decline)' });
+  }
+
+  try {
+    // Get agreement and verify user is borrower
+    const agreement = db.prepare(`
+      SELECT id, lender_user_id, borrower_user_id
+      FROM agreements
+      WHERE id = ?
+    `).get(id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    if (agreement.borrower_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the borrower can respond to counter values' });
+    }
+
+    // Get active renegotiation
+    const renegotiation = db.prepare(`
+      SELECT * FROM renegotiation_requests
+      WHERE agreement_id = ? AND status = 'open' AND stage = 'values_counter_proposed_to_borrower'
+    `).get(id);
+
+    if (!renegotiation) {
+      return res.status(404).json({ error: 'No pending counter-values proposal found' });
+    }
+
+    const now = new Date().toISOString();
+    const history = JSON.parse(renegotiation.history);
+
+    if (action === 'accept') {
+      // Borrower accepts lender's counter values - renegotiation complete
+      history.push({
+        timestamp: now,
+        actor: 'borrower',
+        type: 'accepted',
+        message: `Borrower accepted lender's counter-proposed values.`
+      });
+
+      db.prepare(`
+        UPDATE renegotiation_requests
+        SET status = 'accepted',
+            stage = 'accepted',
+            history = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(
+        JSON.stringify(history),
+        now,
+        renegotiation.id
+      );
+
+      // Notify lender
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.lender_user_id,
+        id,
+        'Payment plan accepted!',
+        `The borrower accepted your proposed payment plan. The agreement schedule will be updated shortly.`,
+        now,
+        'renegotiation_accepted'
+      );
+
+      // TODO: Apply renegotiation to agreement
+
+    } else {
+      // Borrower declines lender's counter values - close renegotiation
+      history.push({
+        timestamp: now,
+        actor: 'borrower',
+        type: 'declined',
+        message: `Borrower declined lender's counter-proposed values. Renegotiation closed.`
+      });
+
+      db.prepare(`
+        UPDATE renegotiation_requests
+        SET status = 'closed_declined',
+            stage = 'closed_declined',
+            history = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(
+        JSON.stringify(history),
+        now,
+        renegotiation.id
+      );
+
+      // Notify lender
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.lender_user_id,
+        id,
+        'Renegotiation closed',
+        `The borrower declined your counter-proposal. The original payment plan remains active.`,
+        now,
+        'renegotiation_closed'
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error responding to counter values:', err);
+    res.status(500).json({ error: 'Server error responding to counter values' });
   }
 });
 
