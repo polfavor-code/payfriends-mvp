@@ -76,7 +76,8 @@
     const name = user.full_name || user.name || user.email || '';
 
     // If user has profile picture, use it
-    if (user.has_profile_picture || user.profile_picture_url) {
+    // Check for profile_picture field (boolean/integer from server)
+    if (user.profile_picture) {
       return `<div class="user-avatar size-${size}"><img src="/api/profile/picture/${userId}" class="user-avatar-image" alt="${name}" /></div>`;
     }
 
@@ -134,16 +135,11 @@
       const data = await res.json();
       currentUser = data.user;
 
-      // Update avatar button with avatar and first name
+      // Update avatar button with just the avatar (no name)
       const avatarButton = document.getElementById('user-avatar-button');
       if (avatarButton) {
-        const firstName = getFirstNameFromUser(currentUser);
         const avatarHTML = generateAvatarHTML(currentUser, 'small');
-
-        avatarButton.innerHTML = `
-          ${avatarHTML}
-          <span class="header-user-name">${firstName}</span>
-        `;
+        avatarButton.innerHTML = avatarHTML;
       }
 
       // Update dropdown with full user info
@@ -272,6 +268,12 @@
 
     if (logoutItem) {
       logoutItem.addEventListener('click', handleLogout);
+    }
+
+    // Header logout button
+    const headerLogoutButton = document.getElementById('header-logout-button');
+    if (headerLogoutButton) {
+      headerLogoutButton.addEventListener('click', handleLogout);
     }
   }
 
