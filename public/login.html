@@ -231,24 +231,23 @@
     </main>
   </div>
 
-  <!-- Smile Money Background Component -->
-  <script src="/components/payfriends-smile-money-background.js"></script>
+  <!-- Two Smileys Animated Background Component -->
+  <script src="/components/payfriends-two-smileys-background.js"></script>
 
   <script>
-    // Initialize Smile Money background
+    // Initialize Two Smileys background
     (function(){
       const canvas = document.getElementById('smile-money-canvas');
-      if (canvas && window.PayFriendsSmileMoneyBackground) {
-        const smileMoneyBg = new window.PayFriendsSmileMoneyBackground(canvas, {
-          smileyCount: 12,
-          maxCoinStreams: 4,
-          speed: 1
+      if (canvas && window.PayFriendsTwoSmileysBackground) {
+        const twoSmileysBg = new window.PayFriendsTwoSmileysBackground(canvas, {
+          speed: 1,
+          moneyStreamFrequency: 1
         });
-        smileMoneyBg.start();
+        twoSmileysBg.start();
 
         // Clean up on page unload
         window.addEventListener('beforeunload', () => {
-          smileMoneyBg.destroy();
+          twoSmileysBg.destroy();
         });
       }
     })();
