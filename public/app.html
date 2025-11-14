@@ -928,8 +928,8 @@
           </label>
         </div>
 
-        <!-- Worst-case scenario -->
-        <div style="margin:24px 0">
+        <!-- Worst-case scenario (only shown for loans >= 6000 EUR) -->
+        <div id="worst-case-scenario-container" style="margin:24px 0">
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
             <label class="toggle-switch">
               <input type="checkbox" id="debt-collection-clause" checked />
@@ -1129,6 +1129,10 @@
       inviteUrl: '',
       agreementSent: false
     };
+
+    // Worst case scenario is only shown for loans from 6,000 EUR and higher,
+    // since debt collectors and legal escalation rarely make sense below this amount.
+    const WORST_CASE_MIN_AMOUNT_EUR = 6000;
 
     // Currency formatters are loaded from /js/formatters.js
     // - formatCurrency0(cents) - for My Agreements table (no decimals, nl-NL locale)
@@ -1820,6 +1824,36 @@
       } else {
         // For one-time payment, update the one-time estimate
         updateOneTimeEstimate();
+      }
+
+      // Also update worst case scenario visibility whenever amount changes
+      updateWorstCaseVisibility();
+    }
+
+    // Update visibility of worst case scenario option based on loan amount
+    function updateWorstCaseVisibility() {
+      const amountInput = document.getElementById('amount');
+      if (!amountInput) return;
+
+      const amountValue = amountInput.value;
+      const cleanAmount = amountValue.replace(/[.,]/g, '');
+      const amountNum = parseFloat(cleanAmount) || 0;
+
+      const container = document.getElementById('worst-case-scenario-container');
+      const checkbox = document.getElementById('debt-collection-clause');
+
+      if (!container) return;
+
+      const showWorstCase = amountNum >= WORST_CASE_MIN_AMOUNT_EUR;
+
+      if (showWorstCase) {
+        container.style.display = '';
+      } else {
+        container.style.display = 'none';
+        // Clear the checkbox when hidden
+        if (checkbox) {
+          checkbox.checked = false;
+        }
       }
     }
 
@@ -2653,6 +2687,9 @@
       }
 
       goToStep(4);
+
+      // Update worst case scenario visibility based on loan amount
+      updateWorstCaseVisibility();
     }
 
     // Navigate to summary
@@ -2691,7 +2728,14 @@
       }
 
       wizardData.proofRequired = document.getElementById('proof-required').checked;
-      wizardData.debtCollectionClause = document.getElementById('debt-collection-clause').checked;
+
+      // Only include debt collection clause if amount is >= 6000 EUR
+      const amountEur = wizardData.amount || 0;
+      if (amountEur >= WORST_CASE_MIN_AMOUNT_EUR) {
+        wizardData.debtCollectionClause = document.getElementById('debt-collection-clause').checked;
+      } else {
+        wizardData.debtCollectionClause = false;
+      }
 
       goToStep(5);
       updateSummary();
@@ -3049,7 +3093,8 @@
           reminderMode: wizardData.reminderMode,
           reminderOffsets: wizardData.reminderOffsets,
           proofRequired: wizardData.proofRequired,
-          debtCollectionClause: wizardData.debtCollectionClause
+          // Only include debt collection clause if amount >= 6000 EUR
+          debtCollectionClause: (wizardData.amount >= WORST_CASE_MIN_AMOUNT_EUR) ? wizardData.debtCollectionClause : false
         };
 
         // Add installment-specific fields if applicable
