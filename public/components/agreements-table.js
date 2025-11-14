@@ -175,6 +175,21 @@ function renderAgreementsTable(agreements, currentUser, currentFilter = 'all', c
   if (welcomeCard && agreements.length === 0) {
     listSection.style.display = 'none';
     welcomeCard.style.display = 'block';
+
+    // Personalize welcome heading with user's first name
+    const welcomeHeading = document.getElementById('welcome-heading');
+    if (welcomeHeading && currentUser) {
+      const fullName = currentUser.full_name || currentUser.name || '';
+      const firstName = fullName.trim().split(/\s+/)[0] || '';
+
+      // Fallback to email prefix if first name is empty
+      const email = currentUser.email || '';
+      const fallbackName = email.includes('@') ? email.split('@')[0] : email;
+      const displayName = firstName || fallbackName || 'there';
+
+      welcomeHeading.textContent = `Welcome ${displayName} to PayFriends.app`;
+    }
+
     return;
   }
 
