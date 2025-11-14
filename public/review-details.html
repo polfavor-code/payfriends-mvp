@@ -1013,6 +1013,9 @@
         // Load and display active renegotiation
         await loadAndDisplayRenegotiation();
 
+        // Load and display loan timeline
+        await loadLoanTimeline();
+
         // Show next payment card for borrower on active agreements
         // This card now includes both action buttons inside
         showNextPaymentCard();
@@ -3144,6 +3147,102 @@
         }
       } catch (err) {
         console.error('Error loading payment data:', err);
+      }
+    }
+
+    async function loadLoanTimeline() {
+      try {
+        const timelineContainer = document.getElementById('timeline-events');
+        const timelineSection = document.getElementById('loan-timeline');
+
+        // Collect all timeline events
+        const events = [];
+
+        // Event 1: Loan created
+        events.push({
+          type: 'created',
+          date: agreement.created_at,
+          title: 'Loan created',
+          description: `${agreement.lender_full_name || agreement.lender_name} created this loan agreement`
+        });
+
+        // Event 2: Loan accepted (if status is active or settled)
+        if (agreement.status === 'active' || agreement.status === 'settled') {
+          events.push({
+            type: 'accepted',
+            date: agreement.created_at,
+            title: 'Loan accepted',
+            description: `${agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email} accepted the loan agreement`
+          });
+        }
+
+        // Event 3: Repayment issue resolved
+        // (hardship requests - we only show resolved ones in timeline)
+
+        // Event 4: Renegotiations accepted
+        const renego = await window.RenegotiationModule.loadRenegotiation(agreementId);
+        if (renego && renego.status === 'accepted') {
+          events.push({
+            type: 'negotiation_accepted',
+            date: renego.updated_at,
+            title: 'New terms accepted',
+            description: 'Both parties agreed on new payment terms'
+          });
+        }
+
+        // Event 5: Loan settled
+        if (agreement.status === 'settled') {
+          events.push({
+            type: 'settled',
+            date: agreement.updated_at,
+            title: 'Loan fully repaid',
+            description: 'The loan has been completely repaid and settled'
+          });
+        }
+
+        // Sort events by date
+        events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // Render timeline
+        if (events.length === 0) {
+          timelineContainer.innerHTML = '<p style="color:var(--muted); font-size:14px">No timeline events yet.</p>';
+        } else {
+          timelineContainer.innerHTML = events.map((event, idx) => {
+            const eventDate = new Date(event.date).toLocaleDateString('en-GB', {
+              day: 'numeric', month: 'short', year: 'numeric'
+            });
+            const eventClass = event.type === 'issue' ? 'timeline-event--issue' :
+                               event.type === 'resolved' ? 'timeline-event--resolved' :
+                               event.type === 'settled' ? 'timeline-event--settled' : '';
+
+            return `
+              <div class="timeline-event ${eventClass}">
+                <div class="timeline-event-header" onclick="toggleTimelineEvent(${idx})">
+                  <div>
+                    <div class="timeline-event-title">${event.title}</div>
+                    <div class="timeline-event-date">${eventDate}</div>
+                  </div>
+                  <div style="color:var(--muted); font-size:12px">›</div>
+                </div>
+                <div class="timeline-event-details" id="timeline-event-${idx}">
+                  <p style="margin:0; color:var(--muted); font-size:13px">${event.description}</p>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Show timeline section
+        timelineSection.classList.remove('hidden');
+      } catch (err) {
+        console.error('Error loading loan timeline:', err);
+      }
+    }
+
+    function toggleTimelineEvent(idx) {
+      const details = document.getElementById(`timeline-event-${idx}`);
+      if (details) {
+        details.classList.toggle('expanded');
       }
     }
 
