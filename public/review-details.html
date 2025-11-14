@@ -102,11 +102,11 @@
     .payment-meta-line{font-size:14px}
     .record-payment-btn{background:#3d7bdc; margin-top:0}
     .record-payment-btn:hover{filter:brightness(1.1)}
-    .next-payment-container{display:grid; grid-template-columns:minmax(0,1fr); gap:16px; align-items:center}
+    .next-payment-container{display:grid; grid-template-columns:minmax(0,1fr); gap:16px; align-items:start}
     .next-payment-info{display:flex; flex-direction:column; gap:4px}
     .next-payment-actions{display:flex; flex-direction:column; gap:8px; width:100%}
     @media (min-width: 768px){
-      .next-payment-container{grid-template-columns:minmax(0,1fr) auto; gap:32px}
+      .next-payment-container{grid-template-columns:minmax(0,1fr) auto; gap:32px; align-items:center}
       .next-payment-actions{width:auto; min-width:224px}
     }
     select{appearance:none; background-image:url('data:image/svg+xml;utf8,<svg fill="%23a7b0bd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat:no-repeat; background-position:right 8px center}
@@ -261,7 +261,7 @@
     </div>
 
     <!-- Next Payment Due Card (borrower-only, active agreements) -->
-    <div id="next-payment-card" class="card hidden" style="padding:16px 20px; margin:16px 0">
+    <div id="next-payment-card" class="card hidden" style="padding:16px 20px; margin:20px 0">
       <div class="next-payment-container">
         <!-- LEFT/TOP: Payment info -->
         <div class="next-payment-info">
@@ -276,61 +276,61 @@
           <button id="hardship-btn" class="warning" onclick="showHardshipForm()" style="width:100%; font-weight:500; white-space:nowrap" aria-label="Having trouble paying?">Having trouble paying?</button>
         </div>
       </div>
+    </div>
 
-      <!-- Inline Report Payment Form (collapsed by default) -->
-      <div id="inline-payment-form" class="hidden" style="margin-top:24px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1)">
-        <h3 style="font-size:18px; font-weight:600; margin:0 0 8px 0">Report a payment</h3>
-        <p id="inline-payment-subtitle" style="color:var(--muted); font-size:14px; margin:0 0 20px 0">
-          Confirm the payment you already made to <span id="inline-lender-name"></span>.
-        </p>
+    <!-- Inline Report Payment Form (separate card, collapsed by default) -->
+    <div id="inline-payment-form-card" class="card hidden" style="padding:20px; margin:20px 0">
+      <h3 style="font-size:18px; font-weight:600; margin:0 0 8px 0">Report a payment</h3>
+      <p id="inline-payment-subtitle" style="color:var(--muted); font-size:14px; margin:0 0 20px 0">
+        Confirm the payment you already made to <span id="inline-lender-name"></span>.
+      </p>
 
-        <div class="form-group">
-          <label class="form-label" for="inline-payment-amount">Amount (EUR)</label>
-          <div style="display:flex; gap:8px; align-items:center">
-            <input type="number" id="inline-payment-amount" placeholder="e.g. 200" min="0" step="0.01" style="flex:1">
-            <button id="autofill-amount-btn" class="secondary" style="white-space:nowrap; padding:10px 14px; font-size:13px" title="Autofill with your next scheduled payment">Use next payment amount</button>
-          </div>
-          <p id="amount-helper-text" style="color:var(--muted); font-size:13px; margin:8px 0 0 0; line-height:1.5"></p>
+      <div class="form-group">
+        <label class="form-label" for="inline-payment-amount">Amount (EUR)</label>
+        <div style="display:flex; gap:8px; align-items:center">
+          <input type="number" id="inline-payment-amount" placeholder="e.g. 200" min="0" step="0.01" style="flex:1">
+          <button id="autofill-amount-btn" class="secondary" style="white-space:nowrap; padding:10px 14px; font-size:13px" title="Autofill with your next scheduled payment">Use next payment amount</button>
         </div>
-
-        <!-- Live Impact Box (only visible for overpayments) -->
-        <div id="live-impact-box" class="hidden" style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.3); border-radius:8px; padding:14px 16px; margin:12px 0; font-size:13px; animation:fadeIn 250ms ease-in">
-          <div id="impact-content" style="line-height:1.8"></div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="inline-payment-method">Payment method</label>
-          <select id="inline-payment-method" required style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
-            <option value="">Select method...</option>
-            <option value="bank">Bank transfer</option>
-            <option value="cash">Cash</option>
-            <option value="revolut">Revolut</option>
-            <option value="bizum">Bizum</option>
-            <option value="paypal">PayPal</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        <div id="inline-payment-proof-section" class="form-group">
-          <label class="form-label" id="inline-payment-proof-label" for="inline-payment-proof">Proof of repayment</label>
-          <p style="color:var(--muted); font-size:12px; margin-bottom:8px">
-            Upload a screenshot, photo, or document.
-          </p>
-          <input type="file" id="inline-payment-proof" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="inline-payment-note">Note (optional)</label>
-          <textarea id="inline-payment-note" placeholder="Add a short note (e.g., paid in two parts — thanks!)" style="width:100%; min-height:80px; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px; resize:vertical"></textarea>
-        </div>
-
-        <div style="display:flex; gap:12px; margin-top:20px">
-          <button id="inline-payment-submit" onclick="submitInlinePayment()" style="flex:1">Report repayment</button>
-          <button class="secondary" onclick="cancelInlinePaymentForm()" style="flex:0.5">Cancel</button>
-        </div>
-
-        <p class="status" id="inline-payment-status" style="margin-top:12px"></p>
+        <p id="amount-helper-text" style="color:var(--muted); font-size:13px; margin:8px 0 0 0; line-height:1.5"></p>
       </div>
+
+      <!-- Live Impact Box (only visible for overpayments) -->
+      <div id="live-impact-box" class="hidden" style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.3); border-radius:8px; padding:14px 16px; margin:12px 0; font-size:13px; animation:fadeIn 250ms ease-in">
+        <div id="impact-content" style="line-height:1.8"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="inline-payment-method">Payment method</label>
+        <select id="inline-payment-method" required style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+          <option value="">Select method...</option>
+          <option value="bank">Bank transfer</option>
+          <option value="cash">Cash</option>
+          <option value="revolut">Revolut</option>
+          <option value="bizum">Bizum</option>
+          <option value="paypal">PayPal</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div id="inline-payment-proof-section" class="form-group">
+        <label class="form-label" id="inline-payment-proof-label" for="inline-payment-proof">Proof of repayment</label>
+        <p style="color:var(--muted); font-size:12px; margin-bottom:8px">
+          Upload a screenshot, photo, or document.
+        </p>
+        <input type="file" id="inline-payment-proof" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="inline-payment-note">Note (optional)</label>
+        <textarea id="inline-payment-note" placeholder="Add a short note (e.g., paid in two parts — thanks!)" style="width:100%; min-height:80px; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px; resize:vertical"></textarea>
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:20px">
+        <button id="inline-payment-submit" onclick="submitInlinePayment()" style="flex:1">Report repayment</button>
+        <button class="secondary" onclick="cancelInlinePaymentForm()" style="flex:0.5">Cancel</button>
+      </div>
+
+      <p class="status" id="inline-payment-status" style="margin-top:12px"></p>
     </div>
 
     <!-- Lender payment action button (for active agreements) -->
@@ -990,12 +990,16 @@
     }
 
     function toggleInlinePaymentForm(lenderName, nextPaymentInfo) {
-      const inlineForm = document.getElementById('inline-payment-form');
-      const isHidden = inlineForm.classList.contains('hidden');
+      const inlineFormCard = document.getElementById('inline-payment-form-card');
+      const reportBtn = document.getElementById('borrower-record-payment-btn');
+      const isHidden = inlineFormCard.classList.contains('hidden');
 
       if (isHidden) {
-        // Show the form
-        inlineForm.classList.remove('hidden');
+        // Show the form card
+        inlineFormCard.classList.remove('hidden');
+
+        // Hide the "Report a payment" button to avoid redundancy
+        reportBtn.classList.add('hidden');
 
         // Set lender name in subtitle
         document.getElementById('inline-lender-name').textContent = lenderName;
@@ -1027,7 +1031,7 @@
         amountInput.addEventListener('input', () => updatePaymentHelpers(nextPaymentInfo));
 
         // Scroll to form
-        inlineForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        inlineFormCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       } else {
         // Hide the form (same as cancel)
         cancelInlinePaymentForm();
@@ -1280,8 +1284,14 @@
     }
 
     function cancelInlinePaymentForm() {
-      const inlineForm = document.getElementById('inline-payment-form');
-      inlineForm.classList.add('hidden');
+      const inlineFormCard = document.getElementById('inline-payment-form-card');
+      const reportBtn = document.getElementById('borrower-record-payment-btn');
+
+      // Hide the form card
+      inlineFormCard.classList.add('hidden');
+
+      // Show the "Report a payment" button again
+      reportBtn.classList.remove('hidden');
 
       // Clear form
       document.getElementById('inline-payment-amount').value = '';
