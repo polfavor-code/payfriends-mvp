@@ -53,8 +53,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    width: 54px;
+    height: 54px;
     padding: 0;
     border: none;
     border-radius: 9999px;
@@ -80,18 +80,18 @@
 
   /* Avatar image inside button */
   .user-avatar-button .user-avatar {
-    width: 44px;
-    height: 44px;
+    width: 54px;
+    height: 54px;
   }
 
   .user-avatar-button .user-avatar-image,
   .user-avatar-button .user-avatar-initials {
-    width: 44px;
-    height: 44px;
+    width: 54px;
+    height: 54px;
   }
 
   .user-avatar-button .user-avatar-initials {
-    font-size: 16px;
+    font-size: 20px;
   }
 
   .avatar-loading {
@@ -106,32 +106,13 @@
     gap: 12px;
   }
 
-  /* Logout button in header */
-  .header-logout-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 40px;
-    min-height: 40px;
-    padding: 0 16px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+  /* Welcome message */
+  .header-welcome-message {
     font-size: 14px;
-    font-weight: 500;
-    color: var(--text);
-    background: transparent;
+    color: var(--muted);
+    line-height: 1.2;
     white-space: nowrap;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .header-logout-button:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  .header-logout-button:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(61, 220, 151, 0.5);
+    margin-right: 8px;
   }
 
   /* User dropdown menu */
@@ -240,6 +221,7 @@
     </a>
   </div>
   <div class="top-header-right">
+    <span class="header-welcome-message" id="header-welcome-message">Loading...</span>
     <div class="pf-btn-header" id="activity-button">
       Activity (<span class="inbox-count" id="activity-count">0</span>)
     </div>
@@ -280,9 +262,5 @@
         </div>
       </div>
     </div>
-    <!-- Logout button -->
-    <button id="header-logout-button" class="header-logout-button">
-      Logout
-    </button>
   </div>
 </header>
