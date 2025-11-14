@@ -281,8 +281,12 @@
     <!-- Inline Report Payment Form (separate card, collapsed by default) -->
     <div id="inline-payment-form-card" class="card hidden" style="padding:20px; margin:20px 0">
       <h3 style="font-size:18px; font-weight:600; margin:0 0 8px 0">Report a payment</h3>
-      <p id="inline-payment-subtitle" style="color:var(--muted); font-size:14px; margin:0 0 20px 0">
+      <p id="inline-payment-subtitle" style="color:var(--muted); font-size:14px; margin:0 0 12px 0">
         Confirm the payment you already made to <span id="inline-lender-name"></span>.
+      </p>
+      <p style="color:var(--muted); font-size:13px; margin:0 0 20px 0; line-height:1.6; display:flex; align-items:start; gap:4px">
+        <img src="/images/payfriends-handshake.svg" style="display:inline-block; height:16px; width:16px; margin-top:2px; flex-shrink:0" alt="PayFriends fairness icon" />
+        <span><strong style="color:var(--accent)">Fairness recalculations activated:</strong> Paying more than the due amount lowers interest and adjusts future installments. (Try adding a higher amount to see the changes)</span>
       </p>
 
       <div class="form-group">
@@ -291,10 +295,6 @@
           <input type="number" id="inline-payment-amount" placeholder="e.g. 1 234,56" min="0" step="0.01" style="width:100%; padding-right:165px">
           <span id="autofill-amount-link" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap; text-decoration:underline; text-decoration-style:dotted" title="Autofill with your next scheduled payment">Use next due amount</span>
         </div>
-        <p style="color:var(--muted); font-size:13px; margin:10px 0 0 0; line-height:1.6; display:flex; align-items:start; gap:4px">
-          <img src="/images/payfriends-handshake.svg" style="display:inline-block; height:16px; width:16px; margin-top:2px; flex-shrink:0" alt="PayFriends fairness icon" />
-          <span><strong style="color:var(--accent)">Fairness recalculations activated:</strong> Paying more than the due amount lowers interest and adjusts future installments. (Try adding a higher amount to see the changes)</span>
-        </p>
         <p id="amount-helper-text" style="color:var(--muted); font-size:13px; margin:8px 0 0 0; line-height:1.5"></p>
       </div>
 
@@ -306,27 +306,27 @@
       <div class="form-group">
         <label class="form-label" for="inline-payment-method">Payment method</label>
         <select id="inline-payment-method" required style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
-          <option value="">Select method...</option>
-          <option value="bank">Bank transfer</option>
-          <option value="cash">Cash</option>
-          <option value="revolut">Revolut</option>
-          <option value="bizum">Bizum</option>
-          <option value="paypal">PayPal</option>
-          <option value="other">Other</option>
+          <!-- Options populated dynamically based on agreement payment methods -->
         </select>
       </div>
 
       <div id="inline-payment-proof-section" class="form-group">
         <label class="form-label" id="inline-payment-proof-label" for="inline-payment-proof">Proof of repayment</label>
-        <p style="color:var(--muted); font-size:12px; margin-bottom:8px">
-          Upload a screenshot, photo, or document.
-        </p>
-        <input type="file" id="inline-payment-proof" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+        <div id="inline-payment-proof-dropzone" style="border:2px dashed rgba(255,255,255,0.2); border-radius:8px; padding:20px; background:rgba(255,255,255,0.02); text-align:center; cursor:pointer; transition:all 0.2s ease; min-height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px">
+          <input type="file" id="inline-payment-proof" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="display:none">
+          <p id="inline-payment-proof-text" style="color:var(--muted); font-size:13px; margin:0">
+            Drag and drop your proof here, or click Browse to upload
+          </p>
+          <button type="button" id="inline-payment-proof-browse-btn" style="padding:8px 16px; font-size:13px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:var(--text); cursor:pointer; font-family:inherit; font-weight:500">
+            Browse
+          </button>
+          <p id="inline-payment-proof-filename" style="color:var(--accent); font-size:12px; margin:0; display:none"></p>
+        </div>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="inline-payment-note">Note (optional)</label>
-        <textarea id="inline-payment-note" placeholder="Add a short note (e.g., paid in two parts — thanks!)" style="width:100%; min-height:80px; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px; resize:vertical"></textarea>
+        <input type="text" id="inline-payment-note" placeholder="Add a short note (e.g., paid in two parts)" maxlength="120" style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
       </div>
 
       <div style="display:flex; gap:12px; margin-top:20px">
@@ -1008,6 +1008,65 @@
         // Set lender name in subtitle
         document.getElementById('inline-lender-name').textContent = lenderName;
 
+        // Set lender name in submit button
+        const submitBtn = document.getElementById('inline-payment-submit');
+        submitBtn.textContent = `Report repayment to ${lenderName}`;
+
+        // Populate payment methods based on agreement
+        const paymentMethodSelect = document.getElementById('inline-payment-method');
+        paymentMethodSelect.innerHTML = '';
+
+        // Get allowed methods from agreement
+        const allowedMethods = agreement.payment_preference_method
+          ? agreement.payment_preference_method.split(',').map(m => m.trim())
+          : [];
+
+        // Map method values to display names
+        const methodNames = {
+          'bank': 'Bank transfer',
+          'cash': 'Cash',
+          'revolut': 'Revolut',
+          'bizum': 'Bizum',
+          'paypal': 'PayPal',
+          'other': 'Other'
+        };
+
+        // Populate dropdown with only allowed methods
+        if (allowedMethods.length > 0) {
+          // If multiple methods, add placeholder
+          if (allowedMethods.length > 1) {
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Select method...';
+            paymentMethodSelect.appendChild(placeholder);
+          }
+
+          // Add allowed methods
+          allowedMethods.forEach(method => {
+            const option = document.createElement('option');
+            option.value = method;
+            option.textContent = methodNames[method] || method;
+            // If only one method, auto-select it
+            if (allowedMethods.length === 1) {
+              option.selected = true;
+            }
+            paymentMethodSelect.appendChild(option);
+          });
+        } else {
+          // Fallback: show all methods if none specified
+          const placeholder = document.createElement('option');
+          placeholder.value = '';
+          placeholder.textContent = 'Select method...';
+          paymentMethodSelect.appendChild(placeholder);
+
+          Object.keys(methodNames).forEach(method => {
+            const option = document.createElement('option');
+            option.value = method;
+            option.textContent = methodNames[method];
+            paymentMethodSelect.appendChild(option);
+          });
+        }
+
         // Set proof requirement based on agreement
         const proofInput = document.getElementById('inline-payment-proof');
         const proofLabel = document.getElementById('inline-payment-proof-label');
@@ -1034,12 +1093,83 @@
         // Add input listener to amount field
         amountInput.addEventListener('input', () => updatePaymentHelpers(nextPaymentInfo));
 
+        // Set up drag and drop for proof of repayment
+        setupProofDropzone();
+
         // Scroll to form
         inlineFormCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       } else {
         // Hide the form (same as cancel)
         cancelInlinePaymentForm();
       }
+    }
+
+    function setupProofDropzone() {
+      const dropzone = document.getElementById('inline-payment-proof-dropzone');
+      const fileInput = document.getElementById('inline-payment-proof');
+      const browseBtn = document.getElementById('inline-payment-proof-browse-btn');
+      const filenameDisplay = document.getElementById('inline-payment-proof-filename');
+      const textDisplay = document.getElementById('inline-payment-proof-text');
+
+      // Browse button click
+      browseBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fileInput.click();
+      };
+
+      // Click on dropzone to open file picker
+      dropzone.onclick = (e) => {
+        if (e.target !== browseBtn) {
+          fileInput.click();
+        }
+      };
+
+      // File input change
+      fileInput.onchange = () => {
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          filenameDisplay.textContent = `Selected: ${file.name}`;
+          filenameDisplay.style.display = 'block';
+          textDisplay.style.display = 'none';
+          browseBtn.textContent = 'Change file';
+          dropzone.style.borderColor = 'var(--accent)';
+          dropzone.style.background = 'rgba(61,220,151,0.05)';
+        }
+      };
+
+      // Drag and drop events
+      dropzone.ondragover = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.style.borderColor = 'var(--accent)';
+        dropzone.style.background = 'rgba(61,220,151,0.1)';
+      };
+
+      dropzone.ondragleave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
+        dropzone.style.background = 'rgba(255,255,255,0.02)';
+      };
+
+      dropzone.ondrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
+        dropzone.style.background = 'rgba(255,255,255,0.02)';
+
+        if (e.dataTransfer.files.length > 0) {
+          fileInput.files = e.dataTransfer.files;
+          const file = e.dataTransfer.files[0];
+          filenameDisplay.textContent = `Selected: ${file.name}`;
+          filenameDisplay.style.display = 'block';
+          textDisplay.style.display = 'none';
+          browseBtn.textContent = 'Change file';
+          dropzone.style.borderColor = 'var(--accent)';
+          dropzone.style.background = 'rgba(61,220,151,0.05)';
+        }
+      };
     }
 
     function updatePaymentHelpers(nextPaymentInfo) {
@@ -1305,6 +1435,19 @@
       document.getElementById('inline-payment-status').textContent = '';
       document.getElementById('amount-helper-text').textContent = '';
       document.getElementById('live-impact-box').classList.add('hidden');
+
+      // Reset dropzone state
+      const dropzone = document.getElementById('inline-payment-proof-dropzone');
+      const filenameDisplay = document.getElementById('inline-payment-proof-filename');
+      const textDisplay = document.getElementById('inline-payment-proof-text');
+      const browseBtn = document.getElementById('inline-payment-proof-browse-btn');
+      if (dropzone && filenameDisplay && textDisplay && browseBtn) {
+        filenameDisplay.style.display = 'none';
+        textDisplay.style.display = 'block';
+        browseBtn.textContent = 'Browse';
+        dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
+        dropzone.style.background = 'rgba(255,255,255,0.02)';
+      }
     }
 
     async function submitInlinePayment() {
