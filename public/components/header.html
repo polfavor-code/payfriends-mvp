@@ -1,3 +1,60 @@
+<style>
+  /* Avatar styles for header */
+  .user-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    vertical-align: middle;
+  }
+  .user-avatar.size-small {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.2px;
+  }
+  .user-avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .user-avatar-initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .user-avatar-initials.color-1 { background: #6366f1; }
+  .user-avatar-initials.color-2 { background: #8b5cf6; }
+  .user-avatar-initials.color-3 { background: #ec4899; }
+  .user-avatar-initials.color-4 { background: #f59e0b; }
+  .user-avatar-initials.color-5 { background: #10b981; }
+  .user-avatar-initials.color-6 { background: #3b82f6; }
+  .user-avatar-initials.color-7 { background: #14b8a6; }
+
+  /* Header user info with avatar */
+  .top-header-user-info {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-user-name {
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+</style>
+
 <header class="top-header">
   <div class="top-header-left">
     <a href="/app" style="text-decoration:none; display:flex; align-items:center; gap:12px">
@@ -10,12 +67,10 @@
   </div>
   <div class="top-header-right">
     <div class="top-header-user-info" id="user-info-display">Loading...</div>
-    <div class="top-header-actions">
-      <div class="pf-btn-header" id="activity-button">
-        Activity (<span class="inbox-count" id="activity-count">0</span>)
-      </div>
-      <a href="/profile" class="pf-btn-header">My Profile</a>
-      <button class="pf-btn-header" id="logout-btn">Logout</button>
+    <div class="pf-btn-header" id="activity-button">
+      Activity (<span class="inbox-count" id="activity-count">0</span>)
     </div>
+    <a href="/profile" class="pf-btn-header">My Profile</a>
+    <button class="pf-btn-header" id="logout-btn">Logout</button>
   </div>
 </header>

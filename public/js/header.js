@@ -9,6 +9,84 @@
   let currentUser = null;
 
   /**
+   * Extract first name from user object
+   * @param {Object} user - User object
+   * @returns {string} First name
+   */
+  function getFirstNameFromUser(user) {
+    if (!user) return '';
+    if (user.first_name) return user.first_name;
+
+    const nameSource = user.full_name || user.name || user.email || '';
+    const trimmed = nameSource.trim();
+    if (!trimmed) return '';
+
+    // Take first word as first name fallback
+    return trimmed.split(/\s+/)[0];
+  }
+
+  /**
+   * Generate avatar initials from user object
+   * @param {Object} user - User object
+   * @returns {string} Two-letter initials
+   */
+  function getAvatarInitialsFromUser(user) {
+    if (!user) return '';
+    if (user.initials) return user.initials;
+
+    const name = (user.full_name || user.name || '').trim();
+    if (!name) {
+      // fallback: first letter of email before @
+      if (user.email) {
+        const prefix = user.email.split('@')[0] || '';
+        return prefix.slice(0, 2).toUpperCase();
+      }
+      return '';
+    }
+
+    const parts = name.split(/\s+/);
+    const first = parts[0] || '';
+    const last = parts[parts.length - 1] || '';
+    const letters = (first[0] || '') + (last[0] || '');
+    return letters.toUpperCase();
+  }
+
+  /**
+   * Get avatar color class based on user name
+   * @param {string} name - User name
+   * @returns {string} Color class name
+   */
+  function getAvatarColor(name) {
+    if (!name) return 'color-1';
+    const colors = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5', 'color-6', 'color-7'];
+    const charCode = name.charCodeAt(0) || 0;
+    return colors[charCode % colors.length];
+  }
+
+  /**
+   * Generate avatar HTML
+   * @param {Object} user - User object
+   * @param {string} size - Avatar size (small, medium, large)
+   * @returns {string} Avatar HTML
+   */
+  function generateAvatarHTML(user, size = 'small') {
+    if (!user) return '';
+
+    const userId = user.id || user.user_id;
+    const name = user.full_name || user.name || user.email || '';
+
+    // If user has profile picture, use it
+    if (user.has_profile_picture || user.profile_picture_url) {
+      return `<div class="user-avatar size-${size}"><img src="/api/profile/picture/${userId}" class="user-avatar-image" alt="${name}" /></div>`;
+    }
+
+    // Otherwise, use initials
+    const initials = getAvatarInitialsFromUser(user);
+    const colorClass = getAvatarColor(name);
+    return `<div class="user-avatar size-${size}"><div class="user-avatar-initials ${colorClass}">${initials}</div></div>`;
+  }
+
+  /**
    * Initialize the shared header
    * @param {Object} options - Configuration options
    * @param {boolean} options.hasActivitySection - Whether the page has an activity section (like app.html)
@@ -56,14 +134,16 @@
       const data = await res.json();
       currentUser = data.user;
 
-      // Update user info display
-      const displayText = currentUser.full_name
-        ? `${currentUser.full_name} | ${currentUser.email}`
-        : currentUser.email;
-
+      // Update user info display with avatar and first name
       const userInfoEl = document.getElementById('user-info-display');
       if (userInfoEl) {
-        userInfoEl.textContent = displayText;
+        const firstName = getFirstNameFromUser(currentUser);
+        const avatarHTML = generateAvatarHTML(currentUser, 'small');
+
+        userInfoEl.innerHTML = `
+          ${avatarHTML}
+          <span class="header-user-name">${firstName}</span>
+        `;
       }
     } catch (err) {
       console.error('Error loading user:', err);
