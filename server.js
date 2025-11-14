@@ -104,6 +104,7 @@ db.exec(`
     can_pay_now_cents INTEGER,
     preferred_adjustments TEXT NOT NULL,
     created_at TEXT NOT NULL,
+    resolved_at TEXT,
     FOREIGN KEY (agreement_id) REFERENCES agreements(id),
     FOREIGN KEY (borrower_user_id) REFERENCES users(id)
   );
@@ -222,6 +223,11 @@ try {
 }
 try {
   db.exec(`ALTER TABLE agreements ADD COLUMN payment_preference_method TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE hardship_requests ADD COLUMN resolved_at TEXT;`);
 } catch (e) {
   // Column already exists, ignore
 }
@@ -1581,10 +1587,10 @@ app.get('/api/agreements/:id/hardship-requests', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'Agreement not found' });
     }
 
-    // Get all hardship requests for this agreement
+    // Get unresolved hardship requests for this agreement
     const requests = db.prepare(`
       SELECT * FROM hardship_requests
-      WHERE agreement_id = ?
+      WHERE agreement_id = ? AND resolved_at IS NULL
       ORDER BY created_at DESC
     `).all(id);
 
@@ -2172,6 +2178,38 @@ app.post('/api/agreements/:id/renegotiation/respond-values', requireAuth, (req, 
         'renegotiation_accepted'
       );
 
+      // Mark any open hardship requests as resolved
+      db.prepare(`
+        UPDATE hardship_requests
+        SET resolved_at = ?
+        WHERE agreement_id = ? AND resolved_at IS NULL
+      `).run(now, id);
+
+      // Send "Repayment issue resolved" messages to both parties
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.borrower_user_id,
+        id,
+        'Repayment issue resolved',
+        `Your payment difficulties have been resolved with a new payment plan.`,
+        now,
+        'HARDSHIP_RESOLVED'
+      );
+
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.lender_user_id,
+        id,
+        'Repayment issue resolved',
+        `The borrower's payment difficulties have been resolved with a new payment plan.`,
+        now,
+        'HARDSHIP_RESOLVED'
+      );
+
       // TODO: Apply renegotiation to agreement (recalculate schedule, update dates, etc.)
       // This would be implemented in a separate function that handles schedule recalculation
 
@@ -2329,6 +2367,38 @@ app.post('/api/agreements/:id/renegotiation/respond-counter-values', requireAuth
         `The borrower accepted your proposed payment plan. The agreement schedule will be updated shortly.`,
         now,
         'renegotiation_accepted'
+      );
+
+      // Mark any open hardship requests as resolved
+      db.prepare(`
+        UPDATE hardship_requests
+        SET resolved_at = ?
+        WHERE agreement_id = ? AND resolved_at IS NULL
+      `).run(now, id);
+
+      // Send "Repayment issue resolved" messages to both parties
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.borrower_user_id,
+        id,
+        'Repayment issue resolved',
+        `Your payment difficulties have been resolved with a new payment plan.`,
+        now,
+        'HARDSHIP_RESOLVED'
+      );
+
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.lender_user_id,
+        id,
+        'Repayment issue resolved',
+        `The borrower's payment difficulties have been resolved with a new payment plan.`,
+        now,
+        'HARDSHIP_RESOLVED'
       );
 
       // TODO: Apply renegotiation to agreement

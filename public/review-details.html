@@ -194,6 +194,28 @@
     .payment-impact-tooltip::before{content:''; position:absolute; bottom:calc(100% + 2px); left:50%; transform:translateX(-50%); border:4px solid transparent; border-top-color:#1f2937; opacity:0; pointer-events:none; transition:opacity 0.2s ease; z-index:1000}
     .payment-impact-tooltip:hover::after,.payment-impact-tooltip:hover::before{opacity:1}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    /* Loan Timeline styles */
+    .timeline-event{margin-bottom:16px; border-left:2px solid rgba(255,255,255,0.1); padding-left:20px; position:relative}
+    .timeline-event::before{content:''; position:absolute; left:-6px; top:4px; width:10px; height:10px; border-radius:50%; background:var(--accent); border:2px solid var(--card)}
+    .timeline-event.timeline-event--issue::before{background:var(--danger)}
+    .timeline-event.timeline-event--resolved::before{background:#22c55e}
+    .timeline-event.timeline-event--settled::before{background:#9ca3af}
+    .timeline-event-header{display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; padding:8px 12px; border-radius:8px; transition:background 0.2s}
+    .timeline-event-header:hover{background:rgba(255,255,255,0.03)}
+    .timeline-event-title{font-weight:600; color:var(--text); font-size:14px}
+    .timeline-event-date{color:var(--muted); font-size:12px; margin-top:2px}
+    .timeline-event-details{margin-top:12px; padding:12px; background:rgba(255,255,255,0.02); border-radius:8px; border:1px solid rgba(255,255,255,0.06); display:none}
+    .timeline-event-details.expanded{display:block}
+    .timeline-event-details-row{display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04)}
+    .timeline-event-details-row:last-child{border-bottom:none}
+    .timeline-event-label{color:var(--muted); font-size:13px}
+    .timeline-event-value{color:var(--text); font-size:13px; font-weight:500}
+    .timeline-comparison-table{width:100%; border-collapse:collapse; margin-top:8px}
+    .timeline-comparison-table th{text-align:left; padding:8px; font-size:12px; color:var(--muted); font-weight:600; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .timeline-comparison-table td{padding:8px; font-size:13px; border-bottom:1px solid rgba(255,255,255,0.04)}
+    .timeline-comparison-table td:first-child{color:var(--muted)}
+    .timeline-comparison-table td.value-old{color:#f87171}
+    .timeline-comparison-table td.value-new{color:var(--accent)}
   </style>
 </head>
 <body>
@@ -544,6 +566,15 @@
       </div>
     </div>
 
+    <!-- Loan Timeline (for all agreements) -->
+    <div id="loan-timeline" class="card hidden">
+      <h2>Loan Timeline</h2>
+      <p style="color:var(--muted); font-size:14px; margin-bottom:16px">Complete history of this loan, including all negotiations and changes.</p>
+      <div id="timeline-events">
+        <p style="color:var(--muted); font-size:14px">Loading timeline...</p>
+      </div>
+    </div>
+
     <!-- Record payment form (for active agreements) -->
     <div id="record-payment-section" class="card hidden">
       <h2 id="payment-form-header">Record a Payment</h2>
@@ -710,9 +741,13 @@
 
       <!-- Step 0: How much can you pay now? -->
       <div class="form-section" id="renegotiation-step-0">
-        <div class="form-section-title">How much can you pay right now?</div>
+        <div style="background:rgba(255,165,0,0.1); border:1px solid rgba(255,165,0,0.3); border-radius:8px; padding:12px; margin-bottom:16px">
+          <p id="expected-payment-context" style="margin:0; font-size:14px; color:var(--text); font-weight:500"></p>
+        </div>
+
+        <div class="form-section-title">How much can you pay now to show good intentions?</div>
         <p style="color:var(--muted); font-size:14px; margin:12px 0">
-          Even a small amount helps. <span id="lender-name-helper"></span> will appreciate receiving something instead of nothing – it shows commitment. Any amount you pay now will immediately reduce what you owe and lower your interest.
+          Even a small amount already helps. Any amount you pay now will immediately reduce what you owe and lower your interest.
         </p>
 
         <div class="form-group">
@@ -1852,8 +1887,8 @@
         checkHardshipRequests().then(hasHardship => {
           if (hasHardship) {
             const currentHtml = document.getElementById('status-display').innerHTML;
-            if (!currentHtml.includes('Pending resolution')) {
-              document.getElementById('status-display').innerHTML = currentHtml + '<span class="secondary-status-badge pending-resolution">Pending resolution</span>';
+            if (!currentHtml.includes('Needs attention') && !currentHtml.includes('Pending resolution')) {
+              document.getElementById('status-display').innerHTML = currentHtml + '<span class="secondary-status-badge pending-resolution">Needs attention</span>';
             }
           }
         });
@@ -2445,9 +2480,19 @@
       const form = document.getElementById('renegotiation-initiation-form');
       form.classList.remove('hidden');
 
-      // Populate lender name in helper text
-      const lenderName = agreement.lender_full_name || agreement.lender_name || 'Your lender';
-      document.getElementById('lender-name-helper').textContent = lenderName;
+      // Populate expected payment context (what was supposed to be paid and when)
+      const expectedPaymentEl = document.getElementById('expected-payment-context');
+      if (agreement.repayment_type === 'installments' && agreement.next_payment_amount_cents && agreement.next_payment_date) {
+        const amount = formatEuro0(agreement.next_payment_amount_cents / 100);
+        const date = new Date(agreement.next_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        expectedPaymentEl.textContent = `You were supposed to pay ${amount} on ${date}.`;
+      } else if (agreement.repayment_type !== 'installments' && agreement.amount_cents && agreement.due_date) {
+        const amount = formatEuro0(agreement.amount_cents / 100);
+        const date = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        expectedPaymentEl.textContent = `You were supposed to pay ${amount} on ${date}.`;
+      } else {
+        expectedPaymentEl.textContent = 'You are having difficulty making the scheduled payment.';
+      }
 
       // Build solution type options based on loan type
       const loanType = agreement.repayment_type === 'installments' ? 'installment' : 'one_time';

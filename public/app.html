@@ -3380,6 +3380,12 @@
               // Payment difficulty - use borrower's name and add emphasis
               const borrowerName = msg.borrower_full_name || msg.friend_first_name || msg.borrower_email;
               activityText = `${borrowerName} reported a payment issue and requested a new plan`;
+            } else if (msg.event_type === 'HARDSHIP_REQUEST_BORROWER') {
+              // Borrower view of their own hardship request
+              activityText = msg.body; // Use the body text from the database
+            } else if (msg.event_type === 'HARDSHIP_RESOLVED') {
+              // Repayment issue resolved
+              activityText = msg.body;
             }
 
             // Determine the link URL based on agreement_id and event_type
@@ -3398,9 +3404,9 @@
             const clickableClass = linkUrl ? 'message-clickable' : '';
             const onclickAttr = linkUrl ? `onclick="handleActivityClick(${msg.id}, '${linkUrl}')"` : '';
 
-            // Add warning icon for payment difficulty
-            const isPaymentDifficulty = msg.event_type === 'HARDSHIP_REQUEST_LENDER';
-            const warningIcon = isPaymentDifficulty ? '<span style="color:#f59e0b; font-weight:700; margin-right:8px" title="Payment issue requires attention">⚠</span>' : '';
+            // Add warning icon for payment difficulty (both borrower and lender views)
+            const isPaymentDifficulty = msg.event_type === 'HARDSHIP_REQUEST_LENDER' || msg.event_type === 'HARDSHIP_REQUEST_BORROWER';
+            const warningIcon = isPaymentDifficulty ? '<span style="color:var(--danger); font-weight:700; margin-right:8px" title="Payment issue requires attention">⚠</span>' : '';
 
             // Apply issue modifier class for payment issues
             const issueClass = isPaymentDifficulty ? 'activity-item--issue' : '';
