@@ -770,6 +770,10 @@
 
         <!-- Fairness Between Friends (collapsible) -->
         <div style="margin:20px 0">
+          <button onclick="toggleSection('fairness-step3-section')" class="secondary" style="width:100%; text-align:left; padding:12px 20px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+            <div style="display:flex; align-items:center; gap:8px">
+              <img src="/images/payfriends-handshake.svg" alt="Fairness Between Friends" style="width:18px; height:18px;" />
+              <span style="color:var(--accent)">Fairness Between Friends (How it Works)</span>
           <button onclick="toggleSection('fairness-step3-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
             <div style="display:flex; align-items:center; gap:8px; color:var(--accent)">
               <svg viewBox="0 0 16 16" aria-hidden="true" style="width:18px; height:18px; display:inline-block; flex-shrink:0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -782,7 +786,7 @@
             </div>
             <span id="fairness-step3-toggle">▼</span>
           </button>
-          <div id="fairness-step3-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <div id="fairness-step3-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px 20px; margin-top:-1px">
             <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
               PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
             </p>
@@ -800,12 +804,12 @@
         </div>
 
         <div style="margin:20px 0">
-          <button onclick="toggleBreakdown()" class="secondary" style="padding:8px 16px; font-size:14px">
+          <button onclick="toggleBreakdown()" class="secondary" style="padding:8px 20px; font-size:14px">
             <span id="breakdown-toggle-text">Show payment breakdown</span>
           </button>
         </div>
 
-        <div id="interest-breakdown" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin:20px 0; max-height:400px; overflow-y:auto">
+        <div id="interest-breakdown" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:20px; margin:20px 0; max-height:400px; overflow-y:auto">
           <h5 style="margin:0 0 12px 0; font-size:14px">Payment breakdown</h5>
           <table style="width:100%; font-size:13px">
             <thead>
@@ -968,40 +972,40 @@
         <!-- General details table -->
         <div style="margin:16px 0">
           <h4 style="margin:0 0 12px 0; font-size:16px">Agreement Details</h4>
-          <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px">
+          <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:20px">
             <div id="general-details-content"></div>
           </div>
         </div>
 
         <!-- Expandable: Repayment schedule & interest calculation -->
         <div style="margin:16px 0">
-          <button onclick="toggleSection('interest-calc-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+          <button onclick="toggleSection('interest-calc-section')" class="secondary" style="width:100%; text-align:left; padding:12px 20px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
             <span>Repayment schedule & interest calculation</span>
             <span id="interest-calc-toggle">▼</span>
           </button>
-          <div id="interest-calc-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <div id="interest-calc-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px 20px; margin-top:-1px">
             <div id="interest-calc-content"></div>
           </div>
         </div>
 
         <!-- Expandable: Repayment details & reminders -->
         <div style="margin:16px 0">
-          <button onclick="toggleSection('payments-reminders-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+          <button onclick="toggleSection('payments-reminders-section')" class="secondary" style="width:100%; text-align:left; padding:12px 20px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
             <span>Repayment details & reminders</span>
             <span id="payments-reminders-toggle">▼</span>
           </button>
-          <div id="payments-reminders-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <div id="payments-reminders-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px 20px; margin-top:-1px">
             <div id="payments-reminders-content"></div>
           </div>
         </div>
 
         <!-- Expandable: Fairness Between Friends -->
         <div style="margin:16px 0">
-          <button onclick="toggleSection('fairness-step5-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+          <button onclick="toggleSection('fairness-step5-section')" class="secondary" style="width:100%; text-align:left; padding:12px 20px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
             <span>Fairness Between Friends</span>
             <span id="fairness-step5-toggle">▼</span>
           </button>
-          <div id="fairness-step5-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+          <div id="fairness-step5-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px 20px; margin-top:-1px">
             <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
               PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
               Interest is calculated dynamically on the outstanding balance and the time elapsed.
