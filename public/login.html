@@ -15,10 +15,12 @@
       margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
       background:var(--bg); color:var(--text);
       min-height:100vh; display:flex; align-items:center; justify-content:center;
+      position:relative; overflow:hidden;
     }
     .page{
       width:100%; max-width:1280px; padding:32px 16px;
       display:flex; flex-direction:column; gap:40px; align-items:center;
+      position:relative; z-index:10;
     }
     @media (min-width:900px){
       .page{
@@ -293,6 +295,21 @@
         status.className = 'status error';
       }
     });
+  </script>
+
+  <!-- PayFriends Matrix Rain Background -->
+  <script src="/components/payfriends-matrix-rain.js"></script>
+  <script>
+    // Initialize Matrix Rain background
+    (function() {
+      const matrixRain = new PayFriendsMatrixRain({
+        container: document.body,
+        density: 1,
+        speed: 1,
+        blur: true,
+        colorMode: 'multi'
+      });
+    })();
   </script>
 </body>
 </html>
