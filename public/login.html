@@ -132,8 +132,8 @@
       overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0;
     }
 
-    /* Bouncy background canvas */
-    #bouncy-canvas{
+    /* Smile Money background canvas */
+    #smile-money-canvas{
       position:fixed;
       top:0;
       left:0;
@@ -149,8 +149,8 @@
   </style>
 </head>
 <body>
-  <!-- Bouncy Smiley Money Gang Background -->
-  <canvas id="bouncy-canvas"></canvas>
+  <!-- Smile Money Background -->
+  <canvas id="smile-money-canvas"></canvas>
   <div class="page">
     <!-- HERO (single instance, responsive) -->
     <section class="hero" aria-labelledby="pf-hero-title">
@@ -231,24 +231,24 @@
     </main>
   </div>
 
-  <!-- Bouncy Smiley Money Gang Component -->
-  <script src="/components/payfriends-bouncy-background.js"></script>
+  <!-- Smile Money Background Component -->
+  <script src="/components/payfriends-smile-money-background.js"></script>
 
   <script>
-    // Initialize Bouncy background
+    // Initialize Smile Money background
     (function(){
-      const canvas = document.getElementById('bouncy-canvas');
-      if (canvas && window.PayFriendsBouncyBackground) {
-        const bouncyBg = new window.PayFriendsBouncyBackground(canvas, {
-          iconCount: 12,
-          particleFrequency: 0.4,
+      const canvas = document.getElementById('smile-money-canvas');
+      if (canvas && window.PayFriendsSmileMoneyBackground) {
+        const smileMoneyBg = new window.PayFriendsSmileMoneyBackground(canvas, {
+          smileyCount: 12,
+          maxCoinStreams: 4,
           speed: 1
         });
-        bouncyBg.start();
+        smileMoneyBg.start();
 
         // Clean up on page unload
         window.addEventListener('beforeunload', () => {
-          bouncyBg.destroy();
+          smileMoneyBg.destroy();
         });
       }
     })();
