@@ -424,22 +424,29 @@
     </section>
 
     <!-- Welcome card for first-time users with no agreements -->
-    <section class="card" id="welcome-card" style="display:none; text-align:center; padding:64px 32px">
-      <div style="max-width:672px; margin:0 auto">
-        <h2 style="margin:0 0 24px 0; font-size:30px; font-weight:600">Welcome to PayFriends.app</h2>
-        <p style="color:var(--muted); font-size:15px; line-height:1.7; margin:0 0 32px 0">
-          PayFriends takes over the awkward part of lending, reminding, chasing, negotiating and recalculating so you don't have to be the debt collector for your friends.
-        </p>
-        <ul style="max-width:512px; margin:0 auto 40px auto; text-align:left; list-style:none; padding:0; color:var(--muted); font-size:14px; line-height:1.8">
-          <li style="margin-bottom:12px">• Create clear, written agreements for loans between friends</li>
-          <li style="margin-bottom:12px">• Automatic fair recalculations when repayments are early, late, or different amounts</li>
-          <li>• PayFriends negotiates new plans with the borrower when they have payment issues</li>
-        </ul>
-        <button onclick="toggleNewAgreement()" style="display:inline-flex; align-items:center; gap:8px; padding:14px 24px; width:auto; font-size:16px">
-          <span style="font-size:20px; font-weight:bold">+</span>
-          <span>New Agreement</span>
-        </button>
+    <section class="card" id="welcome-card" style="display:none; text-align:center; padding:48px 32px">
+      <h2 style="margin:0 0 16px 0; font-size:28px">Welcome to PayFriends.app</h2>
+      <p style="color:var(--text); font-size:15px; line-height:1.6; max-width:540px; margin:0 auto 32px auto">
+        PayFriends takes over the awkward part of lending — reminding, chasing, negotiating and recalculating — so you don't have to be the debt collector for your friends.
+      </p>
+      <div style="max-width:540px; margin:0 auto 32px auto; text-align:left">
+        <div style="display:flex; gap:12px; margin-bottom:16px">
+          <div style="color:var(--accent); font-size:20px; flex-shrink:0">✓</div>
+          <div style="color:var(--text); font-size:14px">Create clear, written agreements for loans between friends.</div>
+        </div>
+        <div style="display:flex; gap:12px; margin-bottom:16px">
+          <div style="color:var(--accent); font-size:20px; flex-shrink:0">✓</div>
+          <div style="color:var(--text); font-size:14px">Automatic fair recalculations when repayments are early, late, or different amounts.</div>
+        </div>
+        <div style="display:flex; gap:12px">
+          <div style="color:var(--accent); font-size:20px; flex-shrink:0">✓</div>
+          <div style="color:var(--text); font-size:14px">PayFriends negotiates new plans with the borrower when they have payment issues.</div>
+        </div>
       </div>
+      <button onclick="toggleNewAgreement()" style="display:inline-flex; align-items:center; gap:8px; padding:14px 24px; width:auto; font-size:16px">
+        <span style="font-size:20px; font-weight:bold">+</span>
+        <span>New Agreement</span>
+      </button>
     </section>
 
     <!-- Wizard for creating agreements -->
