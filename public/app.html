@@ -734,21 +734,36 @@
           </div>
           <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid rgba(255,255,255,0.08); margin-top:8px; padding-top:12px">
             <span style="color:var(--muted)">Total interest</span>
-            <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px">
+            <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px; color:var(--text)">
               <span style="font-weight:600" id="total-interest-display">€ 0,00</span>
-              <img src="/images/payfriends-handshake.svg" alt="Fairness Between Friends" style="width:18px; height:18px;" />
+              <svg viewBox="0 0 16 16" aria-hidden="true" style="width:18px; height:18px; display:inline-block; flex-shrink:0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4.3 3.5 C3.1 3.5 2.2 4.4 2.2 5.7 C2.2 6.9 2.7 7.8 3.7 8.8 L7.5 12.5 L10.8 9.2 C11.8 8.2 12.3 7.3 12.3 6.1 C12.3 5 11.6 4.2 10.6 4.2 C9.8 4.2 9.1 4.6 8.6 5.4 L7.9 6.4 L7.3 5.5 C6.8 4.7 6.1 4.3 5.3 4.3 C5 4.3 4.6 4.3 4.3 3.5Z" />
+                <path d="M8.2 8.3 L8.2 10.9" />
+                <path d="M9.4 8.1 L9.4 10.7" />
+                <path d="M10.6 7.8 L10.6 10.2" />
+              </svg>
             </div>
           </div>
           <div style="display:flex; justify-content:space-between; padding:8px 0">
             <span style="color:var(--muted); font-weight:600">Total to repay</span>
-            <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px">
-              <span style="font-weight:700; font-size:18px; color:var(--accent)" id="total-repay-display">€ 0,00</span>
-              <img src="/images/payfriends-handshake.svg" alt="Fairness Between Friends" style="width:18px; height:18px;" />
+            <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px; color:var(--accent)">
+              <span style="font-weight:700; font-size:18px" id="total-repay-display">€ 0,00</span>
+              <svg viewBox="0 0 16 16" aria-hidden="true" style="width:18px; height:18px; display:inline-block; flex-shrink:0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4.3 3.5 C3.1 3.5 2.2 4.4 2.2 5.7 C2.2 6.9 2.7 7.8 3.7 8.8 L7.5 12.5 L10.8 9.2 C11.8 8.2 12.3 7.3 12.3 6.1 C12.3 5 11.6 4.2 10.6 4.2 C9.8 4.2 9.1 4.6 8.6 5.4 L7.9 6.4 L7.3 5.5 C6.8 4.7 6.1 4.3 5.3 4.3 C5 4.3 4.6 4.3 4.3 3.5Z" />
+                <path d="M8.2 8.3 L8.2 10.9" />
+                <path d="M9.4 8.1 L9.4 10.7" />
+                <path d="M10.6 7.8 L10.6 10.2" />
+              </svg>
             </div>
           </div>
           <p style="margin:12px 0 0 0; color:var(--muted); font-size:12px; line-height:1.5; display:flex; align-items:center; gap:4px">
             <span>Amounts marked with</span>
-            <img src="/images/payfriends-handshake.svg" alt="Fairness Between Friends" style="width:16px; height:16px; flex-shrink:0;" />
+            <svg viewBox="0 0 16 16" aria-hidden="true" style="width:16px; height:16px; display:inline-block; flex-shrink:0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4.3 3.5 C3.1 3.5 2.2 4.4 2.2 5.7 C2.2 6.9 2.7 7.8 3.7 8.8 L7.5 12.5 L10.8 9.2 C11.8 8.2 12.3 7.3 12.3 6.1 C12.3 5 11.6 4.2 10.6 4.2 C9.8 4.2 9.1 4.6 8.6 5.4 L7.9 6.4 L7.3 5.5 C6.8 4.7 6.1 4.3 5.3 4.3 C5 4.3 4.6 4.3 4.3 3.5Z" />
+              <path d="M8.2 8.3 L8.2 10.9" />
+              <path d="M9.4 8.1 L9.4 10.7" />
+              <path d="M10.6 7.8 L10.6 10.2" />
+            </svg>
             <span>are calculated using the Fairness Between Friends rules.</span>
           </p>
         </div>
@@ -759,6 +774,15 @@
             <div style="display:flex; align-items:center; gap:8px">
               <img src="/images/payfriends-handshake.svg" alt="Fairness Between Friends" style="width:18px; height:18px;" />
               <span style="color:var(--accent)">Fairness Between Friends (How it Works)</span>
+          <button onclick="toggleSection('fairness-step3-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+            <div style="display:flex; align-items:center; gap:8px; color:var(--accent)">
+              <svg viewBox="0 0 16 16" aria-hidden="true" style="width:18px; height:18px; display:inline-block; flex-shrink:0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4.3 3.5 C3.1 3.5 2.2 4.4 2.2 5.7 C2.2 6.9 2.7 7.8 3.7 8.8 L7.5 12.5 L10.8 9.2 C11.8 8.2 12.3 7.3 12.3 6.1 C12.3 5 11.6 4.2 10.6 4.2 C9.8 4.2 9.1 4.6 8.6 5.4 L7.9 6.4 L7.3 5.5 C6.8 4.7 6.1 4.3 5.3 4.3 C5 4.3 4.6 4.3 4.3 3.5Z" />
+                <path d="M8.2 8.3 L8.2 10.9" />
+                <path d="M9.4 8.1 L9.4 10.7" />
+                <path d="M10.6 7.8 L10.6 10.2" />
+              </svg>
+              <span>Fairness Between Friends (How it Works)</span>
             </div>
             <span id="fairness-step3-toggle">▼</span>
           </button>
