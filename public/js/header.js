@@ -335,12 +335,20 @@
     await loadActivityCount();
   }
 
+  /**
+   * Refresh user info (useful after profile updates like avatar upload)
+   */
+  async function refreshUserInfo() {
+    await loadUserInfo();
+  }
+
   // Export functions to global scope
   window.PayFriendsHeader = {
     initialize: initializeHeader,
     getCurrentUser: getCurrentUser,
     refreshActivityCount: refreshActivityCount,
-    updateActivityButton: updateActivityButton
+    updateActivityButton: updateActivityButton,
+    refreshUserInfo: refreshUserInfo
   };
 
 })();

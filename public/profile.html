@@ -340,6 +340,11 @@
         currentUser.profile_picture = data.profilePictureUrl;
         displayProfilePicture(data.profilePictureUrl);
 
+        // Refresh header to show new avatar
+        if (window.PayFriendsHeader && window.PayFriendsHeader.refreshUserInfo) {
+          await window.PayFriendsHeader.refreshUserInfo();
+        }
+
         pictureStatus.textContent = '✓ Profile picture updated';
         pictureStatus.className = 'status success';
 
@@ -386,6 +391,11 @@
 
         currentUser.profile_picture = null;
         hideProfilePicture();
+
+        // Refresh header to show initials
+        if (window.PayFriendsHeader && window.PayFriendsHeader.refreshUserInfo) {
+          await window.PayFriendsHeader.refreshUserInfo();
+        }
 
         pictureStatus.textContent = '✓ Profile picture removed';
         pictureStatus.className = 'status success';
