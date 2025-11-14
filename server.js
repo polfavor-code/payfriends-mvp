@@ -835,6 +835,13 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Amount must be a positive number.' });
   }
 
+  // Worst case scenario (debt collection clause) is only allowed for loans >= 6000 EUR (600000 cents)
+  const WORST_CASE_MIN_AMOUNT_CENTS = 600000; // 6000 EUR
+  if (debtCollectionClause && amountCents < WORST_CASE_MIN_AMOUNT_CENTS) {
+    // Silently ignore the flag for small loans instead of rejecting the request
+    debtCollectionClause = false;
+  }
+
   // Allow past dates for existing loans (no validation needed)
 
   const createdAt = new Date().toISOString();
