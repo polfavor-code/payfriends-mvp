@@ -30,9 +30,15 @@
     /* HERO */
     .hero{
       flex:0 0 auto; width:100%;
+      background:var(--card);
+      border:1px solid var(--card-border);
+      border-radius:16px;
+      padding:24px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      backdrop-filter:blur(12px);
     }
     @media (min-width:900px){
-      .hero{flex:0 0 60%; width:auto;}
+      .hero{flex:0 0 60%; width:auto; padding:28px;}
     }
     .hero h1{
       margin:0 0 16px; font-size:40px; line-height:1.15; font-weight:700;
@@ -160,10 +166,10 @@
           <p>
             PayFriends does the awkward stuff for you: the reminders, the nudges, the "hey… remember that money?" messages, so you don't have to become the annoying debt collector.
           </p>
-          <p>✓ Clear agreements that don't feel like a contract with your friends</p>
-          <p>✓ Automatic reminders so you never have to chase anyone</p>
-          <p>✓ Fair recalculations for 'I'll pay a bit now and the rest later' situations</p>
-          <p>✓ New plan suggestions when your friends face difficulties paying you back, solutions only</p>
+          <p style="margin-left:0">✓ Clear agreements that don't feel like a contract with your friends</p>
+          <p style="margin-left:0">✓ Automatic reminders so you never have to chase anyone</p>
+          <p style="margin-left:0">✓ Fair recalculations for 'I'll pay a bit now and the rest later' situations</p>
+          <p style="margin-left:0">✓ New plan suggestions when your friends face difficulties paying you back, solutions only</p>
           <p>
             Because friendships are priceless.........<br>
             But your money isn't!
