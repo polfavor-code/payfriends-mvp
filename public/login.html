@@ -126,8 +126,8 @@
       overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0;
     }
 
-    /* Matrix rain background */
-    #matrix-canvas{
+    /* Network background canvas */
+    #network-canvas{
       position:fixed;
       top:0;
       left:0;
@@ -143,8 +143,8 @@
   </style>
 </head>
 <body>
-  <!-- Matrix Rain Background -->
-  <canvas id="matrix-canvas"></canvas>
+  <!-- Friends Network Background -->
+  <canvas id="network-canvas"></canvas>
   <div class="page">
     <!-- HERO (single instance, responsive) -->
     <section class="hero" aria-labelledby="pf-hero-title">
@@ -225,25 +225,25 @@
     </main>
   </div>
 
-  <!-- Matrix Rain Component -->
-  <script src="/components/payfriends-matrix-rain.js"></script>
+  <!-- Friends Network Background Component -->
+  <script src="/components/payfriends-network-background.js"></script>
 
   <script>
-    // Initialize Matrix rain background
+    // Initialize Friends Network background
     (function(){
-      const canvas = document.getElementById('matrix-canvas');
-      if (canvas && window.PayFriendsMatrixRain) {
-        const matrixRain = new window.PayFriendsMatrixRain(canvas, {
-          density: 1,
-          speed: 1,
-          blur: true,
-          colorMode: 'mint'
+      const canvas = document.getElementById('network-canvas');
+      if (canvas && window.PayFriendsNetworkBackground) {
+        const networkBg = new window.PayFriendsNetworkBackground(canvas, {
+          nodeCount: 32,
+          maxConnectionsPerNode: 4,
+          transactionFrequency: 0.3,
+          speed: 1
         });
-        matrixRain.start();
+        networkBg.start();
 
         // Clean up on page unload
         window.addEventListener('beforeunload', () => {
-          matrixRain.destroy();
+          networkBg.destroy();
         });
       }
     })();
