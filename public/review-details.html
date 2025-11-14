@@ -9,12 +9,16 @@
   <link rel="stylesheet" href="/css/shared-controls.css" />
   <!-- App-wide styles -->
   <link rel="stylesheet" href="/css/app.css" />
+  <!-- Renegotiation styles -->
+  <link rel="stylesheet" href="/css/renegotiation.css" />
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
   <!-- Centralized currency formatters -->
   <script src="/js/formatters.js"></script>
   <!-- Derived field utilities -->
   <script src="/js/derived-fields.js"></script>
+  <!-- Renegotiation module -->
+  <script src="/js/renegotiation.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -273,7 +277,7 @@
         <!-- RIGHT/BOTTOM: Action buttons -->
         <div class="next-payment-actions">
           <button id="borrower-record-payment-btn" class="record-payment-btn" style="width:100%; font-weight:500; white-space:nowrap" aria-label="Report a payment">Report a payment</button>
-          <button id="hardship-btn" class="warning" onclick="showHardshipForm()" style="width:100%; font-weight:500; white-space:nowrap" aria-label="Having trouble paying?">Having trouble paying?</button>
+          <button id="hardship-btn" class="warning" onclick="showRenegotiationInitiationForm()" style="width:100%; font-weight:500; white-space:nowrap" aria-label="Having trouble paying?">Having trouble paying?</button>
         </div>
       </div>
     </div>
@@ -508,6 +512,11 @@
       </div>
     </div>
 
+    <!-- Renegotiation panel -->
+    <div id="renegotiation-panel" class="renegotiation-container hidden">
+      <!-- This will be populated dynamically by JavaScript -->
+    </div>
+
     <!-- Payment summary (for active and settled agreements) -->
     <div id="payment-summary" class="card hidden">
       <h2>Payment Summary</h2>
@@ -693,6 +702,41 @@
       <button class="secondary" onclick="cancelHardshipForm()">Cancel</button>
 
       <p class="status" id="hardship-status"></p>
+    </div>
+
+    <!-- Renegotiation initiation form (Step 0 & 1) -->
+    <div id="renegotiation-initiation-form" class="card hidden">
+      <h2>Request renegotiation</h2>
+
+      <!-- Step 0: How much can you pay now? -->
+      <div class="form-section" id="renegotiation-step-0">
+        <div class="form-section-title">How much can you pay right now?</div>
+        <p style="color:var(--muted); font-size:14px; margin:12px 0">
+          Even a small amount helps. <span id="lender-name-helper"></span> will appreciate receiving something instead of nothing – it shows commitment. Any amount you pay now will immediately reduce what you owe and lower your interest.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Amount (€)</label>
+          <input type="number" id="renegotiation-can-pay-now" placeholder="0.00" step="0.01" min="0" style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-size:14px">
+          <small style="color:var(--muted); font-size:12px">Optional, but recommended</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tell your friend what's going on (optional)</label>
+          <textarea id="renegotiation-note" rows="3" placeholder="I'm going through a tough time..."></textarea>
+        </div>
+      </div>
+
+      <!-- Step 1: Choose solution type -->
+      <div class="form-section" id="renegotiation-step-1">
+        <div class="form-section-title">What kind of solution would work for you?</div>
+        <div id="renegotiation-solution-types"></div>
+      </div>
+
+      <button onclick="submitRenegotiationRequest()">Send renegotiation request</button>
+      <button class="secondary" onclick="cancelRenegotiationForm()">Cancel</button>
+
+      <p class="status" id="renegotiation-initiation-status"></p>
     </div>
 
     <!-- Error state -->
@@ -930,6 +974,9 @@
         if (isLender && hasHardshipRequests && agreement.status === 'active') {
           document.getElementById('hardship-indicator').classList.remove('hidden');
         }
+
+        // Load and display active renegotiation
+        await loadAndDisplayRenegotiation();
 
         // Show next payment card for borrower on active agreements
         // This card now includes both action buttons inside
@@ -2382,6 +2429,652 @@
         console.error('Error checking hardship requests:', err);
       }
       return false;
+    }
+
+    // ===== Renegotiation Initiation (Step 0 & 1) =====
+
+    function showRenegotiationInitiationForm() {
+      // Hide other sections
+      document.getElementById('payment-action-section').classList.add('hidden');
+      document.getElementById('payment-summary').classList.add('hidden');
+      document.getElementById('payment-history').classList.add('hidden');
+      document.getElementById('record-payment-section').classList.add('hidden');
+      document.getElementById('hardship-form').classList.add('hidden');
+
+      // Show renegotiation initiation form
+      const form = document.getElementById('renegotiation-initiation-form');
+      form.classList.remove('hidden');
+
+      // Populate lender name in helper text
+      const lenderName = agreement.lender_full_name || agreement.lender_name || 'Your lender';
+      document.getElementById('lender-name-helper').textContent = lenderName;
+
+      // Build solution type options based on loan type
+      const loanType = agreement.repayment_type === 'installments' ? 'installment' : 'one_time';
+      const solutionTypesContainer = document.getElementById('renegotiation-solution-types');
+      solutionTypesContainer.innerHTML = window.RenegotiationModule.buildSolutionTypeOptions(loanType);
+
+      // Scroll to form
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function cancelRenegotiationForm() {
+      // Hide form
+      document.getElementById('renegotiation-initiation-form').classList.add('hidden');
+
+      // Show payment sections again
+      document.getElementById('payment-action-section').classList.remove('hidden');
+      document.getElementById('payment-summary').classList.remove('hidden');
+      document.getElementById('payment-history').classList.remove('hidden');
+    }
+
+    async function submitRenegotiationRequest() {
+      const status = document.getElementById('renegotiation-initiation-status');
+      status.textContent = '';
+      status.className = 'status';
+
+      // Collect form data
+      const selectedType = document.querySelector('input[name="solution-type"]:checked')?.value;
+      const canPayNowInput = document.getElementById('renegotiation-can-pay-now').value;
+      const note = document.getElementById('renegotiation-note').value;
+
+      // Validate
+      if (!selectedType) {
+        status.textContent = 'Please select a solution type';
+        status.className = 'status error';
+        return;
+      }
+
+      const canPayNowCents = canPayNowInput ? Math.round(parseFloat(canPayNowInput) * 100) : null;
+
+      try {
+        status.textContent = 'Sending renegotiation request...';
+        await window.RenegotiationModule.initializeRenegotiation(
+          agreementId,
+          selectedType,
+          canPayNowCents,
+          note
+        );
+
+        status.textContent = 'Request sent successfully! Reloading...';
+        status.className = 'status success';
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    // ===== Renegotiation Functions =====
+
+    // Load and display active renegotiation
+    async function loadAndDisplayRenegotiation() {
+      try {
+        const renegotiation = await window.RenegotiationModule.loadRenegotiation(agreementId);
+
+        if (!renegotiation) {
+          // No active renegotiation
+          document.getElementById('renegotiation-panel').classList.add('hidden');
+          return;
+        }
+
+        // Display the renegotiation based on its stage and user role
+        const isLender = agreement.lender_user_id === currentUser.id;
+        const isBorrower = agreement.borrower_user_id === currentUser.id;
+
+        displayRenegotiationPanel(renegotiation, isLender, isBorrower);
+        document.getElementById('renegotiation-panel').classList.remove('hidden');
+      } catch (err) {
+        console.error('Error loading renegotiation:', err);
+      }
+    }
+
+    // Display the renegotiation panel based on stage
+    function displayRenegotiationPanel(renegotiation, isLender, isBorrower) {
+      const panel = document.getElementById('renegotiation-panel');
+      let html = '';
+
+      const stage = renegotiation.stage;
+      const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
+      const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+
+      // Status badge color
+      let statusBadgeClass = 'open';
+      if (renegotiation.status === 'accepted') statusBadgeClass = 'accepted';
+      if (renegotiation.status === 'closed_declined') statusBadgeClass = 'declined';
+
+      html += `<div class="renegotiation-card">`;
+      html += `
+        <div class="renegotiation-header">
+          <h3 class="renegotiation-title">Renegotiation in progress</h3>
+          <span class="renegotiation-status-badge ${statusBadgeClass}">${renegotiation.status.replace('_', ' ')}</span>
+        </div>
+      `;
+
+      // Show history timeline
+      html += window.RenegotiationModule.buildHistoryTimeline(renegotiation.history);
+
+      // Stage-specific UI
+      if (stage === 'type_pending_lender_response' && isLender) {
+        html += buildLenderTypeResponseUI(renegotiation, borrowerName);
+      } else if (stage === 'type_counter_proposed_to_borrower' && isBorrower) {
+        html += buildBorrowerTypeCounterResponseUI(renegotiation, lenderName);
+      } else if (stage === 'values_to_be_set' && isBorrower) {
+        html += buildBorrowerValuesProposalUI(renegotiation);
+      } else if (stage === 'values_pending_lender_response' && isLender) {
+        html += buildLenderValuesResponseUI(renegotiation, borrowerName);
+      } else if (stage === 'values_counter_proposed_to_borrower' && isBorrower) {
+        html += buildBorrowerValuesCounterResponseUI(renegotiation, lenderName);
+      } else if (stage === 'accepted') {
+        html += `
+          <div class="alert-box success">
+            <strong>Renegotiation accepted!</strong> The new payment plan has been agreed upon.
+          </div>
+        `;
+      } else {
+        // Waiting for the other party
+        html += `
+          <div class="alert-box info">
+            <p style="margin:0">Waiting for ${isLender ? borrowerName : lenderName} to respond.</p>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      panel.innerHTML = html;
+
+      // Attach event listeners based on stage
+      attachRenegotiationEventListeners(stage, isLender, isBorrower, renegotiation);
+    }
+
+    // Build UI for lender to respond to solution type
+    function buildLenderTypeResponseUI(renegotiation, borrowerName) {
+      const typeLabel = window.RenegotiationModule.getSolutionTypeLabel(renegotiation.selected_type);
+      let html = `
+        <div class="alert-box warning">
+          <p style="margin:0"><strong>${borrowerName}</strong> proposed a solution: <strong>${typeLabel}</strong></p>
+        </div>
+      `;
+
+      if (renegotiation.can_pay_now_cents) {
+        html += `
+          <div class="detail-row">
+            <span class="detail-label">They can pay now</span>
+            <span class="detail-value">${formatEuro0(renegotiation.can_pay_now_cents / 100)}</span>
+          </div>
+        `;
+      }
+
+      if (renegotiation.borrower_note) {
+        html += `
+          <div class="note" style="margin-top:12px">
+            <strong>Note:</strong> ${renegotiation.borrower_note}
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="renegotiation-actions">
+          <button id="renegotiation-approve-type-btn" class="primary">Approve this solution</button>
+          <button id="renegotiation-suggest-type-btn" class="secondary">Suggest different solution</button>
+          <button id="renegotiation-decline-btn" class="danger">Decline request</button>
+        </div>
+        <p class="status" id="renegotiation-status"></p>
+
+        <div id="suggest-type-form" class="hidden" style="margin-top:20px">
+          <h4 style="margin-bottom:12px">Suggest an alternative solution:</h4>
+          ${window.RenegotiationModule.buildSolutionTypeOptions(renegotiation.loan_type)}
+          <div class="form-group">
+            <label class="form-label">Optional note (explain why this might work better)</label>
+            <textarea id="suggest-type-note" rows="3" placeholder="I think this option..."></textarea>
+          </div>
+          <div class="btn-group">
+            <button id="submit-suggest-type-btn" class="primary">Send suggestion</button>
+            <button id="cancel-suggest-type-btn" class="secondary">Cancel</button>
+          </div>
+        </div>
+
+        <div id="decline-form" class="hidden" style="margin-top:20px">
+          <div class="form-group">
+            <label class="form-label">Reason for declining (optional)</label>
+            <textarea id="decline-note" rows="3" placeholder="Sorry, but..."></textarea>
+          </div>
+          <div class="btn-group">
+            <button id="submit-decline-btn" class="danger">Confirm decline</button>
+            <button id="cancel-decline-btn" class="secondary">Cancel</button>
+          </div>
+        </div>
+      `;
+
+      return html;
+    }
+
+    // Build UI for borrower to respond to lender's suggested type
+    function buildBorrowerTypeCounterResponseUI(renegotiation, lenderName) {
+      const suggestedTypeLabel = window.RenegotiationModule.getSolutionTypeLabel(renegotiation.lender_suggested_type);
+      let html = `
+        <div class="alert-box warning">
+          <p style="margin:0"><strong>${lenderName}</strong> suggested a different solution: <strong>${suggestedTypeLabel}</strong></p>
+        </div>
+      `;
+
+      if (renegotiation.lender_response_note) {
+        html += `
+          <div class="note" style="margin-top:12px">
+            <strong>Note:</strong> ${renegotiation.lender_response_note}
+          </div>
+        `;
+      }
+
+      html += `
+        <p style="color:var(--muted); margin:16px 0">Do you agree with this approach?</p>
+        <div class="renegotiation-actions">
+          <button id="accept-suggested-type-btn" class="primary">Accept this solution</button>
+          <button id="decline-suggested-type-btn" class="secondary">Cancel renegotiation</button>
+        </div>
+        <p class="status" id="renegotiation-status"></p>
+      `;
+
+      return html;
+    }
+
+    // Build UI for borrower to propose values
+    function buildBorrowerValuesProposalUI(renegotiation) {
+      const agreedTypeLabel = window.RenegotiationModule.getSolutionTypeLabel(renegotiation.agreed_type);
+      let html = `
+        <div class="alert-box success">
+          <p style="margin:0">Both of you agreed on: <strong>${agreedTypeLabel}</strong></p>
+        </div>
+        <p style="color:var(--muted); margin:16px 0">Now propose the specific amounts and dates:</p>
+      `;
+
+      html += window.RenegotiationModule.buildValuesForm(
+        renegotiation.agreed_type,
+        renegotiation.loan_type,
+        { canPayNowCents: renegotiation.can_pay_now_cents }
+      );
+
+      html += `
+        <div class="btn-group">
+          <button id="submit-values-btn" class="primary">Submit proposal</button>
+        </div>
+        <p class="status" id="renegotiation-status"></p>
+      `;
+
+      return html;
+    }
+
+    // Build UI for lender to respond to values
+    function buildLenderValuesResponseUI(renegotiation, borrowerName) {
+      const agreedTypeLabel = window.RenegotiationModule.getSolutionTypeLabel(renegotiation.agreed_type);
+      let html = `
+        <div class="alert-box warning">
+          <p style="margin:0"><strong>${borrowerName}</strong> proposed new payment plan for: <strong>${agreedTypeLabel}</strong></p>
+        </div>
+
+        <h4 style="margin:16px 0 12px 0">Proposed values:</h4>
+      `;
+
+      html += window.RenegotiationModule.buildValuesDisplay(
+        renegotiation.agreed_type,
+        renegotiation.loan_type,
+        renegotiation.borrower_values_proposal
+      );
+
+      html += `
+        <div class="renegotiation-actions">
+          <button id="approve-values-btn" class="primary">Approve plan</button>
+          <button id="counter-values-btn" class="secondary">Suggest different values</button>
+          <button id="decline-values-btn" class="danger">Decline</button>
+        </div>
+        <p class="status" id="renegotiation-status"></p>
+
+        <div id="counter-values-form" class="hidden" style="margin-top:20px">
+          <h4 style="margin-bottom:12px">Counter-propose different values:</h4>
+          ${window.RenegotiationModule.buildValuesForm(
+            renegotiation.agreed_type,
+            renegotiation.loan_type,
+            renegotiation.borrower_values_proposal
+          )}
+          <div class="form-group">
+            <label class="form-label">Optional note</label>
+            <textarea id="counter-values-note" rows="2" placeholder="I think these values would work better..."></textarea>
+          </div>
+          <div class="btn-group">
+            <button id="submit-counter-values-btn" class="primary">Send counter-proposal</button>
+            <button id="cancel-counter-values-btn" class="secondary">Cancel</button>
+          </div>
+        </div>
+      `;
+
+      return html;
+    }
+
+    // Build UI for borrower to respond to lender's counter values
+    function buildBorrowerValuesCounterResponseUI(renegotiation, lenderName) {
+      const agreedTypeLabel = window.RenegotiationModule.getSolutionTypeLabel(renegotiation.agreed_type);
+      let html = `
+        <div class="alert-box warning">
+          <p style="margin:0"><strong>${lenderName}</strong> proposed different values</p>
+        </div>
+
+        <h4 style="margin:16px 0 8px 0">Comparison:</h4>
+        <div class="comparison-table">
+          <div class="comparison-row header">
+            <div class="comparison-label"></div>
+            <div class="comparison-label">Your proposal</div>
+            <div class="comparison-label">Their proposal</div>
+          </div>
+      `;
+
+      // Build comparison rows based on type
+      const yourVals = renegotiation.borrower_values_proposal;
+      const theirVals = renegotiation.lender_values_proposal;
+
+      if (yourVals.canPayNowCents || theirVals.canPayNowCents) {
+        html += `
+          <div class="comparison-row">
+            <div class="comparison-label">Pay now</div>
+            <div class="comparison-value">${yourVals.canPayNowCents ? formatEuro0(yourVals.canPayNowCents / 100) : '—'}</div>
+            <div class="comparison-value highlight">${theirVals.canPayNowCents ? formatEuro0(theirVals.canPayNowCents / 100) : '—'}</div>
+          </div>
+        `;
+      }
+
+      // Add other comparison rows based on agreed type
+      // (simplified for now - you can expand this)
+
+      html += `</div>`;
+
+      if (renegotiation.lender_response_note) {
+        html += `
+          <div class="note" style="margin-top:12px">
+            <strong>Note:</strong> ${renegotiation.lender_response_note}
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="renegotiation-actions">
+          <button id="accept-counter-values-btn" class="primary">Accept their values</button>
+          <button id="decline-counter-values-btn" class="secondary">Decline</button>
+        </div>
+        <p class="status" id="renegotiation-status"></p>
+      `;
+
+      return html;
+    }
+
+    // Attach event listeners for renegotiation actions
+    function attachRenegotiationEventListeners(stage, isLender, isBorrower, renegotiation) {
+      if (stage === 'type_pending_lender_response' && isLender) {
+        document.getElementById('renegotiation-approve-type-btn')?.addEventListener('click', handleApproveType);
+        document.getElementById('renegotiation-suggest-type-btn')?.addEventListener('click', showSuggestTypeForm);
+        document.getElementById('renegotiation-decline-btn')?.addEventListener('click', showDeclineForm);
+        document.getElementById('submit-suggest-type-btn')?.addEventListener('click', handleSubmitSuggestType);
+        document.getElementById('cancel-suggest-type-btn')?.addEventListener('click', hideSuggestTypeForm);
+        document.getElementById('submit-decline-btn')?.addEventListener('click', handleSubmitDecline);
+        document.getElementById('cancel-decline-btn')?.addEventListener('click', hideDeclineForm);
+      } else if (stage === 'type_counter_proposed_to_borrower' && isBorrower) {
+        document.getElementById('accept-suggested-type-btn')?.addEventListener('click', handleAcceptSuggestedType);
+        document.getElementById('decline-suggested-type-btn')?.addEventListener('click', handleDeclineSuggestedType);
+      } else if (stage === 'values_to_be_set' && isBorrower) {
+        document.getElementById('submit-values-btn')?.addEventListener('click', handleSubmitValues);
+
+        // Handle skip method radio button visibility
+        const skipSpreadRadio = document.getElementById('skip-spread');
+        const skipExtraRadio = document.getElementById('skip-extra');
+        if (skipSpreadRadio && skipExtraRadio) {
+          skipSpreadRadio.addEventListener('change', () => {
+            document.getElementById('skip-spread-amount').style.display = 'block';
+            document.getElementById('skip-extra-amount').style.display = 'none';
+          });
+          skipExtraRadio.addEventListener('change', () => {
+            document.getElementById('skip-spread-amount').style.display = 'none';
+            document.getElementById('skip-extra-amount').style.display = 'block';
+          });
+          // Trigger initial state
+          if (skipSpreadRadio.checked) skipSpreadRadio.dispatchEvent(new Event('change'));
+          if (skipExtraRadio.checked) skipExtraRadio.dispatchEvent(new Event('change'));
+        }
+      } else if (stage === 'values_pending_lender_response' && isLender) {
+        document.getElementById('approve-values-btn')?.addEventListener('click', handleApproveValues);
+        document.getElementById('counter-values-btn')?.addEventListener('click', showCounterValuesForm);
+        document.getElementById('decline-values-btn')?.addEventListener('click', handleDeclineValues);
+        document.getElementById('submit-counter-values-btn')?.addEventListener('click', handleSubmitCounterValues);
+        document.getElementById('cancel-counter-values-btn')?.addEventListener('click', hideCounterValuesForm);
+      } else if (stage === 'values_counter_proposed_to_borrower' && isBorrower) {
+        document.getElementById('accept-counter-values-btn')?.addEventListener('click', handleAcceptCounterValues);
+        document.getElementById('decline-counter-values-btn')?.addEventListener('click', handleDeclineCounterValues);
+      }
+    }
+
+    // Event handlers for type stage
+    async function handleApproveType() {
+      const status = document.getElementById('renegotiation-status');
+      try {
+        status.textContent = 'Approving...';
+        status.className = 'status';
+        await window.RenegotiationModule.respondToType(agreementId, 'approve');
+        status.textContent = 'Approved! Reloading...';
+        status.className = 'status success';
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    function showSuggestTypeForm() {
+      document.getElementById('suggest-type-form').classList.remove('hidden');
+      document.getElementById('renegotiation-approve-type-btn').disabled = true;
+      document.getElementById('renegotiation-decline-btn').disabled = true;
+    }
+
+    function hideSuggestTypeForm() {
+      document.getElementById('suggest-type-form').classList.add('hidden');
+      document.getElementById('renegotiation-approve-type-btn').disabled = false;
+      document.getElementById('renegotiation-decline-btn').disabled = false;
+    }
+
+    async function handleSubmitSuggestType() {
+      const selectedType = document.querySelector('input[name="solution-type"]:checked')?.value;
+      const note = document.getElementById('suggest-type-note').value;
+      const status = document.getElementById('renegotiation-status');
+
+      if (!selectedType) {
+        status.textContent = 'Please select a solution type';
+        status.className = 'status error';
+        return;
+      }
+
+      try {
+        status.textContent = 'Sending suggestion...';
+        status.className = 'status';
+        await window.RenegotiationModule.respondToType(agreementId, 'suggest', selectedType, note);
+        status.textContent = 'Suggestion sent! Reloading...';
+        status.className = 'status success';
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    function showDeclineForm() {
+      document.getElementById('decline-form').classList.remove('hidden');
+      document.getElementById('renegotiation-approve-type-btn').disabled = true;
+      document.getElementById('renegotiation-suggest-type-btn').disabled = true;
+    }
+
+    function hideDeclineForm() {
+      document.getElementById('decline-form').classList.add('hidden');
+      document.getElementById('renegotiation-approve-type-btn').disabled = false;
+      document.getElementById('renegotiation-suggest-type-btn').disabled = false;
+    }
+
+    async function handleSubmitDecline() {
+      const note = document.getElementById('decline-note').value;
+      const status = document.getElementById('renegotiation-status');
+
+      try {
+        status.textContent = 'Declining...';
+        status.className = 'status';
+        await window.RenegotiationModule.respondToType(agreementId, 'decline', null, note);
+        status.textContent = 'Declined. Reloading...';
+        status.className = 'status success';
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    async function handleAcceptSuggestedType() {
+      const status = document.getElementById('renegotiation-status');
+      try {
+        status.textContent = 'Accepting...';
+        status.className = 'status';
+        await window.RenegotiationModule.respondToSuggestedType(agreementId, 'accept');
+        status.textContent = 'Accepted! Reloading...';
+        status.className = 'status success';
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    async function handleDeclineSuggestedType() {
+      const status = document.getElementById('renegotiation-status');
+      try {
+        status.textContent = 'Declining...';
+        status.className = 'status';
+        await window.RenegotiationModule.respondToSuggestedType(agreementId, 'decline');
+        status.textContent = 'Renegotiation cancelled. Reloading...';
+        status.className = 'status success';
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    // Event handlers for values stage
+    async function handleSubmitValues() {
+      const status = document.getElementById('renegotiation-status');
+      try {
+        const renegotiation = await window.RenegotiationModule.loadRenegotiation(agreementId);
+        const values = window.RenegotiationModule.collectValuesFromForm(renegotiation.agreed_type, renegotiation.loan_type);
+
+        status.textContent = 'Submitting proposal...';
+        status.className = 'status';
+        await window.RenegotiationModule.proposeValues(agreementId, values);
+        status.textContent = 'Proposal sent! Reloading...';
+        status.className = 'status success';
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    async function handleApproveValues() {
+      const status = document.getElementById('renegotiation-status');
+      try {
+        status.textContent = 'Approving...';
+        status.className = 'status';
+        await window.RenegotiationModule.respondToValues(agreementId, 'approve');
+        status.textContent = 'Approved! Reloading...';
+        status.className = 'status success';
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    function showCounterValuesForm() {
+      document.getElementById('counter-values-form').classList.remove('hidden');
+      document.getElementById('approve-values-btn').disabled = true;
+      document.getElementById('decline-values-btn').disabled = true;
+    }
+
+    function hideCounterValuesForm() {
+      document.getElementById('counter-values-form').classList.add('hidden');
+      document.getElementById('approve-values-btn').disabled = false;
+      document.getElementById('decline-values-btn').disabled = false;
+    }
+
+    async function handleSubmitCounterValues() {
+      const status = document.getElementById('renegotiation-status');
+      try {
+        const renegotiation = await window.RenegotiationModule.loadRenegotiation(agreementId);
+        const values = window.RenegotiationModule.collectValuesFromForm(renegotiation.agreed_type, renegotiation.loan_type);
+        const note = document.getElementById('counter-values-note').value;
+
+        status.textContent = 'Sending counter-proposal...';
+        status.className = 'status';
+        await window.RenegotiationModule.respondToValues(agreementId, 'counter', values, note);
+        status.textContent = 'Counter-proposal sent! Reloading...';
+        status.className = 'status success';
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    async function handleDeclineValues() {
+      const status = document.getElementById('renegotiation-status');
+      if (!confirm('Are you sure you want to decline this proposal?')) return;
+
+      try {
+        status.textContent = 'Declining...';
+        status.className = 'status';
+        await window.RenegotiationModule.respondToValues(agreementId, 'decline');
+        status.textContent = 'Declined. Reloading...';
+        status.className = 'status success';
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    async function handleAcceptCounterValues() {
+      const status = document.getElementById('renegotiation-status');
+      try {
+        status.textContent = 'Accepting...';
+        status.className = 'status';
+        await window.RenegotiationModule.respondToCounterValues(agreementId, 'accept');
+        status.textContent = 'Accepted! Reloading...';
+        status.className = 'status success';
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
+    }
+
+    async function handleDeclineCounterValues() {
+      const status = document.getElementById('renegotiation-status');
+      if (!confirm('Are you sure you want to decline this counter-proposal?')) return;
+
+      try {
+        status.textContent = 'Declining...';
+        status.className = 'status';
+        await window.RenegotiationModule.respondToCounterValues(agreementId, 'decline');
+        status.textContent = 'Renegotiation cancelled. Reloading...';
+        status.className = 'status success';
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      }
     }
 
     // Payment functions

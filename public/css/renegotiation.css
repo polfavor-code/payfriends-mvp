@@ -1,0 +1,460 @@
+/* Renegotiation Flow Styles */
+
+.renegotiation-container {
+  margin-bottom: 24px;
+}
+
+.renegotiation-card {
+  background: rgba(21, 26, 33, 0.6);
+  border: 1px solid rgba(61, 220, 151, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.renegotiation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.renegotiation-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.renegotiation-status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.renegotiation-status-badge.open {
+  background: rgba(61, 220, 151, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(61, 220, 151, 0.3);
+}
+
+.renegotiation-status-badge.accepted {
+  background: rgba(61, 220, 151, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(61, 220, 151, 0.3);
+}
+
+.renegotiation-status-badge.declined {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.renegotiation-body {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.solution-types {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.form-radio {
+  position: relative;
+  background: rgba(16, 21, 29, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-radio:hover {
+  background: rgba(16, 21, 29, 0.8);
+  border-color: rgba(61, 220, 151, 0.3);
+}
+
+.form-radio input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.form-radio input[type="radio"]:checked + label {
+  color: var(--accent);
+}
+
+.form-radio input[type="radio"]:checked ~ * {
+  border-left-color: var(--accent);
+}
+
+.form-radio label {
+  display: block;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0;
+  padding-left: 32px;
+  position: relative;
+}
+
+.form-radio label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.form-radio input[type="radio"]:checked + label::before {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 3px #10151d;
+}
+
+.form-radio .sublabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.form-radio .description {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.values-form {
+  margin-top: 16px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.input-with-prefix {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-prefix .prefix {
+  position: absolute;
+  left: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.input-with-prefix input {
+  padding-left: 32px;
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #10151d;
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+}
+
+.input-with-prefix input:focus {
+  border-color: rgba(61, 220, 151, 0.4);
+}
+
+.values-form input[type="date"],
+.values-form input[type="number"] {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #10151d;
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+}
+
+.values-form input[type="date"]:focus,
+.values-form input[type="number"]:focus {
+  border-color: rgba(61, 220, 151, 0.4);
+}
+
+.helper-text {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.values-display {
+  background: rgba(16, 21, 29, 0.5);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.detail-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: right;
+}
+
+.renegotiation-history {
+  margin-top: 20px;
+  position: relative;
+}
+
+.history-event {
+  position: relative;
+  padding-left: 32px;
+  padding-bottom: 20px;
+}
+
+.history-event:last-child {
+  padding-bottom: 0;
+}
+
+.history-event::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 20px;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.history-event:last-child::before {
+  display: none;
+}
+
+.history-dot {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #10151d;
+  box-shadow: 0 0 0 2px rgba(61, 220, 151, 0.2);
+}
+
+.history-content {
+  background: rgba(16, 21, 29, 0.4);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.history-message {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.history-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.history-actor {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.history-time {
+  color: var(--muted);
+}
+
+.renegotiation-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.renegotiation-actions button {
+  flex: 1;
+  min-width: 140px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn-group button {
+  flex: 1;
+}
+
+.alert-box {
+  background: rgba(61, 220, 151, 0.1);
+  border: 1px solid rgba(61, 220, 151, 0.3);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.alert-box.warning {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+.alert-box.info {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #3b82f6;
+}
+
+.alert-box.success {
+  background: rgba(61, 220, 151, 0.1);
+  border-color: rgba(61, 220, 151, 0.3);
+  color: var(--accent);
+}
+
+.comparison-table {
+  margin-top: 16px;
+  background: rgba(16, 21, 29, 0.5);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.comparison-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.comparison-row:last-child {
+  border-bottom: none;
+}
+
+.comparison-row.header {
+  background: rgba(61, 220, 151, 0.05);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+
+.comparison-label {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.comparison-value {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.comparison-value.highlight {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Button overrides for renegotiation actions */
+button.primary {
+  background: var(--accent);
+  color: #0e1116;
+  border: none;
+}
+
+button.primary:hover {
+  background: #3ef0a7;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+button.secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+button.danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+button.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .renegotiation-actions {
+    flex-direction: column;
+  }
+
+  .renegotiation-actions button {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .comparison-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .comparison-row.header .comparison-label:first-child {
+    grid-column: 1 / -1;
+  }
+}
