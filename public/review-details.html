@@ -287,13 +287,13 @@
 
       <div class="form-group">
         <label class="form-label" for="inline-payment-amount">Amount (EUR)</label>
-        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
-          <input type="number" id="inline-payment-amount" placeholder="e.g. 1 234,56" min="0" step="0.01" style="min-width:160px; max-width:220px; flex-shrink:0">
-          <button id="autofill-amount-btn" class="secondary" style="white-space:nowrap; padding:10px 14px; font-size:13px; flex-shrink:0" title="Autofill with your next scheduled payment">Use next payment amount</button>
+        <div style="position:relative; width:100%; max-width:400px">
+          <input type="number" id="inline-payment-amount" placeholder="e.g. 1 234,56" min="0" step="0.01" style="width:100%; padding-right:165px">
+          <span id="autofill-amount-link" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap; text-decoration:underline; text-decoration-style:dotted" title="Autofill with your next scheduled payment">Use next due amount</span>
         </div>
         <p style="color:var(--muted); font-size:13px; margin:10px 0 0 0; line-height:1.6; display:flex; align-items:start; gap:4px">
           <img src="/images/payfriends-handshake.svg" style="display:inline-block; height:16px; width:16px; margin-top:2px; flex-shrink:0" alt="PayFriends fairness icon" />
-          <span><strong>Fairness recalculations activated:</strong> Paying more than the due amount lowers interest and adjusts future installments. (Try a higher amount to see the changes.)</span>
+          <span><strong style="color:var(--accent)">Fairness recalculations activated:</strong> Paying more than the due amount lowers interest and adjusts future installments. (Try adding a higher amount to see the changes)</span>
         </p>
         <p id="amount-helper-text" style="color:var(--muted); font-size:13px; margin:8px 0 0 0; line-height:1.5"></p>
       </div>
@@ -1020,11 +1020,11 @@
           proofInput.required = false;
         }
 
-        // Set up autofill button
-        const autofillBtn = document.getElementById('autofill-amount-btn');
+        // Set up autofill inline link
+        const autofillLink = document.getElementById('autofill-amount-link');
         const amountInput = document.getElementById('inline-payment-amount');
 
-        autofillBtn.onclick = () => {
+        autofillLink.onclick = () => {
           const amountInEuros = (nextPaymentInfo.amount_cents / 100).toFixed(2);
           amountInput.value = amountInEuros;
           // Trigger update of helper text and impact box
