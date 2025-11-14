@@ -6,7 +6,7 @@
  * Subtle and brand-aligned with PayFriends green aesthetic.
  *
  * Configuration options:
- * - iconCount: Number of bouncing icons (default: 36, range: 20-60)
+ * - iconCount: Number of bouncing icons (default: 18, range: 10-40)
  *   Automatically adjusts based on screen size
  * - particleFrequency: How often currency transaction particles spawn (default: 0.4)
  *   Higher = more frequent transactions (range: 0-1)
@@ -19,7 +19,8 @@
  * - Currency: €, $, £, ¥, ₿, CHF, R$, ₹, ₺, ₩, 💰, 🪙
  *
  * Visual Design:
- * - All icons are 2x larger than original for better visibility (roughly doubled)
+ * - Emojis, hearts, and handshakes are large (60-90px) for fun, playful feel
+ * - Currency symbols are smaller (28-44px) for subtle details
  * - All icons rendered at 33% opacity for subtle background effect
  * - Green color scheme (#22c55e) matching PayFriends brand
  *
@@ -65,7 +66,7 @@
 
       // Configuration
       this.config = {
-        iconCount: options.iconCount ?? 36,
+        iconCount: options.iconCount ?? 18,
         particleFrequency: options.particleFrequency ?? 0.4,
         speed: options.speed ?? 1
       };
@@ -112,7 +113,7 @@
       const area = this.width * this.height;
       const densityFactor = Math.sqrt(area / (1920 * 1080)); // Normalize to 1080p
       const adjustedIconCount = Math.round(this.config.iconCount * densityFactor);
-      const targetIconCount = Math.max(20, Math.min(60, adjustedIconCount));
+      const targetIconCount = Math.max(10, Math.min(40, adjustedIconCount));
 
       // Initialize or adjust icons
       if (this.icons.length === 0) {
@@ -137,15 +138,15 @@
       if (roll < 0.4) { // 40% green smileys
         type = 'smiley';
         content = GREEN_SMILEYS[Math.floor(Math.random() * GREEN_SMILEYS.length)];
-        size = 104 + Math.random() * 76; // 104-180px (roughly doubled from 52-90px)
+        size = 60 + Math.random() * 30; // 60-90px (big and fun)
       } else if (roll < 0.7) { // 30% currency
         type = 'currency';
         content = CURRENCY[Math.floor(Math.random() * CURRENCY.length)];
-        size = 84 + Math.random() * 60; // 84-144px (roughly doubled from 42-72px)
-      } else { // 30% PayFriends icons
+        size = 28 + Math.random() * 16; // 28-44px (smaller, subtle details)
+      } else { // 30% PayFriends icons (hearts, handshake, money emojis)
         type = 'payfriends';
         content = PAYFRIENDS_ICONS[Math.floor(Math.random() * PAYFRIENDS_ICONS.length)];
-        size = 94 + Math.random() * 74; // 94-168px (roughly doubled from 47-84px)
+        size = 60 + Math.random() * 30; // 60-90px (big and fun like smileys)
       }
 
       // Random position (avoid edges)
@@ -411,8 +412,8 @@
       this.ctx.translate(-400, -366); // Center the SVG
       this.ctx.fillStyle = '#3ddc97'; // PayFriends green
 
-      // SVG paths from the handshake/fairness icon
-      if (iconType === 'handshake' || iconType === 'fairness') {
+      // SVG paths from the handshake icon
+      if (iconType === 'handshake') {
         const path = new Path2D('M2105 7195 c-258 -34 -335 -47 -405 -70 -41 -13 -95 -31 -120 -39 -78 -24 -163 -57 -225 -86 -33 -15 -67 -31 -75 -34 -8 -3 -44 -24 -80 -45 -36 -22 -83 -50 -105 -62 -22 -12 -52 -31 -67 -43 -14 -11 -46 -34 -69 -51 -184 -129 -445 -405 -544 -575 -16 -28 -39 -66 -50 -83 -52 -80 -165 -314 -165 -341 0 -9 -9 -35 -20 -56 -11 -22 -27 -70 -36 -107 -8 -38 -24 -97 -34 -133 -26 -86 -51 -321 -53 -483 -1 -153 25 -427 49 -507 9 -30 27 -93 39 -140 39 -145 66 -214 155 -391 21 -42 46 -88 56 -103 9 -16 25 -40 33 -54 9 -15 25 -42 36 -61 44 -73 186 -243 306 -366 198 -202 575 -576 590 -586 8 -5 22 -9 31 -9 9 0 149 133 311 295 162 162 317 310 344 329 48 33 145 77 213 98 20 6 85 8 155 5 105 -4 130 -9 200 -37 44 -18 93 -43 108 -56 16 -13 33 -24 38 -24 5 0 41 -32 79 -71 53 -53 81 -94 116 -163 41 -83 46 -101 52 -189 5 -63 12 -101 21 -106 7 -5 53 -11 102 -15 102 -8 218 -47 274 -93 19 -15 339 -333 712 -706 960 -961 983 -983 1038 -1021 35 -24 73 -39 126 -50 70 -14 81 -14 151 3 42 10 91 29 109 42 69 51 138 132 175 207 37 74 38 81 39 182 0 103 -1 106 -37 170 -21 37 -71 99 -115 142 -43 42 -315 315 -605 605 -290 290 -640 641 -778 778 -200 200 -252 258 -261 288 -28 103 68 205 173 182 25 -6 218 -193 899 -874 968 -967 920 -925 1069 -937 153 -12 261 28 348 128 65 76 93 145 99 240 7 111 -8 184 -51 249 -20 32 -383 402 -881 899 -465 465 -853 857 -861 872 -8 15 -14 47 -14 72 0 87 89 151 180 131 24 -5 234 -210 901 -876 479 -478 875 -869 880 -869 5 0 26 -11 47 -25 47 -31 152 -46 250 -35 158 17 293 146 328 312 24 114 6 228 -51 313 -18 28 -520 535 -1115 1128 -962 958 -1085 1077 -1112 1077 -27 0 -71 -40 -352 -321 -177 -177 -337 -332 -358 -345 -20 -13 -39 -28 -43 -33 -13 -21 -153 -84 -250 -112 -85 -24 -118 -29 -216 -29 -80 0 -130 5 -160 15 -24 9 -64 20 -89 26 -48 11 -167 68 -213 103 -174 132 -264 256 -328 452 -31 92 -33 108 -33 234 0 128 2 141 36 240 33 98 64 160 130 257 14 22 173 186 352 365 281 280 326 328 326 354 0 24 -13 40 -71 89 -73 62 -81 68 -190 145 -66 46 -75 51 -176 108 -32 17 -65 36 -73 41 -37 23 -168 81 -181 81 -8 0 -33 9 -54 20 -22 11 -74 29 -116 40 -41 11 -91 26 -110 34 -19 7 -72 19 -119 25 -47 6 -125 18 -175 26 -137 21 -325 26 -440 10z M5670 7200 c-58 -4 -130 -12 -160 -18 -30 -7 -93 -16 -140 -22 -47 -5 -119 -21 -160 -35 -41 -13 -97 -32 -125 -41 -156 -50 -332 -131 -435 -198 -44 -29 -175 -116 -203 -136 -75 -51 -277 -243 -662 -632 -439 -441 -441 -443 -480 -528 l-40 -85 0 -146 c0 -141 1 -148 30 -210 63 -136 152 -225 291 -290 67 -31 74 -32 204 -33 133 -1 136 0 210 33 41 18 92 48 114 65 22 17 226 217 454 444 314 313 420 412 438 412 25 0 271 -242 1709 -1678 458 -457 670 -662 685 -662 23 0 93 68 150 145 19 26 47 62 63 80 15 18 27 37 27 43 0 5 7 15 15 22 14 12 43 61 104 175 15 28 32 59 38 70 33 58 127 294 138 345 4 19 18 71 31 115 13 44 28 123 34 175 6 52 15 142 21 200 19 174 -10 529 -57 700 -52 190 -91 294 -164 441 -97 195 -159 291 -294 453 -66 79 -221 234 -280 281 -119 95 -231 175 -245 175 -4 0 -21 10 -36 23 -38 30 -72 48 -230 123 -85 40 -177 75 -240 90 -33 8 -85 24 -115 34 -50 18 -165 38 -340 60 -113 14 -242 18 -350 10z');
         this.ctx.fill(path);
 
