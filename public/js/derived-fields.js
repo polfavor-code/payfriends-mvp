@@ -163,16 +163,21 @@ function getNextPaymentInfo(agreement) {
   }
 
   const totalPaid = agreement.total_paid_cents || 0;
-  const totalOwed = agreement.amount_cents || 0;
-  const outstanding = totalOwed - totalPaid;
-
-  // If fully paid, no next payment
-  if (outstanding <= 0) {
-    return null;
-  }
 
   // For one-time repayment (no amortization needed)
   if (agreement.repayment_type === 'one_time') {
+    // Calculate total owed including interest (if any)
+    const totalOwedCents = agreement.total_repay_amount
+      ? Math.round(agreement.total_repay_amount * 100)
+      : agreement.amount_cents || 0;
+
+    const outstanding = totalOwedCents - totalPaid;
+
+    // If fully paid, no next payment
+    if (outstanding <= 0) {
+      return null;
+    }
+
     return {
       amount_cents: outstanding,
       due_date: agreement.due_date,
@@ -182,6 +187,14 @@ function getNextPaymentInfo(agreement) {
 
   // For installment repayment - use amortization engine
   if (agreement.repayment_type === 'installments') {
+    const totalOwed = agreement.amount_cents || 0;
+    const outstanding = totalOwed - totalPaid;
+
+    // If fully paid, no next payment
+    if (outstanding <= 0) {
+      return null;
+    }
+
     const installmentCount = agreement.installment_count || 0;
 
     if (installmentCount === 0) {
