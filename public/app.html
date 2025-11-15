@@ -855,34 +855,28 @@
           <p style="color:var(--muted); font-size:13px; margin-bottom:12px">Select all that apply:</p>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
-            <label class="payment-method-card" data-value="bank" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+            <label class="payment-method-card" data-value="bank" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
               <input type="checkbox" class="payment-method-checkbox" value="bank" checked style="display:none" />
-              <span style="font-size:20px">🏦</span>
               <span style="font-size:14px; font-weight:500">Bank transfer</span>
             </label>
-            <label class="payment-method-card" data-value="cash" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+            <label class="payment-method-card" data-value="cash" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
               <input type="checkbox" class="payment-method-checkbox" value="cash" style="display:none" />
-              <span style="font-size:20px">💵</span>
               <span style="font-size:14px; font-weight:500">Cash</span>
             </label>
-            <label class="payment-method-card" data-value="paypal" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+            <label class="payment-method-card" data-value="paypal" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
               <input type="checkbox" class="payment-method-checkbox" value="paypal" style="display:none" />
-              <span style="font-size:20px">📱</span>
-              <span style="font-size:14px; font-weight:500">PayPal / mobile payment</span>
+              <span style="font-size:14px; font-weight:500">PayPal</span>
             </label>
-            <label class="payment-method-card" data-value="crypto" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+            <label class="payment-method-card" data-value="crypto" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
               <input type="checkbox" class="payment-method-checkbox" value="crypto" style="display:none" />
-              <span style="font-size:20px">₿</span>
               <span style="font-size:14px; font-weight:500">Crypto</span>
             </label>
-            <label class="payment-method-card" data-value="other" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+            <label class="payment-method-card" data-value="other" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
               <input type="checkbox" class="payment-method-checkbox" value="other" style="display:none" />
-              <span style="font-size:20px">➕</span>
               <span style="font-size:14px; font-weight:500">Other</span>
             </label>
-            <label class="payment-method-card" data-value="any" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+            <label class="payment-method-card" data-value="any" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
               <input type="checkbox" class="payment-method-checkbox" value="any" style="display:none" />
-              <span style="font-size:20px">✨</span>
               <span style="font-size:14px; font-weight:500">Any method</span>
             </label>
           </div>
@@ -959,7 +953,7 @@
         </div>
 
         <!-- Worst-case scenario (only shown for loans >= 6000 EUR) -->
-        <div id="worst-case-scenario-container" style="margin:24px 0">
+        <div id="worst-case-scenario-container" style="margin-bottom:24px">
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
             <label class="toggle-switch">
               <input type="checkbox" id="debt-collection-clause" checked />
