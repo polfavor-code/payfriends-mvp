@@ -668,15 +668,13 @@
           <div class="row">
             <label>First payment due</label>
             <select id="first-payment-option" onchange="updateFirstPaymentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="3days">In 3 days</option>
-              <option value="7days">In 7 days</option>
-              <option value="1month" selected>In 1 month from now</option>
-              <option value="2months">In 2 months from now</option>
-              <option value="3months">In 3 months from now</option>
-              <option value="6months">In 6 months from now</option>
-              <option value="12months">In 12 months from now</option>
-              <option value="today">Today</option>
-              <option value="tomorrow">Tomorrow</option>
+              <option value="3days">In 3 days after loan start</option>
+              <option value="7days">In 7 days after loan start</option>
+              <option value="1month" selected>In 1 month after loan start</option>
+              <option value="2months">In 2 months after loan start</option>
+              <option value="3months">In 3 months after loan start</option>
+              <option value="6months">In 6 months after loan start</option>
+              <option value="12months">In 12 months after loan start</option>
               <option value="custom">Pick a date…</option>
             </select>
           </div>
@@ -690,7 +688,7 @@
           </div>
 
           <div id="installment-summary" style="margin:32px 0 12px 0; line-height:1.8">
-            <p id="plan-length-summary" style="color:var(--muted); font-size:14px; margin:0 0 4px 0"></p>
+            <p id="plan-length-summary" style="color:var(--accent); font-size:14px; font-weight:500; margin:0 0 4px 0"></p>
             <p id="installment-estimate" style="color:var(--accent); font-size:14px; font-weight:500; margin:0"></p>
           </div>
         </div>
@@ -1785,14 +1783,17 @@
         const moneySentDateInput = document.getElementById('money-sent-date');
 
         if (moneySentOption === 'on-acceptance') {
-          // If "on acceptance", use today as base
+          // If "on acceptance", use today as base (normalized to midnight local time)
           baseDate = new Date();
+          baseDate.setHours(0, 0, 0, 0);
         } else if (moneySentDateInput.value) {
-          // Use the money sent date
-          baseDate = new Date(moneySentDateInput.value + 'T00:00:00');
+          // Use the money sent date - parse as YYYY-MM-DD and create at midnight local time
+          const parts = moneySentDateInput.value.split('-');
+          baseDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 0, 0, 0, 0);
         } else {
-          // Fallback to today
+          // Fallback to today (normalized to midnight local time)
           baseDate = new Date();
+          baseDate.setHours(0, 0, 0, 0);
         }
 
         // Calculate due date based on selected option
@@ -1810,9 +1811,12 @@
           dueDate = addYears(baseDate, 1);
         }
 
-        // Set the date input value
+        // Set the date input value - format as YYYY-MM-DD
         if (dueDate) {
-          dueDateInput.value = dueDate.toISOString().split('T')[0];
+          const year = dueDate.getFullYear();
+          const month = String(dueDate.getMonth() + 1).padStart(2, '0');
+          const day = String(dueDate.getDate()).padStart(2, '0');
+          dueDateInput.value = `${year}-${month}-${day}`;
         }
       }
       // Always update the estimate when the option changes
@@ -1823,7 +1827,7 @@
       const dueDate = document.getElementById('due-date').value;
       const amount = document.getElementById('amount').value;
 
-      if (!dueDate || !amount) {
+      if (!amount) {
         document.getElementById('one-time-estimate').textContent = '';
         return;
       }
@@ -1836,12 +1840,35 @@
         return;
       }
 
-      const date = new Date(dueDate);
-      const dateFormatted = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
       const amountFormatted = formatEuro2(amountNum);
 
+      // Check if loan start is "on acceptance"
+      const moneySentOption = document.getElementById('money-sent-option').value;
+      const isLoanStartOnAcceptance = moneySentOption === 'on-acceptance';
+
+      // Check if due date option is relative (not "pick_date")
+      const oneTimeDueOption = document.getElementById('one-time-due-option').value;
+      const isRelativeDueDate = oneTimeDueOption !== 'pick_date';
+
+      // If loan start is "on acceptance" AND due date is relative, show relative text
+      if (isLoanStartOnAcceptance && isRelativeDueDate) {
+        const relativeText = getRelativeDueDateText(oneTimeDueOption);
+        document.getElementById('one-time-estimate').textContent =
+          `One-time payment of ${amountFormatted} (excl interest) ${relativeText}.`;
+        return;
+      }
+
+      // Otherwise, show concrete date (if available)
+      if (!dueDate) {
+        document.getElementById('one-time-estimate').textContent = '';
+        return;
+      }
+
+      const date = new Date(dueDate);
+      const dateFormatted = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
       document.getElementById('one-time-estimate').textContent =
-        `One-time payment of ${amountFormatted} on ${dateFormatted}, excluding interest.`;
+        `One-time payment of ${amountFormatted} (excl interest) on ${dateFormatted}.`;
     }
 
     // Unified function to update estimate based on repayment type
@@ -2217,10 +2244,18 @@
       const frequencyText = getFrequencyTextForSummary(loanDurationValue, loanDurationUnit, numRepayments);
 
       // Loan duration summary
-      planLengthSummary.textContent = `Plan length: ${durationText} (from ${firstFormatted} to ${finalFormatted}).`;
+      // Check if loan start is "on acceptance" - if so, don't show date range
+      const moneySentOption = document.getElementById('money-sent-option').value;
+      const isLoanStartOnAcceptance = moneySentOption === 'on-acceptance';
+
+      if (isLoanStartOnAcceptance) {
+        planLengthSummary.textContent = `Plan length: ${durationText}.`;
+      } else {
+        planLengthSummary.textContent = `Plan length: ${durationText} (from ${firstFormatted} to ${finalFormatted}).`;
+      }
 
       // Payment summary with frequency
-      installmentEstimate.textContent = `${numRepayments} payment${numRepayments === 1 ? '' : 's'} of about ${installmentFormatted} each, ${frequencyText}, excluding interest.`;
+      installmentEstimate.textContent = `${numRepayments} payment${numRepayments === 1 ? '' : 's'} of about ${installmentFormatted} each (excl interest) ${frequencyText}.`;
     }
 
     // Update due date helper text
