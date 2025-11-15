@@ -962,8 +962,20 @@
         }
       } else {
         if (agreement.due_date) {
-          const dueDate = formatDateWithCountdown(agreement.due_date);
-          addTerm('Full repayment due', dueDate);
+          // Check if we should show relative or concrete date
+          const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+          const isRelativeDueDate = agreement.one_time_due_option && agreement.one_time_due_option !== 'pick_date';
+
+          let dueDateDisplay;
+          if (isLoanStartUponAcceptance && isRelativeDueDate) {
+            // Show relative description
+            dueDateDisplay = getRelativeDueDateText(agreement.one_time_due_option);
+          } else {
+            // Show concrete date with countdown
+            dueDateDisplay = formatDateWithCountdown(agreement.due_date);
+          }
+
+          addTerm('Full repayment due', dueDateDisplay);
         }
       }
 
