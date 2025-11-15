@@ -20,6 +20,8 @@
   <script src="/js/derived-fields.js"></script>
   <!-- Renegotiation module -->
   <script src="/js/renegotiation.js"></script>
+  <!-- Payment methods display component -->
+  <script src="/components/payment-methods-display.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -478,6 +480,14 @@
         </button>
         <div id="payments-reminders-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
           <div id="payments-reminders-detail-content"></div>
+        </div>
+      </div>
+
+      <!-- Payment Methods (only shown for active agreements) -->
+      <div id="payment-methods-card" class="hidden" style="margin:16px 0">
+        <h3 style="margin:0 0 16px 0; font-size:16px">Payment Methods</h3>
+        <div id="payment-methods-content">
+          <!-- Populated dynamically by JavaScript -->
         </div>
       </div>
 
@@ -1934,6 +1944,7 @@
       // Populate collapsible detail sections
       populateInterestCalcDetail();
       populatePaymentsAndRemindersDetail();
+      populatePaymentMethodsDetail();
       populateShareDetail();
     }
 
@@ -4118,6 +4129,24 @@
       }
 
       html += '</div>';
+      content.innerHTML = html;
+    }
+
+    // Populate payment methods detail (only for active agreements)
+    function populatePaymentMethodsDetail() {
+      const card = document.getElementById('payment-methods-card');
+      const content = document.getElementById('payment-methods-content');
+
+      // Only show for active agreements (after acceptance)
+      if (agreement.status !== 'active' && agreement.status !== 'settled') {
+        card.classList.add('hidden');
+        return;
+      }
+
+      card.classList.remove('hidden');
+
+      // Use the payment methods display component
+      const html = renderPaymentMethodsSection(agreement, agreement.borrower_user_id === currentUser.id);
       content.innerHTML = html;
     }
 

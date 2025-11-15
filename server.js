@@ -296,6 +296,14 @@ try {
 } catch (e) {
   // Column already exists, ignore
 }
+
+// Add payment method detail fields
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN payment_methods_json TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // --- multer setup for file uploads ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -846,7 +854,7 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     lenderName, borrowerEmail, friendFirstName, amount, moneySentDate, dueDate, direction, repaymentType, description,
     planLength, planUnit, installmentCount, installmentAmount, firstPaymentDate, finalDueDate,
     interestRate, totalInterest, totalRepayAmount,
-    paymentPreferenceMethod, paymentOtherDescription, reminderMode, reminderOffsets,
+    paymentPreferenceMethod, paymentMethodsJson, paymentOtherDescription, reminderMode, reminderOffsets,
     proofRequired, debtCollectionClause, phoneNumber, paymentFrequency, oneTimeDueOption
   } = req.body || {};
 
@@ -902,10 +910,10 @@ app.post('/api/agreements', requireAuth, (req, res) => {
         direction, repayment_type, amount_cents, money_sent_date, due_date, created_at, status, description,
         plan_length, plan_unit, installment_count, installment_amount, first_payment_date, final_due_date,
         interest_rate, total_interest, total_repay_amount,
-        payment_preference_method, payment_other_description, reminder_mode, reminder_offsets,
+        payment_preference_method, payment_methods_json, payment_other_description, reminder_mode, reminder_offsets,
         proof_required, debt_collection_clause, payment_frequency, one_time_due_option
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const agreementInfo = agreementStmt.run(
@@ -930,6 +938,7 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       totalInterest || 0,
       totalRepayAmount || null,
       paymentPreferenceMethod || null,
+      paymentMethodsJson || null,
       paymentOtherDescription || null,
       reminderMode || 'auto',
       reminderOffsets ? JSON.stringify(reminderOffsets) : null,
@@ -1014,6 +1023,395 @@ app.patch('/api/agreements/:id/status', requireAuth, (req, res) => {
   stmt.run(newStatus, id);
 
   res.json({ success: true, id: Number(id), status: newStatus });
+});
+
+// Update payment method details (lender only, for active agreements)
+app.patch('/api/agreements/:id/payment-methods/:method', requireAuth, (req, res) => {
+  const { id, method } = req.params;
+  const { details } = req.body || {};
+
+  if (!details && details !== '') {
+    return res.status(400).json({ error: 'Details are required.' });
+  }
+
+  // Verify agreement belongs to lender
+  const agreement = db.prepare(`
+    SELECT id, lender_user_id, borrower_user_id, status, payment_methods_json
+    FROM agreements WHERE id = ? AND lender_user_id = ?
+  `).get(id, req.user.id);
+
+  if (!agreement) {
+    return res.status(404).json({ error: 'Agreement not found or you do not have permission to edit it.' });
+  }
+
+  // Only allow editing for active or settled agreements
+  if (agreement.status !== 'active' && agreement.status !== 'settled') {
+    return res.status(400).json({ error: 'Payment methods can only be edited for active agreements.' });
+  }
+
+  try {
+    // Parse existing payment methods
+    let paymentMethods = [];
+    if (agreement.payment_methods_json) {
+      try {
+        paymentMethods = JSON.parse(agreement.payment_methods_json);
+      } catch (e) {
+        console.error('Error parsing payment_methods_json:', e);
+        return res.status(500).json({ error: 'Invalid payment methods data.' });
+      }
+    }
+
+    // Find and update the method
+    const methodIndex = paymentMethods.findIndex(pm => pm.method === method);
+    if (methodIndex === -1) {
+      return res.status(404).json({ error: 'Payment method not found.' });
+    }
+
+    const oldDetails = paymentMethods[methodIndex].details;
+    paymentMethods[methodIndex].details = details;
+
+    // Save updated payment methods
+    const updatedJson = JSON.stringify(paymentMethods);
+    db.prepare('UPDATE agreements SET payment_methods_json = ? WHERE id = ?')
+      .run(updatedJson, id);
+
+    // Create activity log entry
+    const methodNames = {
+      'bank': 'bank transfer',
+      'paypal': 'PayPal',
+      'crypto': 'crypto',
+      'cash': 'cash',
+      'other': 'other'
+    };
+    const methodName = methodNames[method] || method;
+    const now = new Date().toISOString();
+
+    // Notify borrower
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.borrower_user_id,
+      id,
+      'Payment method details updated',
+      `The lender updated the ${methodName} details. Please review before making a payment.`,
+      now,
+      'PAYMENT_METHOD_DETAILS_UPDATED'
+    );
+
+    res.json({ success: true, paymentMethods });
+  } catch (err) {
+    console.error('Error updating payment method details:', err);
+    res.status(500).json({ error: 'Server error updating payment method details.' });
+  }
+});
+
+// Add a new payment method (lender only, for active agreements)
+app.post('/api/agreements/:id/payment-methods', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { method, details } = req.body || {};
+
+  if (!method) {
+    return res.status(400).json({ error: 'Method is required.' });
+  }
+
+  // Verify agreement belongs to lender
+  const agreement = db.prepare(`
+    SELECT id, lender_user_id, borrower_user_id, status, payment_methods_json
+    FROM agreements WHERE id = ? AND lender_user_id = ?
+  `).get(id, req.user.id);
+
+  if (!agreement) {
+    return res.status(404).json({ error: 'Agreement not found or you do not have permission to edit it.' });
+  }
+
+  // Only allow adding for active or settled agreements
+  if (agreement.status !== 'active' && agreement.status !== 'settled') {
+    return res.status(400).json({ error: 'Payment methods can only be added to active agreements.' });
+  }
+
+  try {
+    // Parse existing payment methods
+    let paymentMethods = [];
+    if (agreement.payment_methods_json) {
+      try {
+        paymentMethods = JSON.parse(agreement.payment_methods_json);
+      } catch (e) {
+        console.error('Error parsing payment_methods_json:', e);
+        return res.status(500).json({ error: 'Invalid payment methods data.' });
+      }
+    }
+
+    // Check if method already exists
+    if (paymentMethods.some(pm => pm.method === method && pm.status === 'active')) {
+      return res.status(400).json({ error: 'This payment method already exists.' });
+    }
+
+    // Add new method
+    paymentMethods.push({
+      method,
+      details: details || '',
+      status: 'active'
+    });
+
+    // Save updated payment methods
+    const updatedJson = JSON.stringify(paymentMethods);
+    db.prepare('UPDATE agreements SET payment_methods_json = ? WHERE id = ?')
+      .run(updatedJson, id);
+
+    // Create activity log entry
+    const methodNames = {
+      'bank': 'Bank transfer',
+      'paypal': 'PayPal',
+      'crypto': 'Crypto',
+      'cash': 'Cash',
+      'other': 'Other'
+    };
+    const methodName = methodNames[method] || method;
+    const now = new Date().toISOString();
+
+    // Notify borrower
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.borrower_user_id,
+      id,
+      'New payment method added',
+      `A new payment method was added. You can now also repay using ${methodName}.`,
+      now,
+      'PAYMENT_METHOD_ADDED'
+    );
+
+    res.json({ success: true, paymentMethods });
+  } catch (err) {
+    console.error('Error adding payment method:', err);
+    res.status(500).json({ error: 'Server error adding payment method.' });
+  }
+});
+
+// Request removal of a payment method (requires borrower approval)
+app.delete('/api/agreements/:id/payment-methods/:method', requireAuth, (req, res) => {
+  const { id, method } = req.params;
+
+  // Verify agreement belongs to lender
+  const agreement = db.prepare(`
+    SELECT id, lender_user_id, borrower_user_id, status, payment_methods_json
+    FROM agreements WHERE id = ? AND lender_user_id = ?
+  `).get(id, req.user.id);
+
+  if (!agreement) {
+    return res.status(404).json({ error: 'Agreement not found or you do not have permission to edit it.' });
+  }
+
+  // Only allow removal request for active agreements
+  if (agreement.status !== 'active') {
+    return res.status(400).json({ error: 'Payment methods can only be removed from active agreements.' });
+  }
+
+  try {
+    // Parse existing payment methods
+    let paymentMethods = [];
+    if (agreement.payment_methods_json) {
+      try {
+        paymentMethods = JSON.parse(agreement.payment_methods_json);
+      } catch (e) {
+        console.error('Error parsing payment_methods_json:', e);
+        return res.status(500).json({ error: 'Invalid payment methods data.' });
+      }
+    }
+
+    // Find the method
+    const methodIndex = paymentMethods.findIndex(pm => pm.method === method && pm.status === 'active');
+    if (methodIndex === -1) {
+      return res.status(404).json({ error: 'Payment method not found.' });
+    }
+
+    // Ensure at least one active method remains
+    const activeCount = paymentMethods.filter(pm => pm.status === 'active' || pm.status === 'pending_removal').length;
+    if (activeCount <= 1) {
+      return res.status(400).json({ error: 'Cannot remove the last payment method. At least one method must remain available.' });
+    }
+
+    // Mark as pending removal (requires borrower approval)
+    paymentMethods[methodIndex].status = 'pending_removal';
+
+    // Save updated payment methods
+    const updatedJson = JSON.stringify(paymentMethods);
+    db.prepare('UPDATE agreements SET payment_methods_json = ? WHERE id = ?')
+      .run(updatedJson, id);
+
+    // Create activity log entry
+    const methodNames = {
+      'bank': 'Bank transfer',
+      'paypal': 'PayPal',
+      'crypto': 'Crypto',
+      'cash': 'Cash',
+      'other': 'Other'
+    };
+    const methodName = methodNames[method] || method;
+    const now = new Date().toISOString();
+
+    // Notify borrower (requires approval)
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.borrower_user_id,
+      id,
+      'Payment method removal requested',
+      `The lender wants to remove ${methodName} as a payment method. Approve or decline this change.`,
+      now,
+      'PAYMENT_METHOD_REMOVAL_REQUESTED'
+    );
+
+    res.json({ success: true, paymentMethods });
+  } catch (err) {
+    console.error('Error requesting payment method removal:', err);
+    res.status(500).json({ error: 'Server error requesting payment method removal.' });
+  }
+});
+
+// Approve payment method removal (borrower only)
+app.post('/api/agreements/:id/payment-methods/:method/approve-removal', requireAuth, (req, res) => {
+  const { id, method } = req.params;
+
+  // Verify agreement belongs to borrower
+  const agreement = db.prepare(`
+    SELECT id, lender_user_id, borrower_user_id, status, payment_methods_json
+    FROM agreements WHERE id = ? AND borrower_user_id = ?
+  `).get(id, req.user.id);
+
+  if (!agreement) {
+    return res.status(404).json({ error: 'Agreement not found or you do not have permission to approve this.' });
+  }
+
+  try {
+    // Parse existing payment methods
+    let paymentMethods = [];
+    if (agreement.payment_methods_json) {
+      try {
+        paymentMethods = JSON.parse(agreement.payment_methods_json);
+      } catch (e) {
+        console.error('Error parsing payment_methods_json:', e);
+        return res.status(500).json({ error: 'Invalid payment methods data.' });
+      }
+    }
+
+    // Find the method pending removal
+    const methodIndex = paymentMethods.findIndex(pm => pm.method === method && pm.status === 'pending_removal');
+    if (methodIndex === -1) {
+      return res.status(404).json({ error: 'Payment method removal request not found.' });
+    }
+
+    // Remove the method
+    paymentMethods.splice(methodIndex, 1);
+
+    // Save updated payment methods
+    const updatedJson = JSON.stringify(paymentMethods);
+    db.prepare('UPDATE agreements SET payment_methods_json = ? WHERE id = ?')
+      .run(updatedJson, id);
+
+    // Create activity log entry
+    const methodNames = {
+      'bank': 'Bank transfer',
+      'paypal': 'PayPal',
+      'crypto': 'Crypto',
+      'cash': 'Cash',
+      'other': 'Other'
+    };
+    const methodName = methodNames[method] || method;
+    const now = new Date().toISOString();
+
+    // Notify lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.lender_user_id,
+      id,
+      'Payment method removal approved',
+      `The borrower approved removal of ${methodName}.`,
+      now,
+      'PAYMENT_METHOD_REMOVAL_APPROVED'
+    );
+
+    res.json({ success: true, paymentMethods });
+  } catch (err) {
+    console.error('Error approving payment method removal:', err);
+    res.status(500).json({ error: 'Server error approving payment method removal.' });
+  }
+});
+
+// Decline payment method removal (borrower only)
+app.post('/api/agreements/:id/payment-methods/:method/decline-removal', requireAuth, (req, res) => {
+  const { id, method } = req.params;
+
+  // Verify agreement belongs to borrower
+  const agreement = db.prepare(`
+    SELECT id, lender_user_id, borrower_user_id, status, payment_methods_json
+    FROM agreements WHERE id = ? AND borrower_user_id = ?
+  `).get(id, req.user.id);
+
+  if (!agreement) {
+    return res.status(404).json({ error: 'Agreement not found or you do not have permission to decline this.' });
+  }
+
+  try {
+    // Parse existing payment methods
+    let paymentMethods = [];
+    if (agreement.payment_methods_json) {
+      try {
+        paymentMethods = JSON.parse(agreement.payment_methods_json);
+      } catch (e) {
+        console.error('Error parsing payment_methods_json:', e);
+        return res.status(500).json({ error: 'Invalid payment methods data.' });
+      }
+    }
+
+    // Find the method pending removal
+    const methodIndex = paymentMethods.findIndex(pm => pm.method === method && pm.status === 'pending_removal');
+    if (methodIndex === -1) {
+      return res.status(404).json({ error: 'Payment method removal request not found.' });
+    }
+
+    // Revert to active status
+    paymentMethods[methodIndex].status = 'active';
+
+    // Save updated payment methods
+    const updatedJson = JSON.stringify(paymentMethods);
+    db.prepare('UPDATE agreements SET payment_methods_json = ? WHERE id = ?')
+      .run(updatedJson, id);
+
+    // Create activity log entry
+    const methodNames = {
+      'bank': 'Bank transfer',
+      'paypal': 'PayPal',
+      'crypto': 'Crypto',
+      'cash': 'Cash',
+      'other': 'Other'
+    };
+    const methodName = methodNames[method] || method;
+    const now = new Date().toISOString();
+
+    // Notify lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.lender_user_id,
+      id,
+      'Payment method removal declined',
+      `The borrower declined removal of ${methodName}.`,
+      now,
+      'PAYMENT_METHOD_REMOVAL_DECLINED'
+    );
+
+    res.json({ success: true, paymentMethods });
+  } catch (err) {
+    console.error('Error declining payment method removal:', err);
+    res.status(500).json({ error: 'Server error declining payment method removal.' });
+  }
 });
 
 // Get messages for logged-in user
