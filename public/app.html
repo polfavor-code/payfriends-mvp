@@ -854,12 +854,8 @@
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
             <label class="payment-method-card" data-value="bank" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
-              <input type="checkbox" class="payment-method-checkbox" value="bank" checked style="display:none" />
+              <input type="checkbox" class="payment-method-checkbox" value="bank" style="display:none" />
               <span style="font-size:14px; font-weight:500">Bank transfer</span>
-            </label>
-            <label class="payment-method-card" data-value="cash" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
-              <input type="checkbox" class="payment-method-checkbox" value="cash" style="display:none" />
-              <span style="font-size:14px; font-weight:500">Cash</span>
             </label>
             <label class="payment-method-card" data-value="paypal" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
               <input type="checkbox" class="payment-method-checkbox" value="paypal" style="display:none" />
@@ -869,18 +865,45 @@
               <input type="checkbox" class="payment-method-checkbox" value="crypto" style="display:none" />
               <span style="font-size:14px; font-weight:500">Crypto</span>
             </label>
+            <label class="payment-method-card" data-value="cash" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+              <input type="checkbox" class="payment-method-checkbox" value="cash" style="display:none" />
+              <span style="font-size:14px; font-weight:500">Cash</span>
+            </label>
             <label class="payment-method-card" data-value="other" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
               <input type="checkbox" class="payment-method-checkbox" value="other" style="display:none" />
               <span style="font-size:14px; font-weight:500">Other</span>
             </label>
-            <label class="payment-method-card" data-value="any" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
-              <input type="checkbox" class="payment-method-checkbox" value="any" style="display:none" />
-              <span style="font-size:14px; font-weight:500">Any method</span>
-            </label>
           </div>
 
-          <div id="other-payment-method" class="hidden" style="margin:12px 0">
-            <input id="other-payment-description" type="text" placeholder="Describe the other payment method" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
+          <!-- Payment method detail fields (shown below the grid when selected) -->
+          <div id="payment-method-details" style="margin-top:16px">
+            <!-- Bank transfer details -->
+            <div id="bank-details" class="payment-detail-section hidden" style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
+              <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">Bank transfer instructions *</label>
+              <textarea id="bank-instructions" placeholder="Enter all information needed to receive a bank transfer, including the account holder name.&#10;&#10;Examples: IBAN, account number, routing number, sort code, BSB, SWIFT, or any regional format." style="width:100%; min-height:120px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:inherit; resize:vertical"></textarea>
+              <p style="color:var(--muted); font-size:12px; margin:6px 0 0 0">Enter all information needed to receive a bank transfer, including the account holder name. Examples: IBAN, account number, routing number, sort code, BSB, SWIFT, or any regional format.</p>
+            </div>
+
+            <!-- PayPal details -->
+            <div id="paypal-details" class="payment-detail-section hidden" style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
+              <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">PayPal email *</label>
+              <input id="paypal-email" type="email" placeholder="your.email@example.com" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
+            </div>
+
+            <!-- Crypto details -->
+            <div id="crypto-details" class="payment-detail-section hidden" style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
+              <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">Crypto payment instructions *</label>
+              <textarea id="crypto-instructions" placeholder="Include wallet address and the network.&#10;&#10;Example: 0xABC123… (ETH on ERC-20)" style="width:100%; min-height:100px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:inherit; resize:vertical"></textarea>
+              <p style="color:var(--muted); font-size:12px; margin:6px 0 0 0">Include wallet address and the network. Example: 0xABC123… (ETH on ERC-20).</p>
+            </div>
+
+            <!-- Cash - no fields needed -->
+
+            <!-- Other method details -->
+            <div id="other-details" class="payment-detail-section hidden" style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
+              <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">Description *</label>
+              <input id="other-payment-description" type="text" placeholder="Describe the other payment method" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
+            </div>
           </div>
         </div>
 
@@ -2781,20 +2804,77 @@
         return;
       }
 
-      // Validate "Other" description if "other" is selected
+      // Build payment methods JSON with details
+      const paymentMethodsData = [];
+
+      // Validate and collect Bank transfer details
+      if (selectedMethods.includes('bank')) {
+        const bankInstructions = document.getElementById('bank-instructions').value.trim();
+        if (!bankInstructions) {
+          document.getElementById('step4-status').textContent = 'Please enter bank transfer instructions';
+          return;
+        }
+        paymentMethodsData.push({
+          method: 'bank',
+          details: bankInstructions,
+          status: 'active'
+        });
+      }
+
+      // Validate and collect PayPal details
+      if (selectedMethods.includes('paypal')) {
+        const paypalEmail = document.getElementById('paypal-email').value.trim();
+        if (!paypalEmail) {
+          document.getElementById('step4-status').textContent = 'Please enter PayPal email';
+          return;
+        }
+        paymentMethodsData.push({
+          method: 'paypal',
+          details: paypalEmail,
+          status: 'active'
+        });
+      }
+
+      // Validate and collect Crypto details
+      if (selectedMethods.includes('crypto')) {
+        const cryptoInstructions = document.getElementById('crypto-instructions').value.trim();
+        if (!cryptoInstructions) {
+          document.getElementById('step4-status').textContent = 'Please enter crypto payment instructions';
+          return;
+        }
+        paymentMethodsData.push({
+          method: 'crypto',
+          details: cryptoInstructions,
+          status: 'active'
+        });
+      }
+
+      // Cash - no details required
+      if (selectedMethods.includes('cash')) {
+        paymentMethodsData.push({
+          method: 'cash',
+          details: '',
+          status: 'active'
+        });
+      }
+
+      // Validate and collect Other details
       if (selectedMethods.includes('other')) {
         const otherDescription = document.getElementById('other-payment-description').value.trim();
         if (!otherDescription) {
           document.getElementById('step4-status').textContent = 'Please describe the other payment method';
           return;
         }
-        wizardData.paymentOtherDescription = otherDescription;
-      } else {
-        // Clear the description if "Other" is not selected
-        wizardData.paymentOtherDescription = '';
+        paymentMethodsData.push({
+          method: 'other',
+          details: otherDescription,
+          status: 'active'
+        });
       }
 
+      // Store payment methods data
       wizardData.paymentMethods = selectedMethods;
+      wizardData.paymentMethodsJson = JSON.stringify(paymentMethodsData);
 
       // Get reminder settings
       const reminderMode = document.querySelector('input[name="reminder-mode"]:checked').value;
@@ -2842,15 +2922,45 @@
       }
     }
 
-    // Toggle other payment method description field
-    function toggleOtherPaymentMethod() {
-      const otherCheckbox = document.querySelector('.payment-method-checkbox[value="other"]');
-      const otherField = document.getElementById('other-payment-method');
-
-      if (otherCheckbox && otherCheckbox.checked) {
-        otherField.classList.remove('hidden');
+    // Toggle payment method detail fields
+    function togglePaymentMethodDetails() {
+      // Bank transfer
+      const bankCheckbox = document.querySelector('.payment-method-checkbox[value="bank"]');
+      const bankDetails = document.getElementById('bank-details');
+      if (bankCheckbox && bankCheckbox.checked) {
+        bankDetails.classList.remove('hidden');
       } else {
-        otherField.classList.add('hidden');
+        bankDetails.classList.add('hidden');
+        document.getElementById('bank-instructions').value = '';
+      }
+
+      // PayPal
+      const paypalCheckbox = document.querySelector('.payment-method-checkbox[value="paypal"]');
+      const paypalDetails = document.getElementById('paypal-details');
+      if (paypalCheckbox && paypalCheckbox.checked) {
+        paypalDetails.classList.remove('hidden');
+      } else {
+        paypalDetails.classList.add('hidden');
+        document.getElementById('paypal-email').value = '';
+      }
+
+      // Crypto
+      const cryptoCheckbox = document.querySelector('.payment-method-checkbox[value="crypto"]');
+      const cryptoDetails = document.getElementById('crypto-details');
+      if (cryptoCheckbox && cryptoCheckbox.checked) {
+        cryptoDetails.classList.remove('hidden');
+      } else {
+        cryptoDetails.classList.add('hidden');
+        document.getElementById('crypto-instructions').value = '';
+      }
+
+      // Other
+      const otherCheckbox = document.querySelector('.payment-method-checkbox[value="other"]');
+      const otherDetails = document.getElementById('other-details');
+      if (otherCheckbox && otherCheckbox.checked) {
+        otherDetails.classList.remove('hidden');
+      } else {
+        otherDetails.classList.add('hidden');
         document.getElementById('other-payment-description').value = '';
       }
     }
@@ -2887,27 +2997,7 @@
 
     // Handle payment method selection logic
     function handlePaymentMethodChange(changedValue, isChecked) {
-      const anyCheckbox = document.querySelector('.payment-method-checkbox[value="any"]');
-      const anyCard = document.querySelector('.payment-method-card[data-value="any"]');
       const allCards = document.querySelectorAll('.payment-method-card');
-      const allCheckboxes = document.querySelectorAll('.payment-method-checkbox');
-
-      if (changedValue === 'any' && isChecked) {
-        // "Any method" was selected - uncheck all other methods (but don't disable)
-        allCheckboxes.forEach(cb => {
-          if (cb.value !== 'any') {
-            cb.checked = false;
-            const card = document.querySelector(`.payment-method-card[data-value="${cb.value}"]`);
-            updateCardVisualState(card, false);
-          }
-        });
-        // Hide "Other" description field when "Any method" is selected
-        toggleOtherPaymentMethod();
-      } else if (changedValue !== 'any' && isChecked && anyCheckbox.checked) {
-        // Another method was selected while "Any" is active - uncheck "Any" first
-        anyCheckbox.checked = false;
-        updateCardVisualState(anyCard, false);
-      }
 
       // Update visual state for all cards
       allCards.forEach(card => {
@@ -2915,8 +3005,8 @@
         updateCardVisualState(card, cb.checked);
       });
 
-      // Handle "Other" payment method description field
-      toggleOtherPaymentMethod();
+      // Show/hide detail fields based on selection
+      togglePaymentMethodDetails();
 
       // Clear any error messages
       document.getElementById('step4-status').textContent = '';
@@ -3269,6 +3359,7 @@
           totalInterest: wizardData.totalInterest,
           totalRepayAmount: wizardData.totalRepayAmount,
           paymentPreferenceMethod: paymentMethodsStr,
+          paymentMethodsJson: wizardData.paymentMethodsJson,
           paymentOtherDescription: wizardData.paymentOtherDescription,
           reminderMode: wizardData.reminderMode,
           reminderOffsets: wizardData.reminderOffsets,
