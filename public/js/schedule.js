@@ -209,12 +209,15 @@ function buildRepaymentSchedule(input) {
  * @param {Array<Object>} rows - Schedule rows as produced by buildRepaymentSchedule. Each row should contain `dateISO` (ISO date string), `paymentCents`, `principalCents`, `interestCents`, and `remainingCents` (all amounts in cents).
  * @returns {string} An HTML string containing a styled grid representing the provided schedule rows.
  */
-function generateScheduleTableHTML(rows) {
+function generateScheduleTableHTML(rows, includeOutstanding = true) {
   // Container with max-height and scroll
   let html = '<div style="margin:16px 0; max-height:400px; overflow-y:auto; border:1px solid rgba(55,65,81,0.5); border-radius:8px; background:rgba(12,16,21,1)">';
 
-  // Grid container
-  html += '<div style="display:grid; grid-template-columns:minmax(120px,1fr) minmax(120px,1fr) minmax(100px,1fr) minmax(120px,1fr) minmax(140px,1fr); font-size:13px">';
+  // Grid container - adjust columns based on whether Outstanding is included
+  const gridColumns = includeOutstanding
+    ? 'minmax(120px,1fr) minmax(120px,1fr) minmax(100px,1fr) minmax(120px,1fr) minmax(140px,1fr)'
+    : 'minmax(120px,1fr) minmax(120px,1fr) minmax(100px,1fr) minmax(120px,1fr)';
+  html += `<div style="display:grid; grid-template-columns:${gridColumns}; font-size:13px">`;
 
   // Header row (sticky)
   html += '<div style="display:contents; position:sticky; top:0; z-index:10">';
@@ -222,7 +225,9 @@ function generateScheduleTableHTML(rows) {
   html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Repayment (excl. interest)</div>';
   html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Interest</div>';
   html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Payment total</div>';
-  html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Balance</div>';
+  if (includeOutstanding) {
+    html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Balance</div>';
+  }
   html += '</div>';
 
   // Data rows
@@ -235,7 +240,9 @@ function generateScheduleTableHTML(rows) {
     html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap">${formatCurrency2(row.principalCents)}</div>`;
     html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap">${formatCurrency2(row.interestCents)}</div>`;
     html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:600">${formatCurrency2(row.paymentCents)}</div>`;
-    html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap">${formatCurrency2(row.remainingCents)}</div>`;
+    if (includeOutstanding) {
+      html += `<div style="padding:10px 12px; background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap">${formatCurrency2(row.remainingCents)}</div>`;
+    }
     html += '</div>';
   });
 
@@ -253,10 +260,11 @@ function generateScheduleTableHTML(rows) {
  * @param {number} params.count - Number of repayments.
  * @param {Array<Date|string>} params.paymentDates - Array of payment dates (Date objects or ISO strings).
  * @param {Date|string} params.startDate - Start date for interest calculation (Date or ISO string).
+ * @param {boolean} [params.includeOutstanding=true] - Whether to include the Outstanding/Balance column in the table.
  * @returns {string} HTML string containing the lead-in summary sentence and the schedule table.
  */
 function generateScheduleAccordionHTML(params) {
-  const { principalCents, aprPercent, count, paymentDates, startDate } = params;
+  const { principalCents, aprPercent, count, paymentDates, startDate, includeOutstanding = true } = params;
 
   // Build schedule
   const schedule = buildRepaymentSchedule({
@@ -277,7 +285,7 @@ function generateScheduleAccordionHTML(params) {
 
   // Build complete HTML
   let html = `<p style="margin:0 0 16px 0; font-size:14px; color:#a7b0bd; line-height:1.5">${leadInSentence}</p>`;
-  html += generateScheduleTableHTML(schedule.rows);
+  html += generateScheduleTableHTML(schedule.rows, includeOutstanding);
 
   return html;
 }

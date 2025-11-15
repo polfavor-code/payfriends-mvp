@@ -826,12 +826,7 @@
           <h5 style="margin:0 0 12px 0; font-size:14px">Payment breakdown</h5>
           <table style="width:100%; font-size:13px">
             <thead>
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
-                <th style="text-align:left; padding:8px 4px">Due date</th>
-                <th style="text-align:right; padding:8px 4px">Payment total</th>
-                <th style="text-align:right; padding:8px 4px">Loan repayment</th>
-                <th style="text-align:right; padding:8px 4px">Interest</th>
-                <th style="text-align:right; padding:8px 4px">Outstanding</th>
+              <tr id="breakdown-thead" style="border-bottom:1px solid rgba(255,255,255,0.08)">
               </tr>
             </thead>
             <tbody id="breakdown-tbody"></tbody>
@@ -2678,6 +2673,19 @@
       document.getElementById('total-repay-display').textContent = formatEuro2(totalRepayAmount);
 
       // Generate breakdown table using shared schedule utility
+      const isInstallments = wizardData.repaymentType === 'installments';
+
+      // Update table header based on repayment type
+      const thead = document.getElementById('breakdown-thead');
+      thead.innerHTML = '';
+      thead.innerHTML = `
+        <th style="text-align:left; padding:8px 4px">Due date</th>
+        <th style="text-align:right; padding:8px 4px">Loan repayment</th>
+        <th style="text-align:right; padding:8px 4px">Interest</th>
+        <th style="text-align:right; padding:8px 4px">Payment total</th>
+        ${isInstallments ? '<th style="text-align:right; padding:8px 4px">Outstanding</th>' : ''}
+      `;
+
       const tbody = document.getElementById('breakdown-tbody');
       tbody.innerHTML = '';
 
@@ -2697,10 +2705,10 @@
         tr.style = rowStyle + '; border-bottom:1px solid rgba(255,255,255,0.05)';
         tr.innerHTML = `
           <td style="padding:8px 4px">${formatScheduleDate(row.dateISO)}</td>
-          <td style="text-align:right; padding:8px 4px; font-weight:600">${formatCurrency2(row.paymentCents)}</td>
           <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.principalCents)}</td>
           <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.interestCents)}</td>
-          <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.remainingCents)}</td>
+          <td style="text-align:right; padding:8px 4px; font-weight:600">${formatCurrency2(row.paymentCents)}</td>
+          ${isInstallments ? `<td style="text-align:right; padding:8px 4px">${formatCurrency2(row.remainingCents)}</td>` : ''}
         `;
         tbody.appendChild(tr);
       });
