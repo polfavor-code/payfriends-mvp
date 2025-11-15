@@ -664,7 +664,7 @@
         const methods = agreement.payment_preference_method.split(',').map(m => {
           if (m === 'bank') return 'Bank transfer';
           if (m === 'cash') return 'Cash';
-          if (m === 'paypal') return 'PayPal / mobile payment';
+          if (m === 'paypal') return 'PayPal';
           if (m === 'crypto') return 'Crypto';
           if (m === 'any') return 'Any method';
           if (m === 'other') return 'Other';
