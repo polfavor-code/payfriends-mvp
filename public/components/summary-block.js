@@ -89,7 +89,7 @@ const SUMMARY_ORDER_ONETIME = [
   // Section 2: Loan terms (one-time specific)
   { kind: "field", label: "Money transfer date (loan start date)", key: "moneyTransferDate" },
   { kind: "field", label: "Amount", key: "amount" },
-  { kind: "field", label: "Loan duration", key: "loanDuration" },
+  // Duration is hidden for one-time loans
   { kind: "field", label: "Interest rate", key: "interestRate" },
   { kind: "field", label: "Total interest", key: "totalInterest" },
   { kind: "field", label: "Total to repay", key: "totalToRepay" },
@@ -228,7 +228,7 @@ function buildSummaryDataMap(wizardData, currentUser) {
     paymentFrequency: paymentFrequency,
     firstRepaymentDate: wizardData.firstPaymentDate ? new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
     finalDueDate: wizardData.finalDueDate ? new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
-    fullRepaymentDueDate: wizardData.dueDate ? new Date(wizardData.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+    fullRepaymentDueDate: wizardData.dueDate ? formatDateWithCountdown(wizardData.dueDate) : '',
     repaymentMethods: methodsText,
     requireProof: wizardData.proofRequired ? 'Yes — Borrower must upload proof (photo, screenshot, or PDF) with each payment' : null,
     reminders: remindersText,

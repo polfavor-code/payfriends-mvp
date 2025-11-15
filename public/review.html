@@ -962,7 +962,7 @@
         }
       } else {
         if (agreement.due_date) {
-          const dueDate = formatISOToHuman(agreement.due_date);
+          const dueDate = formatDateWithCountdown(agreement.due_date);
           addTerm('Full repayment due', dueDate);
         }
       }

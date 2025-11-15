@@ -73,3 +73,52 @@ function formatDate(isoDate) {
     day: '2-digit'
   }).format(date);
 }
+
+/**
+ * Calculate countdown text for a due date
+ * @param {string|Date} dueDate - ISO date string or Date object
+ * @returns {string} Countdown text (e.g., "(in 35 days)", "(today)", "(5 days overdue)")
+ */
+function getDueDateCountdown(dueDate) {
+  if (!dueDate) return '';
+  const due = new Date(dueDate);
+  if (isNaN(due.getTime())) return '';
+
+  const now = new Date();
+  // Set both dates to midnight for accurate day comparison
+  now.setHours(0, 0, 0, 0);
+  due.setHours(0, 0, 0, 0);
+
+  const diffMs = due - now;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays > 0) {
+    return `(in ${diffDays} day${diffDays === 1 ? '' : 's'})`;
+  } else if (diffDays === 0) {
+    return '(today)';
+  } else {
+    const overdueDays = Math.abs(diffDays);
+    return `(${overdueDays} day${overdueDays === 1 ? '' : 's'} overdue)`;
+  }
+}
+
+/**
+ * Format date with countdown for one-time loan due dates
+ * @param {string|Date} isoDate - ISO date string or Date object
+ * @param {string} locale - Locale to use (default: 'en-GB' for "15 Jan 2025" format)
+ * @returns {string} Formatted date with countdown (e.g., "15 Jan 2025 (in 35 days)")
+ */
+function formatDateWithCountdown(isoDate, locale = 'en-GB') {
+  if (!isoDate) return '—';
+  const date = new Date(isoDate);
+  if (isNaN(date.getTime())) return '—';
+
+  const formattedDate = date.toLocaleDateString(locale, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+
+  const countdown = getDueDateCountdown(isoDate);
+  return countdown ? `${formattedDate} ${countdown}` : formattedDate;
+}
