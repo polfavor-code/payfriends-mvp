@@ -2526,10 +2526,29 @@
       const microcopyEl = document.getElementById('can-pay-now-microcopy');
       microcopyEl.textContent = `${lenderName} will appreciate receiving something rather than nothing. Anything paid now will help show commitment and will recalculate the remaining amounts fairly.`;
 
-      // Build solution type options based on loan type
+      // Important: One-time vs installment loans have different renegotiation options.
+      // Do not unify these lists again, we want tailored solutions per loan type.
+      // Installment loans get: lower installments, skip payment, pay part & adjust
+      // One-time loans get: extend due date, split into parts, pay part & reschedule rest
       const loanType = agreement.repayment_type === 'installments' ? 'installment' : 'one_time';
       const solutionTypesContainer = document.getElementById('renegotiation-solution-types');
+
+      if (!solutionTypesContainer) {
+        console.error('renegotiation-solution-types container not found');
+        return;
+      }
+
+      if (!window.RenegotiationModule) {
+        console.error('RenegotiationModule not loaded');
+        return;
+      }
+
       solutionTypesContainer.innerHTML = window.RenegotiationModule.buildSolutionTypeOptions(loanType);
+
+      // Verify options were rendered
+      if (!solutionTypesContainer.innerHTML.trim()) {
+        console.error('Failed to render renegotiation options for loan type:', loanType);
+      }
 
       // Set button text with lender name
       const submitBtn = document.getElementById('renegotiation-submit-btn');
@@ -2717,6 +2736,7 @@
 
         <div id="suggest-type-form" class="hidden" style="margin-top:20px">
           <h4 style="margin-bottom:12px">Suggest an alternative solution:</h4>
+          <!-- Use the loan_type saved in renegotiation record (set correctly by backend) -->
           ${window.RenegotiationModule.buildSolutionTypeOptions(renegotiation.loan_type)}
           <div class="form-group">
             <label class="form-label">Optional note (explain why this might work better)</label>

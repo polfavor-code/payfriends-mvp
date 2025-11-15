@@ -6,7 +6,11 @@
  */
 
 // Solution type options for different loan types
+// CRITICAL: Keep these two lists separate and distinct!
+// Installment loans and one-time payment loans require different renegotiation strategies.
+// Do NOT merge or unify these option sets - they must remain tailored to each loan type.
 const SOLUTION_TYPES = {
+  // Options for INSTALLMENT loans (recurring payments over time)
   installment: [
     {
       value: 'lower_installment',
@@ -27,6 +31,7 @@ const SOLUTION_TYPES = {
       description: 'I\'ll pay what I can now. PayFriends will recalculate the remaining installments and interest fairly.'
     }
   ],
+  // Options for ONE-TIME payment loans (single lump sum payment)
   one_time: [
     {
       value: 'extend_due_date',
@@ -265,8 +270,22 @@ function buildHistoryTimeline(history) {
 }
 
 // Build HTML for solution type selection (Step 1)
+// CRITICAL: This function branches by loan type to show the correct option set
+// loanType must be either 'installment' or 'one_time' (singular forms)
 function buildSolutionTypeOptions(loanType, selectedType = null) {
+  // Important: One-time vs installment loans have different renegotiation options.
+  // Do not unify these lists again, we want tailored solutions per loan type.
+  if (loanType !== 'installment' && loanType !== 'one_time') {
+    console.error('Invalid loan type passed to buildSolutionTypeOptions:', loanType);
+    return '<p style="color: var(--danger)">Error: Invalid loan type. Please refresh the page.</p>';
+  }
+
   const options = loanType === 'installment' ? SOLUTION_TYPES.installment : SOLUTION_TYPES.one_time;
+
+  if (!options || options.length === 0) {
+    console.error('No solution options found for loan type:', loanType);
+    return '<p style="color: var(--danger)">Error: No solution options available.</p>';
+  }
 
   let html = '<div class="solution-types">';
 

@@ -1651,6 +1651,10 @@ app.post('/api/agreements/:id/renegotiation', requireAuth, (req, res) => {
     }
 
     const now = new Date().toISOString();
+
+    // CRITICAL: Determine loan type to ensure correct renegotiation options are shown
+    // Database stores 'installments' (plural), but module uses 'installment' (singular)
+    // This distinction is important - installment and one-time loans have different solution options
     const loanType = agreement.repayment_type === 'installments' ? 'installment' : 'one_time';
 
     // Create history event
