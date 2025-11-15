@@ -2593,6 +2593,35 @@
       }
     }
 
+    /**
+     * Format the due date for display in the Payment breakdown table.
+     * For one-time loans when loan start is "on acceptance" and due date is offset-based,
+     * returns a relative label like "1 year after loan start".
+     * Otherwise, returns the formatted calendar date.
+     */
+    function formatOneTimeDueDateDisplay(dateISO) {
+      const isOneTime = wizardData.repaymentType === 'one_time';
+      const isOnAcceptance = wizardData.moneySentDate === 'on-acceptance';
+      const oneTimeDueOption = wizardData.oneTimeDueOption;
+      const isOffsetBased = oneTimeDueOption && oneTimeDueOption !== 'pick_date';
+
+      // Show relative label for one-time loans with "on acceptance" start and offset-based due date
+      if (isOneTime && isOnAcceptance && isOffsetBased) {
+        // Map oneTimeDueOption values to readable labels
+        const labelMap = {
+          'in_1_week': '1 week after loan start',
+          'in_1_month': '1 month after loan start',
+          'in_3_months': '3 months after loan start',
+          'in_6_months': '6 months after loan start',
+          'in_1_year': '1 year after loan start'
+        };
+        return labelMap[oneTimeDueOption] || formatScheduleDate(dateISO);
+      }
+
+      // Default: show the actual calendar date
+      return formatScheduleDate(dateISO);
+    }
+
     // Calculate interest using fair amortization (equal principal payments)
     function calculateInterest() {
       let interestRate = parseFloat(document.getElementById('interest-rate').value) || 0;
@@ -2843,7 +2872,7 @@
         const rowStyle = index % 2 === 0 ? 'background:rgba(12,16,21,0.3)' : 'background:rgba(10,13,17,0.3)';
         tr.style = rowStyle + '; border-bottom:1px solid rgba(255,255,255,0.05)';
         tr.innerHTML = `
-          <td style="padding:8px 4px">${formatScheduleDate(row.dateISO)}</td>
+          <td style="padding:8px 4px">${formatOneTimeDueDateDisplay(row.dateISO)}</td>
           <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.principalCents)}</td>
           <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.interestCents)}</td>
           <td style="text-align:right; padding:8px 4px; font-weight:600">${formatCurrency2(row.paymentCents)}</td>
