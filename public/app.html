@@ -1016,9 +1016,15 @@
         <!-- Expandable: Fairness Between Friends -->
         <div style="margin:16px 0">
           <button onclick="toggleSection('fairness-step5-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-            <span>Fairness Between Friends</span>
+            <div style="display:flex; align-items:center; gap:8px; color:var(--accent)">
+              <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
+              <span>Fairness Between Friends (How it Works)</span>
+            </div>
             <span id="fairness-step5-toggle">▼</span>
           </button>
+          <script>
+            document.currentScript.previousElementSibling.querySelector('div > span:first-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
+          </script>
           <div id="fairness-step5-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
             <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
               PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
@@ -2961,11 +2967,19 @@
 
       let html = '<div class="summary-grid">';
 
-      // Payment methods
+      // Payment methods - use same mapping as summary-block.js
       const methods = wizardData.paymentMethods || [];
-      const methodsText = methods.length > 0 ? methods.join(', ') : 'Not specified';
+      const methodLabels = methods.map(m => {
+        if (m === 'bank') return 'Bank transfer';
+        if (m === 'cash') return 'Cash in person';
+        if (m === 'crypto') return 'Crypto';
+        if (m === 'any') return 'Any method';
+        if (m === 'other') return `Other${wizardData.paymentOtherDescription ? ': ' + wizardData.paymentOtherDescription : ''}`;
+        return m;
+      });
+      const methodsText = methodLabels.length > 0 ? methodLabels.join(', ') : 'Not specified';
       html += `<div class="summary-grid-row">
-        <label class="summary-grid-label">Preferred payment methods:</label>
+        <label class="summary-grid-label">Repayment methods:</label>
         <div class="summary-grid-value">
           <div style="color:var(--muted); font-size:14px">${methodsText}</div>
         </div>
@@ -2979,22 +2993,10 @@
         </div>
       </div>`;
 
-      // Reminder mode
-      html += `<div class="summary-grid-row">
-        <label class="summary-grid-label">Reminder mode:</label>
-        <div class="summary-grid-value">
-          <div style="color:var(--muted); font-size:14px">${wizardData.reminderMode === 'auto' ? 'Auto (recommended)' : 'Custom schedule'}</div>
-        </div>
-      </div>`;
-
-      // Reminder details
+      // Reminder schedule (merged mode and schedule into one line)
+      let reminderScheduleText = '';
       if (wizardData.reminderMode === 'auto') {
-        html += `<div class="summary-grid-row">
-          <label class="summary-grid-label">Reminder schedule:</label>
-          <div class="summary-grid-value">
-            <div style="color:var(--muted); font-size:14px; line-height:1.6">7 days before, 1 day before, on the due date. If unpaid: 1 day after, then every 3 days.</div>
-          </div>
-        </div>`;
+        reminderScheduleText = 'Auto: 7 days before, 1 day before, on the due date. If unpaid: 1 day after, then every 3 days.';
       } else if (wizardData.reminderOffsets && wizardData.reminderOffsets.length > 0) {
         const reminders = wizardData.reminderOffsets.sort((a, b) => a - b).map(offset => {
           if (offset < 0) return `${Math.abs(offset)} days before`;
@@ -3003,14 +3005,17 @@
           if (offset === 7) return 'Every 7 days after';
           return `${offset} day${offset > 1 ? 's' : ''} after`;
         }).join(', ');
-
-        html += `<div class="summary-grid-row">
-          <label class="summary-grid-label">Reminder schedule:</label>
-          <div class="summary-grid-value">
-            <div style="color:var(--muted); font-size:14px">${reminders}</div>
-          </div>
-        </div>`;
+        reminderScheduleText = `Custom: ${reminders}`;
+      } else {
+        reminderScheduleText = 'Not configured';
       }
+
+      html += `<div class="summary-grid-row">
+        <label class="summary-grid-label">Reminder schedule:</label>
+        <div class="summary-grid-value">
+          <div style="color:var(--muted); font-size:14px; line-height:1.6">${reminderScheduleText}</div>
+        </div>
+      </div>`;
 
       // Worst case scenario (only show if enabled)
       if (wizardData.debtCollectionClause) {

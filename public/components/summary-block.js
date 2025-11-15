@@ -59,14 +59,6 @@ const SUMMARY_ORDER_INSTALLMENTS = [
 
   { kind: "spacer" },
 
-  // Section 4: Payment details
-  { kind: "field", label: "Repayment method(s)", key: "repaymentMethods" },
-  { kind: "field", label: "Require proof of payment", key: "requireProof", hideIfEmpty: true },
-  { kind: "field", label: "Reminders", key: "reminders" },
-  { kind: "field", label: "Worst case scenario plan", key: "worstCase", hideIfEmpty: true },
-
-  { kind: "spacer" },
-
   // Dropdowns
   { kind: "dropdown", from: "interest", title: "Repayment schedule & interest calculation" },
   { kind: "dropdown", from: "payments", title: "Repayment details & reminders" },
@@ -98,14 +90,6 @@ const SUMMARY_ORDER_ONETIME = [
 
   { kind: "field", label: "Repayment type", key: "repaymentType" },
   { kind: "field", label: "Full repayment due date", key: "fullRepaymentDueDate" },
-
-  { kind: "spacer" },
-
-  // Section 3: Payment details
-  { kind: "field", label: "Repayment method(s)", key: "repaymentMethods" },
-  { kind: "field", label: "Require proof of payment", key: "requireProof", hideIfEmpty: true },
-  { kind: "field", label: "Reminders", key: "reminders" },
-  { kind: "field", label: "Worst case scenario plan", key: "worstCase", hideIfEmpty: true },
 
   { kind: "spacer" },
 
