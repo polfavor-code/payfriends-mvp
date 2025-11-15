@@ -22,6 +22,8 @@
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+      --danger:#ef4444;
+      --warning:#f97316;
     }
     *{box-sizing:border-box}
     body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
@@ -197,7 +199,7 @@
     /* Loan Timeline styles */
     .timeline-event{margin-bottom:16px; border-left:2px solid rgba(255,255,255,0.1); padding-left:20px; position:relative}
     .timeline-event::before{content:''; position:absolute; left:-6px; top:4px; width:10px; height:10px; border-radius:50%; background:var(--accent); border:2px solid var(--card)}
-    .timeline-event.timeline-event--issue::before{background:var(--danger)}
+    .timeline-event.timeline-event--issue::before{background:var(--warning)}
     .timeline-event.timeline-event--resolved::before{background:#22c55e}
     .timeline-event.timeline-event--settled::before{background:#9ca3af}
     .timeline-event-header{display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; padding:8px 12px; border-radius:8px; transition:background 0.2s}
@@ -745,15 +747,12 @@
           <p id="expected-payment-context" style="margin:0; font-size:14px; color:var(--text); font-weight:500"></p>
         </div>
 
-        <div class="form-section-title">How much can you pay now to show good intentions?</div>
-        <p style="color:var(--muted); font-size:14px; margin:12px 0">
-          Even a small amount already helps. Any amount you pay now will immediately reduce what you owe and lower your interest.
-        </p>
+        <div class="form-section-title">How much can you pay now?</div>
 
         <div class="form-group">
           <label class="form-label">Amount (€)</label>
           <input type="number" id="renegotiation-can-pay-now" placeholder="0.00" step="0.01" min="0" style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-size:14px">
-          <small style="color:var(--muted); font-size:12px">Optional, but recommended</small>
+          <small id="can-pay-now-microcopy" style="color:var(--muted); font-size:12px; line-height:1.5; display:block; margin-top:8px"></small>
         </div>
 
         <div class="form-group">
@@ -779,6 +778,12 @@
       <div class="form-section" id="renegotiation-step-1">
         <div class="form-section-title">What kind of solution would work for you?</div>
         <div id="renegotiation-solution-types"></div>
+      </div>
+
+      <!-- Optional explanation -->
+      <div class="form-group">
+        <label class="form-label">Add a short explanation for your friend (optional)</label>
+        <textarea id="renegotiation-borrower-message" rows="3" placeholder="Explain your situation or preference..." style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-size:14px; font-family:inherit; resize:vertical"></textarea>
       </div>
 
       <button id="renegotiation-submit-btn" onclick="submitRenegotiationRequest()">Send renegotiation request</button>
@@ -2528,29 +2533,26 @@
       const form = document.getElementById('renegotiation-initiation-form');
       form.classList.remove('hidden');
 
+      // Get lender name for personalization
+      const lenderName = (agreement.lender_full_name || agreement.lender_name || agreement.lender_email).split(' ')[0];
+
       // Populate expected payment context (what was supposed to be paid and when)
       const expectedPaymentEl = document.getElementById('expected-payment-context');
       if (agreement.repayment_type === 'installments' && agreement.next_payment_amount_cents && agreement.next_payment_date) {
         const amount = formatEuro0(agreement.next_payment_amount_cents / 100);
         const date = new Date(agreement.next_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        expectedPaymentEl.textContent = `You were supposed to pay ${amount} on ${date}.`;
+        expectedPaymentEl.textContent = `Upcoming installment: ${amount} due on ${date}`;
       } else if (agreement.repayment_type !== 'installments' && agreement.amount_cents && agreement.due_date) {
         const amount = formatEuro0(agreement.amount_cents / 100);
         const date = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        expectedPaymentEl.textContent = `You were supposed to pay ${amount} on ${date}.`;
+        expectedPaymentEl.textContent = `Full repayment due: ${amount} on ${date}`;
       } else {
         expectedPaymentEl.textContent = 'You are having difficulty making the scheduled payment.';
       }
 
-      // Populate payment due reminder
-      const paymentDueReminder = document.getElementById('payment-due-reminder');
-      if (agreement.next_payment_amount_cents && agreement.next_payment_date) {
-        const amountEuro = (agreement.next_payment_amount_cents / 100).toFixed(0);
-        const dueDate = new Date(agreement.next_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        paymentDueReminder.textContent = `You were supposed to pay €${amountEuro} on ${dueDate}.`;
-      } else {
-        paymentDueReminder.textContent = ''; // Hide if no payment due info
-      }
+      // Set microcopy for "How much can you pay now?" field
+      const microcopyEl = document.getElementById('can-pay-now-microcopy');
+      microcopyEl.textContent = `${lenderName} will appreciate receiving something rather than nothing. Anything paid now will help show commitment and will recalculate the remaining amounts fairly.`;
 
       // Build solution type options based on loan type
       const loanType = agreement.repayment_type === 'installments' ? 'installment' : 'one_time';
@@ -2558,9 +2560,8 @@
       solutionTypesContainer.innerHTML = window.RenegotiationModule.buildSolutionTypeOptions(loanType);
 
       // Set button text with lender name
-      const lenderName = (agreement.lender_full_name || agreement.lender_name || agreement.lender_email).split(' ')[0];
       const submitBtn = document.getElementById('renegotiation-submit-btn');
-      submitBtn.textContent = `Send renegotiation request to ${lenderName}`;
+      submitBtn.textContent = `Send request to ${lenderName}`;
 
       // Scroll to form
       form.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2586,6 +2587,7 @@
       const troubleReasonOther = document.getElementById('renegotiation-reason-other').value;
       const selectedType = document.querySelector('input[name="solution-type"]:checked')?.value;
       const canPayNowInput = document.getElementById('renegotiation-can-pay-now').value;
+      const borrowerMessage = document.getElementById('renegotiation-borrower-message').value.trim();
 
       // Validate trouble reason (mandatory)
       if (!troubleReason) {
@@ -2610,7 +2612,7 @@
           agreementId,
           selectedType,
           canPayNowCents,
-          null, // borrowerNote - no longer used
+          borrowerMessage || null,
           troubleReason,
           troubleReasonOther
         );

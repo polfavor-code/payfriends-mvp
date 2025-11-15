@@ -10,53 +10,41 @@ const SOLUTION_TYPES = {
   installment: [
     {
       value: 'lower_installment',
-      label: 'Lower my installment amount',
-      sublabel: 'Reduce the amount per payment. The loan duration will increase to cover the full amount.',
-      description: 'Reduce the amount per payment period. The loan duration will increase to cover the full amount.'
-    },
-    {
-      value: 'postpone_upcoming',
-      label: 'Postpone the upcoming installment',
-      sublabel: 'Delay your next payment by a few days or weeks. All future payments will shift accordingly.',
-      description: 'Delay your next payment by a few days or weeks. All future payments will shift accordingly.'
+      label: 'Extend the loan duration (lower installments)',
+      sublabel: 'Spread the remaining amount over a longer period so the installments become lower.',
+      description: 'Spread the remaining amount over a longer period so the installments become lower.'
     },
     {
       value: 'skip_upcoming',
-      label: 'Skip the upcoming installment',
-      sublabel: 'Skip your next payment and spread the amount across future installments.',
-      description: 'Skip your next payment and spread the amount across future installments or add one extra payment at the end.'
-    },
-    {
-      value: 'temporary_pause',
-      label: 'Temporary payment pause',
-      sublabel: 'Pause payments for a short period. Resume afterwards with an adjusted schedule.',
-      description: 'Pause payments for a short period (1-3 installments). Resume afterwards with adjusted schedule.'
+      label: 'Skip this payment and catch up later',
+      sublabel: 'Skip this payment. Your next payments will be slightly higher so you can catch up.',
+      description: 'Skip this payment. Your next payments will be slightly higher so you can catch up.'
     },
     {
       value: 'pay_part_adjust',
-      label: 'Pay part now and adjust my schedule',
-      sublabel: 'Make a partial payment now and adjust the remaining installments to a more manageable amount.',
-      description: 'Make a partial payment now and adjust the remaining installments to a more manageable amount.'
+      label: 'Pay what I can now & recalculate fairly',
+      sublabel: 'I\'ll pay what I can now. PayFriends will recalculate the remaining installments and interest fairly.',
+      description: 'I\'ll pay what I can now. PayFriends will recalculate the remaining installments and interest fairly.'
     }
   ],
   one_time: [
     {
       value: 'extend_due_date',
-      label: 'Extend the due date',
-      sublabel: 'Move the full repayment to a later date.',
-      description: 'Push the repayment deadline to a later date, giving you more time to gather the full amount.'
+      label: 'Move the full repayment date',
+      sublabel: 'I can\'t pay on the current date. I\'d like to move the full repayment to a later date.',
+      description: 'I can\'t pay on the current date. I\'d like to move the full repayment to a later date.'
     },
     {
       value: 'split_repayment',
-      label: 'Split the repayment into smaller parts',
-      sublabel: 'Turn the one-time amount into multiple smaller scheduled payments.',
-      description: 'Convert the single payment into multiple smaller payments spread over time.'
+      label: 'Split the one-time payment into smaller parts',
+      sublabel: 'I can\'t pay the full amount at once. Please split it into smaller payments.',
+      description: 'I can\'t pay the full amount at once. Please split it into smaller payments.'
     },
     {
       value: 'pay_part_rest_later',
-      label: 'Pay part now, rest later',
-      sublabel: 'Pay something today and set a new due date for the remainder.',
-      description: 'Pay what you can afford now and set a new due date for the remaining balance.'
+      label: 'Pay what I can now, and reschedule the rest',
+      sublabel: 'I\'ll pay part now, and I need more time for the remaining amount.',
+      description: 'I\'ll pay part now, and I need more time for the remaining amount.'
     }
   ]
 };
