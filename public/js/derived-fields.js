@@ -40,6 +40,12 @@ function getLoanDurationLabel(agreement) {
 
   // For one-time loans, calculate duration from money_sent_date to due_date
   if (agreement.repayment_type === 'one_time' && agreement.money_sent_date && agreement.due_date) {
+    // Check if money_sent_date is "upon agreement acceptance" - if so, can't calculate absolute duration
+    if (agreement.money_sent_date === 'upon agreement acceptance' || agreement.money_transfer_date === 'upon agreement acceptance') {
+      // Return null - caller should use relative phrasing instead
+      return null;
+    }
+
     // Parse dates and normalize to UTC midnight to avoid timezone/DST issues
     const startDateObj = new Date(agreement.money_sent_date);
     const dueDateObj = new Date(agreement.due_date);

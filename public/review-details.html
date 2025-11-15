@@ -708,11 +708,35 @@
     <div id="renegotiation-initiation-form" class="card hidden">
       <h2>Request renegotiation</h2>
 
-      <!-- Step 0: How much can you pay now? -->
-      <div class="form-section" id="renegotiation-step-0">
+      <!-- Step 0a: Why are you having trouble paying? (mandatory) -->
+      <div class="form-section" id="renegotiation-step-0a">
+        <div class="form-section-title">Why are you having trouble paying? <span style="color:#ef4444">*</span></div>
+
+        <div class="form-group">
+          <select id="renegotiation-trouble-reason" required style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-size:14px">
+            <option value="">Select a reason</option>
+            <option value="unexpected_expenses">Unexpected expenses</option>
+            <option value="income_delay">Income delay (salary, client, invoice, etc)</option>
+            <option value="tight_budget">My budget is tight this month</option>
+            <option value="prefer_not_say">I prefer not to say</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group hidden" id="renegotiation-reason-other-container">
+          <label class="form-label">Explain in your own words (optional)</label>
+          <textarea id="renegotiation-reason-other" rows="3" placeholder="Tell us more..."></textarea>
+        </div>
+      </div>
+
+      <!-- Step 0b: How much can you pay now? -->
+      <div class="form-section" id="renegotiation-step-0b">
         <div class="form-section-title">How much can you pay right now?</div>
+        <p id="payment-due-reminder" style="color:var(--text); font-size:14px; margin:12px 0; font-weight:500">
+          <!-- Will be populated with: "You were supposed to pay X euro on DATE." -->
+        </p>
         <p style="color:var(--muted); font-size:14px; margin:12px 0">
-          Even a small amount helps. <span id="lender-name-helper"></span> will appreciate receiving something instead of nothing – it shows commitment. Any amount you pay now will immediately reduce what you owe and lower your interest.
+          How much can you pay now to show good intentions? Even a small amount already helps.
         </p>
 
         <div class="form-group">
@@ -759,6 +783,20 @@
     document.addEventListener('DOMContentLoaded', async () => {
       await PayFriendsHeader.initialize();
       initializePage();
+
+      // Add event listener for trouble reason dropdown to show/hide "Other" textarea
+      const troubleReasonDropdown = document.getElementById('renegotiation-trouble-reason');
+      const otherContainer = document.getElementById('renegotiation-reason-other-container');
+
+      if (troubleReasonDropdown && otherContainer) {
+        troubleReasonDropdown.addEventListener('change', function() {
+          if (this.value === 'other') {
+            otherContainer.classList.remove('hidden');
+          } else {
+            otherContainer.classList.add('hidden');
+          }
+        });
+      }
     });
     const pathParts = window.location.pathname.split('/');
     const agreementId = pathParts[2];
@@ -1700,6 +1738,19 @@
       if (loanDurationLabel) {
         document.getElementById('loan-duration-display').textContent = loanDurationLabel;
         document.getElementById('loan-duration-row').style.display = 'flex';
+      } else if (agreement.money_transfer_date === 'upon agreement acceptance' || agreement.money_sent_date === 'upon agreement acceptance') {
+        // Show relative phrasing for agreements without concrete money transfer date
+        if (agreement.repayment_type === 'one_time' && agreement.due_date) {
+          // Try to calculate months from due date (assuming transfer happens at acceptance)
+          const dueDateObj = new Date(agreement.due_date);
+          const now = new Date();
+          const monthsDiff = Math.round((dueDateObj - now) / (1000 * 60 * 60 * 24 * 30));
+          const durationText = monthsDiff === 1 ? '1 month after money transfer' : `${monthsDiff} months after money transfer`;
+          document.getElementById('loan-duration-display').textContent = durationText;
+          document.getElementById('loan-duration-row').style.display = 'flex';
+        } else {
+          document.getElementById('loan-duration-row').style.display = 'none';
+        }
       } else {
         document.getElementById('loan-duration-row').style.display = 'none';
       }
@@ -2454,6 +2505,16 @@
       const lenderName = agreement.lender_full_name || agreement.lender_name || 'Your lender';
       document.getElementById('lender-name-helper').textContent = lenderName;
 
+      // Populate payment due reminder
+      const paymentDueReminder = document.getElementById('payment-due-reminder');
+      if (agreement.next_payment_amount_cents && agreement.next_payment_date) {
+        const amountEuro = (agreement.next_payment_amount_cents / 100).toFixed(0);
+        const dueDate = new Date(agreement.next_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        paymentDueReminder.textContent = `You were supposed to pay €${amountEuro} on ${dueDate}.`;
+      } else {
+        paymentDueReminder.textContent = ''; // Hide if no payment due info
+      }
+
       // Build solution type options based on loan type
       const loanType = agreement.repayment_type === 'installments' ? 'installment' : 'one_time';
       const solutionTypesContainer = document.getElementById('renegotiation-solution-types');
@@ -2479,11 +2540,21 @@
       status.className = 'status';
 
       // Collect form data
+      const troubleReason = document.getElementById('renegotiation-trouble-reason').value;
+      const troubleReasonOther = document.getElementById('renegotiation-reason-other').value;
       const selectedType = document.querySelector('input[name="solution-type"]:checked')?.value;
       const canPayNowInput = document.getElementById('renegotiation-can-pay-now').value;
       const note = document.getElementById('renegotiation-note').value;
 
-      // Validate
+      // Validate trouble reason (mandatory)
+      if (!troubleReason) {
+        status.textContent = 'Please select a reason for having trouble paying';
+        status.className = 'status error';
+        document.getElementById('renegotiation-trouble-reason').focus();
+        return;
+      }
+
+      // Validate solution type
       if (!selectedType) {
         status.textContent = 'Please select a solution type';
         status.className = 'status error';
@@ -2498,7 +2569,9 @@
           agreementId,
           selectedType,
           canPayNowCents,
-          note
+          note,
+          troubleReason,
+          troubleReasonOther
         );
 
         status.textContent = 'Request sent successfully! Reloading...';

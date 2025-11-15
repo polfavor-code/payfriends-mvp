@@ -68,6 +68,7 @@ db.exec(`
     created_at TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
     description TEXT,
+    has_repayment_issue INTEGER DEFAULT 0,
     FOREIGN KEY (lender_user_id) REFERENCES users(id),
     FOREIGN KEY (borrower_user_id) REFERENCES users(id)
   );
@@ -120,6 +121,8 @@ db.exec(`
     agreed_type TEXT,
     can_pay_now_cents INTEGER,
     borrower_note TEXT,
+    trouble_reason TEXT,
+    trouble_reason_other TEXT,
     borrower_values_proposal TEXT,
     lender_values_proposal TEXT,
     lender_response_note TEXT,
@@ -1600,10 +1603,14 @@ app.get('/api/agreements/:id/hardship-requests', requireAuth, (req, res) => {
 // Create renegotiation request (borrower initiates - Step 0 & 1)
 app.post('/api/agreements/:id/renegotiation', requireAuth, (req, res) => {
   const { id } = req.params;
-  const { selectedType, canPayNowCents, borrowerNote } = req.body || {};
+  const { selectedType, canPayNowCents, borrowerNote, troubleReason, troubleReasonOther } = req.body || {};
 
   if (!selectedType) {
     return res.status(400).json({ error: 'Solution type is required' });
+  }
+
+  if (!troubleReason) {
+    return res.status(400).json({ error: 'Reason for trouble paying is required' });
   }
 
   try {
@@ -1652,18 +1659,77 @@ app.post('/api/agreements/:id/renegotiation', requireAuth, (req, res) => {
     const result = db.prepare(`
       INSERT INTO renegotiation_requests (
         agreement_id, status, stage, initiated_by, loan_type, selected_type,
-        can_pay_now_cents, borrower_note, history, created_at, updated_at
+        can_pay_now_cents, borrower_note, trouble_reason, trouble_reason_other,
+        history, created_at, updated_at
       )
-      VALUES (?, 'open', 'type_pending_lender_response', 'borrower', ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, 'open', 'type_pending_lender_response', 'borrower', ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id,
       loanType,
       selectedType,
       canPayNowCents || null,
       borrowerNote || null,
+      troubleReason,
+      troubleReasonOther || null,
       history,
       now,
       now
+    );
+
+    // Set repayment issue flag on agreement
+    db.prepare(`
+      UPDATE agreements SET has_repayment_issue = 1 WHERE id = ?
+    `).run(id);
+
+    // Create repayment issue warning messages for both parties
+    const borrowerName = agreement.friend_first_name || 'The borrower';
+
+    // Get human-readable reason text
+    let reasonText = '';
+    switch(troubleReason) {
+      case 'unexpected_expenses':
+        reasonText = 'unexpected expenses';
+        break;
+      case 'income_delay':
+        reasonText = 'income delay (salary, client, invoice, etc)';
+        break;
+      case 'tight_budget':
+        reasonText = 'tight budget this month';
+        break;
+      case 'prefer_not_say':
+        reasonText = 'prefers not to share details';
+        break;
+      case 'other':
+        reasonText = troubleReasonOther ? troubleReasonOther : 'other reasons';
+        break;
+      default:
+        reasonText = 'payment difficulties';
+    }
+
+    // Message for borrower
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.borrower_user_id,
+      id,
+      'Repayment issue reported',
+      `You reported having trouble paying due to ${reasonText}.`,
+      now,
+      'repayment_issue_reported'
+    );
+
+    // Message for lender
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.lender_user_id,
+      id,
+      'Repayment issue reported',
+      `${borrowerName} reported having trouble paying${troubleReason === 'prefer_not_say' ? ' but prefers not to share details' : ' due to ' + reasonText}.`,
+      now,
+      'repayment_issue_reported'
     );
 
     // Create notification message for lender
@@ -2159,7 +2225,37 @@ app.post('/api/agreements/:id/renegotiation/respond-values', requireAuth, (req, 
         renegotiation.id
       );
 
-      // Notify borrower
+      // Clear repayment issue flag and create resolved messages
+      db.prepare(`
+        UPDATE agreements SET has_repayment_issue = 0 WHERE id = ?
+      `).run(id);
+
+      // Create "Repayment issue resolved" messages for both parties
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.borrower_user_id,
+        id,
+        'Repayment issue resolved',
+        `Your repayment issue has been resolved with the new payment plan.`,
+        now,
+        'repayment_issue_resolved'
+      );
+
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.lender_user_id,
+        id,
+        'Repayment issue resolved',
+        `The repayment issue has been resolved with the new payment plan.`,
+        now,
+        'repayment_issue_resolved'
+      );
+
+      // Notify borrower about acceptance
       db.prepare(`
         INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -2318,7 +2414,37 @@ app.post('/api/agreements/:id/renegotiation/respond-counter-values', requireAuth
         renegotiation.id
       );
 
-      // Notify lender
+      // Clear repayment issue flag and create resolved messages
+      db.prepare(`
+        UPDATE agreements SET has_repayment_issue = 0 WHERE id = ?
+      `).run(id);
+
+      // Create "Repayment issue resolved" messages for both parties
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.borrower_user_id,
+        id,
+        'Repayment issue resolved',
+        `Your repayment issue has been resolved with the new payment plan.`,
+        now,
+        'repayment_issue_resolved'
+      );
+
+      db.prepare(`
+        INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        agreement.lender_user_id,
+        id,
+        'Repayment issue resolved',
+        `The repayment issue has been resolved with the new payment plan.`,
+        now,
+        'repayment_issue_resolved'
+      );
+
+      // Notify lender about acceptance
       db.prepare(`
         INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
         VALUES (?, ?, ?, ?, ?, ?)
