@@ -269,7 +269,7 @@
       <div class="next-payment-container">
         <!-- LEFT/TOP: Payment info -->
         <div class="next-payment-info">
-          <div style="color:var(--muted); font-size:14px">Next payment due</div>
+          <div id="next-payment-label" style="color:var(--muted); font-size:14px">Next payment due</div>
           <div id="next-payment-amount" style="font-size:28px; font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums"></div>
           <div style="color:var(--muted); font-size:14px; white-space:nowrap">Due on <span id="next-payment-date"></span></div>
         </div>
@@ -1028,6 +1028,11 @@
       const amountFormatted = formatCurrency2(nextPaymentInfo.amount_cents);
       const dateFormatted = formatDate(nextPaymentInfo.due_date);
 
+      // Set the label based on repayment type
+      const isOneTimeRepayment = agreement.repayment_type === 'one_time';
+      const labelText = isOneTimeRepayment ? 'Payment due' : 'Next payment due';
+
+      document.getElementById('next-payment-label').textContent = labelText;
       document.getElementById('next-payment-amount').textContent = amountFormatted;
       document.getElementById('next-payment-date').textContent = dateFormatted;
 
