@@ -749,6 +749,10 @@
             <span style="color:var(--muted)">Loan amount</span>
             <span style="font-weight:600" id="summary-loan-amount">€ 0,00</span>
           </div>
+          <div id="summary-repayment-type-row" style="display:none; justify-content:space-between; padding:8px 0">
+            <span style="color:var(--muted)">Repayment type</span>
+            <span style="font-weight:600" id="summary-repayment-type">—</span>
+          </div>
           <div style="display:flex; justify-content:space-between; padding:8px 0">
             <span style="color:var(--muted)">Duration</span>
             <span style="font-weight:600" id="summary-duration">—</span>
@@ -2552,6 +2556,51 @@
       }
     }
 
+    // Helper function to compute duration between two dates for one-time loans
+    function computeOneTimeLoanDuration(startDate, dueDate, oneTimeDueOption) {
+      // If user selected a preset duration, extract it from the option
+      if (oneTimeDueOption && oneTimeDueOption !== 'pick_date') {
+        if (oneTimeDueOption === 'in_1_week') return '1 week';
+        if (oneTimeDueOption === 'in_1_month') return '1 month';
+        if (oneTimeDueOption === 'in_3_months') return '3 months';
+        if (oneTimeDueOption === 'in_6_months') return '6 months';
+        if (oneTimeDueOption === 'in_1_year') return '1 year';
+      }
+
+      // Otherwise, compute duration from dates
+      const start = new Date(startDate);
+      const due = new Date(dueDate);
+
+      // Calculate difference in months
+      const yearsDiff = due.getFullYear() - start.getFullYear();
+      const monthsDiff = due.getMonth() - start.getMonth();
+      const daysDiff = due.getDate() - start.getDate();
+
+      let totalMonths = yearsDiff * 12 + monthsDiff;
+
+      // Adjust for partial months (round to nearest month)
+      if (daysDiff >= 15) {
+        totalMonths += 1; // Round up if 15+ days into next month
+      } else if (daysDiff < 0) {
+        totalMonths -= 1; // Subtract if we haven't reached the same day
+      }
+
+      // Format the duration
+      if (totalMonths === 0) {
+        // Less than a month - show in days
+        const days = Math.round((due - start) / (1000 * 60 * 60 * 24));
+        return days === 1 ? '1 day' : `${days} days`;
+      } else if (totalMonths < 12) {
+        return totalMonths === 1 ? '1 month' : `${totalMonths} months`;
+      } else if (totalMonths % 12 === 0) {
+        const years = totalMonths / 12;
+        return years === 1 ? '1 year' : `${years} years`;
+      } else {
+        // Mixed years and months, just show total months
+        return `${totalMonths} months`;
+      }
+    }
+
     // Calculate interest using fair amortization (equal principal payments)
     function calculateInterest() {
       let interestRate = parseFloat(document.getElementById('interest-rate').value) || 0;
@@ -2593,9 +2642,23 @@
           durationLabel = `${planLength} day${planLength > 1 ? 's' : ''}`;
         }
       } else {
-        durationInMonths = Math.ceil((new Date(wizardData.dueDate) - new Date()) / (1000 * 60 * 60 * 24 * 30));
+        // For one-time loans, compute duration from loan start to due date
+        let startDate;
+        if (wizardData.moneySentDate && wizardData.moneySentDate !== 'on-acceptance') {
+          startDate = wizardData.moneySentDate;
+        } else {
+          // Fallback to today if money sent date is not set
+          startDate = new Date().toISOString().split('T')[0];
+        }
+
+        // Compute duration for display
+        durationLabel = computeOneTimeLoanDuration(startDate, wizardData.dueDate, wizardData.oneTimeDueOption);
+
+        // Calculate durationInMonths for fair range calculation (from start to due date)
+        const start = new Date(startDate);
+        const due = new Date(wizardData.dueDate);
+        durationInMonths = Math.ceil((due - start) / (1000 * 60 * 60 * 24 * 30));
         periodsPerYear = 12;
-        durationLabel = 'One-time payment';
       }
 
       // Calculate fair range based on duration
@@ -2740,7 +2803,18 @@
 
       // Update summary card (use formatEuro2 for 2-decimal nl-NL formatting)
       document.getElementById('summary-loan-amount').textContent = formatEuro2(principal);
-      document.getElementById('summary-duration').textContent = durationLabel;
+
+      // For one-time loans, show repayment type and computed duration separately
+      if (wizardData.repaymentType === 'one_time') {
+        document.getElementById('summary-repayment-type-row').style.display = 'flex';
+        document.getElementById('summary-repayment-type').textContent = 'One-time payment';
+        document.getElementById('summary-duration').textContent = durationLabel;
+      } else {
+        // For installments, hide repayment type row and show duration only
+        document.getElementById('summary-repayment-type-row').style.display = 'none';
+        document.getElementById('summary-duration').textContent = durationLabel;
+      }
+
       document.getElementById('summary-interest-rate').textContent = interestRate;
       document.getElementById('total-interest-display').textContent = formatEuro2(totalInterest);
       document.getElementById('total-repay-display').textContent = formatEuro2(totalRepayAmount);
