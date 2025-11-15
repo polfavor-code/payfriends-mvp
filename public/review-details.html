@@ -4087,15 +4087,8 @@
 
       let html = '<div style="display:flex; flex-direction:column; gap:16px">';
 
-      // Payment methods
-      const methods = agreement.payment_preference_method
-        ? agreement.payment_preference_method.split(',').map(m => m.trim())
-        : [];
-      const methodsText = methods.length > 0 ? methods.join(', ') : 'Not specified';
-      html += `<div>
-        <div style="font-weight:600; margin-bottom:6px; font-size:14px">Preferred payment methods:</div>
-        <div style="color:var(--muted); font-size:14px">${methodsText}</div>
-      </div>`;
+      // Payment methods - Show list with expandable details
+      html += renderPaymentMethodsInline();
 
       // Proof required
       const proofText = agreement.proof_required
@@ -4132,22 +4125,94 @@
       content.innerHTML = html;
     }
 
-    // Populate payment methods detail (only for active agreements)
-    function populatePaymentMethodsDetail() {
-      const card = document.getElementById('payment-methods-card');
-      const content = document.getElementById('payment-methods-content');
+    // Render payment methods inline with expandable details
+    function renderPaymentMethodsInline() {
+      const paymentMethodsJson = agreement.payment_methods_json;
 
-      // Only show for active agreements (after acceptance)
-      if (agreement.status !== 'active' && agreement.status !== 'settled') {
-        card.classList.add('hidden');
-        return;
+      let html = '<div>';
+      html += '<div style="font-weight:600; margin-bottom:8px; font-size:14px">Preferred payment methods:</div>';
+
+      if (!paymentMethodsJson) {
+        // Fallback to old format - just show text
+        const methods = agreement.payment_preference_method
+          ? agreement.payment_preference_method.split(',').map(m => m.trim())
+          : [];
+        const methodsText = methods.length > 0 ? methods.join(', ') : 'Not specified';
+        html += `<div style="color:var(--muted); font-size:14px">${methodsText}</div>`;
+        html += '</div>';
+        return html;
       }
 
-      card.classList.remove('hidden');
+      let paymentMethods;
+      try {
+        paymentMethods = JSON.parse(paymentMethodsJson);
+      } catch (e) {
+        console.error('Error parsing payment methods JSON:', e);
+        html += '<div style="color:var(--muted); font-size:14px">Error loading payment methods</div>';
+        html += '</div>';
+        return html;
+      }
 
-      // Use the payment methods display component
-      const html = renderPaymentMethodsSection(agreement, agreement.borrower_user_id === currentUser.id);
-      content.innerHTML = html;
+      // Filter active methods only
+      const activeMethods = paymentMethods.filter(pm => pm.status === 'active');
+
+      if (activeMethods.length === 0) {
+        html += '<div style="color:var(--muted); font-size:14px">No payment methods available</div>';
+        html += '</div>';
+        return html;
+      }
+
+      // List each method with a "Show details" link
+      html += '<div style="display:flex; flex-direction:column; gap:8px; margin-left:8px">';
+
+      activeMethods.forEach(method => {
+        const methodInfo = getPaymentMethodInfo(method.method);
+        html += `
+          <div style="display:flex; flex-direction:column; gap:4px">
+            <div style="display:flex; align-items:center; gap:12px">
+              <span style="font-size:14px; color:var(--text)">${methodInfo.label}</span>
+              <button
+                onclick="toggleInlinePaymentMethodDetails('${method.method}')"
+                style="background:none; border:none; color:var(--accent); font-size:13px; cursor:pointer; padding:0; text-decoration:underline"
+                id="inline-toggle-btn-${method.method}"
+              >
+                Show details
+              </button>
+            </div>
+            <div id="inline-details-${method.method}" class="hidden" style="margin-left:16px; padding:12px; background:rgba(255,255,255,0.02); border-left:2px solid var(--accent); border-radius:4px">
+              ${renderPaymentMethodDetails(method)}
+            </div>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      html += '</div>';
+
+      return html;
+    }
+
+    // Toggle inline payment method details
+    function toggleInlinePaymentMethodDetails(methodName) {
+      const detailsEl = document.getElementById(`inline-details-${methodName}`);
+      const toggleBtn = document.getElementById(`inline-toggle-btn-${methodName}`);
+
+      if (detailsEl.classList.contains('hidden')) {
+        detailsEl.classList.remove('hidden');
+        toggleBtn.textContent = 'Hide details';
+      } else {
+        detailsEl.classList.add('hidden');
+        toggleBtn.textContent = 'Show details';
+      }
+    }
+
+    // Populate payment methods detail (only for active agreements)
+    // REMOVED: Payment methods are now shown inline within "Repayment details & reminders"
+    function populatePaymentMethodsDetail() {
+      const card = document.getElementById('payment-methods-card');
+
+      // Hide the separate payment methods section - now integrated into Repayment details & reminders
+      card.classList.add('hidden');
     }
 
     // Populate share detail (lender only, for pending agreements)
