@@ -2280,15 +2280,7 @@
       const frequencyText = getFrequencyTextForSummary(loanDurationValue, loanDurationUnit, numRepayments);
 
       // Loan duration summary
-      // Check if loan start is "on acceptance" - if so, don't show date range
-      const moneySentOption = document.getElementById('money-sent-option').value;
-      const isLoanStartOnAcceptance = moneySentOption === 'on-acceptance';
-
-      if (isLoanStartOnAcceptance) {
-        planLengthSummary.textContent = `Plan length: ${durationText}.`;
-      } else {
-        planLengthSummary.textContent = `Plan length: ${durationText} (from ${firstFormatted} to ${finalFormatted}).`;
-      }
+      planLengthSummary.textContent = `Plan length: ${durationText}.`;
 
       // Payment summary with frequency
       installmentEstimate.textContent = `${numRepayments} payment${numRepayments === 1 ? '' : 's'} of about ${installmentFormatted} each (excl interest) ${frequencyText}.`;
