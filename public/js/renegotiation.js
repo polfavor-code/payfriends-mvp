@@ -43,19 +43,19 @@ const SOLUTION_TYPES = {
     {
       value: 'extend_due_date',
       label: 'Extend the due date',
-      sublabel: 'Get more time',
+      sublabel: 'Move the full repayment to a later date.',
       description: 'Push the repayment deadline to a later date, giving you more time to gather the full amount.'
     },
     {
       value: 'split_repayment',
-      label: 'Split the repayment into smaller parts',
-      sublabel: 'Pay in installments',
-      description: 'Convert the single payment into 2-3 smaller payments spread over time.'
+      label: 'Split into smaller parts',
+      sublabel: 'Turn the one-time amount into multiple smaller scheduled payments.',
+      description: 'Convert the single payment into multiple smaller payments spread over time.'
     },
     {
       value: 'pay_part_rest_later',
       label: 'Pay part now, rest later',
-      sublabel: 'Immediate partial + deadline for remainder',
+      sublabel: 'Pay something today and set a new due date for the remainder.',
       description: 'Pay what you can afford now and set a new due date for the remaining balance.'
     }
   ]
@@ -92,7 +92,7 @@ async function loadRenegotiation(agreementId) {
 }
 
 // Initialize renegotiation (borrower starts)
-async function initializeRenegotiation(agreementId, selectedType, canPayNowCents, borrowerNote) {
+async function initializeRenegotiation(agreementId, selectedType, canPayNowCents, borrowerNote, troubleReason, troubleReasonOther) {
   try {
     const response = await fetch(`/api/agreements/${agreementId}/renegotiation`, {
       method: 'POST',
@@ -100,7 +100,9 @@ async function initializeRenegotiation(agreementId, selectedType, canPayNowCents
       body: JSON.stringify({
         selectedType,
         canPayNowCents: canPayNowCents || null,
-        borrowerNote: borrowerNote || null
+        borrowerNote: borrowerNote || null,
+        troubleReason,
+        troubleReasonOther: troubleReasonOther || null
       })
     });
 

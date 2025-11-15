@@ -794,6 +794,20 @@
     document.addEventListener('DOMContentLoaded', async () => {
       await PayFriendsHeader.initialize();
       initializePage();
+
+      // Add event listener for trouble reason dropdown to show/hide "Other" textarea
+      const troubleReasonDropdown = document.getElementById('renegotiation-trouble-reason');
+      const otherContainer = document.getElementById('renegotiation-reason-other-container');
+
+      if (troubleReasonDropdown && otherContainer) {
+        troubleReasonDropdown.addEventListener('change', function() {
+          if (this.value === 'other') {
+            otherContainer.classList.remove('hidden');
+          } else {
+            otherContainer.classList.add('hidden');
+          }
+        });
+      }
     });
     const pathParts = window.location.pathname.split('/');
     const agreementId = pathParts[2];
@@ -1738,6 +1752,19 @@
       if (loanDurationLabel) {
         document.getElementById('loan-duration-display').textContent = loanDurationLabel;
         document.getElementById('loan-duration-row').style.display = 'flex';
+      } else if (agreement.money_transfer_date === 'upon agreement acceptance' || agreement.money_sent_date === 'upon agreement acceptance') {
+        // Show relative phrasing for agreements without concrete money transfer date
+        if (agreement.repayment_type === 'one_time' && agreement.due_date) {
+          // Try to calculate months from due date (assuming transfer happens at acceptance)
+          const dueDateObj = new Date(agreement.due_date);
+          const now = new Date();
+          const monthsDiff = Math.round((dueDateObj - now) / (1000 * 60 * 60 * 24 * 30));
+          const durationText = monthsDiff === 1 ? '1 month after money transfer' : `${monthsDiff} months after money transfer`;
+          document.getElementById('loan-duration-display').textContent = durationText;
+          document.getElementById('loan-duration-row').style.display = 'flex';
+        } else {
+          document.getElementById('loan-duration-row').style.display = 'none';
+        }
       } else {
         document.getElementById('loan-duration-row').style.display = 'none';
       }
@@ -2502,6 +2529,16 @@
         expectedPaymentEl.textContent = 'You are having difficulty making the scheduled payment.';
       }
 
+      // Populate payment due reminder
+      const paymentDueReminder = document.getElementById('payment-due-reminder');
+      if (agreement.next_payment_amount_cents && agreement.next_payment_date) {
+        const amountEuro = (agreement.next_payment_amount_cents / 100).toFixed(0);
+        const dueDate = new Date(agreement.next_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        paymentDueReminder.textContent = `You were supposed to pay €${amountEuro} on ${dueDate}.`;
+      } else {
+        paymentDueReminder.textContent = ''; // Hide if no payment due info
+      }
+
       // Build solution type options based on loan type
       const loanType = agreement.repayment_type === 'installments' ? 'installment' : 'one_time';
       const solutionTypesContainer = document.getElementById('renegotiation-solution-types');
@@ -2527,11 +2564,21 @@
       status.className = 'status';
 
       // Collect form data
+      const troubleReason = document.getElementById('renegotiation-trouble-reason').value;
+      const troubleReasonOther = document.getElementById('renegotiation-reason-other').value;
       const selectedType = document.querySelector('input[name="solution-type"]:checked')?.value;
       const canPayNowInput = document.getElementById('renegotiation-can-pay-now').value;
       const note = document.getElementById('renegotiation-note').value;
 
-      // Validate
+      // Validate trouble reason (mandatory)
+      if (!troubleReason) {
+        status.textContent = 'Please select a reason for having trouble paying';
+        status.className = 'status error';
+        document.getElementById('renegotiation-trouble-reason').focus();
+        return;
+      }
+
+      // Validate solution type
       if (!selectedType) {
         status.textContent = 'Please select a solution type';
         status.className = 'status error';
@@ -2546,7 +2593,9 @@
           agreementId,
           selectedType,
           canPayNowCents,
-          note
+          note,
+          troubleReason,
+          troubleReasonOther
         );
 
         status.textContent = 'Request sent successfully! Reloading...';
