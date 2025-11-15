@@ -469,7 +469,7 @@
       <p style="color:var(--text); font-size:15px; line-height:1.6; max-width:960px; margin:0 auto 24px auto">
         Whenever you're ready, create your first agreement — whether you're lending to a friend or borrowing from one.
       </p>
-      <button onclick="toggleNewAgreement()" style="display:inline-flex; align-items:center; gap:8px; padding:14px 24px; width:auto; font-size:16px">
+      <button onclick="startNewAgreementFromWelcome()" style="display:inline-flex; align-items:center; gap:8px; padding:14px 24px; width:auto; font-size:16px">
         <span style="font-size:20px; font-weight:bold">+</span>
         <span>New Agreement</span>
       </button>
@@ -3469,9 +3469,54 @@
       }
     }
 
+    function startNewAgreementFromWelcome() {
+      const welcomeCard = document.getElementById('welcome-card');
+      const newAgreementSection = document.getElementById('new-agreement-section');
+      const listSection = document.getElementById('list-section');
+
+      // Hide the welcome card
+      if (welcomeCard) {
+        welcomeCard.style.display = 'none';
+      }
+
+      // Show the list section (container) so the new agreement wizard has a proper context
+      if (listSection) {
+        listSection.style.display = 'block';
+      }
+
+      // Show the new agreement wizard
+      if (newAgreementSection) {
+        newAgreementSection.classList.remove('hidden');
+        // Scroll the wizard into view
+        setTimeout(() => {
+          newAgreementSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+
     function closeNewAgreement() {
-      document.getElementById('new-agreement-section').classList.add('hidden');
-      document.getElementById('new-agreement-btn').style.display = 'flex';
+      const newAgreementSection = document.getElementById('new-agreement-section');
+      const newAgreementBtn = document.getElementById('new-agreement-btn');
+      const welcomeCard = document.getElementById('welcome-card');
+      const listSection = document.getElementById('list-section');
+
+      // Hide the new agreement wizard
+      if (newAgreementSection) {
+        newAgreementSection.classList.add('hidden');
+      }
+
+      // Show the new agreement button (if it exists - it won't exist in welcome state)
+      if (newAgreementBtn) {
+        newAgreementBtn.style.display = 'flex';
+      }
+
+      // If there are no agreements, restore the welcome card
+      if (welcomeCard && allAgreements.length === 0) {
+        welcomeCard.style.display = 'block';
+        if (listSection) {
+          listSection.style.display = 'none';
+        }
+      }
     }
 
     // Fetch current user (now handled by shared header, but we still need to set currentUser)
