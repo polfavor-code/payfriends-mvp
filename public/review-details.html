@@ -1855,9 +1855,20 @@
         document.getElementById('repayment-type-onetime-row').style.display = 'flex';
 
         // 9. Full repayment due date
-        const dueDate = new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
-        document.getElementById('full-due-display').textContent = dueDate;
-        document.getElementById('full-due-countdown').textContent = getDueDateCountdown(agreement.due_date);
+        // Check if we should show relative or concrete date
+        const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+        const isRelativeDueDate = agreement.one_time_due_option && agreement.one_time_due_option !== 'pick_date';
+
+        if (isLoanStartUponAcceptance && isRelativeDueDate) {
+          // Show relative description
+          document.getElementById('full-due-display').textContent = getRelativeDueDateText(agreement.one_time_due_option);
+          document.getElementById('full-due-countdown').textContent = '';
+        } else {
+          // Show concrete date with countdown
+          const dueDate = new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+          document.getElementById('full-due-display').textContent = dueDate;
+          document.getElementById('full-due-countdown').textContent = getDueDateCountdown(agreement.due_date);
+        }
         document.getElementById('full-due-row').style.display = 'flex';
 
         // Spacer after one-time section
@@ -2165,8 +2176,20 @@
         }
       } else {
         if (agreement.due_date) {
-          const dueDate = new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
-          addTerm('Full repayment due', dueDate);
+          // Check if we should show relative or concrete date
+          const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+          const isRelativeDueDate = agreement.one_time_due_option && agreement.one_time_due_option !== 'pick_date';
+
+          let dueDateDisplay;
+          if (isLoanStartUponAcceptance && isRelativeDueDate) {
+            // Show relative description
+            dueDateDisplay = getRelativeDueDateText(agreement.one_time_due_option);
+          } else {
+            // Show concrete date
+            dueDateDisplay = new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+          }
+
+          addTerm('Full repayment due', dueDateDisplay);
         }
       }
 

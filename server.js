@@ -291,6 +291,11 @@ try {
 } catch (e) {
   // Column already exists, ignore
 }
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN one_time_due_option TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
 // --- multer setup for file uploads ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -842,7 +847,7 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     planLength, planUnit, installmentCount, installmentAmount, firstPaymentDate, finalDueDate,
     interestRate, totalInterest, totalRepayAmount,
     paymentPreferenceMethod, paymentOtherDescription, reminderMode, reminderOffsets,
-    proofRequired, debtCollectionClause, phoneNumber, paymentFrequency
+    proofRequired, debtCollectionClause, phoneNumber, paymentFrequency, oneTimeDueOption
   } = req.body || {};
 
   if (!borrowerEmail || !amount || !dueDate || !description) {
@@ -898,9 +903,9 @@ app.post('/api/agreements', requireAuth, (req, res) => {
         plan_length, plan_unit, installment_count, installment_amount, first_payment_date, final_due_date,
         interest_rate, total_interest, total_repay_amount,
         payment_preference_method, payment_other_description, reminder_mode, reminder_offsets,
-        proof_required, debt_collection_clause, payment_frequency
+        proof_required, debt_collection_clause, payment_frequency, one_time_due_option
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const agreementInfo = agreementStmt.run(
@@ -930,7 +935,8 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       reminderOffsets ? JSON.stringify(reminderOffsets) : null,
       proofRequired ? 1 : 0,
       debtCollectionClause ? 1 : 0,
-      paymentFrequency || 'monthly'
+      paymentFrequency || 'monthly',
+      oneTimeDueOption || null
     );
 
     const agreementId = agreementInfo.lastInsertRowid;

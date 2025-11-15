@@ -122,3 +122,20 @@ function formatDateWithCountdown(isoDate, locale = 'en-GB') {
   const countdown = getDueDateCountdown(isoDate);
   return countdown ? `${formattedDate} ${countdown}` : formattedDate;
 }
+
+/**
+ * Get relative due date text from one-time due option
+ * @param {string} oneTimeDueOption - Option value (e.g., "in_1_week", "in_1_month", etc.)
+ * @returns {string} Relative text (e.g., "1 week after loan start date")
+ */
+function getRelativeDueDateText(oneTimeDueOption) {
+  const mapping = {
+    'in_1_week': '1 week after loan start date',
+    'in_1_month': '1 month after loan start date',
+    'in_3_months': '3 months after loan start date',
+    'in_6_months': '6 months after loan start date',
+    'in_1_year': '1 year after loan start date',
+    'in_1_years': '1 year after loan start date' // Handle both variants
+  };
+  return mapping[oneTimeDueOption] || '—';
+}

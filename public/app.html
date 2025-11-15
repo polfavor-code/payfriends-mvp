@@ -1146,6 +1146,7 @@
       amount: '',
       repaymentType: 'one_time',
       dueDate: '',
+      oneTimeDueOption: 'in_1_year', // Store the due date option for one-time loans
       moneySentDate: '',
       moneySentOption: 'on-acceptance',
       // Installment fields
@@ -1784,6 +1785,9 @@
       const option = document.getElementById('one-time-due-option').value;
       const customDateField = document.getElementById('custom-one-time-due-date');
       const dueDateInput = document.getElementById('due-date');
+
+      // Store the option in wizardData
+      wizardData.oneTimeDueOption = option;
 
       if (option === 'pick_date') {
         customDateField.classList.remove('hidden');
@@ -2936,8 +2940,19 @@
 
       let summaryLine2 = '';
       if (wizardData.repaymentType === 'one_time') {
-        const dueDate = new Date(wizardData.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        summaryLine2 = `To be repaid in one payment by ${dueDate}.`;
+        // Check if we should show relative or concrete date
+        const isLoanStartUponAcceptance = wizardData.moneySentDate === 'on-acceptance' || wizardData.moneySentOption === 'on-acceptance';
+        const isRelativeDueDate = wizardData.oneTimeDueOption && wizardData.oneTimeDueOption !== 'pick_date';
+
+        if (isLoanStartUponAcceptance && isRelativeDueDate) {
+          // Show relative description
+          const relativeText = getRelativeDueDateText(wizardData.oneTimeDueOption);
+          summaryLine2 = `To be repaid in one payment ${relativeText}.`;
+        } else {
+          // Show concrete date
+          const dueDate = new Date(wizardData.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          summaryLine2 = `To be repaid in one payment by ${dueDate}.`;
+        }
       } else {
         const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -3244,6 +3259,11 @@
           payload.firstPaymentDate = wizardData.firstPaymentDate;
           payload.finalDueDate = wizardData.finalDueDate;
           payload.paymentFrequency = wizardData.paymentFrequency;
+        }
+
+        // Add one-time specific fields if applicable
+        if (wizardData.repaymentType === 'one_time') {
+          payload.oneTimeDueOption = wizardData.oneTimeDueOption;
         }
 
         const res = await fetch('/api/agreements', {

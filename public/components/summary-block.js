@@ -100,6 +100,28 @@ const SUMMARY_ORDER_ONETIME = [
 ];
 
 /**
+ * Get full repayment due date display text
+ * Handles both concrete dates and relative descriptions based on loan start type
+ * @param {Object} wizardData - The wizard data object
+ * @returns {string} Formatted due date or relative description
+ */
+function getFullRepaymentDueDateDisplay(wizardData) {
+  // Check if loan start is "Upon agreement acceptance"
+  const isLoanStartUponAcceptance = wizardData.moneySentDate === 'on-acceptance' || wizardData.moneySentOption === 'on-acceptance';
+
+  // Check if due date option is a relative period (not "pick_date")
+  const isRelativeDueDate = wizardData.oneTimeDueOption && wizardData.oneTimeDueOption !== 'pick_date';
+
+  // If loan start is "upon acceptance" AND due date is relative, show relative text
+  if (isLoanStartUponAcceptance && isRelativeDueDate) {
+    return getRelativeDueDateText(wizardData.oneTimeDueOption);
+  }
+
+  // Otherwise, show concrete date with countdown
+  return wizardData.dueDate ? formatDateWithCountdown(wizardData.dueDate) : '';
+}
+
+/**
  * Build data map from wizard data
  * @param {Object} wizardData - The wizard data object
  * @param {Object} currentUser - The current user object
@@ -213,7 +235,7 @@ function buildSummaryDataMap(wizardData, currentUser) {
     paymentFrequency: paymentFrequency,
     firstRepaymentDate: wizardData.firstPaymentDate ? new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
     finalDueDate: wizardData.finalDueDate ? new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
-    fullRepaymentDueDate: wizardData.dueDate ? formatDateWithCountdown(wizardData.dueDate) : '',
+    fullRepaymentDueDate: getFullRepaymentDueDateDisplay(wizardData),
     repaymentMethods: methodsText,
     requireProof: wizardData.proofRequired ? 'Yes — Borrower must upload proof (photo, screenshot, or PDF) with each payment' : null,
     reminders: remindersText,
