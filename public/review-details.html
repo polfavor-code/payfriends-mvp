@@ -1739,26 +1739,21 @@
         document.getElementById('money-sent-row').style.display = 'none';
       }
 
-      // 6. Loan duration (show if available) - using helper function
-      const loanDurationLabel = getLoanDurationLabel(agreement);
-      if (loanDurationLabel) {
-        document.getElementById('loan-duration-display').textContent = loanDurationLabel;
-        document.getElementById('loan-duration-row').style.display = 'flex';
-      } else if (agreement.money_transfer_date === 'upon agreement acceptance' || agreement.money_sent_date === 'upon agreement acceptance') {
-        // Show relative phrasing for agreements without concrete money transfer date
-        if (agreement.repayment_type === 'one_time' && agreement.due_date) {
-          // Try to calculate months from due date (assuming transfer happens at acceptance)
-          const dueDateObj = new Date(agreement.due_date);
-          const now = new Date();
-          const monthsDiff = Math.round((dueDateObj - now) / (1000 * 60 * 60 * 24 * 30));
-          const durationText = monthsDiff === 1 ? '1 month after money transfer' : `${monthsDiff} months after money transfer`;
-          document.getElementById('loan-duration-display').textContent = durationText;
+      // 6. Loan duration (hide for one-time loans, show for installments)
+      const isOneTimePayment = agreement.repayment_type === 'one_time';
+
+      if (isOneTimePayment) {
+        // Hide duration entirely for one-time payment loans
+        document.getElementById('loan-duration-row').style.display = 'none';
+      } else {
+        // Show duration for installment loans
+        const loanDurationLabel = getLoanDurationLabel(agreement);
+        if (loanDurationLabel) {
+          document.getElementById('loan-duration-display').textContent = loanDurationLabel;
           document.getElementById('loan-duration-row').style.display = 'flex';
         } else {
           document.getElementById('loan-duration-row').style.display = 'none';
         }
-      } else {
-        document.getElementById('loan-duration-row').style.display = 'none';
       }
 
       // Handle installment loans vs one-time payment differently
