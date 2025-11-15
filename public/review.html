@@ -256,23 +256,37 @@
         <div id="accept-modal-terms" style="display:flex; flex-direction:column; gap:8px; font-size:13px;"></div>
       </div>
 
+      <!-- Profile name helper -->
+      <p style="color:var(--muted); font-size:12px; margin-bottom:16px; line-height:1.5;">
+        Make sure your name in My Profile is correct. It will appear on the signed agreement.
+      </p>
+
       <!-- Confirmations section -->
       <div style="margin-bottom:20px;">
         <div style="font-weight:600; margin-bottom:12px; font-size:14px; color:var(--text);">Confirmations</div>
         <div style="display:flex; flex-direction:column; gap:12px;">
-          <!-- Always required -->
+          <!-- Single required checkbox -->
           <label style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
             <input type="checkbox" id="accept-confirm-terms" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
             <span style="color:var(--text); font-size:13px; line-height:1.5;">I confirm the above terms are correct and I agree to repay as stated.</span>
           </label>
+          <p id="accept-checkbox-error" class="hidden" style="color:#ff6b6b; font-size:12px; margin:0;">Please tick this box to confirm you accept the terms.</p>
         </div>
       </div>
 
       <!-- Signature section -->
       <div style="margin-bottom:20px;">
-        <label for="accept-signature" style="display:block; font-weight:600; margin-bottom:8px; font-size:14px; color:var(--text);">Type your full name to confirm</label>
-        <input type="text" id="accept-signature" placeholder="Your full name" style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px;" oninput="validateAcceptModal()">
-        <p id="accept-signature-error" class="hidden" style="color:#ff6b6b; font-size:12px; margin:6px 0 0 0;"></p>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <label for="accept-signature-canvas" style="font-weight:600; font-size:14px; color:var(--text);">Sign to accept</label>
+          <button type="button" id="clear-signature-btn" onclick="clearSignature()" style="background:none; border:none; color:#8691a1; font-size:12px; cursor:pointer; padding:4px 8px; text-decoration:underline;">Clear</button>
+        </div>
+        <div style="position:relative; width:100%; border:1px solid rgba(255,255,255,0.15); border-radius:8px; background:rgba(255,255,255,0.02);">
+          <canvas id="accept-signature-canvas" style="width:100%; height:140px; display:block; cursor:crosshair; border-radius:8px; touch-action:none;"></canvas>
+        </div>
+        <p style="color:var(--muted); font-size:11px; margin-top:8px; line-height:1.5;">
+          By signing here you confirm that you are the borrower shown above and accept this repayment plan.
+        </p>
+        <p id="accept-signature-error" class="hidden" style="color:#ff6b6b; font-size:12px; margin:6px 0 0 0;">Please add your signature to continue.</p>
       </div>
 
       <!-- Action buttons -->
@@ -738,6 +752,139 @@
       }
     }
 
+    // Signature pad state
+    let signaturePad = {
+      canvas: null,
+      ctx: null,
+      isDrawing: false,
+      hasContent: false,
+      lastX: 0,
+      lastY: 0
+    };
+
+    function initSignaturePad() {
+      const canvas = document.getElementById('accept-signature-canvas');
+      if (!canvas) return;
+
+      signaturePad.canvas = canvas;
+      signaturePad.ctx = canvas.getContext('2d');
+
+      // Set canvas size to match display size
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      signaturePad.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      // Configure drawing style
+      signaturePad.ctx.strokeStyle = '#ffffff';
+      signaturePad.ctx.lineWidth = 2;
+      signaturePad.ctx.lineCap = 'round';
+      signaturePad.ctx.lineJoin = 'round';
+
+      // Reset state
+      signaturePad.hasContent = false;
+      signaturePad.isDrawing = false;
+
+      // Mouse events
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseleave', stopDrawing);
+
+      // Touch events
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      canvas.addEventListener('touchend', stopDrawing);
+      canvas.addEventListener('touchcancel', stopDrawing);
+
+      // Expose hasContent checker globally
+      window.signaturePadHasContent = () => signaturePad.hasContent;
+    }
+
+    function getMousePos(canvas, evt) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
+      };
+    }
+
+    function getTouchPos(canvas, evt) {
+      const rect = canvas.getBoundingClientRect();
+      const touch = evt.touches[0];
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    }
+
+    function startDrawing(e) {
+      signaturePad.isDrawing = true;
+      const pos = getMousePos(signaturePad.canvas, e);
+      signaturePad.lastX = pos.x;
+      signaturePad.lastY = pos.y;
+    }
+
+    function draw(e) {
+      if (!signaturePad.isDrawing) return;
+
+      const pos = getMousePos(signaturePad.canvas, e);
+
+      signaturePad.ctx.beginPath();
+      signaturePad.ctx.moveTo(signaturePad.lastX, signaturePad.lastY);
+      signaturePad.ctx.lineTo(pos.x, pos.y);
+      signaturePad.ctx.stroke();
+
+      signaturePad.lastX = pos.x;
+      signaturePad.lastY = pos.y;
+      signaturePad.hasContent = true;
+
+      // Revalidate on draw
+      validateAcceptModal();
+    }
+
+    function stopDrawing() {
+      signaturePad.isDrawing = false;
+    }
+
+    function handleTouchStart(e) {
+      e.preventDefault();
+      signaturePad.isDrawing = true;
+      const pos = getTouchPos(signaturePad.canvas, e);
+      signaturePad.lastX = pos.x;
+      signaturePad.lastY = pos.y;
+    }
+
+    function handleTouchMove(e) {
+      if (!signaturePad.isDrawing) return;
+      e.preventDefault();
+
+      const pos = getTouchPos(signaturePad.canvas, e);
+
+      signaturePad.ctx.beginPath();
+      signaturePad.ctx.moveTo(signaturePad.lastX, signaturePad.lastY);
+      signaturePad.ctx.lineTo(pos.x, pos.y);
+      signaturePad.ctx.stroke();
+
+      signaturePad.lastX = pos.x;
+      signaturePad.lastY = pos.y;
+      signaturePad.hasContent = true;
+
+      // Revalidate on draw
+      validateAcceptModal();
+    }
+
+    function clearSignature() {
+      if (!signaturePad.canvas || !signaturePad.ctx) return;
+
+      signaturePad.ctx.clearRect(0, 0, signaturePad.canvas.width, signaturePad.canvas.height);
+      signaturePad.hasContent = false;
+      signaturePad.isDrawing = false;
+
+      // Revalidate after clearing
+      validateAcceptModal();
+    }
+
     function handleAccept() {
       openAcceptModal();
     }
@@ -749,9 +896,9 @@
 
       // Reset modal state
       document.getElementById('accept-confirm-terms').checked = false;
-      document.getElementById('accept-signature').value = '';
       document.getElementById('accept-modal-status').textContent = '';
       document.getElementById('accept-signature-error').classList.add('hidden');
+      document.getElementById('accept-checkbox-error').classList.add('hidden');
 
       // Build key terms HTML
       let termsHTML = '';
@@ -859,6 +1006,9 @@
 
       termsContainer.innerHTML = termsHTML;
 
+      // Initialize signature pad
+      initSignaturePad();
+
       // Reset and disable confirm button
       validateAcceptModal();
 
@@ -872,34 +1022,30 @@
     }
 
     function validateAcceptModal() {
-      const agreement = inviteData.agreement;
       const termsChecked = document.getElementById('accept-confirm-terms').checked;
-      const signature = document.getElementById('accept-signature').value.trim();
       const confirmBtn = document.getElementById('accept-modal-confirm-btn');
       const signatureError = document.getElementById('accept-signature-error');
-      const signatureInput = document.getElementById('accept-signature');
+      const checkboxError = document.getElementById('accept-checkbox-error');
 
-      // Validate all required fields (only terms checkbox now)
-      const allCheckboxesValid = termsChecked;
+      // Check if signature pad has content
+      const signatureValid = window.signaturePadHasContent && window.signaturePadHasContent();
 
-      // Validate name matches borrower name on the agreement
-      // Note: This validation ensures the typed name matches the borrower's legal name for agreement validity.
-      // If the name needs updating, users should update it in their profile first.
-      const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || currentUser?.full_name || '';
-      const canonicalName = borrowerName.trim().replace(/\s+/g, ' ').toLowerCase();
-      const typedName = signature.replace(/\s+/g, ' ').toLowerCase();
-      const nameMatches = typedName === canonicalName && signature.length > 0;
-
-      if (signature.length > 0 && !nameMatches) {
-        signatureError.textContent = "Please type your full name exactly as in this agreement. If your name is wrong, update it in your profile first. We recommend using the name as in your passport.";
-        signatureError.classList.remove('hidden');
-        signatureInput.style.borderColor = '#ef4444';
+      // Show/hide errors based on validation
+      if (!termsChecked) {
+        checkboxError.classList.remove('hidden');
       } else {
-        signatureError.classList.add('hidden');
-        signatureInput.style.borderColor = 'rgba(255,255,255,0.15)';
+        checkboxError.classList.add('hidden');
       }
 
-      if (allCheckboxesValid && nameMatches) {
+      if (!signatureValid && termsChecked) {
+        // Only show signature error if checkbox is checked (progressive validation)
+        signatureError.classList.remove('hidden');
+      } else {
+        signatureError.classList.add('hidden');
+      }
+
+      // Enable button only if both are valid
+      if (termsChecked && signatureValid) {
         confirmBtn.disabled = false;
         confirmBtn.style.opacity = '1';
         confirmBtn.style.cursor = 'pointer';
