@@ -167,7 +167,8 @@ function buildSummaryDataMap(wizardData, currentUser) {
   const methods = wizardData.paymentMethods || [];
   const methodLabels = methods.map(m => {
     if (m === 'bank') return 'Bank transfer';
-    if (m === 'cash') return 'Cash in person';
+    if (m === 'cash') return 'Cash';
+    if (m === 'paypal') return 'PayPal / mobile payment';
     if (m === 'crypto') return 'Crypto';
     if (m === 'any') return 'Any method';
     if (m === 'other') return `Other${wizardData.paymentOtherDescription ? ': ' + wizardData.paymentOtherDescription : ''}`;
