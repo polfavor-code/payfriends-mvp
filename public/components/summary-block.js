@@ -190,7 +190,7 @@ function buildSummaryDataMap(wizardData, currentUser) {
   const methodLabels = methods.map(m => {
     if (m === 'bank') return 'Bank transfer';
     if (m === 'cash') return 'Cash';
-    if (m === 'paypal') return 'PayPal / mobile payment';
+    if (m === 'paypal') return 'PayPal';
     if (m === 'crypto') return 'Crypto';
     if (m === 'any') return 'Any method';
     if (m === 'other') return `Other${wizardData.paymentOtherDescription ? ': ' + wizardData.paymentOtherDescription : ''}`;

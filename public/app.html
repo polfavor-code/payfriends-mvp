@@ -953,7 +953,7 @@
         </div>
 
         <!-- Worst-case scenario (only shown for loans >= 6000 EUR) -->
-        <div id="worst-case-scenario-container" style="margin-bottom:24px">
+        <div id="worst-case-scenario-container" style="margin:48px 0 24px 0">
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
             <label class="toggle-switch">
               <input type="checkbox" id="debt-collection-clause" checked />
@@ -2829,8 +2829,11 @@
 
         // Handle clicks
         card.addEventListener('click', (e) => {
-          // Prevent double-toggle if clicking checkbox directly
-          if (e.target === checkbox) return;
+          // Prevent default label behavior to avoid double-toggle
+          e.preventDefault();
+
+          // Don't toggle if card is disabled
+          if (card.classList.contains('disabled')) return;
 
           // Toggle checkbox
           checkbox.checked = !checkbox.checked;
@@ -3096,7 +3099,7 @@
       const methodLabels = methods.map(m => {
         if (m === 'bank') return 'Bank transfer';
         if (m === 'cash') return 'Cash';
-        if (m === 'paypal') return 'PayPal / mobile payment';
+        if (m === 'paypal') return 'PayPal';
         if (m === 'crypto') return 'Crypto';
         if (m === 'any') return 'Any method';
         if (m === 'other') return `Other${wizardData.paymentOtherDescription ? ': ' + wizardData.paymentOtherDescription : ''}`;
@@ -3191,7 +3194,7 @@
         const methodLabels = wizardData.paymentMethods.map(m => {
           if (m === 'bank') return 'Bank transfer';
           if (m === 'cash') return 'Cash';
-          if (m === 'paypal') return 'PayPal / mobile payment';
+          if (m === 'paypal') return 'PayPal';
           if (m === 'crypto') return 'Crypto';
           if (m === 'any') return 'Any method';
           if (m === 'other') return `Other (${wizardData.paymentOtherDescription || 'not specified'})`;
