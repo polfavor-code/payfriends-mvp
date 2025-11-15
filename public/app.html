@@ -1723,6 +1723,9 @@
           const oneTimeDueOption = document.getElementById('one-time-due-option').value;
           if (repaymentType === 'one_time' && oneTimeDueOption !== 'pick_date') {
             updateOneTimeDueOption();
+          } else if (repaymentType === 'installments') {
+            // Recalculate installment schedule when money transfer date changes
+            calculateInstallments();
           }
           return;
         } else if (option === 'today') {
@@ -1747,6 +1750,9 @@
         const oneTimeDueOption = document.getElementById('one-time-due-option').value;
         if (repaymentType === 'one_time' && oneTimeDueOption !== 'pick_date') {
           updateOneTimeDueOption();
+        } else if (repaymentType === 'installments') {
+          // Recalculate installment schedule when money transfer date changes
+          calculateInstallments();
         }
       }
     }
@@ -1761,6 +1767,9 @@
       const oneTimeDueOption = document.getElementById('one-time-due-option').value;
       if (repaymentType === 'one_time' && oneTimeDueOption !== 'pick_date') {
         updateOneTimeDueOption();
+      } else if (repaymentType === 'installments') {
+        // Recalculate installment schedule when money transfer date changes
+        calculateInstallments();
       }
     }
 
