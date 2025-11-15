@@ -187,7 +187,7 @@ function renderAgreementsTable(agreements, currentUser, currentFilter = 'all', c
       const fallbackName = email.includes('@') ? email.split('@')[0] : email;
       const displayName = firstName || fallbackName || 'there';
 
-      welcomeHeading.textContent = `Welcome ${displayName} to PayFriends.app`;
+      welcomeHeading.textContent = `Welcome, ${displayName}`;
     }
 
     return;
