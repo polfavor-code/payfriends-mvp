@@ -2512,7 +2512,7 @@
       if (agreement.repayment_type === 'installments' && agreement.next_payment_amount_cents && agreement.next_payment_date) {
         const amount = formatCurrency2(agreement.next_payment_amount_cents);
         const date = new Date(agreement.next_payment_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-        expectedPaymentEl.textContent = `Your next installment is ${amount}, due on ${date}. Let's see how we can adjust the plan.`;
+        expectedPaymentEl.textContent = `Your next installment is ${amount}, due on ${date}.`;
       } else if (agreement.repayment_type !== 'installments' && agreement.amount_cents && agreement.due_date) {
         const amount = formatEuro0(agreement.amount_cents / 100);
         const date = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
