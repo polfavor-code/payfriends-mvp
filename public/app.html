@@ -184,6 +184,8 @@
     .toggle-switch input:checked + .toggle-slider:before{transform:translateX(24px)}
     .toggle-switch input:disabled + .toggle-slider{opacity:0.5;cursor:not-allowed}
     .reminder-option-active{background:rgba(61,220,151,0.05) !important;border:1px solid rgba(61,220,151,0.15) !important;border-radius:12px !important}
+    .payment-method-card.selected{border-color:var(--accent) !important;background:rgba(61,220,151,0.08) !important}
+    .payment-method-card.disabled{opacity:0.4;cursor:not-allowed !important;pointer-events:none}
 
     /* Custom Phone Input Widget */
     .phone-input-wrapper{position:relative}
@@ -857,31 +859,41 @@
           <h4 style="margin:0 0 12px 0; font-size:16px">Payment methods</h4>
           <p style="color:var(--muted); font-size:13px; margin-bottom:12px">Select all that apply:</p>
 
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
-              <input type="checkbox" class="payment-method-checkbox" value="bank" checked />
-              <span style="font-size:14px">Bank transfer</span>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+            <label class="payment-method-card" data-value="bank" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+              <input type="checkbox" class="payment-method-checkbox" value="bank" checked style="display:none" />
+              <span style="font-size:20px">🏦</span>
+              <span style="font-size:14px; font-weight:500">Bank transfer</span>
             </label>
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
-              <input type="checkbox" class="payment-method-checkbox" value="cash" />
-              <span style="font-size:14px">Cash</span>
+            <label class="payment-method-card" data-value="cash" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+              <input type="checkbox" class="payment-method-checkbox" value="cash" style="display:none" />
+              <span style="font-size:20px">💵</span>
+              <span style="font-size:14px; font-weight:500">Cash</span>
             </label>
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
-              <input type="checkbox" class="payment-method-checkbox" value="paypal" />
-              <span style="font-size:14px">PayPal / mobile payment</span>
+            <label class="payment-method-card" data-value="paypal" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+              <input type="checkbox" class="payment-method-checkbox" value="paypal" style="display:none" />
+              <span style="font-size:20px">📱</span>
+              <span style="font-size:14px; font-weight:500">PayPal / mobile payment</span>
             </label>
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
-              <input type="checkbox" class="payment-method-checkbox" value="crypto" />
-              <span style="font-size:14px">Crypto</span>
+            <label class="payment-method-card" data-value="crypto" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+              <input type="checkbox" class="payment-method-checkbox" value="crypto" style="display:none" />
+              <span style="font-size:20px">₿</span>
+              <span style="font-size:14px; font-weight:500">Crypto</span>
             </label>
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
-              <input type="checkbox" class="payment-method-checkbox" value="other" onchange="toggleOtherPaymentMethod()" />
-              <span style="font-size:14px">Other</span>
+            <label class="payment-method-card" data-value="other" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+              <input type="checkbox" class="payment-method-checkbox" value="other" style="display:none" />
+              <span style="font-size:20px">➕</span>
+              <span style="font-size:14px; font-weight:500">Other</span>
             </label>
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02)">
-              <input type="checkbox" class="payment-method-checkbox" value="any" />
-              <span style="font-size:14px">Any method</span>
+            <label class="payment-method-card" data-value="any" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+              <input type="checkbox" class="payment-method-checkbox" value="any" style="display:none" />
+              <span style="font-size:20px">✨</span>
+              <span style="font-size:14px; font-weight:500">Any method</span>
             </label>
+          </div>
+
+          <div id="any-method-helper" class="hidden" style="margin:12px 0; padding:12px; background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.2); border-radius:8px; font-size:13px; color:var(--muted)">
+            Borrower may repay using any payment method, as long as proof is provided.
           </div>
 
           <div id="other-payment-method" class="hidden" style="margin:12px 0">
@@ -890,7 +902,7 @@
         </div>
 
         <!-- Require proof of repayment -->
-        <div style="margin:24px 0">
+        <div style="margin:24px 0 48px 0">
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
             <label class="toggle-switch">
               <input type="checkbox" id="proof-required" checked />
@@ -2798,6 +2810,96 @@
       }
     }
 
+    // Handle payment method card clicks
+    function setupPaymentMethodCards() {
+      const cards = document.querySelectorAll('.payment-method-card');
+
+      cards.forEach(card => {
+        const checkbox = card.querySelector('.payment-method-checkbox');
+        const value = card.dataset.value;
+
+        // Set initial state
+        updateCardVisualState(card, checkbox.checked);
+
+        // Handle clicks
+        card.addEventListener('click', (e) => {
+          // Prevent double-toggle if clicking checkbox directly
+          if (e.target === checkbox) return;
+
+          // Toggle checkbox
+          checkbox.checked = !checkbox.checked;
+
+          // Handle special logic for "Any method"
+          handlePaymentMethodChange(value, checkbox.checked);
+        });
+
+        // Also listen to checkbox change events
+        checkbox.addEventListener('change', () => {
+          handlePaymentMethodChange(value, checkbox.checked);
+        });
+      });
+    }
+
+    // Handle payment method selection logic
+    function handlePaymentMethodChange(changedValue, isChecked) {
+      const anyCheckbox = document.querySelector('.payment-method-checkbox[value="any"]');
+      const anyCard = document.querySelector('.payment-method-card[data-value="any"]');
+      const anyHelper = document.getElementById('any-method-helper');
+      const allCards = document.querySelectorAll('.payment-method-card');
+      const allCheckboxes = document.querySelectorAll('.payment-method-checkbox');
+
+      if (changedValue === 'any' && isChecked) {
+        // "Any method" was selected - disable and uncheck all other methods
+        allCheckboxes.forEach(cb => {
+          if (cb.value !== 'any') {
+            cb.checked = false;
+            const card = document.querySelector(`.payment-method-card[data-value="${cb.value}"]`);
+            card.classList.add('disabled');
+            updateCardVisualState(card, false);
+          }
+        });
+        anyHelper.classList.remove('hidden');
+      } else if (changedValue === 'any' && !isChecked) {
+        // "Any method" was unselected - re-enable all methods
+        allCards.forEach(card => {
+          if (card.dataset.value !== 'any') {
+            card.classList.remove('disabled');
+          }
+        });
+        anyHelper.classList.add('hidden');
+      } else if (changedValue !== 'any' && isChecked && anyCheckbox.checked) {
+        // Another method was selected while "Any" is active - uncheck "Any"
+        anyCheckbox.checked = false;
+        updateCardVisualState(anyCard, false);
+        allCards.forEach(card => {
+          if (card.dataset.value !== 'any') {
+            card.classList.remove('disabled');
+          }
+        });
+        anyHelper.classList.add('hidden');
+      }
+
+      // Update visual state for all cards
+      allCards.forEach(card => {
+        const cb = card.querySelector('.payment-method-checkbox');
+        updateCardVisualState(card, cb.checked);
+      });
+
+      // Handle "Other" payment method description field
+      if (changedValue === 'other') {
+        toggleOtherPaymentMethod();
+      }
+    }
+
+    // Update card visual state (selected/unselected)
+    function updateCardVisualState(card, isSelected) {
+      if (isSelected) {
+        card.classList.add('selected');
+      } else {
+        card.classList.remove('selected');
+      }
+    }
+
     // Toggle reminder mode (auto vs custom)
     function toggleReminderMode() {
       const mode = document.querySelector('input[name="reminder-mode"]:checked').value;
@@ -2976,7 +3078,8 @@
       const methods = wizardData.paymentMethods || [];
       const methodLabels = methods.map(m => {
         if (m === 'bank') return 'Bank transfer';
-        if (m === 'cash') return 'Cash in person';
+        if (m === 'cash') return 'Cash';
+        if (m === 'paypal') return 'PayPal / mobile payment';
         if (m === 'crypto') return 'Crypto';
         if (m === 'any') return 'Any method';
         if (m === 'other') return `Other${wizardData.paymentOtherDescription ? ': ' + wizardData.paymentOtherDescription : ''}`;
@@ -3070,7 +3173,8 @@
       if (wizardData.paymentMethods && wizardData.paymentMethods.length > 0) {
         const methodLabels = wizardData.paymentMethods.map(m => {
           if (m === 'bank') return 'Bank transfer';
-          if (m === 'cash') return 'Cash in person';
+          if (m === 'cash') return 'Cash';
+          if (m === 'paypal') return 'PayPal / mobile payment';
           if (m === 'crypto') return 'Crypto';
           if (m === 'any') return 'Any method';
           if (m === 'other') return `Other (${wizardData.paymentOtherDescription || 'not specified'})`;
@@ -3293,6 +3397,14 @@
       document.querySelectorAll('.payment-method-checkbox').forEach(cb => {
         cb.checked = cb.value === 'bank';
       });
+      // Update card visual states
+      document.querySelectorAll('.payment-method-card').forEach(card => {
+        const cb = card.querySelector('.payment-method-checkbox');
+        updateCardVisualState(card, cb.checked);
+        card.classList.remove('disabled');
+      });
+      document.getElementById('any-method-helper').classList.add('hidden');
+      document.getElementById('other-payment-method').classList.add('hidden');
       document.getElementById('other-payment-description').value = '';
       document.querySelector('input[name="reminder-mode"][value="auto"]').checked = true;
       document.querySelectorAll('.custom-reminder-checkbox').forEach(cb => cb.checked = false);
@@ -3776,6 +3888,9 @@
       // Phone input is auto-initialized by PhoneInputManager
       // Get reference to the instance
       agreementPhoneInput = window.PhoneInputManager.getInstance('agreement-phone');
+
+      // Initialize payment method cards
+      setupPaymentMethodCards();
 
       // Load user and other data
       loadUser();

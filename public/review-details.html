@@ -1123,7 +1123,9 @@
           'cash': 'Cash',
           'revolut': 'Revolut',
           'bizum': 'Bizum',
-          'paypal': 'PayPal',
+          'paypal': 'PayPal / mobile payment',
+          'crypto': 'Crypto',
+          'any': 'Any method',
           'other': 'Other'
         };
 
@@ -2173,9 +2175,9 @@
         const methods = agreement.payment_preference_method.split(',').map(m => {
           const trimmed = m.trim();
           if (trimmed === 'bank') return 'Bank transfer';
-          if (trimmed === 'cash') return 'Cash in person';
+          if (trimmed === 'cash') return 'Cash';
+          if (trimmed === 'paypal') return 'PayPal / mobile payment';
           if (trimmed === 'crypto') return 'Crypto';
-          if (trimmed === 'paypal') return 'PayPal';
           if (trimmed === 'any') return 'Any method';
           if (trimmed === 'other') return 'Other';
           return trimmed;
