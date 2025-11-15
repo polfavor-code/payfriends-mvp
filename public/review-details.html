@@ -747,7 +747,6 @@
             <option value="prefer_not_to_say">I prefer not to say</option>
             <option value="other">Other</option>
           </select>
-          <small style="color:var(--muted); font-size:12px">Required</small>
         </div>
 
         <div class="form-group hidden" id="renegotiation-reason-other-container">
@@ -2513,11 +2512,11 @@
       if (agreement.repayment_type === 'installments' && agreement.next_payment_amount_cents && agreement.next_payment_date) {
         const amount = formatCurrency2(agreement.next_payment_amount_cents);
         const date = new Date(agreement.next_payment_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-        expectedPaymentEl.textContent = `You are supposed to pay ${amount} on ${date}.`;
+        expectedPaymentEl.textContent = `Your next installment is ${amount}, due on ${date}. Let's see how we can adjust the plan.`;
       } else if (agreement.repayment_type !== 'installments' && agreement.amount_cents && agreement.due_date) {
         const amount = formatEuro0(agreement.amount_cents / 100);
         const date = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        expectedPaymentEl.textContent = `Full repayment due: ${amount} on ${date}`;
+        expectedPaymentEl.textContent = `You are supposed to pay ${amount} on ${date}.`;
       } else {
         expectedPaymentEl.textContent = 'You are having difficulty making the scheduled payment.';
       }
@@ -2552,7 +2551,7 @@
 
       // Set button text with lender name
       const submitBtn = document.getElementById('renegotiation-submit-btn');
-      submitBtn.textContent = `Send request to ${lenderName}`;
+      submitBtn.textContent = `Send new plan proposal to ${lenderName}`;
 
       // Scroll to form
       form.scrollIntoView({ behavior: 'smooth', block: 'start' });
