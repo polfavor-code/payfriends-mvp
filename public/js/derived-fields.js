@@ -38,12 +38,15 @@ function getLoanDurationLabel(agreement) {
     }
   }
 
-  // For one-time loans, calculate duration from money_sent_date to due_date
-  if (agreement.repayment_type === 'one_time' && agreement.money_sent_date && agreement.due_date) {
-    // Check if money_sent_date is "upon agreement acceptance" - if so, can't calculate absolute duration
-    if (agreement.money_sent_date === 'upon agreement acceptance' || agreement.money_transfer_date === 'upon agreement acceptance') {
-      // Return null - caller should use relative phrasing instead
-      return null;
+  // For one-time loans, try to calculate duration from money_sent_date to due_date
+  if (agreement.repayment_type === 'one_time') {
+    // Check if money_sent_date is "upon agreement acceptance" or missing
+    if (!agreement.money_sent_date || !agreement.due_date ||
+        agreement.money_sent_date === 'upon agreement acceptance' ||
+        agreement.money_sent_date === 'on-acceptance' ||
+        agreement.money_transfer_date === 'upon agreement acceptance') {
+      // For one-time loans without calculable duration, return descriptive text
+      return 'One-time repayment';
     }
 
     // Parse dates and normalize to UTC midnight to avoid timezone/DST issues
@@ -67,7 +70,7 @@ function getLoanDurationLabel(agreement) {
 
     // Same day check
     if (daysDiff === 0) {
-      return null;
+      return 'Same day';
     }
 
     // Calculate month difference accounting for partial months
@@ -86,7 +89,7 @@ function getLoanDurationLabel(agreement) {
     }
 
     if (totalMonths < 0) {
-      return null; // Invalid date range
+      return 'One-time repayment'; // Invalid date range
     } else if (totalMonths === 0) {
       // Less than a month - use days/weeks
       if (daysDiff === 1) {

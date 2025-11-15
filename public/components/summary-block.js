@@ -140,11 +140,22 @@ function buildSummaryDataMap(wizardData, currentUser) {
   }
 
   // Format loan duration
-  const durationText = wizardData.planUnit === 'days' ? `${wizardData.planLength} ${wizardData.planLength === 1 ? 'day' : 'days'}` :
-                       wizardData.planUnit === 'weeks' ? `${wizardData.planLength} ${wizardData.planLength === 1 ? 'week' : 'weeks'}` :
-                       wizardData.planUnit === 'months' ? `${wizardData.planLength} ${wizardData.planLength === 1 ? 'month' : 'months'}` :
-                       wizardData.planUnit === 'years' ? `${wizardData.planLength} ${wizardData.planLength === 1 ? 'year' : 'years'}` :
-                       `${wizardData.planLength} months`;
+  let durationText;
+  if (wizardData.repaymentType === 'one_time') {
+    // For one-time loans, show "One-time repayment" instead of duration
+    durationText = 'One-time repayment';
+  } else if (wizardData.planUnit === 'days') {
+    durationText = `${wizardData.planLength} ${wizardData.planLength === 1 ? 'day' : 'days'}`;
+  } else if (wizardData.planUnit === 'weeks') {
+    durationText = `${wizardData.planLength} ${wizardData.planLength === 1 ? 'week' : 'weeks'}`;
+  } else if (wizardData.planUnit === 'months') {
+    durationText = `${wizardData.planLength} ${wizardData.planLength === 1 ? 'month' : 'months'}`;
+  } else if (wizardData.planUnit === 'years') {
+    durationText = `${wizardData.planLength} ${wizardData.planLength === 1 ? 'year' : 'years'}`;
+  } else {
+    // Fallback for unexpected cases
+    durationText = wizardData.planLength ? `${wizardData.planLength} months` : 'One-time repayment';
+  }
 
   // Format payment frequency - Note: uses inline logic for wizard data
   // (Cannot use formatRepaymentFrequency helper since it expects "every_4_weeks" but wizard has "every_X_days")

@@ -1006,14 +1006,16 @@
 
       termsContainer.innerHTML = termsHTML;
 
-      // Initialize signature pad
-      initSignaturePad();
-
-      // Reset and disable confirm button
-      validateAcceptModal();
-
-      // Show modal
+      // Show modal first so canvas dimensions are correct
       modal.style.display = 'flex';
+
+      // Initialize signature pad after modal is visible
+      // Use requestAnimationFrame to ensure layout is complete
+      requestAnimationFrame(() => {
+        initSignaturePad();
+        // Reset and disable confirm button
+        validateAcceptModal();
+      });
     }
 
     function closeAcceptModal() {
