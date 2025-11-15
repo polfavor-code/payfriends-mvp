@@ -41,7 +41,7 @@ const SUMMARY_ORDER_INSTALLMENTS = [
   { kind: "spacer" },
 
   // Section 2: Loan terms
-  { kind: "field", label: "Money transfer date (loan start date)", key: "moneyTransferDate" },
+  { kind: "field", label: "Money transfer date (Loan start)", key: "moneyTransferDate" },
   { kind: "field", label: "Amount", key: "amount" },
   { kind: "field", label: "Loan duration", key: "loanDuration" },
   { kind: "field", label: "Interest rate", key: "interestRate" },
@@ -79,7 +79,7 @@ const SUMMARY_ORDER_ONETIME = [
   { kind: "spacer" },
 
   // Section 2: Loan terms (one-time specific)
-  { kind: "field", label: "Money transfer date (loan start date)", key: "moneyTransferDate" },
+  { kind: "field", label: "Money transfer date (Loan start)", key: "moneyTransferDate" },
   { kind: "field", label: "Amount", key: "amount" },
   // Duration is hidden for one-time loans
   { kind: "field", label: "Interest rate", key: "interestRate" },

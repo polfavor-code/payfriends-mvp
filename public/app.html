@@ -574,7 +574,7 @@
         <p id="amount-error" class="hidden" style="color:#f87171; font-size:13px; margin:0 0 16px 172px"></p>
 
         <div class="row">
-          <label>Money transfer date</label>
+          <label>Money transfer date (Loan start)</label>
           <select id="money-sent-option" onchange="updateMoneySentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
             <option value="on-acceptance">When agreement is accepted</option>
             <option value="today">Today</option>
@@ -609,12 +609,11 @@
           <div class="row">
             <label>Full repayment due</label>
             <select id="one-time-due-option" onchange="updateOneTimeDueOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="in_1_week">In 1 week</option>
-              <option value="in_1_month">In 1 month</option>
-              <option value="in_3_months">In 3 months</option>
-              <option value="in_6_months">In 6 months</option>
-              <option value="in_1_year">in 1 year</option>
-              <option value="in_1_years">in 1 years</option>
+              <option value="in_1_week">1 week after loan start</option>
+              <option value="in_1_month">1 month after loan start</option>
+              <option value="in_3_months">3 months after loan start</option>
+              <option value="in_6_months">6 months after loan start</option>
+              <option value="in_1_year" selected>1 year after loan start</option>
               <option value="pick_date">Pick a date</option>
             </select>
           </div>
@@ -1841,7 +1840,7 @@
       const amountFormatted = formatEuro2(amountNum);
 
       document.getElementById('one-time-estimate').textContent =
-        `1 payment of about ${amountFormatted} on ${dateFormatted}, excluding interest.`;
+        `One-time payment of ${amountFormatted} on ${dateFormatted}, excluding interest.`;
     }
 
     // Unified function to update estimate based on repayment type
