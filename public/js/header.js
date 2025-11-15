@@ -135,14 +135,6 @@
       const data = await res.json();
       currentUser = data.user;
 
-      // Update welcome message with first name
-      const welcomeMessageEl = document.getElementById('header-welcome-message');
-      if (welcomeMessageEl) {
-        const firstName = getFirstNameFromUser(currentUser);
-        const displayName = firstName || currentUser.email || 'User';
-        welcomeMessageEl.textContent = `Welcome ${displayName} to PayFriends.app`;
-      }
-
       // Update avatar button with just the avatar (no name)
       const avatarButton = document.getElementById('user-avatar-button');
       if (avatarButton) {
@@ -197,7 +189,7 @@
 
     if (unreadCount > 0) {
       if (activityCountEl) {
-        activityCountEl.textContent = unreadCount;
+        activityCountEl.textContent = `(${unreadCount})`;
       }
       activityButton.classList.add('inbox-widget-has-unread');
     } else {
