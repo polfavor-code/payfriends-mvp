@@ -881,10 +881,6 @@
             </label>
           </div>
 
-          <div id="any-method-helper" class="hidden" style="margin:12px 0; padding:12px; background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.2); border-radius:8px; font-size:13px; color:var(--muted)">
-            Borrower may repay using any payment method, as long as proof is provided.
-          </div>
-
           <div id="other-payment-method" class="hidden" style="margin:12px 0">
             <input id="other-payment-description" type="text" placeholder="Describe the other payment method" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
           </div>
@@ -2750,12 +2746,20 @@
         return;
       }
 
-      wizardData.paymentMethods = selectedMethods;
-
-      // Get payment other description if "other" is selected
+      // Validate "Other" description if "other" is selected
       if (selectedMethods.includes('other')) {
-        wizardData.paymentOtherDescription = document.getElementById('other-payment-description').value.trim();
+        const otherDescription = document.getElementById('other-payment-description').value.trim();
+        if (!otherDescription) {
+          document.getElementById('step4-status').textContent = 'Please describe the other payment method';
+          return;
+        }
+        wizardData.paymentOtherDescription = otherDescription;
+      } else {
+        // Clear the description if "Other" is not selected
+        wizardData.paymentOtherDescription = '';
       }
+
+      wizardData.paymentMethods = selectedMethods;
 
       // Get reminder settings
       const reminderMode = document.querySelector('input[name="reminder-mode"]:checked').value;
@@ -2832,9 +2836,6 @@
           // Prevent default label behavior to avoid double-toggle
           e.preventDefault();
 
-          // Don't toggle if card is disabled
-          if (card.classList.contains('disabled')) return;
-
           // Toggle checkbox
           checkbox.checked = !checkbox.checked;
 
@@ -2853,39 +2854,24 @@
     function handlePaymentMethodChange(changedValue, isChecked) {
       const anyCheckbox = document.querySelector('.payment-method-checkbox[value="any"]');
       const anyCard = document.querySelector('.payment-method-card[data-value="any"]');
-      const anyHelper = document.getElementById('any-method-helper');
       const allCards = document.querySelectorAll('.payment-method-card');
       const allCheckboxes = document.querySelectorAll('.payment-method-checkbox');
 
       if (changedValue === 'any' && isChecked) {
-        // "Any method" was selected - disable and uncheck all other methods
+        // "Any method" was selected - uncheck all other methods (but don't disable)
         allCheckboxes.forEach(cb => {
           if (cb.value !== 'any') {
             cb.checked = false;
             const card = document.querySelector(`.payment-method-card[data-value="${cb.value}"]`);
-            card.classList.add('disabled');
             updateCardVisualState(card, false);
           }
         });
-        anyHelper.classList.remove('hidden');
-      } else if (changedValue === 'any' && !isChecked) {
-        // "Any method" was unselected - re-enable all methods
-        allCards.forEach(card => {
-          if (card.dataset.value !== 'any') {
-            card.classList.remove('disabled');
-          }
-        });
-        anyHelper.classList.add('hidden');
+        // Hide "Other" description field when "Any method" is selected
+        toggleOtherPaymentMethod();
       } else if (changedValue !== 'any' && isChecked && anyCheckbox.checked) {
-        // Another method was selected while "Any" is active - uncheck "Any"
+        // Another method was selected while "Any" is active - uncheck "Any" first
         anyCheckbox.checked = false;
         updateCardVisualState(anyCard, false);
-        allCards.forEach(card => {
-          if (card.dataset.value !== 'any') {
-            card.classList.remove('disabled');
-          }
-        });
-        anyHelper.classList.add('hidden');
       }
 
       // Update visual state for all cards
@@ -2895,9 +2881,10 @@
       });
 
       // Handle "Other" payment method description field
-      if (changedValue === 'other') {
-        toggleOtherPaymentMethod();
-      }
+      toggleOtherPaymentMethod();
+
+      // Clear any error messages
+      document.getElementById('step4-status').textContent = '';
     }
 
     // Update card visual state (selected/unselected)
