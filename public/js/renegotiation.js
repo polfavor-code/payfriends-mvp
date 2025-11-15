@@ -11,31 +11,31 @@ const SOLUTION_TYPES = {
     {
       value: 'lower_installment',
       label: 'Lower my installment amount',
-      sublabel: 'Loan will extend',
+      sublabel: 'Reduce the amount per payment. The loan duration will increase to cover the full amount.',
       description: 'Reduce the amount per payment period. The loan duration will increase to cover the full amount.'
     },
     {
       value: 'postpone_upcoming',
       label: 'Postpone the upcoming installment',
-      sublabel: 'Push the next payment date',
+      sublabel: 'Delay your next payment by a few days or weeks. All future payments will shift accordingly.',
       description: 'Delay your next payment by a few days or weeks. All future payments will shift accordingly.'
     },
     {
       value: 'skip_upcoming',
       label: 'Skip the upcoming installment',
-      sublabel: 'Catch up later',
+      sublabel: 'Skip your next payment and spread the amount across future installments.',
       description: 'Skip your next payment and spread the amount across future installments or add one extra payment at the end.'
     },
     {
       value: 'temporary_pause',
       label: 'Temporary payment pause',
-      sublabel: 'Take a break',
+      sublabel: 'Pause payments for a short period. Resume afterwards with an adjusted schedule.',
       description: 'Pause payments for a short period (1-3 installments). Resume afterwards with adjusted schedule.'
     },
     {
       value: 'pay_part_adjust',
       label: 'Pay part now and adjust my schedule',
-      sublabel: 'Partial payment with new plan',
+      sublabel: 'Make a partial payment now and adjust the remaining installments to a more manageable amount.',
       description: 'Make a partial payment now and adjust the remaining installments to a more manageable amount.'
     }
   ],
@@ -48,7 +48,7 @@ const SOLUTION_TYPES = {
     },
     {
       value: 'split_repayment',
-      label: 'Split into smaller parts',
+      label: 'Split the repayment into smaller parts',
       sublabel: 'Turn the one-time amount into multiple smaller scheduled payments.',
       description: 'Convert the single payment into multiple smaller payments spread over time.'
     },
@@ -290,8 +290,7 @@ function buildSolutionTypeOptions(loanType, selectedType = null) {
                value="${option.value}" ${checked}>
         <label for="solution-${option.value}">
           <strong>${option.label}</strong>
-          ${option.sublabel ? `<span class="sublabel">${option.sublabel}</span>` : ''}
-          <div class="description">${option.description}</div>
+          ${option.sublabel ? `<div class="description">${option.sublabel}</div>` : ''}
         </label>
       </div>
     `;
