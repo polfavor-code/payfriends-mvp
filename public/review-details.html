@@ -542,25 +542,6 @@
       <!-- This will be populated dynamically by JavaScript -->
     </div>
 
-    <!-- Payment summary (for active and settled agreements) -->
-    <div id="payment-summary" class="card hidden">
-      <h2>Payment Summary</h2>
-      <div style="margin:16px 0">
-        <div class="detail-row">
-          <span class="detail-label">Original amount</span>
-          <span class="detail-value" id="original-amount"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Total paid</span>
-          <span class="detail-value" id="total-paid"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Outstanding</span>
-          <span class="detail-value" id="outstanding-amount"></span>
-        </div>
-      </div>
-    </div>
-
     <!-- Payment history (for active and settled agreements) -->
     <div id="payment-history" class="card hidden">
       <h2>Payment History</h2>
@@ -770,7 +751,7 @@
         </div>
 
         <div class="form-group hidden" id="renegotiation-reason-other-container">
-          <label class="form-label">Explain in your own words (optional)</label>
+          <label class="form-label">Explain in your own words</label>
           <textarea id="renegotiation-reason-other" rows="3" placeholder="Tell your friend more about your situation..."></textarea>
         </div>
       </div>
@@ -779,12 +760,6 @@
       <div class="form-section" id="renegotiation-step-1">
         <div class="form-section-title">What kind of solution would work for you?</div>
         <div id="renegotiation-solution-types"></div>
-      </div>
-
-      <!-- Optional explanation -->
-      <div class="form-group">
-        <label class="form-label">Add a short explanation for your friend (optional)</label>
-        <textarea id="renegotiation-borrower-message" rows="3" placeholder="Explain your situation or preference..." style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-size:14px; font-family:inherit; resize:vertical"></textarea>
       </div>
 
       <button id="renegotiation-submit-btn" onclick="submitRenegotiationRequest()">Send renegotiation request</button>
@@ -950,7 +925,6 @@
       // Explicitly hide all payment-related sections for review page
       document.getElementById('payment-action-section').classList.add('hidden');
       document.getElementById('hardship-indicator').classList.add('hidden');
-      document.getElementById('payment-summary').classList.add('hidden');
       document.getElementById('payment-history').classList.add('hidden');
       document.getElementById('record-payment-section').classList.add('hidden');
       document.getElementById('hardship-form').classList.add('hidden');
@@ -2367,7 +2341,6 @@
     function showHardshipForm() {
       document.getElementById('details-section').classList.add('hidden');
       document.getElementById('payment-action-section').classList.add('hidden');
-      document.getElementById('payment-summary').classList.add('hidden');
       document.getElementById('payment-history').classList.add('hidden');
       document.getElementById('hardship-form').classList.remove('hidden');
 
@@ -2393,7 +2366,6 @@
       document.getElementById('hardship-form').classList.add('hidden');
       document.getElementById('details-section').classList.remove('hidden');
       document.getElementById('payment-action-section').classList.remove('hidden');
-      document.getElementById('payment-summary').classList.remove('hidden');
       document.getElementById('payment-history').classList.remove('hidden');
     }
 
@@ -2525,7 +2497,6 @@
     function showRenegotiationInitiationForm() {
       // Hide other sections
       document.getElementById('payment-action-section').classList.add('hidden');
-      document.getElementById('payment-summary').classList.add('hidden');
       document.getElementById('payment-history').classList.add('hidden');
       document.getElementById('record-payment-section').classList.add('hidden');
       document.getElementById('hardship-form').classList.add('hidden');
@@ -2540,9 +2511,9 @@
       // Populate expected payment context (what was supposed to be paid and when)
       const expectedPaymentEl = document.getElementById('expected-payment-context');
       if (agreement.repayment_type === 'installments' && agreement.next_payment_amount_cents && agreement.next_payment_date) {
-        const amount = formatEuro0(agreement.next_payment_amount_cents / 100);
-        const date = new Date(agreement.next_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        expectedPaymentEl.textContent = `Upcoming installment: ${amount} due on ${date}`;
+        const amount = formatCurrency2(agreement.next_payment_amount_cents);
+        const date = new Date(agreement.next_payment_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        expectedPaymentEl.textContent = `You are supposed to pay ${amount} on ${date}.`;
       } else if (agreement.repayment_type !== 'installments' && agreement.amount_cents && agreement.due_date) {
         const amount = formatEuro0(agreement.amount_cents / 100);
         const date = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -2574,7 +2545,6 @@
 
       // Show payment sections again
       document.getElementById('payment-action-section').classList.remove('hidden');
-      document.getElementById('payment-summary').classList.remove('hidden');
       document.getElementById('payment-history').classList.remove('hidden');
     }
 
@@ -2588,7 +2558,6 @@
       const troubleReasonOther = document.getElementById('renegotiation-reason-other').value;
       const selectedType = document.querySelector('input[name="solution-type"]:checked')?.value;
       const canPayNowInput = document.getElementById('renegotiation-can-pay-now').value;
-      const borrowerMessage = document.getElementById('renegotiation-borrower-message').value.trim();
 
       // Validate trouble reason (mandatory)
       if (!troubleReason) {
@@ -2613,7 +2582,7 @@
           agreementId,
           selectedType,
           canPayNowCents,
-          borrowerMessage || null,
+          null,
           troubleReason,
           troubleReasonOther
         );
@@ -3202,12 +3171,6 @@
     // Payment functions
     async function loadPaymentData() {
       try {
-        // Show payment summary
-        document.getElementById('payment-summary').classList.remove('hidden');
-        document.getElementById('original-amount').textContent = formatCurrency2(agreement.amount_cents);
-        document.getElementById('total-paid').textContent = formatCurrency2(agreement.total_paid_cents || 0);
-        document.getElementById('outstanding-amount').textContent = formatCurrency2(agreement.outstanding_cents || agreement.amount_cents);
-
         // Load payment history
         const res = await fetch(`/api/agreements/${agreementId}/payments`);
         if (res.ok) {
@@ -3589,7 +3552,6 @@
 
       document.getElementById('details-section').classList.add('hidden');
       document.getElementById('payment-action-section').classList.add('hidden');
-      document.getElementById('payment-summary').classList.add('hidden');
       document.getElementById('payment-history').classList.add('hidden');
       document.getElementById('record-payment-section').classList.remove('hidden');
     }
@@ -3598,7 +3560,6 @@
       document.getElementById('record-payment-section').classList.add('hidden');
       document.getElementById('details-section').classList.remove('hidden');
       document.getElementById('payment-action-section').classList.remove('hidden');
-      document.getElementById('payment-summary').classList.remove('hidden');
       document.getElementById('payment-history').classList.remove('hidden');
 
       // Clear form
