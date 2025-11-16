@@ -8,7 +8,7 @@
  * @param {Object} options - Configuration options
  * @param {number} options.density - Plane count multiplier (default: 1)
  * @param {number} options.speed - Global speed multiplier (default: 1)
- * @param {number} options.opacity - Global opacity (default: 0.15)
+ * @param {number} options.opacity - Global opacity (default: 0.33)
  */
 (function() {
   'use strict';
@@ -73,7 +73,7 @@
       this.config = {
         density: options.density ?? 1,
         speed: options.speed ?? 1,
-        opacity: options.opacity ?? 0.15
+        opacity: options.opacity ?? 0.33
       };
 
       // State
@@ -155,7 +155,7 @@
       const sprite = this.getRandomSprite();
       const scale = SCALE_MIN + Math.random() * (SCALE_MAX - SCALE_MIN);
       const duration = (FLIGHT_DURATION_MIN + Math.random() * (FLIGHT_DURATION_MAX - FLIGHT_DURATION_MIN)) / this.config.speed;
-      const initialRotation = (Math.random() - 0.5) * 2 * ROTATION_VARIANCE * (Math.PI / 180);
+      const wobblePhase = Math.random() * Math.PI * 2; // Random phase for wobble variation
 
       // Determine start and end positions based on path type
       let start, end, control1, control2;
@@ -258,8 +258,7 @@
         scale,
         duration,
         startTime: Date.now(),
-        initialRotation,
-        rotationSpeed: (Math.random() - 0.5) * 0.002, // radians per ms
+        wobblePhase,
         wobbleFrequency: 0.003 + Math.random() * 0.002,
         wobbleAmplitude: 20 + Math.random() * 40
       };
@@ -348,8 +347,13 @@
       // Get position and rotation
       const pos = this.getPositionOnPath(plane, t);
       const baseAngle = this.getTangentAngle(plane, t);
-      const rotationDelta = elapsed * plane.rotationSpeed;
-      const angle = baseAngle + plane.initialRotation + rotationDelta;
+
+      // Add a very subtle wobble (3-5 degrees max) for natural paper airplane movement
+      const wobbleFrequency = 2; // Slow wobble
+      const wobbleAmplitude = 0.05; // ~3 degrees in radians
+      const wobble = Math.sin(elapsed * 0.002 * wobbleFrequency + plane.wobblePhase) * wobbleAmplitude;
+
+      const angle = baseAngle + wobble;
 
       // Draw
       const ctx = this.ctx;
