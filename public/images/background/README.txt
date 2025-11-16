@@ -1,38 +1,48 @@
 PayFriends Money Planes Sprite Sheet
 ======================================
 
-Required file: flying-money-planes.png
+File: flying-money-planes.png
 
-This sprite sheet should contain money paper airplane images for multiple currencies.
+This sprite sheet contains 12 colorful money paper airplane images made from real currency bills.
 
-Expected Layout:
-----------------
-The sprite sheet should be organized in a grid with the following regions:
+Actual Layout:
+--------------
+Sprite sheet dimensions: 1024px × 1536px
+
+The sprite sheet contains 12 money paper airplanes arranged in 5 rows:
 
 Row 1:
-- USD plane: x=0, y=0, width=200px, height=100px
-- EUR plane: x=200, y=0, width=200px, height=100px
-- GBP plane: x=400, y=0, width=200px, height=100px
+- USD $100 plane (left): 60,50 300×150
+- EUR €50 plane (right): 580,50 300×200
 
 Row 2:
-- CHF plane: x=0, y=100, width=200px, height=100px
-- JPY plane: x=200, y=100, width=200px, height=100px
+- CHF 20 green plane (left): 60,330 200×150
+- GBP plane (center): 360,270 220×180
+- EUR €50 flat bill (right): 620,330 220×140
 
-Total sprite sheet dimensions: 600px × 200px
+Row 3:
+- EUR €100 yellow plane (left): 120,540 280×180
+- JPY plane (right): 720,600 280×160
 
-Design Guidelines:
-------------------
-- Each plane should be a stylized paper airplane made from currency
-- Include visual currency indicators (symbols, colors, or bill designs)
-- Transparent background (PNG with alpha channel)
-- High resolution for crisp display at various sizes
-- Consider the PayFriends brand green (#3ddc97) as an accent
+Row 4:
+- EUR €100 green plane (left): 60,850 240×140
+- EUR €20 yellow plane (center): 420,840 200×140
+- EUR €10 bill (right): 660,880 200×120
 
-Fallback Behavior:
-------------------
-If the sprite sheet is not available, the component will:
-1. Show a loading placeholder initially
-2. Fall back to programmatically drawn planes if loading fails
-3. Display the currency code on each fallback plane
+Row 5:
+- EUR €100 green plane (left): 60,1130 260×150
+- EUR €20 yellow plane (center): 420,1160 230×140
+- GBP £20 green plane (right): 760,1140 180×140
 
-The animation will work regardless of sprite sheet availability.
+Design Features:
+----------------
+- Realistic paper airplanes folded from actual currency bills
+- Multiple currencies: USD, EUR, GBP, CHF, JPY
+- Various orientations and sizes for visual variety
+- Dark navy background for contrast
+- High resolution for crisp display at various scales
+
+Implementation:
+---------------
+The component randomly selects from these 12 sprite regions when creating new planes.
+Each plane is scaled (0.4x to 1.4x) and rotated during flight for natural variation.
