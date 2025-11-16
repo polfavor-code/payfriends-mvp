@@ -659,6 +659,29 @@ app.get('/api/user', requireAuth, (req, res) => {
   res.json({ user: req.user });
 });
 
+// Update user timezone preference
+app.patch('/api/settings/timezone', requireAuth, (req, res) => {
+  const { timezone } = req.body || {};
+
+  if (!timezone || !timezone.trim()) {
+    return res.status(400).json({ error: 'Timezone is required' });
+  }
+
+  // Validate timezone format (basic check for IANA format)
+  if (!/^[A-Za-z_]+\/[A-Za-z_]+/.test(timezone)) {
+    return res.status(400).json({ error: 'Invalid timezone format' });
+  }
+
+  try {
+    db.prepare('UPDATE users SET timezone = ? WHERE id = ?')
+      .run(timezone.trim(), req.user.id);
+    res.json({ success: true, timezone: timezone.trim() });
+  } catch (err) {
+    console.error('Error updating timezone:', err);
+    res.status(500).json({ error: 'Server error updating timezone' });
+  }
+});
+
 // Update user profile
 app.post('/api/profile', requireAuth, (req, res) => {
   const { fullName, phoneNumber, timezone } = req.body || {};

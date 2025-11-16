@@ -9,8 +9,6 @@
   <link rel="stylesheet" href="/css/shared-controls.css" />
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
-  <!-- Phone input component -->
-  <script src="/js/phone-input.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -88,31 +86,7 @@
   <div class="container">
     <h1 class="page-title">Settings</h1>
 
-    <!-- Section 1: My Profile -->
-    <div class="card">
-      <h2 class="section-title">My Profile</h2>
-      <p class="section-description">Manage your personal information and profile settings</p>
-
-      <div class="row">
-        <label for="email">Email</label>
-        <input type="email" id="email" disabled />
-      </div>
-
-      <div class="row">
-        <label for="fullName">Full Name</label>
-        <input type="text" id="fullName" placeholder="Enter your full name" />
-      </div>
-
-      <div class="row">
-        <label for="phoneNumber">Phone Number</label>
-        <div class="phone-input-wrapper" id="phoneInputWrapper"></div>
-      </div>
-
-      <button id="saveProfileBtn">Save Profile Changes</button>
-      <div class="status" id="profileStatus"></div>
-    </div>
-
-    <!-- Section 2: App Preferences -->
+    <!-- App Preferences -->
     <div class="card">
       <h2 class="section-title">App Preferences</h2>
       <p class="section-description">Customize your app experience and display settings</p>
@@ -130,7 +104,7 @@
       <div class="status" id="preferencesStatus"></div>
     </div>
 
-    <!-- Section 3: Security -->
+    <!-- Security -->
     <div class="card">
       <h2 class="section-title">Security</h2>
       <p class="section-description">Manage your account security settings</p>
@@ -138,24 +112,6 @@
       <div class="row">
         <button style="background:#6366f1">Change Password</button>
         <div class="helper-text">Coming soon: Update your password and enable two-factor authentication</div>
-      </div>
-    </div>
-
-    <!-- Section 4: Legal -->
-    <div class="card">
-      <h2 class="section-title">Legal & About</h2>
-      <p class="section-description">Terms, privacy policy, and app information</p>
-
-      <div class="row">
-        <div style="color:var(--muted); font-size:14px; line-height:2">
-          <div><a href="#" class="link-style">Terms of Service</a></div>
-          <div><a href="#" class="link-style">Privacy Policy</a></div>
-          <div style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08)">
-            <strong>PayFriends</strong><br>
-            Version 1.0.0<br>
-            © 2025 PayFriends
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -222,14 +178,10 @@
       'UTC'
     ].sort();
 
-    let currentUser = null;
-    let phoneInputWidget = null;
-
     /**
-     * Initialize timezone dropdown with user timezone or browser detection
-     * @param {Object|null} user - User object or null
+     * Initialize timezone dropdown with browser-detected timezone
      */
-    function initializeTimezoneSelect(user) {
+    function initializeTimezoneSelect() {
       const timezoneSelect = document.getElementById('timezone');
       timezoneSelect.innerHTML = '';
 
@@ -240,11 +192,7 @@
         console.warn('Failed to detect timezone:', e);
       }
 
-      // Decide which timezone to preselect:
-      // - user.timezone if available
-      // - otherwise detectedTimezone
-      // - otherwise default 'Europe/Amsterdam'
-      const currentTimezone = (user && user.timezone) || detectedTimezone || 'Europe/Amsterdam';
+      const currentTimezone = detectedTimezone || 'Europe/Amsterdam';
 
       TIMEZONES.forEach(tz => {
         const option = document.createElement('option');
@@ -255,111 +203,6 @@
         }
         timezoneSelect.appendChild(option);
       });
-
-      // If we have a user object and they have no timezone stored yet,
-      // but we detected one and it is in our list, silently save it.
-      if (user && !user.timezone && detectedTimezone && TIMEZONES.includes(detectedTimezone)) {
-        saveTimezoneOnly(detectedTimezone).catch(err => {
-          console.error('Failed to auto-save timezone:', err);
-        });
-      }
-    }
-
-    async function loadUserData() {
-      try {
-        const res = await fetch('/api/user');
-        if (!res.ok) {
-          if (res.status === 401) {
-            window.location.href = '/login.html';
-            return;
-          }
-          throw new Error('Failed to load user data');
-        }
-        const data = await res.json();
-        currentUser = data.user;
-
-        // Populate fields
-        document.getElementById('email').value = currentUser.email || '';
-        document.getElementById('fullName').value = currentUser.full_name || '';
-
-        // Initialize phone input using the PhoneInput class
-        const phoneContainer = document.getElementById('phoneInputWrapper');
-        phoneContainer.innerHTML = ''; // clear before re-initializing
-        phoneInputWidget = new PhoneInput(phoneContainer);
-        if (currentUser.phone_number) {
-          phoneInputWidget.setNumber(currentUser.phone_number);
-        }
-
-        // Initialize timezone dropdown using helper
-        initializeTimezoneSelect(currentUser);
-
-        // Clear any previous error messages on successful load
-        showStatus('profileStatus', '', '');
-
-      } catch (err) {
-        console.error('Error loading user:', err);
-        showStatus('profileStatus', 'Failed to load user data. Please refresh the page or try again.', 'error');
-
-        // Even if user data fails, still initialize timezone dropdown using only browser detection and default
-        currentUser = null;
-        initializeTimezoneSelect(null);
-      }
-    }
-
-    async function saveTimezoneOnly(timezone) {
-      // Silent save for auto-detection on first load
-      try {
-        const res = await fetch('/api/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fullName: currentUser ? (currentUser.full_name || 'User') : 'User',
-            phoneNumber: currentUser ? currentUser.phone_number : null,
-            timezone: timezone
-          })
-        });
-        if (res.ok) {
-          if (!currentUser) {
-            currentUser = {};
-          }
-          currentUser.timezone = timezone;
-        }
-      } catch (err) {
-        console.error('Failed to auto-save timezone:', err);
-      }
-    }
-
-    async function saveProfile() {
-      const fullName = document.getElementById('fullName').value.trim();
-      const phoneNumber = phoneInputWidget ? phoneInputWidget.getFullNumber() : '';
-
-      if (!fullName) {
-        showStatus('profileStatus', 'Full name is required', 'error');
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fullName,
-            phoneNumber,
-            timezone: currentUser ? currentUser.timezone : undefined
-          })
-        });
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || 'Failed to save profile');
-        }
-
-        showStatus('profileStatus', 'Profile updated successfully', 'success');
-        setTimeout(() => loadUserData(), 1000);
-      } catch (err) {
-        console.error('Error saving profile:', err);
-        showStatus('profileStatus', err.message, 'error');
-      }
     }
 
     async function savePreferences() {
@@ -371,14 +214,10 @@
       }
 
       try {
-        const res = await fetch('/api/profile', {
-          method: 'POST',
+        const res = await fetch('/api/settings/timezone', {
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fullName: currentUser ? (currentUser.full_name || 'User') : 'User',
-            phoneNumber: currentUser ? currentUser.phone_number : null,
-            timezone: timezone
-          })
+          body: JSON.stringify({ timezone })
         });
 
         if (!res.ok) {
@@ -386,10 +225,6 @@
           throw new Error(data.error || 'Failed to save preferences');
         }
 
-        if (!currentUser) {
-          currentUser = {};
-        }
-        currentUser.timezone = timezone;
         showStatus('preferencesStatus', 'Preferences updated successfully', 'success');
       } catch (err) {
         console.error('Error saving preferences:', err);
@@ -410,11 +245,10 @@
     }
 
     // Event listeners
-    document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
     document.getElementById('savePreferencesBtn').addEventListener('click', savePreferences);
 
-    // Load user data on page load
-    loadUserData();
+    // Initialize UI
+    initializeTimezoneSelect();
 
     // Initialize header
     PayFriendsHeader.initialize();

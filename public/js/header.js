@@ -261,6 +261,7 @@
     // Dropdown menu item actions
     const profileItem = document.getElementById('user-menu-profile');
     const settingsItem = document.getElementById('user-menu-settings');
+    const legalItem = document.getElementById('user-menu-legal');
     const logoutItem = document.getElementById('user-menu-logout');
 
     if (profileItem) {
@@ -272,6 +273,12 @@
     if (settingsItem) {
       settingsItem.addEventListener('click', () => {
         window.location.href = '/settings';
+      });
+    }
+
+    if (legalItem) {
+      legalItem.addEventListener('click', () => {
+        window.location.href = '/legal';
       });
     }
 
