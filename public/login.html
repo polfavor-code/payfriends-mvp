@@ -233,17 +233,17 @@
   </div>
 
   <!-- Money Airplanes Animated Background Component -->
-  <script src="/components/payfriends-money-airplanes-background.js"></script>
+  <script src="/components/PayFriendsMoneyPlanesAnimated.js"></script>
 
   <script>
     // Initialize Money Airplanes background
     (function(){
       const canvas = document.getElementById('money-airplanes-canvas');
-      if (canvas && window.PayFriendsMoneyAirplanesBackground) {
-        const moneyAirplanesBg = new window.PayFriendsMoneyAirplanesBackground(canvas, {
+      if (canvas && window.PayFriendsMoneyPlanesAnimated) {
+        const moneyAirplanesBg = new window.PayFriendsMoneyPlanesAnimated(canvas, {
           speed: 1,
           density: 1,
-          opacity: 0.18
+          opacity: 0.15
         });
         moneyAirplanesBg.start();
 
