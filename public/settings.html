@@ -242,8 +242,12 @@
         document.getElementById('email').value = currentUser.email || '';
         document.getElementById('fullName').value = currentUser.full_name || '';
 
-        // Initialize phone input
-        phoneInputWidget = initPhoneInput('phoneInputWrapper', currentUser.phone_number || '');
+        // Initialize phone input using the PhoneInput class
+        const phoneContainer = document.getElementById('phoneInputWrapper');
+        phoneInputWidget = new PhoneInput(phoneContainer);
+        if (currentUser.phone_number) {
+          phoneInputWidget.setNumber(currentUser.phone_number);
+        }
 
         // Populate timezone dropdown
         const timezoneSelect = document.getElementById('timezone');
@@ -275,9 +279,12 @@
           await saveTimezoneOnly(detectedTimezone);
         }
 
+        // Clear any previous error messages on successful load
+        showStatus('profileStatus', '', '');
+
       } catch (err) {
         console.error('Error loading user:', err);
-        showStatus('profileStatus', 'Failed to load user data', 'error');
+        showStatus('profileStatus', 'Failed to load user data. Please refresh the page or try again.', 'error');
       }
     }
 
@@ -359,10 +366,10 @@
         }
 
         currentUser.timezone = timezone;
-        showStatus('preferencesStatus', 'Timezone updated successfully', 'success');
+        showStatus('preferencesStatus', 'Preferences updated successfully', 'success');
       } catch (err) {
         console.error('Error saving preferences:', err);
-        showStatus('preferencesStatus', err.message, 'error');
+        showStatus('preferencesStatus', 'Failed to save preferences. Please try again.', 'error');
       }
     }
 
