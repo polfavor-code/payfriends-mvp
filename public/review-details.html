@@ -358,15 +358,12 @@
 
       <div class="form-group">
         <label class="form-label" for="inline-payment-method">Payment method</label>
-        <div style="position:relative; width:100%; max-width:400px">
-          <select id="inline-payment-method" required style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
-            <!-- Options populated dynamically based on agreement payment methods -->
-          </select>
-          <span id="toggle-method-details-link" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap; text-decoration:underline; text-decoration-style:dotted; display:none">Show details</span>
-        </div>
+        <select id="inline-payment-method" required style="width:100%; max-width:400px; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+          <!-- Options populated dynamically based on agreement payment methods -->
+        </select>
       </div>
 
-      <!-- Payment method details section (collapsed by default) -->
+      <!-- Payment method details section (shown automatically when method is selected) -->
       <div id="inline-payment-method-details" class="hidden" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin:-8px 0 16px 0; font-size:14px; line-height:1.8">
         <!-- Method details populated dynamically -->
       </div>
@@ -1340,59 +1337,7 @@
 
     function setupPaymentMethodToggle(agreement, autoSelected) {
       const paymentMethodSelect = document.getElementById('inline-payment-method');
-      const toggleLink = document.getElementById('toggle-method-details-link');
       const detailsSection = document.getElementById('inline-payment-method-details');
-
-      let isDetailsVisible = false;
-
-      // Method name mapping for the toggle link
-      const methodLabels = {
-        'bank': 'bank',
-        'paypal': 'PayPal',
-        'crypto': 'crypto',
-        'cash': 'cash',
-        'revolut': 'Revolut',
-        'bizum': 'Bizum',
-        'other': 'other method'
-      };
-
-      // Update toggle link visibility and text based on selected method
-      function updateToggleLink() {
-        const selectedMethod = paymentMethodSelect.value;
-
-        if (!selectedMethod) {
-          // No method selected - hide the link
-          toggleLink.style.display = 'none';
-          detailsSection.classList.add('hidden');
-          isDetailsVisible = false;
-        } else {
-          // Method selected - show the link with appropriate text
-          const methodLabel = methodLabels[selectedMethod] || 'method';
-          const actionText = isDetailsVisible ? 'Hide' : 'Show';
-          toggleLink.textContent = `${actionText} ${methodLabel} details`;
-          toggleLink.style.display = 'inline';
-        }
-      }
-
-      // Toggle details visibility
-      function toggleDetails() {
-        const selectedMethod = paymentMethodSelect.value;
-
-        if (!selectedMethod) return;
-
-        isDetailsVisible = !isDetailsVisible;
-
-        if (isDetailsVisible) {
-          // Show details
-          renderMethodDetails(selectedMethod);
-          detailsSection.classList.remove('hidden');
-        } else {
-          // Hide details
-          detailsSection.classList.add('hidden');
-        }
-
-        updateToggleLink();
-      }
 
       // Render payment method details
       function renderMethodDetails(methodValue) {
@@ -1440,6 +1385,20 @@
         detailsSection.innerHTML = html;
       }
 
+      // Function to update payment method details visibility
+      function updateMethodDetails() {
+        const selectedMethod = paymentMethodSelect.value;
+
+        if (!selectedMethod) {
+          // No method selected - hide details
+          detailsSection.classList.add('hidden');
+        } else {
+          // Method selected - show details automatically
+          renderMethodDetails(selectedMethod);
+          detailsSection.classList.remove('hidden');
+        }
+      }
+
       // Function to update crypto tip visibility
       function updateCryptoTip() {
         const cryptoTip = document.getElementById('crypto-tx-tip');
@@ -1455,23 +1414,16 @@
 
       // Set up event listeners
       paymentMethodSelect.addEventListener('change', () => {
-        // Reset details when method changes
-        isDetailsVisible = false;
-        detailsSection.classList.add('hidden');
-        updateToggleLink();
+        // Show/hide details based on selected method
+        updateMethodDetails();
 
         // Update crypto tip visibility
         updateCryptoTip();
       });
 
-      toggleLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleDetails();
-      });
-
-      // Initial setup - if method is auto-selected, update the link
+      // Initial setup - if method is auto-selected, show details
       if (autoSelected) {
-        updateToggleLink();
+        updateMethodDetails();
       }
 
       // Initial crypto tip visibility update
