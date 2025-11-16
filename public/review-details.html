@@ -363,6 +363,11 @@
         </div>
       </div>
 
+      <!-- Crypto tip (only visible when payment method is Crypto) -->
+      <p id="crypto-tx-tip" class="hidden" style="color:var(--muted); font-size:13px; margin:0 0 16px 0">
+        <strong>Tip:</strong> You can also paste the TX hash or blockchain link in the note field.
+      </p>
+
       <div class="form-group">
         <label class="form-label" for="inline-payment-note">Note (optional)</label>
         <input type="text" id="inline-payment-note" placeholder="Add a short note (e.g., paid in two parts)" maxlength="120" style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
@@ -1393,12 +1398,28 @@
         detailsSection.innerHTML = html;
       }
 
+      // Function to update crypto tip visibility
+      function updateCryptoTip() {
+        const cryptoTip = document.getElementById('crypto-tx-tip');
+        if (cryptoTip) {
+          const selectedMethod = paymentMethodSelect.value;
+          if (selectedMethod === 'crypto') {
+            cryptoTip.classList.remove('hidden');
+          } else {
+            cryptoTip.classList.add('hidden');
+          }
+        }
+      }
+
       // Set up event listeners
       paymentMethodSelect.addEventListener('change', () => {
         // Reset details when method changes
         isDetailsVisible = false;
         detailsSection.classList.add('hidden');
         updateToggleLink();
+
+        // Update crypto tip visibility
+        updateCryptoTip();
       });
 
       toggleLink.addEventListener('click', (e) => {
@@ -1410,6 +1431,9 @@
       if (autoSelected) {
         updateToggleLink();
       }
+
+      // Initial crypto tip visibility update
+      updateCryptoTip();
     }
 
     function updatePaymentHelpers(nextPaymentInfo) {
@@ -1679,6 +1703,12 @@
       // Hide payment method details and toggle link
       document.getElementById('toggle-method-details-link').style.display = 'none';
       document.getElementById('inline-payment-method-details').classList.add('hidden');
+
+      // Hide crypto tip
+      const cryptoTip = document.getElementById('crypto-tx-tip');
+      if (cryptoTip) {
+        cryptoTip.classList.add('hidden');
+      }
 
       // Reset dropzone state
       const dropzone = document.getElementById('inline-payment-proof-dropzone');
