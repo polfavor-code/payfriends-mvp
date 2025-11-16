@@ -178,10 +178,13 @@
       'UTC'
     ].sort();
 
+    let currentUser = null;
+
     /**
-     * Initialize timezone dropdown with browser-detected timezone
+     * Initialize timezone dropdown with user timezone or browser-detected timezone
+     * @param {string|null} initialTimezone - User's stored timezone
      */
-    function initializeTimezoneSelect() {
+    function initializeTimezoneSelect(initialTimezone) {
       const timezoneSelect = document.getElementById('timezone');
       timezoneSelect.innerHTML = '';
 
@@ -192,7 +195,7 @@
         console.warn('Failed to detect timezone:', e);
       }
 
-      const currentTimezone = detectedTimezone || 'Europe/Amsterdam';
+      const currentTimezone = initialTimezone || detectedTimezone || 'Europe/Amsterdam';
 
       TIMEZONES.forEach(tz => {
         const option = document.createElement('option');
@@ -205,6 +208,31 @@
       });
     }
 
+    /**
+     * Load current user timezone from backend
+     */
+    async function loadCurrentUserTimezone() {
+      try {
+        const res = await fetch('/api/user');
+
+        if (!res.ok) {
+          throw new Error('Failed to load user');
+        }
+
+        // Match the response shape from header.js
+        const data = await res.json();
+        currentUser = data.user;
+
+        const tzFromUser = currentUser.timezone || null;
+
+        initializeTimezoneSelect(tzFromUser);
+      } catch (err) {
+        console.error('Could not load current user for timezone:', err);
+        currentUser = null;
+        initializeTimezoneSelect(null);
+      }
+    }
+
     async function savePreferences() {
       const timezone = document.getElementById('timezone').value;
 
@@ -214,16 +242,34 @@
       }
 
       try {
-        const res = await fetch('/api/settings/timezone', {
-          method: 'PATCH',
+        const payload = {
+          timezone: timezone
+        };
+
+        // If backend requires fullName and phoneNumber in the same call, include them
+        if (currentUser) {
+          if (currentUser.full_name) {
+            payload.fullName = currentUser.full_name;
+          }
+          if (currentUser.phone_number) {
+            payload.phoneNumber = currentUser.phone_number;
+          }
+        }
+
+        const res = await fetch('/api/profile', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ timezone })
+          body: JSON.stringify(payload)
         });
 
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error || 'Failed to save preferences');
         }
+
+        // Update local copy so later saves use the new value
+        if (!currentUser) currentUser = {};
+        currentUser.timezone = timezone;
 
         showStatus('preferencesStatus', 'Preferences updated successfully', 'success');
       } catch (err) {
@@ -247,8 +293,8 @@
     // Event listeners
     document.getElementById('savePreferencesBtn').addEventListener('click', savePreferences);
 
-    // Initialize UI
-    initializeTimezoneSelect();
+    // Load user timezone on page load
+    loadCurrentUserTimezone();
 
     // Initialize header
     PayFriendsHeader.initialize();

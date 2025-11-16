@@ -686,28 +686,37 @@ app.patch('/api/settings/timezone', requireAuth, (req, res) => {
 app.post('/api/profile', requireAuth, (req, res) => {
   const { fullName, phoneNumber, timezone } = req.body || {};
 
-  if (!fullName || !fullName.trim()) {
-    return res.status(400).json({ error: 'Full name is required' });
+  // Get current user data to check if we need to update or preserve existing values
+  const currentUserData = db.prepare('SELECT full_name, phone_number, timezone FROM users WHERE id = ?').get(req.user.id);
+
+  // Determine which values to update
+  const newFullName = fullName !== undefined ? (fullName.trim() || null) : currentUserData.full_name;
+  const newPhoneNumber = phoneNumber !== undefined ? (phoneNumber || null) : currentUserData.phone_number;
+  const newTimezone = timezone !== undefined ? (timezone || null) : currentUserData.timezone;
+
+  // If updating full_name, it must not be empty
+  if (fullName !== undefined && (!fullName || !fullName.trim())) {
+    return res.status(400).json({ error: 'Full name cannot be empty' });
   }
 
   // Phone number validation if provided
-  if (phoneNumber !== undefined && phoneNumber !== null && phoneNumber !== '') {
-    if (!/\d/.test(phoneNumber)) {
+  if (newPhoneNumber !== null && newPhoneNumber !== '') {
+    if (!/\d/.test(newPhoneNumber)) {
       return res.status(400).json({ error: 'Phone number must contain at least one digit' });
     }
   }
 
   // Validate timezone if provided (basic check for IANA format)
-  if (timezone !== undefined && timezone !== null && timezone !== '') {
-    if (!/^[A-Za-z_]+\/[A-Za-z_]+/.test(timezone)) {
+  if (newTimezone !== null && newTimezone !== '') {
+    if (!/^[A-Za-z_]+\/[A-Za-z_]+/.test(newTimezone)) {
       return res.status(400).json({ error: 'Invalid timezone format' });
     }
   }
 
   try {
     db.prepare('UPDATE users SET full_name = ?, phone_number = ?, timezone = ? WHERE id = ?')
-      .run(fullName.trim(), phoneNumber || null, timezone || null, req.user.id);
-    res.json({ success: true, full_name: fullName.trim(), phone_number: phoneNumber || null, timezone: timezone || null });
+      .run(newFullName, newPhoneNumber, newTimezone, req.user.id);
+    res.json({ success: true, full_name: newFullName, phone_number: newPhoneNumber, timezone: newTimezone });
   } catch (err) {
     console.error('Error updating profile:', err);
     res.status(500).json({ error: 'Server error updating profile' });
@@ -3803,6 +3812,15 @@ app.get('/profile', (req, res) => {
 app.get('/settings', (req, res) => {
   if (req.user) {
     res.sendFile(path.join(__dirname, 'public', 'settings.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Legal & About: serve legal page if authenticated, else redirect to /
+app.get('/legal', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'legal.html'));
   } else {
     res.redirect('/');
   }
