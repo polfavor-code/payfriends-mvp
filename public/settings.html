@@ -225,6 +225,46 @@
     let currentUser = null;
     let phoneInputWidget = null;
 
+    /**
+     * Initialize timezone dropdown with user timezone or browser detection
+     * @param {Object|null} user - User object or null
+     */
+    function initializeTimezoneSelect(user) {
+      const timezoneSelect = document.getElementById('timezone');
+      timezoneSelect.innerHTML = '';
+
+      let detectedTimezone = null;
+      try {
+        detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } catch (e) {
+        console.warn('Failed to detect timezone:', e);
+      }
+
+      // Decide which timezone to preselect:
+      // - user.timezone if available
+      // - otherwise detectedTimezone
+      // - otherwise default 'Europe/Amsterdam'
+      const currentTimezone = (user && user.timezone) || detectedTimezone || 'Europe/Amsterdam';
+
+      TIMEZONES.forEach(tz => {
+        const option = document.createElement('option');
+        option.value = tz;
+        option.textContent = tz.replace(/_/g, ' ');
+        if (tz === currentTimezone) {
+          option.selected = true;
+        }
+        timezoneSelect.appendChild(option);
+      });
+
+      // If we have a user object and they have no timezone stored yet,
+      // but we detected one and it is in our list, silently save it.
+      if (user && !user.timezone && detectedTimezone && TIMEZONES.includes(detectedTimezone)) {
+        saveTimezoneOnly(detectedTimezone).catch(err => {
+          console.error('Failed to auto-save timezone:', err);
+        });
+      }
+    }
+
     async function loadUserData() {
       try {
         const res = await fetch('/api/user');
@@ -244,40 +284,14 @@
 
         // Initialize phone input using the PhoneInput class
         const phoneContainer = document.getElementById('phoneInputWrapper');
+        phoneContainer.innerHTML = ''; // clear before re-initializing
         phoneInputWidget = new PhoneInput(phoneContainer);
         if (currentUser.phone_number) {
           phoneInputWidget.setNumber(currentUser.phone_number);
         }
 
-        // Populate timezone dropdown
-        const timezoneSelect = document.getElementById('timezone');
-        timezoneSelect.innerHTML = '';
-
-        // Auto-detect browser timezone if user has no timezone set
-        let detectedTimezone = null;
-        try {
-          detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        } catch (e) {
-          console.warn('Failed to detect timezone:', e);
-        }
-
-        // Use user's stored timezone, or detected timezone, or default to Europe/Amsterdam
-        const currentTimezone = currentUser.timezone || detectedTimezone || 'Europe/Amsterdam';
-
-        TIMEZONES.forEach(tz => {
-          const option = document.createElement('option');
-          option.value = tz;
-          option.textContent = tz.replace(/_/g, ' ');
-          if (tz === currentTimezone) {
-            option.selected = true;
-          }
-          timezoneSelect.appendChild(option);
-        });
-
-        // If user has no timezone set and we detected one, auto-save it
-        if (!currentUser.timezone && detectedTimezone && TIMEZONES.includes(detectedTimezone)) {
-          await saveTimezoneOnly(detectedTimezone);
-        }
+        // Initialize timezone dropdown using helper
+        initializeTimezoneSelect(currentUser);
 
         // Clear any previous error messages on successful load
         showStatus('profileStatus', '', '');
@@ -285,6 +299,10 @@
       } catch (err) {
         console.error('Error loading user:', err);
         showStatus('profileStatus', 'Failed to load user data. Please refresh the page or try again.', 'error');
+
+        // Even if user data fails, still initialize timezone dropdown using only browser detection and default
+        currentUser = null;
+        initializeTimezoneSelect(null);
       }
     }
 
@@ -295,12 +313,15 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            fullName: currentUser.full_name || 'User',
-            phoneNumber: currentUser.phone_number,
+            fullName: currentUser ? (currentUser.full_name || 'User') : 'User',
+            phoneNumber: currentUser ? currentUser.phone_number : null,
             timezone: timezone
           })
         });
         if (res.ok) {
+          if (!currentUser) {
+            currentUser = {};
+          }
           currentUser.timezone = timezone;
         }
       } catch (err) {
@@ -324,12 +345,12 @@
           body: JSON.stringify({
             fullName,
             phoneNumber,
-            timezone: currentUser.timezone // Keep current timezone
+            timezone: currentUser ? currentUser.timezone : undefined
           })
         });
 
         if (!res.ok) {
-          const data = await res.json();
+          const data = await res.json().catch(() => ({}));
           throw new Error(data.error || 'Failed to save profile');
         }
 
@@ -354,17 +375,20 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            fullName: currentUser.full_name || 'User',
-            phoneNumber: currentUser.phone_number,
+            fullName: currentUser ? (currentUser.full_name || 'User') : 'User',
+            phoneNumber: currentUser ? currentUser.phone_number : null,
             timezone: timezone
           })
         });
 
         if (!res.ok) {
-          const data = await res.json();
+          const data = await res.json().catch(() => ({}));
           throw new Error(data.error || 'Failed to save preferences');
         }
 
+        if (!currentUser) {
+          currentUser = {};
+        }
         currentUser.timezone = timezone;
         showStatus('preferencesStatus', 'Preferences updated successfully', 'success');
       } catch (err) {
