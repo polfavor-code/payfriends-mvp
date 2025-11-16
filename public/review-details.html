@@ -221,6 +221,28 @@
     .timeline-comparison-table td:first-child{color:var(--muted)}
     .timeline-comparison-table td.value-old{color:#f87171}
     .timeline-comparison-table td.value-new{color:var(--accent)}
+
+    /* Toast notification animations */
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -800,6 +822,26 @@
     let agreement = null;
     let currentUser = null;
     let mode = 'view'; // 'review' or 'view'
+
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Get payment method display info
+    function getPaymentMethodInfo(method) {
+      const methodMap = {
+        'bank': { label: 'Bank Transfer', icon: '🏦' },
+        'paypal': { label: 'PayPal', icon: '💳' },
+        'crypto': { label: 'Crypto', icon: '₿' },
+        'cash': { label: 'Cash', icon: '💵' },
+        'other': { label: 'Other Method', icon: '💱' }
+      };
+
+      return methodMap[method] || { label: method, icon: '💰' };
+    }
 
     // Initialize shared header
     document.addEventListener('DOMContentLoaded', async () => {
@@ -4298,6 +4340,9 @@
         return html;
       }
 
+      // Check if current user is the lender
+      const isLender = currentUser && agreement.lender_user_id === currentUser.id;
+
       // List each method with a "Show details" link
       html += '<div style="display:flex; flex-direction:column; gap:8px; margin-left:8px">';
 
@@ -4316,7 +4361,12 @@
               </button>
             </div>
             <div id="inline-details-${method.method}" class="hidden" style="margin-left:16px; padding:12px; background:rgba(255,255,255,0.02); border-left:2px solid var(--accent); border-radius:4px">
-              ${renderPaymentMethodDetails(method)}
+              <div id="inline-details-view-${method.method}">
+                ${renderPaymentMethodDetailsWithEdit(method, isLender)}
+              </div>
+              <div id="inline-details-edit-${method.method}" class="hidden">
+                ${renderPaymentMethodEditForm(method)}
+              </div>
             </div>
           </div>
         `;
@@ -4325,6 +4375,121 @@
       html += '</div>';
       html += '</div>';
 
+      return html;
+    }
+
+    // Render payment method details with edit button for lenders
+    function renderPaymentMethodDetailsWithEdit(method, isLender) {
+      const methodInfo = getPaymentMethodInfo(method.method);
+
+      let html = `<div style="font-size:14px; line-height:1.8; color:var(--text)">`;
+      html += `<p style="margin:0 0 12px 0; font-weight:600">${methodInfo.icon} ${methodInfo.label}</p>`;
+
+      if (method.method === 'cash') {
+        html += `<p style="margin:0; color:var(--muted)">Pay in cash directly to the lender.</p>`;
+      } else if (method.details) {
+        html += `<div style="white-space:pre-wrap; font-family:monospace; background:rgba(0,0,0,0.2); padding:12px; border-radius:6px; margin:8px 0">${escapeHtml(method.details)}</div>`;
+      } else {
+        html += `<p style="margin:0; color:var(--muted)">No additional details provided.</p>`;
+      }
+
+      // Add "Edit details" button for lenders (except for cash which has no editable details)
+      if (isLender && method.method !== 'cash') {
+        html += `
+          <div style="margin-top:12px">
+            <button
+              onclick="showPaymentMethodEditForm('${method.method}')"
+              style="background:none; border:none; color:var(--accent); font-size:13px; cursor:pointer; padding:0; text-decoration:underline; font-weight:500"
+            >
+              Edit details
+            </button>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+
+      return html;
+    }
+
+    // Render payment method edit form
+    function renderPaymentMethodEditForm(method) {
+      const methodInfo = getPaymentMethodInfo(method.method);
+      let html = `<div style="font-size:14px; line-height:1.8; color:var(--text)">`;
+      html += `<p style="margin:0 0 12px 0; font-weight:600">Editing ${methodInfo.label} details:</p>`;
+
+      // Different form fields based on payment method type
+      if (method.method === 'bank') {
+        html += `
+          <div style="margin-bottom:12px">
+            <label style="display:block; margin-bottom:6px; font-weight:500; font-size:13px">Bank transfer instructions</label>
+            <textarea
+              id="edit-details-${method.method}"
+              placeholder="Enter all information needed to receive a bank transfer, including the account holder name.&#10;&#10;Examples: IBAN, account number, routing number, sort code, BSB, SWIFT, or any regional format."
+              style="width:100%; min-height:120px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:inherit; resize:vertical"
+            >${escapeHtml(method.details || '')}</textarea>
+            <p style="color:var(--muted); font-size:12px; margin:6px 0 0 0">Enter all information needed to receive a bank transfer, including the account holder name.</p>
+          </div>
+        `;
+      } else if (method.method === 'paypal') {
+        html += `
+          <div style="margin-bottom:12px">
+            <label style="display:block; margin-bottom:6px; font-weight:500; font-size:13px">PayPal email</label>
+            <input
+              id="edit-details-${method.method}"
+              type="email"
+              placeholder="your.email@example.com"
+              value="${escapeHtml(method.details || '')}"
+              style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)"
+            />
+          </div>
+        `;
+      } else if (method.method === 'crypto') {
+        html += `
+          <div style="margin-bottom:12px">
+            <label style="display:block; margin-bottom:6px; font-weight:500; font-size:13px">Crypto payment instructions</label>
+            <textarea
+              id="edit-details-${method.method}"
+              placeholder="Include wallet address and the network.&#10;&#10;Example: 0xABC123… (ETH on ERC-20)"
+              style="width:100%; min-height:100px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:inherit; resize:vertical"
+            >${escapeHtml(method.details || '')}</textarea>
+            <p style="color:var(--muted); font-size:12px; margin:6px 0 0 0">Include wallet address and the network.</p>
+          </div>
+        `;
+      } else if (method.method === 'other') {
+        html += `
+          <div style="margin-bottom:12px">
+            <label style="display:block; margin-bottom:6px; font-weight:500; font-size:13px">Description</label>
+            <input
+              id="edit-details-${method.method}"
+              type="text"
+              placeholder="Describe the other payment method"
+              value="${escapeHtml(method.details || '')}"
+              style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)"
+            />
+          </div>
+        `;
+      }
+
+      // Save and Cancel buttons
+      html += `
+        <div style="display:flex; gap:8px; margin-top:12px">
+          <button
+            onclick="savePaymentMethodDetails('${method.method}')"
+            style="padding:8px 16px; background:var(--accent); color:#0d130f; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px"
+          >
+            Save changes
+          </button>
+          <button
+            onclick="cancelPaymentMethodEdit('${method.method}')"
+            style="padding:8px 16px; background:none; border:none; color:var(--muted); cursor:pointer; text-decoration:underline; font-size:13px"
+          >
+            Cancel
+          </button>
+        </div>
+      `;
+
+      html += `</div>`;
       return html;
     }
 
@@ -4340,6 +4505,118 @@
         detailsEl.classList.add('hidden');
         toggleBtn.textContent = 'Show details';
       }
+    }
+
+    // Show payment method edit form
+    function showPaymentMethodEditForm(methodName) {
+      const viewEl = document.getElementById(`inline-details-view-${methodName}`);
+      const editEl = document.getElementById(`inline-details-edit-${methodName}`);
+
+      if (viewEl && editEl) {
+        viewEl.classList.add('hidden');
+        editEl.classList.remove('hidden');
+      }
+    }
+
+    // Cancel payment method edit
+    function cancelPaymentMethodEdit(methodName) {
+      const viewEl = document.getElementById(`inline-details-view-${methodName}`);
+      const editEl = document.getElementById(`inline-details-edit-${methodName}`);
+
+      if (viewEl && editEl) {
+        editEl.classList.add('hidden');
+        viewEl.classList.remove('hidden');
+      }
+    }
+
+    // Save payment method details
+    async function savePaymentMethodDetails(methodName) {
+      const detailsInput = document.getElementById(`edit-details-${methodName}`);
+
+      if (!detailsInput) {
+        console.error('Details input not found');
+        return;
+      }
+
+      const newDetails = detailsInput.value.trim();
+
+      // Validate required fields
+      if (!newDetails && methodName !== 'cash') {
+        alert('Please enter payment details.');
+        return;
+      }
+
+      // Validate PayPal email
+      if (methodName === 'paypal' && newDetails) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(newDetails)) {
+          alert('Please enter a valid email address.');
+          return;
+        }
+      }
+
+      try {
+        const response = await fetch(`/api/agreements/${agreementId}/payment-methods/${methodName}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ details: newDetails })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to update payment method details');
+        }
+
+        // Update the agreement object with new payment methods
+        agreement.payment_methods_json = JSON.stringify(data.paymentMethods);
+
+        // Reload the payment methods section
+        populatePaymentsAndRemindersDetail();
+
+        // Show success message
+        showToast('Payment method details updated successfully', 'success');
+
+        // Reload activity to show the new entry
+        if (typeof loadActivity === 'function') {
+          loadActivity();
+        }
+
+      } catch (error) {
+        console.error('Error updating payment method details:', error);
+        alert(error.message || 'Failed to update payment method details. Please try again.');
+      }
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'info') {
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: ${type === 'success' ? 'var(--accent)' : '#ef4444'};
+        color: ${type === 'success' ? '#0d130f' : 'white'};
+        border-radius: 8px;
+        font-weight: 600;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+      `;
+
+      document.body.appendChild(toast);
+
+      // Remove after 3 seconds
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, 3000);
     }
 
     // Populate payment methods detail (only for active agreements)
