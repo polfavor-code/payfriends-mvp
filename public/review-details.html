@@ -336,9 +336,17 @@
 
       <div class="form-group">
         <label class="form-label" for="inline-payment-method">Payment method</label>
-        <select id="inline-payment-method" required style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
-          <!-- Options populated dynamically based on agreement payment methods -->
-        </select>
+        <div style="position:relative; width:100%; max-width:400px">
+          <select id="inline-payment-method" required style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+            <!-- Options populated dynamically based on agreement payment methods -->
+          </select>
+          <span id="toggle-method-details-link" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap; text-decoration:underline; text-decoration-style:dotted; display:none">Show details</span>
+        </div>
+      </div>
+
+      <!-- Payment method details section (collapsed by default) -->
+      <div id="inline-payment-method-details" class="hidden" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin:-8px 0 16px 0; font-size:14px; line-height:1.8">
+        <!-- Method details populated dynamically -->
       </div>
 
       <div id="inline-payment-proof-section" class="form-group">
@@ -1187,6 +1195,9 @@
           proofInput.required = false;
         }
 
+        // Set up payment method details toggle
+        setupPaymentMethodToggle(agreement, allowedMethods.length === 1);
+
         // Set up autofill inline link
         const autofillLink = document.getElementById('autofill-amount-link');
         const amountInput = document.getElementById('inline-payment-amount');
@@ -1278,6 +1289,127 @@
           dropzone.style.background = 'rgba(61,220,151,0.05)';
         }
       };
+    }
+
+    function setupPaymentMethodToggle(agreement, autoSelected) {
+      const paymentMethodSelect = document.getElementById('inline-payment-method');
+      const toggleLink = document.getElementById('toggle-method-details-link');
+      const detailsSection = document.getElementById('inline-payment-method-details');
+
+      let isDetailsVisible = false;
+
+      // Method name mapping for the toggle link
+      const methodLabels = {
+        'bank': 'bank',
+        'paypal': 'PayPal',
+        'crypto': 'crypto',
+        'cash': 'cash',
+        'revolut': 'Revolut',
+        'bizum': 'Bizum',
+        'other': 'other method'
+      };
+
+      // Update toggle link visibility and text based on selected method
+      function updateToggleLink() {
+        const selectedMethod = paymentMethodSelect.value;
+
+        if (!selectedMethod) {
+          // No method selected - hide the link
+          toggleLink.style.display = 'none';
+          detailsSection.classList.add('hidden');
+          isDetailsVisible = false;
+        } else {
+          // Method selected - show the link with appropriate text
+          const methodLabel = methodLabels[selectedMethod] || 'method';
+          const actionText = isDetailsVisible ? 'Hide' : 'Show';
+          toggleLink.textContent = `${actionText} ${methodLabel} details`;
+          toggleLink.style.display = 'inline';
+        }
+      }
+
+      // Toggle details visibility
+      function toggleDetails() {
+        const selectedMethod = paymentMethodSelect.value;
+
+        if (!selectedMethod) return;
+
+        isDetailsVisible = !isDetailsVisible;
+
+        if (isDetailsVisible) {
+          // Show details
+          renderMethodDetails(selectedMethod);
+          detailsSection.classList.remove('hidden');
+        } else {
+          // Hide details
+          detailsSection.classList.add('hidden');
+        }
+
+        updateToggleLink();
+      }
+
+      // Render payment method details
+      function renderMethodDetails(methodValue) {
+        const methodInfo = getPaymentMethodInfo(methodValue);
+
+        // Try to get details from payment_methods_json
+        let methodDetails = null;
+
+        if (agreement.payment_methods_json) {
+          try {
+            const paymentMethods = JSON.parse(agreement.payment_methods_json);
+            const activeMethod = paymentMethods.find(pm => pm.method === methodValue && pm.status === 'active');
+            if (activeMethod) {
+              methodDetails = activeMethod.details;
+            }
+          } catch (e) {
+            console.error('Error parsing payment methods JSON:', e);
+          }
+        }
+
+        let html = `<div style="font-size:14px; line-height:1.8; color:var(--text)">`;
+        html += `<p style="margin:0 0 12px 0; font-weight:600">${methodInfo.icon} ${methodInfo.label}</p>`;
+
+        if (methodValue === 'cash') {
+          html += `<p style="margin:0; color:var(--muted)">Pay in cash directly to the lender.</p>`;
+        } else if (methodDetails) {
+          html += `<div style="white-space:pre-wrap; font-family:monospace; background:rgba(0,0,0,0.2); padding:12px; border-radius:6px; margin:8px 0">${escapeHtml(methodDetails)}</div>`;
+        } else {
+          // Fallback to legacy fields
+          if (methodValue === 'bank' && agreement.payment_bank_details) {
+            html += `<div style="white-space:pre-wrap; font-family:monospace; background:rgba(0,0,0,0.2); padding:12px; border-radius:6px; margin:8px 0">${escapeHtml(agreement.payment_bank_details)}</div>`;
+          } else if (methodValue === 'paypal' && agreement.payment_paypal_email) {
+            html += `<p style="margin:0; color:var(--muted)">PayPal email: <strong>${escapeHtml(agreement.payment_paypal_email)}</strong></p>`;
+          } else if (methodValue === 'crypto' && agreement.payment_crypto_address) {
+            html += `<div style="white-space:pre-wrap; font-family:monospace; background:rgba(0,0,0,0.2); padding:12px; border-radius:6px; margin:8px 0">${escapeHtml(agreement.payment_crypto_address)}</div>`;
+          } else if (methodValue === 'other' && agreement.payment_other_description) {
+            html += `<div style="white-space:pre-wrap; background:rgba(0,0,0,0.2); padding:12px; border-radius:6px; margin:8px 0">${escapeHtml(agreement.payment_other_description)}</div>`;
+          } else {
+            html += `<p style="margin:0; color:var(--muted)">No additional details provided.</p>`;
+          }
+        }
+
+        html += `</div>`;
+
+        detailsSection.innerHTML = html;
+      }
+
+      // Set up event listeners
+      paymentMethodSelect.addEventListener('change', () => {
+        // Reset details when method changes
+        isDetailsVisible = false;
+        detailsSection.classList.add('hidden');
+        updateToggleLink();
+      });
+
+      toggleLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleDetails();
+      });
+
+      // Initial setup - if method is auto-selected, update the link
+      if (autoSelected) {
+        updateToggleLink();
+      }
     }
 
     function updatePaymentHelpers(nextPaymentInfo) {
@@ -1543,6 +1675,10 @@
       document.getElementById('inline-payment-status').textContent = '';
       document.getElementById('amount-helper-text').textContent = '';
       document.getElementById('live-impact-box').classList.add('hidden');
+
+      // Hide payment method details and toggle link
+      document.getElementById('toggle-method-details-link').style.display = 'none';
+      document.getElementById('inline-payment-method-details').classList.add('hidden');
 
       // Reset dropzone state
       const dropzone = document.getElementById('inline-payment-proof-dropzone');
