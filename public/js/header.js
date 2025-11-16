@@ -189,12 +189,14 @@
 
     if (unreadCount > 0) {
       if (activityCountEl) {
-        activityCountEl.textContent = `(${unreadCount})`;
+        activityCountEl.textContent = ` (${unreadCount})`;
       }
       activityButton.classList.add('inbox-widget-has-unread');
     } else {
-      // Hide the count when zero
-      activityButton.innerHTML = 'Activity';
+      // Show count even when zero
+      if (activityCountEl) {
+        activityCountEl.textContent = ' (0)';
+      }
       activityButton.classList.remove('inbox-widget-has-unread');
     }
   }
