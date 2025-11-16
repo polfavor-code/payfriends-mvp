@@ -243,6 +243,9 @@
         opacity: 0;
       }
     }
+    @media (max-width: 768px) {
+      .pf-review-modal{max-width:100% !important; width:100% !important; margin:0 !important; border-radius:0 !important; padding:16px !important}
+    }
   </style>
 </head>
 <body>
@@ -4807,7 +4810,7 @@
 
   <!-- Accept Agreement Modal -->
   <div id="accept-modal" onclick="closeAcceptModal()" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.85); align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="accept-modal-title">
-    <div onclick="event.stopPropagation()" style="max-width:650px; width:90%; max-height:90vh; overflow-y:auto; position:relative; background:#1a1f26; padding:24px; border-radius:12px; cursor:default; border:1px solid rgba(255,255,255,0.1);">
+    <div onclick="event.stopPropagation()" class="pf-review-modal" style="max-width:780px; width:100%; max-height:90vh; overflow-y:auto; position:relative; background:#1a1f26; padding:24px; border-radius:12px; cursor:default; border:1px solid rgba(255,255,255,0.1);">
       <!-- Close button -->
       <span onclick="closeAcceptModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeAcceptModal();}" tabindex="0" role="button" style="position:absolute; top:10px; right:15px; color:#fff; font-size:28px; font-weight:bold; cursor:pointer; line-height:1;" aria-label="Close">&times;</span>
 
@@ -4818,9 +4821,9 @@
       <p style="color:var(--muted); margin:0 0 20px 0; font-size:14px; line-height:1.5;">Review the key terms below and confirm to proceed.</p>
 
       <!-- Key terms section -->
-      <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin-bottom:20px;">
-        <div style="font-weight:600; margin-bottom:12px; font-size:14px; color:var(--text);">Key terms</div>
-        <div id="accept-modal-terms" style="display:flex; flex-direction:column; gap:8px; font-size:13px;"></div>
+      <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin-bottom:20px; margin-top:20px;">
+        <div style="font-weight:600; margin-bottom:16px; font-size:14px; color:var(--text);">Key terms</div>
+        <div id="accept-modal-terms" style="display:flex; flex-direction:column; gap:10px; font-size:13px;"></div>
       </div>
 
       <!-- Profile name helper -->
@@ -4829,7 +4832,7 @@
       </p>
 
       <!-- Confirmations section -->
-      <div style="margin-bottom:20px;">
+      <div style="margin-bottom:20px; margin-top:20px;">
         <div style="font-weight:600; margin-bottom:12px; font-size:14px; color:var(--text);">Confirmations</div>
         <div style="display:flex; flex-direction:column; gap:12px;">
           <!-- Single required checkbox -->
@@ -4842,7 +4845,7 @@
       </div>
 
       <!-- Signature section -->
-      <div style="margin-bottom:20px;">
+      <div style="margin-bottom:20px; margin-top:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <label for="accept-signature-canvas" style="font-weight:600; font-size:14px; color:var(--text);">Sign to accept</label>
           <button type="button" id="clear-signature-btn" onclick="clearSignature()" style="background:none; border:none; color:#8691a1; font-size:12px; cursor:pointer; padding:4px 8px; text-decoration:underline;">Clear</button>
@@ -4850,8 +4853,8 @@
         <div style="position:relative; width:100%; border:1px solid rgba(255,255,255,0.15); border-radius:8px; background:rgba(255,255,255,0.02);">
           <canvas id="accept-signature-canvas" style="width:100%; height:140px; display:block; cursor:crosshair; border-radius:8px; touch-action:none;"></canvas>
         </div>
-        <p style="color:var(--muted); font-size:11px; margin-top:8px; line-height:1.5;">
-          By signing here you confirm that you are the borrower shown above and accept this repayment plan.
+        <p style="color:var(--muted); font-size:12px; margin-top:8px; line-height:1.5;">
+          By signing here I confirm that I am the borrower named above and I accept this repayment agreement as legally binding.
         </p>
         <p id="accept-signature-error" class="hidden" style="color:#ff6b6b; font-size:12px; margin:6px 0 0 0;">Please add your signature to continue.</p>
       </div>
