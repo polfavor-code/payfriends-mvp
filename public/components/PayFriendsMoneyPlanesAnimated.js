@@ -36,15 +36,33 @@
   /**
    * Sprite sheet configuration
    * Define regions for each currency plane in the sprite sheet
-   * Format: { x, y, width, height } in pixels
+   * Sprite sheet is 1024×1536px with 12 money paper airplanes
+   * Format: { sx, sy, sw, sh } in pixels (source x, source y, source width, source height)
    */
-  const SPRITE_REGIONS = {
-    USD: { x: 0, y: 0, width: 200, height: 100 },
-    EUR: { x: 200, y: 0, width: 200, height: 100 },
-    GBP: { x: 400, y: 0, width: 200, height: 100 },
-    CHF: { x: 0, y: 100, width: 200, height: 100 },
-    JPY: { x: 200, y: 100, width: 200, height: 100 }
-  };
+  const SPRITES = [
+    // Row 1
+    { sx: 60, sy: 50, sw: 300, sh: 150 },    // USD $100 plane (top left)
+    { sx: 580, sy: 50, sw: 300, sh: 200 },   // EUR €50 plane (top right)
+
+    // Row 2
+    { sx: 60, sy: 330, sw: 200, sh: 150 },   // CHF 20 green plane (left)
+    { sx: 360, sy: 270, sw: 220, sh: 180 },  // GBP plane (center)
+    { sx: 620, sy: 330, sw: 220, sh: 140 },  // EUR €50 flat bill (right)
+
+    // Row 3
+    { sx: 120, sy: 540, sw: 280, sh: 180 },  // EUR €100 yellow plane (left)
+    { sx: 720, sy: 600, sw: 280, sh: 160 },  // JPY plane (right)
+
+    // Row 4
+    { sx: 60, sy: 850, sw: 240, sh: 140 },   // EUR €100 green plane (left)
+    { sx: 420, sy: 840, sw: 200, sh: 140 },  // EUR €20 yellow plane (center)
+    { sx: 660, sy: 880, sw: 200, sh: 120 },  // EUR €10 bill (right)
+
+    // Row 5
+    { sx: 60, sy: 1130, sw: 260, sh: 150 },  // EUR €100 green plane (bottom left)
+    { sx: 420, sy: 1160, sw: 230, sh: 140 }, // EUR €20 yellow plane (bottom center)
+    { sx: 760, sy: 1140, sw: 180, sh: 140 }  // GBP £20 green plane (bottom right)
+  ];
 
   class PayFriendsMoneyPlanesAnimated {
     constructor(canvas, options = {}) {
@@ -128,9 +146,8 @@
     }
 
     getRandomSprite() {
-      const currencies = Object.keys(SPRITE_REGIONS);
-      const currency = currencies[Math.floor(Math.random() * currencies.length)];
-      return { currency, region: SPRITE_REGIONS[currency] };
+      const index = Math.floor(Math.random() * SPRITES.length);
+      return SPRITES[index];
     }
 
     createPlane() {
@@ -341,29 +358,25 @@
       ctx.translate(pos.x, pos.y);
       ctx.rotate(angle);
 
-      // Calculate scaled dimensions
-      const scaledWidth = plane.sprite.region.width * plane.scale;
-      const scaledHeight = plane.sprite.region.height * plane.scale;
+      // Calculate scaled dimensions (base size ~200px)
+      const baseWidth = plane.sprite.sw;
+      const baseHeight = plane.sprite.sh;
+      const scaledWidth = baseWidth * plane.scale;
+      const scaledHeight = baseHeight * plane.scale;
 
       if (this.spriteLoaded) {
         // Draw from sprite sheet
         ctx.drawImage(
           this.spriteImage,
-          plane.sprite.region.x,
-          plane.sprite.region.y,
-          plane.sprite.region.width,
-          plane.sprite.region.height,
+          plane.sprite.sx,
+          plane.sprite.sy,
+          plane.sprite.sw,
+          plane.sprite.sh,
           -scaledWidth / 2,
           -scaledHeight / 2,
           scaledWidth,
           scaledHeight
         );
-      } else if (!this.spriteLoadError) {
-        // Sprite still loading - draw placeholder
-        this.drawPlaceholderPlane(scaledWidth, scaledHeight, plane.sprite.currency);
-      } else {
-        // Sprite failed to load - draw fallback
-        this.drawFallbackPlane(scaledWidth, scaledHeight, plane.sprite.currency);
       }
 
       ctx.restore();
@@ -371,34 +384,6 @@
       return t >= 1; // Return true if complete
     }
 
-    drawPlaceholderPlane(width, height, currency) {
-      const ctx = this.ctx;
-      ctx.fillStyle = 'rgba(61, 220, 151, 0.3)';
-      ctx.fillRect(-width / 2, -height / 2, width, height);
-      ctx.strokeStyle = 'rgba(61, 220, 151, 0.6)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-width / 2, -height / 2, width, height);
-    }
-
-    drawFallbackPlane(width, height, currency) {
-      const ctx = this.ctx;
-
-      // Simple paper airplane shape
-      ctx.fillStyle = '#3ddc97';
-      ctx.beginPath();
-      ctx.moveTo(-width * 0.5, 0);
-      ctx.lineTo(width * 0.3, height * 0.4);
-      ctx.lineTo(width * 0.3, -height * 0.4);
-      ctx.closePath();
-      ctx.fill();
-
-      // Add currency label
-      ctx.fillStyle = '#fff';
-      ctx.font = `bold ${Math.min(width, height) * 0.3}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(currency, 0, 0);
-    }
 
     spawnPlane() {
       const maxPlanes = Math.ceil(MAX_PLANES * this.config.density);
