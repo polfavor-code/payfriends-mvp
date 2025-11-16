@@ -3817,6 +3817,15 @@ app.get('/settings', (req, res) => {
   }
 });
 
+// Security: serve security page if authenticated, else redirect to /
+app.get('/security', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'security.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
 // Legal & About: serve legal page if authenticated, else redirect to /
 app.get('/legal', (req, res) => {
   if (req.user) {
