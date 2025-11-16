@@ -385,10 +385,13 @@
 
     <!-- Activity section (initially hidden) -->
     <section class="card" id="activity-section" style="display:none">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
         <h2 style="margin:0">Activity</h2>
         <button id="mark-all-read-btn" onclick="markAllAsRead()" style="padding:6px 12px; font-size:13px">Mark all as read</button>
       </div>
+      <p id="activity-timezone-note" style="font-size:13px; color:var(--muted); margin:0 0 16px 0">
+        Times in this history are shown in your local timezone.
+      </p>
       <div class="messages-list" id="activity-list">
         <p class="empty-state">No activity yet</p>
       </div>
@@ -3906,12 +3909,19 @@
           PayFriendsHeader.updateActivityButton(unreadCount);
         }
 
+        // Update timezone note with user's actual timezone
+        const timezoneNote = document.getElementById('activity-timezone-note');
+        if (timezoneNote && currentUser?.timezone) {
+          timezoneNote.textContent = `Times in this history are shown in your local timezone (${currentUser.timezone}).`;
+        }
+
         const activityList = document.getElementById('activity-list');
         if (messages.length === 0) {
           activityList.innerHTML = '<p class="empty-state">No activity yet</p>';
         } else {
           activityList.innerHTML = messages.map(msg => {
-            const timestamp = new Date(msg.created_at).toLocaleString();
+            const userTimezone = currentUser?.timezone;
+            const timestamp = formatTimestamp(msg.created_at, userTimezone);
             const relativeTime = timeAgo(msg.created_at);
             const isUnread = !msg.read_at;
 

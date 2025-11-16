@@ -139,3 +139,76 @@ function getRelativeDueDateText(oneTimeDueOption) {
   };
   return mapping[oneTimeDueOption] || '—';
 }
+
+/**
+ * Format a UTC timestamp in the user's timezone
+ * Used for event timestamps (created_at, accepted_at, etc.)
+ * @param {string|Date} utcTimestamp - UTC ISO timestamp string or Date object
+ * @param {string} timezone - IANA timezone string (e.g., "Europe/Amsterdam")
+ * @returns {string} Formatted timestamp (e.g., "11 Nov 2025, 19:43")
+ */
+function formatTimestamp(utcTimestamp, timezone = null) {
+  if (!utcTimestamp) return '—';
+  const date = new Date(utcTimestamp);
+  if (isNaN(date.getTime())) return '—';
+
+  // If no timezone provided, use browser's timezone
+  const options = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  };
+
+  if (timezone) {
+    options.timeZone = timezone;
+  }
+
+  try {
+    return new Intl.DateTimeFormat('en-GB', options).format(date);
+  } catch (e) {
+    console.warn('Failed to format timestamp with timezone:', e);
+    // Fallback to browser timezone
+    return new Intl.DateTimeFormat('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(date);
+  }
+}
+
+/**
+ * Format a financial date (pure date, no timezone consideration)
+ * Used for loan start dates, due dates, money sent dates
+ * @param {string} dateString - Date string in YYYY-MM-DD format
+ * @returns {string} Formatted date (e.g., "16 Nov 2025")
+ */
+function formatFinancialDate(dateString) {
+  if (!dateString) return '—';
+
+  // Parse YYYY-MM-DD as a pure date (no timezone conversion)
+  // We parse it manually to avoid timezone issues
+  const parts = dateString.split('T')[0].split('-'); // Take only date part if full ISO string
+  if (parts.length !== 3) return '—';
+
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+  const day = parseInt(parts[2], 10);
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return '—';
+
+  // Create a date object using local time (no UTC conversion)
+  const date = new Date(year, month, day);
+  if (isNaN(date.getTime())) return '—';
+
+  return new Intl.DateTimeFormat('en-GB', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  }).format(date);
+}
