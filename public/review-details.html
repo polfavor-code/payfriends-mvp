@@ -4333,7 +4333,7 @@
       content.innerHTML = html;
     }
 
-    // Render payment methods inline with expandable details
+    // Render payment methods inline with always-visible details
     function renderPaymentMethodsInline() {
       const paymentMethodsJson = agreement.payment_methods_json;
 
@@ -4373,24 +4373,13 @@
       // Check if current user is the lender
       const isLender = currentUser && agreement.lender_user_id === currentUser.id;
 
-      // List each method with a "Show details" link
-      html += '<div style="display:flex; flex-direction:column; gap:8px; margin-left:8px">';
+      // List each method with details always visible
+      html += '<div style="display:flex; flex-direction:column; gap:16px; margin-left:8px">';
 
       activeMethods.forEach(method => {
-        const methodInfo = getPaymentMethodInfo(method.method);
         html += `
-          <div style="display:flex; flex-direction:column; gap:4px">
-            <div style="display:flex; align-items:center; gap:12px">
-              <span style="font-size:14px; color:var(--text)">${methodInfo.label}</span>
-              <button
-                onclick="toggleInlinePaymentMethodDetails('${method.method}')"
-                style="background:none; border:none; color:var(--accent); font-size:13px; cursor:pointer; padding:0; text-decoration:underline"
-                id="inline-toggle-btn-${method.method}"
-              >
-                Show details
-              </button>
-            </div>
-            <div id="inline-details-${method.method}" class="hidden" style="margin-left:16px; padding:12px; background:rgba(255,255,255,0.02); border-left:2px solid var(--accent); border-radius:4px">
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div id="inline-details-${method.method}" style="padding:12px; background:rgba(255,255,255,0.02); border-left:2px solid var(--accent); border-radius:4px">
               <div id="inline-details-view-${method.method}">
                 ${renderPaymentMethodDetailsWithEdit(method, isLender)}
               </div>
@@ -4408,33 +4397,37 @@
       return html;
     }
 
-    // Render payment method details with edit button for lenders
+    // Render payment method details with inline edit button for lenders
     function renderPaymentMethodDetailsWithEdit(method, isLender) {
       const methodInfo = getPaymentMethodInfo(method.method);
 
       let html = `<div style="font-size:14px; line-height:1.8; color:var(--text)">`;
-      html += `<p style="margin:0 0 12px 0; font-weight:600">${methodInfo.icon} ${methodInfo.label}</p>`;
 
+      // Method heading with inline "Edit details" link for lenders
+      html += `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">`;
+      html += `<p style="margin:0; font-weight:600">${methodInfo.icon} ${methodInfo.label}</p>`;
+
+      // Add "Edit details" link inline for lenders (except for cash which has no editable details)
+      if (isLender && method.method !== 'cash') {
+        html += `
+          <button
+            onclick="showPaymentMethodEditForm('${method.method}')"
+            style="background:none; border:none; color:var(--accent); font-size:13px; cursor:pointer; padding:0; text-decoration:underline; font-weight:500"
+          >
+            Edit details
+          </button>
+        `;
+      }
+
+      html += `</div>`;
+
+      // Payment method details
       if (method.method === 'cash') {
         html += `<p style="margin:0; color:var(--muted)">Pay in cash directly to the lender.</p>`;
       } else if (method.details) {
-        html += `<div style="white-space:pre-wrap; font-family:monospace; background:rgba(0,0,0,0.2); padding:12px; border-radius:6px; margin:8px 0">${escapeHtml(method.details)}</div>`;
+        html += `<div style="white-space:pre-wrap; font-family:monospace; background:rgba(0,0,0,0.2); padding:12px; border-radius:6px; margin:0">${escapeHtml(method.details)}</div>`;
       } else {
         html += `<p style="margin:0; color:var(--muted)">No additional details provided.</p>`;
-      }
-
-      // Add "Edit details" button for lenders (except for cash which has no editable details)
-      if (isLender && method.method !== 'cash') {
-        html += `
-          <div style="margin-top:12px">
-            <button
-              onclick="showPaymentMethodEditForm('${method.method}')"
-              style="background:none; border:none; color:var(--accent); font-size:13px; cursor:pointer; padding:0; text-decoration:underline; font-weight:500"
-            >
-              Edit details
-            </button>
-          </div>
-        `;
       }
 
       html += `</div>`;
@@ -4521,20 +4514,6 @@
 
       html += `</div>`;
       return html;
-    }
-
-    // Toggle inline payment method details
-    function toggleInlinePaymentMethodDetails(methodName) {
-      const detailsEl = document.getElementById(`inline-details-${methodName}`);
-      const toggleBtn = document.getElementById(`inline-toggle-btn-${methodName}`);
-
-      if (detailsEl.classList.contains('hidden')) {
-        detailsEl.classList.remove('hidden');
-        toggleBtn.textContent = 'Hide details';
-      } else {
-        detailsEl.classList.add('hidden');
-        toggleBtn.textContent = 'Show details';
-      }
     }
 
     // Show payment method edit form
