@@ -133,8 +133,8 @@
       overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0;
     }
 
-    /* Smile Money background canvas */
-    #smile-money-canvas{
+    /* Money Airplanes background canvas */
+    #money-airplanes-canvas{
       position:fixed;
       top:0;
       left:0;
@@ -150,8 +150,8 @@
   </style>
 </head>
 <body>
-  <!-- Smile Money Background -->
-  <canvas id="smile-money-canvas"></canvas>
+  <!-- Money Airplanes Background -->
+  <canvas id="money-airplanes-canvas"></canvas>
   <div class="page">
     <!-- HERO (single instance, responsive) -->
     <section class="hero" aria-labelledby="pf-hero-title">
@@ -232,23 +232,24 @@
     </main>
   </div>
 
-  <!-- Two Smileys Animated Background Component -->
-  <script src="/components/payfriends-two-smileys-background.js"></script>
+  <!-- Money Airplanes Animated Background Component -->
+  <script src="/components/payfriends-money-airplanes-background.js"></script>
 
   <script>
-    // Initialize Two Smileys background
+    // Initialize Money Airplanes background
     (function(){
-      const canvas = document.getElementById('smile-money-canvas');
-      if (canvas && window.PayFriendsTwoSmileysBackground) {
-        const twoSmileysBg = new window.PayFriendsTwoSmileysBackground(canvas, {
+      const canvas = document.getElementById('money-airplanes-canvas');
+      if (canvas && window.PayFriendsMoneyAirplanesBackground) {
+        const moneyAirplanesBg = new window.PayFriendsMoneyAirplanesBackground(canvas, {
           speed: 1,
-          moneyStreamFrequency: 1
+          density: 1,
+          opacity: 0.18
         });
-        twoSmileysBg.start();
+        moneyAirplanesBg.start();
 
         // Clean up on page unload
         window.addEventListener('beforeunload', () => {
-          twoSmileysBg.destroy();
+          moneyAirplanesBg.destroy();
         });
       }
     })();
