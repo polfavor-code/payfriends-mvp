@@ -325,11 +325,19 @@
       status.textContent = 'Creating account...';
       status.className = 'status';
 
+      // Detect user's timezone
+      let timezone = null;
+      try {
+        timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } catch (e) {
+        console.warn('Failed to detect timezone:', e);
+      }
+
       try {
         const res = await fetch('/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, fullName })
+          body: JSON.stringify({ email, password, fullName, timezone })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Signup failed');

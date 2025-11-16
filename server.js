@@ -188,6 +188,13 @@ try {
   // Column already exists, ignore
 }
 
+// Add timezone column to users if it doesn't exist (for existing databases)
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN timezone TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // Add installment and interest fields to agreements if they don't exist (for existing databases)
 try {
   db.exec(`ALTER TABLE agreements ADD COLUMN installment_count INTEGER;`);
@@ -381,7 +388,7 @@ app.use((req, res, next) => {
 
   try {
     const session = db.prepare(`
-      SELECT s.*, u.email, u.id as user_id, u.full_name, u.profile_picture, u.phone_number
+      SELECT s.*, u.email, u.id as user_id, u.full_name, u.profile_picture, u.phone_number, u.timezone
       FROM sessions s
       JOIN users u ON s.user_id = u.id
       WHERE s.id = ? AND s.expires_at > datetime('now')
@@ -393,7 +400,8 @@ app.use((req, res, next) => {
         email: session.email,
         full_name: session.full_name,
         profile_picture: session.profile_picture,
-        phone_number: session.phone_number
+        phone_number: session.phone_number,
+        timezone: session.timezone
       };
     }
   } catch (err) {
@@ -457,6 +465,24 @@ function isValidEmail(email) {
   return email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// normalize a date value to YYYY-MM-DD format (for financial dates)
+// Accepts ISO strings, Date objects, or YYYY-MM-DD strings
+function toDateOnly(dateValue) {
+  if (!dateValue) return null;
+
+  // If already in YYYY-MM-DD format, return as-is
+  if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    return dateValue;
+  }
+
+  // Parse to Date and extract date components
+  const date = new Date(dateValue);
+  if (isNaN(date.getTime())) return null;
+
+  // Format as YYYY-MM-DD in UTC
+  return date.toISOString().split('T')[0];
+}
+
 // Auto-link pending agreements to borrower when they log in/signup
 function autoLinkPendingAgreements(userId, userEmail, userFullName) {
   try {
@@ -503,7 +529,7 @@ function autoLinkPendingAgreements(userId, userEmail, userFullName) {
 
 // Signup
 app.post('/auth/signup', async (req, res) => {
-  const { email, password, fullName, phoneNumber } = req.body || {};
+  const { email, password, fullName, phoneNumber, timezone } = req.body || {};
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
@@ -513,6 +539,11 @@ app.post('/auth/signup', async (req, res) => {
   // Basic phone validation if provided: must contain at least some digits
   if (phoneNumber && !/\d/.test(phoneNumber)) {
     return res.status(400).json({ error: 'Phone number must contain at least one digit' });
+  }
+
+  // Validate timezone if provided (basic check for IANA format)
+  if (timezone && !/^[A-Za-z_]+\/[A-Za-z_]+/.test(timezone)) {
+    return res.status(400).json({ error: 'Invalid timezone format' });
   }
 
   if (!isValidEmail(email)) {
@@ -536,9 +567,9 @@ app.post('/auth/signup', async (req, res) => {
 
     // Create user
     const result = db.prepare(`
-      INSERT INTO users (email, password_hash, created_at, full_name, phone_number)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(email, passwordHash, createdAt, fullName || null, phoneNumber || null);
+      INSERT INTO users (email, password_hash, created_at, full_name, phone_number, timezone)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(email, passwordHash, createdAt, fullName || null, phoneNumber || null, timezone || null);
 
     const userId = result.lastInsertRowid;
 
@@ -630,7 +661,7 @@ app.get('/api/user', requireAuth, (req, res) => {
 
 // Update user profile
 app.post('/api/profile', requireAuth, (req, res) => {
-  const { fullName, phoneNumber } = req.body || {};
+  const { fullName, phoneNumber, timezone } = req.body || {};
 
   if (!fullName || !fullName.trim()) {
     return res.status(400).json({ error: 'Full name is required' });
@@ -643,10 +674,17 @@ app.post('/api/profile', requireAuth, (req, res) => {
     }
   }
 
+  // Validate timezone if provided (basic check for IANA format)
+  if (timezone !== undefined && timezone !== null && timezone !== '') {
+    if (!/^[A-Za-z_]+\/[A-Za-z_]+/.test(timezone)) {
+      return res.status(400).json({ error: 'Invalid timezone format' });
+    }
+  }
+
   try {
-    db.prepare('UPDATE users SET full_name = ?, phone_number = ? WHERE id = ?')
-      .run(fullName.trim(), phoneNumber || null, req.user.id);
-    res.json({ success: true, full_name: fullName.trim(), phone_number: phoneNumber || null });
+    db.prepare('UPDATE users SET full_name = ?, phone_number = ?, timezone = ? WHERE id = ?')
+      .run(fullName.trim(), phoneNumber || null, timezone || null, req.user.id);
+    res.json({ success: true, full_name: fullName.trim(), phone_number: phoneNumber || null, timezone: timezone || null });
   } catch (err) {
     console.error('Error updating profile:', err);
     res.status(500).json({ error: 'Server error updating profile' });
@@ -916,6 +954,12 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
+    // Normalize financial dates to YYYY-MM-DD format (pure dates, no time component)
+    const normalizedMoneySentDate = toDateOnly(moneySentDate);
+    const normalizedDueDate = toDateOnly(dueDate);
+    const normalizedFirstPaymentDate = toDateOnly(firstPaymentDate);
+    const normalizedFinalDueDate = toDateOnly(finalDueDate);
+
     const agreementInfo = agreementStmt.run(
       req.user.id,
       finalLenderName,
@@ -924,16 +968,16 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       direction || 'lend',
       repaymentType || 'one_time',
       amountCents,
-      moneySentDate || null,
-      dueDate,
+      normalizedMoneySentDate,
+      normalizedDueDate,
       createdAt,
       description,
       planLength || null,
       planUnit || null,
       installmentCount || null,
       installmentAmount || null,
-      firstPaymentDate || null,
-      finalDueDate || null,
+      normalizedFirstPaymentDate,
+      normalizedFinalDueDate,
       interestRate || 0,
       totalInterest || 0,
       totalRepayAmount || null,
@@ -3727,6 +3771,15 @@ app.get('/app', (req, res) => {
 app.get('/profile', (req, res) => {
   if (req.user) {
     res.sendFile(path.join(__dirname, 'public', 'profile.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Settings: serve settings page if authenticated, else redirect to /
+app.get('/settings', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'settings.html'));
   } else {
     res.redirect('/');
   }

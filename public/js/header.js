@@ -260,11 +260,18 @@
 
     // Dropdown menu item actions
     const profileItem = document.getElementById('user-menu-profile');
+    const settingsItem = document.getElementById('user-menu-settings');
     const logoutItem = document.getElementById('user-menu-logout');
 
     if (profileItem) {
       profileItem.addEventListener('click', () => {
         window.location.href = '/profile';
+      });
+    }
+
+    if (settingsItem) {
+      settingsItem.addEventListener('click', () => {
+        window.location.href = '/settings';
       });
     }
 
