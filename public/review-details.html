@@ -4355,18 +4355,20 @@
 
       let html = `<div style="font-size:14px; line-height:1.8; color:var(--text)">`;
 
-      // Method heading with inline "Edit details" link for lenders
+      // Method header: icon+name on left, "(edit details)" action on right (for lenders)
       html += `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">`;
       html += `<p style="margin:0; font-weight:600">${methodInfo.icon} ${methodInfo.label}</p>`;
 
-      // Add "Edit details" link inline for lenders (except for cash which has no editable details)
+      // Add "(edit details)" action for lenders (except for cash which has no editable details)
       if (isLender && method.method !== 'cash') {
         html += `
           <button
             onclick="showPaymentMethodEditForm('${method.method}')"
-            style="background:none; border:none; color:var(--accent); font-size:13px; cursor:pointer; padding:0; text-decoration:underline; font-weight:500"
+            style="background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; padding:0; font-weight:400; transition:color 0.2s"
+            onmouseover="this.style.color='var(--accent)'"
+            onmouseout="this.style.color='var(--muted)'"
           >
-            Edit details
+            (edit details)
           </button>
         `;
       }
