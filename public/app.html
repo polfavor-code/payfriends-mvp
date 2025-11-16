@@ -2080,6 +2080,83 @@
       }
     }
 
+    // Get first payment offset in months from option value
+    function getFirstPaymentOffsetMonths(firstPaymentOption) {
+      const monthMap = {
+        '1month': 1,
+        '2months': 2,
+        '3months': 3,
+        '6months': 6,
+        '12months': 12
+      };
+
+      if (monthMap[firstPaymentOption]) {
+        return monthMap[firstPaymentOption];
+      }
+
+      // For day-based options, convert to approximate months
+      if (firstPaymentOption === '3days') return 3 / 30;
+      if (firstPaymentOption === '7days') return 7 / 30;
+
+      // For custom dates, we'll calculate the offset separately
+      return null;
+    }
+
+    // Generate payment dates for installments using month-based calculation
+    function generateInstallmentPaymentDates(params) {
+      const {
+        loanStartDate,
+        durationMonths,
+        numberOfPayments,
+        firstPaymentOption,
+        firstPaymentDate
+      } = params;
+
+      const paymentDates = [];
+      const intervalMonths = durationMonths / numberOfPayments;
+
+      // Determine first payment offset in months
+      let firstOffsetMonths;
+
+      if (firstPaymentOption === 'custom' && firstPaymentDate) {
+        // For custom dates, calculate the offset from loan start to first payment
+        const loanStart = new Date(loanStartDate);
+        const firstPayment = new Date(firstPaymentDate);
+        loanStart.setHours(0, 0, 0, 0);
+        firstPayment.setHours(0, 0, 0, 0);
+
+        // Calculate approximate month difference
+        const yearDiff = firstPayment.getFullYear() - loanStart.getFullYear();
+        const monthDiff = firstPayment.getMonth() - loanStart.getMonth();
+        firstOffsetMonths = yearDiff * 12 + monthDiff;
+
+        // Adjust for day of month differences
+        if (firstPayment.getDate() < loanStart.getDate()) {
+          firstOffsetMonths -= 1;
+        }
+      } else {
+        // For preset options, get the offset directly
+        firstOffsetMonths = getFirstPaymentOffsetMonths(firstPaymentOption);
+
+        // If offset is null or not a clean month value, default to intervalMonths
+        if (firstOffsetMonths === null || firstOffsetMonths < 0.5) {
+          firstOffsetMonths = intervalMonths;
+        }
+      }
+
+      // Generate dates using month-based offsets
+      const loanStart = new Date(loanStartDate);
+      loanStart.setHours(0, 0, 0, 0);
+
+      for (let i = 0; i < numberOfPayments; i++) {
+        const offsetMonths = firstOffsetMonths + (i * intervalMonths);
+        const dueDate = addMonthsKeepingDay(loanStart, offsetMonths);
+        paymentDates.push(dueDate);
+      }
+
+      return paymentDates;
+    }
+
 
     function updateFirstPaymentOption() {
       const option = document.getElementById('first-payment-option').value;
@@ -2271,6 +2348,7 @@
       wizardData.installmentCount = numRepayments;
       wizardData.installmentAmount = parseFloat(installmentAmount);
       wizardData.firstPaymentDate = firstPaymentDate;
+      wizardData.firstPaymentOption = document.getElementById('first-payment-option').value;
       wizardData.finalDueDate = installmentSchedule[installmentSchedule.length - 1];
       wizardData.installmentSchedule = installmentSchedule;
       wizardData.paymentFrequency = getPaymentFrequency(loanDurationValue, loanDurationUnit, numRepayments);
@@ -2597,10 +2675,13 @@
      * Format the due date for display in the Payment breakdown table.
      * For one-time loans when loan start is "on acceptance" and due date is offset-based,
      * returns a relative label like "1 year after loan start".
+     * For installments when loan start is "on acceptance", returns a relative label
+     * like "X months after loan start" based on the installment schedule.
      * Otherwise, returns the formatted calendar date.
      */
-    function formatOneTimeDueDateDisplay(dateISO) {
+    function formatOneTimeDueDateDisplay(dateISO, installmentIndex) {
       const isOneTime = wizardData.repaymentType === 'one_time';
+      const isInstallments = wizardData.repaymentType === 'installments';
       const isOnAcceptance = wizardData.moneySentDate === 'on-acceptance';
       const oneTimeDueOption = wizardData.oneTimeDueOption;
       const isOffsetBased = oneTimeDueOption && oneTimeDueOption !== 'pick_date';
@@ -2616,6 +2697,34 @@
           'in_1_year': '1 year after loan start'
         };
         return labelMap[oneTimeDueOption] || formatScheduleDate(dateISO);
+      }
+
+      // Show relative label for installments with "on acceptance" start
+      if (isInstallments && isOnAcceptance && installmentIndex !== undefined) {
+        // Convert duration to months
+        let durationMonths;
+        if (wizardData.planUnit === 'months') {
+          durationMonths = wizardData.planLength;
+        } else if (wizardData.planUnit === 'years') {
+          durationMonths = wizardData.planLength * 12;
+        } else if (wizardData.planUnit === 'weeks') {
+          durationMonths = wizardData.planLength / 4.33; // Approximate
+        } else if (wizardData.planUnit === 'days') {
+          durationMonths = wizardData.planLength / 30; // Approximate
+        }
+
+        const intervalMonths = durationMonths / wizardData.installmentCount;
+        const firstOffsetMonths = getFirstPaymentOffsetMonths(wizardData.firstPaymentOption || '1month') || intervalMonths;
+        const offsetMonths = firstOffsetMonths + (installmentIndex * intervalMonths);
+
+        // Round to nearest integer for cleaner display
+        const roundedOffset = Math.round(offsetMonths);
+
+        if (roundedOffset === 1) {
+          return '1 month after loan start';
+        } else {
+          return `${roundedOffset} months after loan start`;
+        }
       }
 
       // Default: show the actual calendar date
@@ -2763,21 +2872,44 @@
         startDate.setHours(0, 0, 0, 0);
       }
 
-      // Generate payment dates using frequency-based calculation with normalization
+      // Generate payment dates
       let paymentDates = [];
-      if (wizardData.repaymentType === 'installments' && wizardData.firstPaymentDate && wizardData.paymentFrequency) {
-        const dateResult = generatePaymentDates({
-          transferDate: startDate,
-          firstDueDate: wizardData.firstPaymentDate,
-          frequency: wizardData.paymentFrequency,
-          count: n
-        });
-        paymentDates = dateResult.paymentDates;
+      if (wizardData.repaymentType === 'installments') {
+        // For installments with known start date, use month-based calculation
+        if (wizardData.moneySentDate && wizardData.moneySentDate !== 'on-acceptance') {
+          // Convert duration to months
+          let durationMonths;
+          if (wizardData.planUnit === 'months') {
+            durationMonths = wizardData.planLength;
+          } else if (wizardData.planUnit === 'years') {
+            durationMonths = wizardData.planLength * 12;
+          } else if (wizardData.planUnit === 'weeks') {
+            durationMonths = wizardData.planLength / 4.33; // Approximate
+          } else if (wizardData.planUnit === 'days') {
+            durationMonths = wizardData.planLength / 30; // Approximate
+          }
 
-        // Update wizardData with normalized first payment date if it changed
-        if (dateResult.normalizedFirstDueDate.toISOString().split('T')[0] !== wizardData.firstPaymentDate) {
-          wizardData.firstPaymentDate = dateResult.normalizedFirstDueDate.toISOString().split('T')[0];
+          paymentDates = generateInstallmentPaymentDates({
+            loanStartDate: wizardData.moneySentDate,
+            durationMonths: durationMonths,
+            numberOfPayments: n,
+            firstPaymentOption: wizardData.firstPaymentOption || '1month',
+            firstPaymentDate: wizardData.firstPaymentDate
+          });
+
+          // Update wizardData with calculated dates
+          wizardData.firstPaymentDate = paymentDates[0].toISOString().split('T')[0];
           wizardData.finalDueDate = paymentDates[paymentDates.length - 1].toISOString().split('T')[0];
+        } else {
+          // For "on acceptance" loans, we still need dates for interest calculation
+          // Use frequency-based calculation as fallback
+          const dateResult = generatePaymentDates({
+            transferDate: startDate,
+            firstDueDate: wizardData.firstPaymentDate,
+            frequency: wizardData.paymentFrequency,
+            count: n
+          });
+          paymentDates = dateResult.paymentDates;
         }
       } else if (wizardData.repaymentType === 'one_time' && wizardData.dueDate) {
         paymentDates = [new Date(wizardData.dueDate)];
@@ -2872,7 +3004,7 @@
         const rowStyle = index % 2 === 0 ? 'background:rgba(12,16,21,0.3)' : 'background:rgba(10,13,17,0.3)';
         tr.style = rowStyle + '; border-bottom:1px solid rgba(255,255,255,0.05)';
         tr.innerHTML = `
-          <td style="padding:8px 4px">${formatOneTimeDueDateDisplay(row.dateISO)}</td>
+          <td style="padding:8px 4px">${formatOneTimeDueDateDisplay(row.dateISO, index)}</td>
           <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.principalCents)}</td>
           <td style="text-align:right; padding:8px 4px">${formatCurrency2(row.interestCents)}</td>
           <td style="text-align:right; padding:8px 4px; font-weight:600">${formatCurrency2(row.paymentCents)}</td>
