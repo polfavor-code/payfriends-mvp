@@ -37,31 +37,32 @@
    * Sprite sheet configuration
    * Define regions for each currency plane in the sprite sheet
    * Sprite sheet is 1024×1536px with 12 money paper airplanes
-   * Format: { sx, sy, sw, sh } in pixels (source x, source y, source width, source height)
+   * Format: { sx, sy, sw, sh, facing } in pixels
+   * facing: "left" or "right" - which direction the plane's nose points in the sprite image
    */
   const SPRITES = [
     // Row 1
-    { sx: 60, sy: 50, sw: 300, sh: 150 },    // USD $100 plane (top left)
-    { sx: 580, sy: 50, sw: 300, sh: 200 },   // EUR €50 plane (top right)
+    { sx: 60, sy: 50, sw: 300, sh: 150, facing: "left" },    // USD $100 plane (top left) - nose points LEFT
+    { sx: 580, sy: 50, sw: 300, sh: 200, facing: "right" },  // EUR €50 plane (top right) - nose points RIGHT
 
     // Row 2
-    { sx: 60, sy: 330, sw: 200, sh: 150 },   // CHF 20 green plane (left)
-    { sx: 360, sy: 270, sw: 220, sh: 180 },  // GBP plane (center)
-    { sx: 620, sy: 330, sw: 220, sh: 140 },  // EUR €50 flat bill (right)
+    { sx: 60, sy: 330, sw: 200, sh: 150, facing: "right" },   // CHF 20 green plane (left)
+    { sx: 360, sy: 270, sw: 220, sh: 180, facing: "right" },  // GBP plane (center)
+    { sx: 620, sy: 330, sw: 220, sh: 140, facing: "right" },  // EUR €50 flat bill (right)
 
     // Row 3
-    { sx: 120, sy: 540, sw: 280, sh: 180 },  // EUR €100 yellow plane (left)
-    { sx: 720, sy: 600, sw: 280, sh: 160 },  // JPY plane (right)
+    { sx: 120, sy: 540, sw: 280, sh: 180, facing: "right" },  // EUR €100 yellow plane (left)
+    { sx: 720, sy: 600, sw: 280, sh: 160, facing: "right" },  // JPY plane (right)
 
     // Row 4
-    { sx: 60, sy: 850, sw: 240, sh: 140 },   // EUR €100 green plane (left)
-    { sx: 420, sy: 840, sw: 200, sh: 140 },  // EUR €20 yellow plane (center)
-    { sx: 660, sy: 880, sw: 200, sh: 120 },  // EUR €10 bill (right)
+    { sx: 60, sy: 850, sw: 240, sh: 140, facing: "right" },   // EUR €100 green plane (left)
+    { sx: 420, sy: 840, sw: 200, sh: 140, facing: "right" },  // EUR €20 yellow plane (center)
+    { sx: 660, sy: 880, sw: 200, sh: 120, facing: "right" },  // EUR €10 bill (right)
 
     // Row 5
-    { sx: 60, sy: 1130, sw: 260, sh: 150 },  // EUR €100 green plane (bottom left)
-    { sx: 420, sy: 1160, sw: 230, sh: 140 }, // EUR €20 yellow plane (bottom center)
-    { sx: 760, sy: 1140, sw: 180, sh: 140 }  // GBP £20 green plane (bottom right)
+    { sx: 60, sy: 1130, sw: 260, sh: 150, facing: "right" },  // EUR €100 green plane (bottom left)
+    { sx: 420, sy: 1160, sw: 230, sh: 140, facing: "right" }, // EUR €20 yellow plane (bottom center)
+    { sx: 760, sy: 1140, sw: 180, sh: 140, facing: "right" }  // GBP £20 green plane (bottom right)
   ];
 
   class PayFriendsMoneyPlanesAnimated {
@@ -248,6 +249,14 @@
           break;
       }
 
+      // Calculate flight heading (left or right) based on start and end positions
+      const vx = end.x - start.x;
+      const heading = vx >= 0 ? "right" : "left";
+
+      // Determine if we need to flip the sprite horizontally
+      // If sprite faces left but we're going right, or vice versa, we need to flip
+      const needsFlip = sprite.facing !== heading;
+
       return {
         sprite,
         pathType,
@@ -260,7 +269,9 @@
         startTime: Date.now(),
         wobblePhase,
         wobbleFrequency: 0.003 + Math.random() * 0.002,
-        wobbleAmplitude: 20 + Math.random() * 40
+        wobbleAmplitude: 20 + Math.random() * 40,
+        heading,        // "left" or "right" - which way the plane is flying
+        needsFlip       // whether to flip sprite horizontally
       };
     }
 
@@ -344,14 +355,17 @@
         opacity *= (1 - t) / 0.1;
       }
 
-      // Get position and rotation
+      // Get position
       const pos = this.getPositionOnPath(plane, t);
-      const baseAngle = this.getTangentAngle(plane, t);
 
-      // Add a very subtle wobble (3-5 degrees max) for natural paper airplane movement
-      const wobbleFrequency = 2; // Slow wobble
-      const wobbleAmplitude = 0.05; // ~3 degrees in radians
-      const wobble = Math.sin(elapsed * 0.002 * wobbleFrequency + plane.wobblePhase) * wobbleAmplitude;
+      // NEW ROTATION LOGIC: No more path-based rotation that causes upside-down planes
+      // Base orientation is purely horizontal based on flight direction
+      const baseAngle = plane.heading === "right" ? 0 : Math.PI;
+
+      // Add only a small wobble (bank) for natural paper airplane movement
+      // This keeps the plane nose-forward but adds slight tilt
+      const wobbleAmplitude = (5 * Math.PI) / 180; // 5 degrees max
+      const wobble = Math.sin(elapsed * 0.002 * 2 + plane.wobblePhase) * wobbleAmplitude;
 
       const angle = baseAngle + wobble;
 
@@ -360,26 +374,33 @@
       ctx.save();
       ctx.globalAlpha = opacity;
       ctx.translate(pos.x, pos.y);
+
+      // Apply rotation (plane nose always forward with slight wobble)
       ctx.rotate(angle);
 
-      // Calculate scaled dimensions (base size ~200px)
-      const baseWidth = plane.sprite.sw;
-      const baseHeight = plane.sprite.sh;
-      const scaledWidth = baseWidth * plane.scale;
-      const scaledHeight = baseHeight * plane.scale;
+      // Handle horizontal flip if needed
+      // If sprite faces opposite direction from flight, flip it horizontally
+      const scaleX = plane.needsFlip ? -1 : 1;
+      const scaleY = 1; // Never flip vertically
+
+      ctx.scale(scaleX, scaleY);
+
+      // Calculate scaled dimensions
+      const drawWidth = plane.sprite.sw * plane.scale;
+      const drawHeight = plane.sprite.sh * plane.scale;
 
       if (this.spriteLoaded) {
-        // Draw from sprite sheet
+        // Draw from sprite sheet, centered on (0, 0) after transforms
         ctx.drawImage(
           this.spriteImage,
           plane.sprite.sx,
           plane.sprite.sy,
           plane.sprite.sw,
           plane.sprite.sh,
-          -scaledWidth / 2,
-          -scaledHeight / 2,
-          scaledWidth,
-          scaledHeight
+          -drawWidth / 2,
+          -drawHeight / 2,
+          drawWidth,
+          drawHeight
         );
       }
 
