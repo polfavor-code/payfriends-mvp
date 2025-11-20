@@ -80,6 +80,7 @@
     .divider{height:1px; background:rgba(255,255,255,0.08); margin:32px 0}
     .link-style{color:var(--accent); text-decoration:none; cursor:pointer}
     .link-style:hover{text-decoration:underline}
+    .link-button{background:none; border:0; padding:0; margin-left:4px; color:var(--accent); cursor:pointer; font:inherit; text-decoration:underline}
   </style>
 </head>
 <body>
@@ -98,6 +99,7 @@
           This timezone is used to show history and activity timestamps in your local time.<br>
           Financial dates like due dates are calendar days and do not depend on timezone.
         </div>
+        <div class="helper-text" id="timezoneHint"></div>
       </div>
 
       <button id="savePreferencesBtn">Save Preferences</button>
@@ -168,57 +170,71 @@
     ].sort();
 
     let currentUser = null;
+    let detectedTimezoneGlobal = null;
 
     /**
      * Initialize timezone dropdown with user timezone or browser-detected timezone
-     * @param {string|null} initialTimezone - User's stored timezone
+     * @param {string|null} savedTimezone - User's stored timezone
+     * @param {string|null} detectedTimezone - Browser-detected timezone
      */
-    function initializeTimezoneSelect(initialTimezone) {
+    function initializeTimezoneSelect(savedTimezone, detectedTimezone) {
       const timezoneSelect = document.getElementById('timezone');
+      const hintEl = document.getElementById('timezoneHint');
+
       timezoneSelect.innerHTML = '';
+      if (hintEl) hintEl.innerHTML = '';
 
-      let detectedTimezone = null;
-      try {
-        detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      } catch (e) {
-        console.warn('Failed to detect timezone:', e);
-      }
+      detectedTimezoneGlobal = detectedTimezone || null;
 
-      const currentTimezone = initialTimezone || detectedTimezone || 'Europe/Amsterdam';
+      const currentTimezone = savedTimezone || detectedTimezone || 'Europe/Amsterdam';
 
       TIMEZONES.forEach(tz => {
-        const option = document.createElement('option');
-        option.value = tz;
-        option.textContent = tz.replace(/_/g, ' ');
-        if (tz === currentTimezone) {
-          option.selected = true;
-        }
-        timezoneSelect.appendChild(option);
+        const opt = document.createElement('option');
+        opt.value = tz;
+        opt.textContent = tz.replace(/_/g, ' ');
+        if (tz === currentTimezone) opt.selected = true;
+        timezoneSelect.appendChild(opt);
       });
+
+      // Show mismatch hint
+      if (savedTimezone && detectedTimezone && savedTimezone !== detectedTimezone && hintEl) {
+        hintEl.innerHTML = `
+          Your current browser timezone is <strong>${detectedTimezone.replace(/_/g, ' ')}</strong>.
+          <button type="button" class="link-button" id="useBrowserTimezoneBtn">Use current timezone</button>
+        `;
+
+        const btn = document.getElementById('useBrowserTimezoneBtn');
+        btn.addEventListener('click', () => {
+          if (!detectedTimezoneGlobal) return;
+          timezoneSelect.value = detectedTimezoneGlobal;
+          savePreferences();
+        });
+      }
     }
 
     /**
      * Load current user timezone from backend
      */
     async function loadCurrentUserTimezone() {
+      let detectedTimezone = null;
+      try {
+        detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } catch (e) {
+        console.warn('Could not detect browser timezone:', e);
+      }
+
       try {
         const res = await fetch('/api/user');
+        if (!res.ok) throw new Error('Failed to load user');
 
-        if (!res.ok) {
-          throw new Error('Failed to load user');
-        }
-
-        // Match the response shape from header.js
         const data = await res.json();
         currentUser = data.user;
 
-        const tzFromUser = currentUser.timezone || null;
-
-        initializeTimezoneSelect(tzFromUser);
+        const savedTimezone = currentUser.timezone || null;
+        initializeTimezoneSelect(savedTimezone, detectedTimezone);
       } catch (err) {
-        console.error('Could not load current user for timezone:', err);
-        currentUser = null;
-        initializeTimezoneSelect(null);
+        console.error(err);
+        initializeTimezoneSelect(null, detectedTimezone);
       }
     }
 
