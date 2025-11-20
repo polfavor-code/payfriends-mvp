@@ -232,24 +232,24 @@
     </main>
   </div>
 
-  <!-- Money Airplanes Animated Background Component -->
-  <script src="/components/PayFriendsMoneyPlanesAnimated.js"></script>
+  <!-- Paper Plane Animated Background Component -->
+  <script src="/components/PayFriendsPaperPlaneBackground.js"></script>
 
   <script>
-    // Initialize Money Airplanes background
+    // Initialize Paper Plane background
     (function(){
       const canvas = document.getElementById('money-airplanes-canvas');
-      if (canvas && window.PayFriendsMoneyPlanesAnimated) {
-        const moneyAirplanesBg = new window.PayFriendsMoneyPlanesAnimated(canvas, {
+      if (canvas && window.PayFriendsPaperPlaneBackground) {
+        const paperPlaneBg = new window.PayFriendsPaperPlaneBackground(canvas, {
+          density: 1,
           speed: 1,
-          density: 1
-          // opacity defaults to 0.33 for better visibility
+          opacity: 0.33
         });
-        moneyAirplanesBg.start();
+        paperPlaneBg.start();
 
         // Clean up on page unload
         window.addEventListener('beforeunload', () => {
-          moneyAirplanesBg.destroy();
+          paperPlaneBg.destroy();
         });
       }
     })();
