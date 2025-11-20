@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayFriends — Legal & About</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:1200px;margin:0 auto;padding:32px 16px;}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin:16px 0}
+    .section-title{font-size:18px; font-weight:600; margin:0 0 16px 0; color:var(--text)}
+    .section-description{color:var(--muted); font-size:14px; margin-bottom:20px; line-height:1.5}
+    .row{margin:20px 0}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; gap:12px; align-items:center}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
+    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
+    .top-header-user-info{color:var(--text); font-size:14px; line-height:1; white-space:nowrap; display:inline-flex; align-items:center; height:40px}
+    .top-header-actions{display:flex; gap:12px; align-items:center}
+    .inbox-count{color:var(--accent);font-weight:700}
+
+    /* Avatar styles */
+    .user-avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;flex-shrink:0;vertical-align:middle}
+    .user-avatar.size-small{width:22px;height:22px;font-size:10px;margin-right:8px}
+    .user-avatar.size-medium{width:48px;height:48px;font-size:18px}
+    .user-avatar-image{width:100%;height:100%;object-fit:cover}
+    .user-avatar-initials{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:600}
+    .user-avatar-initials.color-1{background:#6366f1;color:#fff}
+    .user-avatar-initials.color-2{background:#ec4899;color:#fff}
+    .user-avatar-initials.color-3{background:#f59e0b;color:#fff}
+    .user-avatar-initials.color-4{background:#10b981;color:#fff}
+    .user-avatar-initials.color-5{background:#3b82f6;color:#fff}
+    .user-avatar-initials.color-6{background:#8b5cf6;color:#fff}
+    .user-avatar-initials.color-7{background:#14b8a6;color:#fff}
+
+    .page-title{font-size:28px; font-weight:600; margin:0 0 24px 0}
+    .link-style{color:var(--accent); text-decoration:none; cursor:pointer}
+    .link-style:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="page-title">Legal & About</h1>
+
+    <div class="card">
+      <h2 class="section-title">Legal & About</h2>
+      <p class="section-description">Terms, privacy policy, and app information</p>
+
+      <div class="row">
+        <div style="color:var(--muted); font-size:14px; line-height:2">
+          <div><a href="#" class="link-style">Terms of Service</a></div>
+          <div><a href="#" class="link-style">Privacy Policy</a></div>
+          <div style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08)">
+            <strong>PayFriends</strong><br>
+            Version 1.0.0<br>
+            © 2025 PayFriends
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize header
+    PayFriendsHeader.initialize();
+  </script>
+</body>
+</html>
