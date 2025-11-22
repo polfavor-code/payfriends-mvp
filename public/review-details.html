@@ -1865,6 +1865,20 @@
     }
 
     async function populateDetails() {
+      // Debug: Log the entire agreement object to see what fields are available
+      console.log('=== POPULATE DETAILS DEBUG ===');
+      console.log('Full agreement object:', agreement);
+      console.log('Key fields:', {
+        amount_cents: agreement.amount_cents,
+        total_repay_amount: agreement.total_repay_amount,
+        planned_total_due_cents: agreement.planned_total_due_cents,
+        today_total_due_cents: agreement.today_total_due_cents,
+        today_interest_cents: agreement.today_interest_cents,
+        planned_interest_max_cents: agreement.planned_interest_max_cents,
+        interest_rate: agreement.interest_rate,
+        repayment_type: agreement.repayment_type
+      });
+
       const amount = formatCurrency2(agreement.amount_cents);
       const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
@@ -1889,13 +1903,14 @@
       document.getElementById('agreement-summary-line1').textContent = summaryLine1;
 
       // Generate human-readable summary line 2 (payment schedule)
+      // Use 'en-GB' locale for capitalized month names (e.g., "22 Feb 2026")
       let summaryLine2 = '';
       if (isInstallments && agreement.installment_count) {
-        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         summaryLine2 = `${agreement.installment_count} monthly payments, from ${firstDate} to ${finalDate}.`;
       } else {
-        const dueDate = new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         summaryLine2 = `Full repayment date is ${dueDate}.`;
       }
       document.getElementById('agreement-summary-line2').textContent = summaryLine2;
