@@ -31,6 +31,9 @@ if (!fs.existsSync('./uploads/payments')) {
 if (!fs.existsSync('./uploads/profiles')) {
   fs.mkdirSync('./uploads/profiles', { recursive: true });
 }
+if (!fs.existsSync('./uploads/grouptabs')) {
+  fs.mkdirSync('./uploads/grouptabs', { recursive: true });
+}
 
 // --- database setup ---
 const db = new Database('./data/payfriends.db');
@@ -147,6 +150,46 @@ db.exec(`
     proof_mime_type TEXT,
     FOREIGN KEY (agreement_id) REFERENCES agreements(id),
     FOREIGN KEY (recorded_by_user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS grouptabs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    total_amount_cents INTEGER NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'EUR',
+    event_date TEXT,
+    bill_image_url TEXT,
+    attendees_count INTEGER,
+    status TEXT NOT NULL DEFAULT 'open',
+    public_slug TEXT UNIQUE NOT NULL,
+    payment_bank_details TEXT,
+    payment_paypal_details TEXT,
+    payment_other_details TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (owner_user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS grouptab_contributions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    grouptab_id INTEGER NOT NULL,
+    guest_name TEXT NOT NULL,
+    guest_user_id INTEGER,
+    amount_cents INTEGER NOT NULL,
+    method TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    comment TEXT,
+    proof_image_url TEXT,
+    proof_original_name TEXT,
+    proof_mime_type TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    confirmed_at TEXT,
+    rejected_reason TEXT,
+    FOREIGN KEY (grouptab_id) REFERENCES grouptabs(id),
+    FOREIGN KEY (guest_user_id) REFERENCES users(id)
   );
 `);
 
@@ -368,6 +411,34 @@ const uploadProfilePicture = multer({
   }
 });
 
+// GroupTab bill and contribution proof upload configuration
+const grouptabStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, './uploads/grouptabs/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    const prefix = file.fieldname === 'billImage' ? 'bill' : 'proof';
+    cb(null, `grouptab-${prefix}-${uniqueSuffix}${ext}`);
+  }
+});
+
+const uploadGrouptab = multer({
+  storage: grouptabStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images (JPEG, PNG, GIF, WebP) and PDF files are allowed'));
+    }
+  }
+});
+
 // --- middleware ---
 app.use(morgan('dev'));
 app.use(bodyParser.json());
@@ -490,6 +561,50 @@ function toDateOnly(dateValue) {
 
   // Format as YYYY-MM-DD in UTC
   return date.toISOString().split('T')[0];
+}
+
+// Generate unique public slug for GroupTab
+function generateGrouptabSlug() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let slug = '';
+
+  // Try up to 10 times to generate a unique slug
+  for (let attempts = 0; attempts < 10; attempts++) {
+    slug = 'gt-';
+    for (let i = 0; i < 8; i++) {
+      slug += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    // Check if slug already exists
+    const exists = db.prepare('SELECT id FROM grouptabs WHERE public_slug = ?').get(slug);
+    if (!exists) {
+      return slug;
+    }
+  }
+
+  // Fallback to timestamp-based slug if all attempts failed
+  return 'gt-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+}
+
+// compute contribution totals for a grouptab
+function getGrouptabContributionTotals(grouptabId) {
+  const confirmed = db.prepare(`
+    SELECT COALESCE(SUM(amount_cents), 0) as total_cents
+    FROM grouptab_contributions
+    WHERE grouptab_id = ? AND status = 'confirmed'
+  `).get(grouptabId);
+
+  const pending = db.prepare(`
+    SELECT COALESCE(SUM(amount_cents), 0) as total_cents
+    FROM grouptab_contributions
+    WHERE grouptab_id = ? AND status = 'pending'
+  `).get(grouptabId);
+
+  return {
+    confirmed_cents: confirmed.total_cents,
+    pending_cents: pending.total_cents,
+    total_reported_cents: confirmed.total_cents + pending.total_cents
+  };
 }
 
 // Auto-link pending agreements to borrower when they log in/signup
@@ -3585,6 +3700,433 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true });
 });
 
+// ============================================
+// GroupTab API Endpoints
+// ============================================
+
+// Create a new GroupTab
+app.post('/api/grouptabs', requireAuth, uploadGrouptab.single('billImage'), (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      totalAmount,
+      currency = 'EUR',
+      eventDate,
+      attendeesCount,
+      paymentBankDetails,
+      paymentPaypalDetails,
+      paymentOtherDetails
+    } = req.body;
+
+    // Validation
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    const totalAmountCents = toCents(totalAmount);
+    if (!totalAmountCents) {
+      return res.status(400).json({ error: 'Valid total amount is required' });
+    }
+
+    // Generate unique public slug
+    const publicSlug = generateGrouptabSlug();
+
+    // Handle uploaded bill image
+    const billImageUrl = req.file ? req.file.path : null;
+
+    const now = new Date().toISOString();
+    const normalizedEventDate = toDateOnly(eventDate) || toDateOnly(now);
+
+    const result = db.prepare(`
+      INSERT INTO grouptabs (
+        owner_user_id, title, description, total_amount_cents, currency,
+        event_date, bill_image_url, attendees_count, status, public_slug,
+        payment_bank_details, payment_paypal_details, payment_other_details,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?)
+    `).run(
+      req.user.id,
+      title.trim(),
+      description || null,
+      totalAmountCents,
+      currency,
+      normalizedEventDate,
+      billImageUrl,
+      attendeesCount ? parseInt(attendeesCount, 10) : null,
+      publicSlug,
+      paymentBankDetails || null,
+      paymentPaypalDetails || null,
+      paymentOtherDetails || null,
+      now,
+      now
+    );
+
+    res.json({
+      success: true,
+      grouptabId: result.lastInsertRowid,
+      publicSlug: publicSlug
+    });
+  } catch (err) {
+    console.error('Error creating grouptab:', err);
+    res.status(500).json({ error: 'Server error creating grouptab' });
+  }
+});
+
+// Get all grouptabs for the logged-in user
+app.get('/api/grouptabs', requireAuth, (req, res) => {
+  try {
+    const grouptabs = db.prepare(`
+      SELECT * FROM grouptabs
+      WHERE owner_user_id = ?
+      ORDER BY created_at DESC
+    `).all(req.user.id);
+
+    // Add totals for each grouptab
+    const grouptabsWithTotals = grouptabs.map(gt => {
+      const totals = getGrouptabContributionTotals(gt.id);
+      return {
+        ...gt,
+        ...totals,
+        remaining_confirmed_cents: Math.max(0, gt.total_amount_cents - totals.confirmed_cents)
+      };
+    });
+
+    res.json({ grouptabs: grouptabsWithTotals });
+  } catch (err) {
+    console.error('Error fetching grouptabs:', err);
+    res.status(500).json({ error: 'Server error fetching grouptabs' });
+  }
+});
+
+// Get a specific grouptab (authenticated - for host)
+app.get('/api/grouptabs/:id', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const grouptab = db.prepare('SELECT * FROM grouptabs WHERE id = ?').get(id);
+
+    if (!grouptab) {
+      return res.status(404).json({ error: 'GroupTab not found' });
+    }
+
+    // Verify ownership
+    if (grouptab.owner_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Get all contributions
+    const contributions = db.prepare(`
+      SELECT * FROM grouptab_contributions
+      WHERE grouptab_id = ?
+      ORDER BY created_at DESC
+    `).all(id);
+
+    // Calculate totals
+    const totals = getGrouptabContributionTotals(id);
+
+    res.json({
+      grouptab: {
+        ...grouptab,
+        ...totals,
+        remaining_confirmed_cents: Math.max(0, grouptab.total_amount_cents - totals.confirmed_cents)
+      },
+      contributions
+    });
+  } catch (err) {
+    console.error('Error fetching grouptab:', err);
+    res.status(500).json({ error: 'Server error fetching grouptab' });
+  }
+});
+
+// Update grouptab status (close/reopen)
+app.patch('/api/grouptabs/:id/status', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['open', 'closed'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be "open" or "closed"' });
+    }
+
+    const grouptab = db.prepare('SELECT * FROM grouptabs WHERE id = ?').get(id);
+
+    if (!grouptab) {
+      return res.status(404).json({ error: 'GroupTab not found' });
+    }
+
+    if (grouptab.owner_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const now = new Date().toISOString();
+
+    db.prepare(`
+      UPDATE grouptabs
+      SET status = ?, updated_at = ?
+      WHERE id = ?
+    `).run(status, now, id);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating grouptab status:', err);
+    res.status(500).json({ error: 'Server error updating grouptab status' });
+  }
+});
+
+// ============================================
+// GroupTab Contributions API (Authenticated - Host Only)
+// ============================================
+
+// Confirm a contribution
+app.post('/api/grouptab-contributions/:id/confirm', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, method } = req.body; // Optional: allow editing amount/method
+
+    const contribution = db.prepare(`
+      SELECT c.*, g.owner_user_id
+      FROM grouptab_contributions c
+      JOIN grouptabs g ON c.grouptab_id = g.id
+      WHERE c.id = ?
+    `).get(id);
+
+    if (!contribution) {
+      return res.status(404).json({ error: 'Contribution not found' });
+    }
+
+    // Verify ownership of the grouptab
+    if (contribution.owner_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const now = new Date().toISOString();
+
+    // If amount or method is provided, update them
+    if (amount !== undefined) {
+      const amountCents = toCents(amount);
+      if (!amountCents) {
+        return res.status(400).json({ error: 'Invalid amount' });
+      }
+
+      db.prepare(`
+        UPDATE grouptab_contributions
+        SET status = 'confirmed', confirmed_at = ?, amount_cents = ?, method = ?, updated_at = ?
+        WHERE id = ?
+      `).run(now, amountCents, method || contribution.method, now, id);
+    } else {
+      db.prepare(`
+        UPDATE grouptab_contributions
+        SET status = 'confirmed', confirmed_at = ?, updated_at = ?
+        WHERE id = ?
+      `).run(now, now, id);
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error confirming contribution:', err);
+    res.status(500).json({ error: 'Server error confirming contribution' });
+  }
+});
+
+// Reject a contribution
+app.post('/api/grouptab-contributions/:id/reject', requireAuth, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const contribution = db.prepare(`
+      SELECT c.*, g.owner_user_id
+      FROM grouptab_contributions c
+      JOIN grouptabs g ON c.grouptab_id = g.id
+      WHERE c.id = ?
+    `).get(id);
+
+    if (!contribution) {
+      return res.status(404).json({ error: 'Contribution not found' });
+    }
+
+    if (contribution.owner_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const now = new Date().toISOString();
+
+    db.prepare(`
+      UPDATE grouptab_contributions
+      SET status = 'rejected', rejected_reason = ?, updated_at = ?
+      WHERE id = ?
+    `).run(reason || 'Rejected by host', now, id);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error rejecting contribution:', err);
+    res.status(500).json({ error: 'Server error rejecting contribution' });
+  }
+});
+
+// ============================================
+// Public GroupTab API (No Authentication Required)
+// ============================================
+
+// Get grouptab by public slug (for guests)
+app.get('/api/public/grouptabs/:slug', (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const grouptab = db.prepare(`
+      SELECT g.*, u.full_name as owner_name
+      FROM grouptabs g
+      JOIN users u ON g.owner_user_id = u.id
+      WHERE g.public_slug = ?
+    `).get(slug);
+
+    if (!grouptab) {
+      return res.status(404).json({ error: 'GroupTab not found' });
+    }
+
+    // Get all non-rejected contributions
+    const contributions = db.prepare(`
+      SELECT
+        id, grouptab_id, guest_name, amount_cents, method, status,
+        comment, created_at, confirmed_at
+      FROM grouptab_contributions
+      WHERE grouptab_id = ? AND status != 'rejected'
+      ORDER BY confirmed_at DESC, created_at DESC
+    `).all(grouptab.id);
+
+    // Calculate totals
+    const totals = getGrouptabContributionTotals(grouptab.id);
+
+    // Group contributions by guest_name
+    const contributionsByGuest = {};
+    contributions.forEach(c => {
+      if (!contributionsByGuest[c.guest_name]) {
+        contributionsByGuest[c.guest_name] = {
+          guest_name: c.guest_name,
+          confirmed_cents: 0,
+          pending_cents: 0,
+          contributions: []
+        };
+      }
+
+      if (c.status === 'confirmed') {
+        contributionsByGuest[c.guest_name].confirmed_cents += c.amount_cents;
+      } else if (c.status === 'pending') {
+        contributionsByGuest[c.guest_name].pending_cents += c.amount_cents;
+      }
+
+      contributionsByGuest[c.guest_name].contributions.push(c);
+    });
+
+    const guestsList = Object.values(contributionsByGuest);
+
+    // Return safe, public data (no sensitive owner info)
+    res.json({
+      grouptab: {
+        id: grouptab.id,
+        title: grouptab.title,
+        description: grouptab.description,
+        total_amount_cents: grouptab.total_amount_cents,
+        currency: grouptab.currency,
+        event_date: grouptab.event_date,
+        bill_image_url: grouptab.bill_image_url,
+        attendees_count: grouptab.attendees_count,
+        status: grouptab.status,
+        public_slug: grouptab.public_slug,
+        owner_name: grouptab.owner_name ? grouptab.owner_name.split(' ')[0] : 'Host', // First name only
+        payment_bank_details: grouptab.payment_bank_details,
+        payment_paypal_details: grouptab.payment_paypal_details,
+        payment_other_details: grouptab.payment_other_details,
+        ...totals,
+        remaining_confirmed_cents: Math.max(0, grouptab.total_amount_cents - totals.confirmed_cents)
+      },
+      guests: guestsList
+    });
+  } catch (err) {
+    console.error('Error fetching public grouptab:', err);
+    res.status(500).json({ error: 'Server error fetching grouptab' });
+  }
+});
+
+// Submit a contribution as a guest (no auth required)
+app.post('/api/public/grouptabs/:slug/contributions', uploadGrouptab.single('proof'), (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { guestName, amount, method, comment } = req.body;
+
+    // Validation
+    if (!guestName || !guestName.trim()) {
+      return res.status(400).json({ error: 'Your name is required' });
+    }
+
+    const amountCents = toCents(amount);
+    if (!amountCents) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+
+    // Find grouptab by slug
+    const grouptab = db.prepare('SELECT * FROM grouptabs WHERE public_slug = ?').get(slug);
+
+    if (!grouptab) {
+      return res.status(404).json({ error: 'GroupTab not found' });
+    }
+
+    // Check if grouptab is closed
+    if (grouptab.status === 'closed') {
+      return res.status(400).json({ error: 'This GroupTab is closed and no longer accepting contributions' });
+    }
+
+    const now = new Date().toISOString();
+    const proofImageUrl = req.file ? req.file.path : null;
+
+    const result = db.prepare(`
+      INSERT INTO grouptab_contributions (
+        grouptab_id, guest_name, amount_cents, method, status, comment,
+        proof_image_url, proof_original_name, proof_mime_type,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?)
+    `).run(
+      grouptab.id,
+      guestName.trim(),
+      amountCents,
+      method || null,
+      comment || null,
+      proofImageUrl,
+      req.file?.originalname || null,
+      req.file?.mimetype || null,
+      now,
+      now
+    );
+
+    res.json({
+      success: true,
+      contributionId: result.lastInsertRowid
+    });
+  } catch (err) {
+    console.error('Error submitting contribution:', err);
+    res.status(500).json({ error: 'Server error submitting contribution' });
+  }
+});
+
+// Serve grouptab images (public)
+app.get('/api/grouptab-images/:filename', (req, res) => {
+  try {
+    const { filename } = req.params;
+    const filePath = `./uploads/grouptabs/${filename}`;
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    // Send the file
+    res.sendFile(path.resolve(filePath));
+  } catch (err) {
+    console.error('Error serving grouptab image:', err);
+    res.status(500).json({ error: 'Server error serving image' });
+  }
+});
+
 // Get invite details by token (public)
 app.get('/api/invites/:token', (req, res) => {
   const { token } = req.params;
@@ -3863,6 +4405,38 @@ app.get('/legal', (req, res) => {
   } else {
     res.redirect('/');
   }
+});
+
+// GroupTabs: serve grouptabs overview page if authenticated, else redirect to /
+app.get('/group-tabs', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'group-tabs.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// GroupTab Create: serve grouptab creation page if authenticated, else redirect to /
+app.get('/group-tabs/create', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'group-tab-create.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// GroupTab Detail: serve grouptab detail/management page if authenticated, else redirect to /
+app.get('/group-tabs/:id', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'group-tab-detail.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Public GroupTab: serve public grouptab page (no auth required)
+app.get('/gt/:slug', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'gt.html'));
 });
 
 // Review: serve review page for agreement invites

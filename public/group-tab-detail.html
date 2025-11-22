@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GroupTab — PayFriends</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <link rel="stylesheet" href="/css/app.css" />
+  <script src="/js/header.js"></script>
+  <script src="/js/formatters.js"></script>
+  <style>
+    :root{--bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97; --danger:#ef4444; --warning:#f97316;}
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:1200px;margin:0 auto;padding:32px 16px;}
+    .back-link{color:var(--muted);text-decoration:none;margin-bottom:24px;display:inline-block;font-size:14px}
+    .back-link:hover{color:var(--text)}
+    .page-header{margin-bottom:32px}
+    .page-header h1{margin:0 0 8px 0;font-size:32px;font-weight:700}
+    .page-header .meta{color:var(--muted);font-size:14px;margin-top:4px}
+    .status-badge{display:inline-block;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;margin-left:12px}
+    .status-badge.open{background:rgba(61,220,151,0.15);color:var(--accent);border:1px solid rgba(61,220,151,0.3)}
+    .status-badge.closed{background:rgba(156,163,175,0.15);color:#9ca3af;border:1px solid rgba(156,163,175,0.3)}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin:16px 0}
+    .public-link-section{background:#10151d;padding:16px;border-radius:12px;margin-top:16px}
+    .public-link-label{color:var(--muted);font-size:13px;margin-bottom:8px;font-weight:600}
+    .public-link-display{display:flex;gap:12px;align-items:center}
+    .public-link-url{flex:1;background:var(--card);padding:12px;border-radius:8px;font-family:monospace;font-size:13px;word-break:break-all;border:1px solid rgba(61,220,151,0.2);color:var(--accent)}
+    .copy-btn{padding:10px 16px;border-radius:8px;border:0;background:var(--accent);color:#0d130f;font-weight:700;cursor:pointer;white-space:nowrap}
+    .copy-btn:hover{filter:brightness(1.06)}
+    .copy-btn.copied{background:#22c55e}
+    .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+    .summary-item{background:#10151d;padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.06)}
+    .summary-label{color:var(--muted);font-size:13px;margin-bottom:4px}
+    .summary-value{font-size:24px;font-weight:700}
+    .summary-value.positive{color:var(--accent)}
+    .summary-value.warning{color:var(--warning)}
+    .section-title{font-size:20px;font-weight:600;margin:32px 0 16px 0}
+    .contributors-list{margin-top:16px}
+    .contributor-card{background:#10151d;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:12px}
+    .contributor-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .contributor-name{font-size:18px;font-weight:600}
+    .contributor-totals{font-size:14px;color:var(--muted)}
+    .contributor-totals .confirmed{color:var(--accent);font-weight:600}
+    .contributor-totals .pending{color:var(--warning);font-weight:600}
+    .contribution-item{background:var(--card);padding:12px;border-radius:8px;margin:8px 0;border-left:3px solid transparent}
+    .contribution-item.pending{border-left-color:var(--warning)}
+    .contribution-item.confirmed{border-left-color:var(--accent)}
+    .contribution-item.rejected{border-left-color:var(--danger);opacity:0.6}
+    .contribution-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .contribution-info{flex:1}
+    .contribution-amount{font-size:16px;font-weight:700}
+    .contribution-meta{font-size:13px;color:var(--muted);margin-top:4px}
+    .contribution-comment{margin-top:8px;padding:8px;background:#10151d;border-radius:6px;font-size:13px;font-style:italic}
+    .contribution-actions{display:flex;gap:8px}
+    .btn{padding:8px 16px;border-radius:8px;border:0;font-weight:600;cursor:pointer;font-size:13px;transition:all 0.2s}
+    .btn-confirm{background:var(--accent);color:#0d130f}
+    .btn-confirm:hover{filter:brightness(1.1)}
+    .btn-reject{background:transparent;border:1px solid var(--danger);color:var(--danger)}
+    .btn-reject:hover{background:rgba(239,68,68,0.1)}
+    .btn-close{background:var(--danger);color:#fff;padding:10px 20px;border-radius:8px;border:0;font-weight:600;cursor:pointer}
+    .btn-close:hover{filter:brightness(1.1)}
+    .btn-secondary{background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--text)}
+    .btn-secondary:hover{background:rgba(255,255,255,0.05)}
+    .empty-state{text-align:center;padding:40px;color:var(--muted)}
+    .bill-image{max-width:100%;max-height:400px;border-radius:12px;margin-top:12px;cursor:pointer}
+    .bill-image:hover{opacity:0.9}
+    .close-grouptab-section{margin-top:32px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.08);text-align:center}
+  </style>
+</head>
+<body>
+  <div id="header-container"></div>
+
+  <div class="container">
+    <a href="/group-tabs" class="back-link">← Back to GroupTabs</a>
+
+    <div id="content"></div>
+  </div>
+
+  <script>
+    loadHeader();
+
+    const grouptabId = window.location.pathname.split('/').pop();
+    let grouptabData = null;
+
+    async function loadGrouptab() {
+      try {
+        const response = await fetch(`/api/grouptabs/${grouptabId}`);
+        if (!response.ok) throw new Error('Failed to load grouptab');
+
+        const data = await response.json();
+        grouptabData = data;
+        renderGrouptab(data);
+      } catch (err) {
+        console.error('Error loading grouptab:', err);
+        document.getElementById('content').innerHTML = `
+          <div class="empty-state">
+            <h2>Error loading GroupTab</h2>
+            <p>${err.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderGrouptab(data) {
+      const gt = data.grouptab;
+      const contributions = data.contributions || [];
+
+      const publicUrl = `${window.location.origin}/gt/${gt.public_slug}`;
+      const totalAmount = formatCurrency0(gt.total_amount_cents);
+      const confirmedAmount = formatCurrency0(gt.confirmed_cents);
+      const pendingAmount = formatCurrency0(gt.pending_cents);
+      const remainingAmount = formatCurrency0(gt.remaining_confirmed_cents);
+      const eventDate = gt.event_date ? new Date(gt.event_date).toLocaleDateString() : '';
+      const fairShare = gt.attendees_count ? formatCurrency0(Math.round(gt.total_amount_cents / gt.attendees_count)) : null;
+
+      // Group contributions by guest
+      const byGuest = {};
+      contributions.forEach(c => {
+        if (!byGuest[c.guest_name]) {
+          byGuest[c.guest_name] = { confirmed: 0, pending: 0, items: [] };
+        }
+        byGuest[c.guest_name].items.push(c);
+        if (c.status === 'confirmed') {
+          byGuest[c.guest_name].confirmed += c.amount_cents;
+        } else if (c.status === 'pending') {
+          byGuest[c.guest_name].pending += c.amount_cents;
+        }
+      });
+
+      const guestsList = Object.keys(byGuest).sort();
+
+      let html = `
+        <div class="page-header">
+          <h1>
+            ${escapeHtml(gt.title)}
+            <span class="status-badge ${gt.status}">${gt.status === 'open' ? 'Open' : 'Closed'}</span>
+          </h1>
+          <div class="meta">${eventDate}${gt.attendees_count ? ` • ${gt.attendees_count} people` : ''}</div>
+        </div>
+
+        <div class="card">
+          <div class="summary-grid">
+            <div class="summary-item">
+              <div class="summary-label">Total Bill</div>
+              <div class="summary-value">${totalAmount}</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">Confirmed Paid Back</div>
+              <div class="summary-value positive">${confirmedAmount}</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">Pending Confirmation</div>
+              <div class="summary-value warning">${pendingAmount}</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">Still Missing (Confirmed)</div>
+              <div class="summary-value ${gt.remaining_confirmed_cents > 0 ? 'warning' : 'positive'}">${remainingAmount}</div>
+            </div>
+          </div>
+
+          ${fairShare ? `<div style="color:var(--muted);font-size:14px;margin-top:8px">Fair share per person: ${fairShare}</div>` : ''}
+
+          ${gt.bill_image_url ? `
+            <div>
+              <div style="color:var(--muted);font-size:13px;margin-top:16px;margin-bottom:8px;font-weight:600">Bill Image:</div>
+              <img src="/${gt.bill_image_url}" alt="Bill" class="bill-image" onclick="window.open('/${gt.bill_image_url}', '_blank')" />
+            </div>
+          ` : ''}
+
+          <div class="public-link-section">
+            <div class="public-link-label">Public Link (share with your group):</div>
+            <div class="public-link-display">
+              <div class="public-link-url" id="public-link">${publicUrl}</div>
+              <button class="copy-btn" onclick="copyLink()">Copy Link</button>
+            </div>
+          </div>
+        </div>
+
+        ${guestsList.length === 0 ? `
+          <div class="section-title">Contributions</div>
+          <div class="empty-state">
+            <p>No contributions yet. Share the public link with your group!</p>
+          </div>
+        ` : `
+          <div class="section-title">Contributions by Guest (${guestsList.length} ${guestsList.length === 1 ? 'person' : 'people'})</div>
+          <div class="contributors-list">
+            ${guestsList.map(guestName => {
+              const guest = byGuest[guestName];
+              const confirmedTotal = formatCurrency0(guest.confirmed);
+              const pendingTotal = formatCurrency0(guest.pending);
+
+              return `
+                <div class="contributor-card">
+                  <div class="contributor-header">
+                    <div class="contributor-name">${escapeHtml(guestName)}</div>
+                    <div class="contributor-totals">
+                      ${guest.confirmed > 0 ? `<span class="confirmed">✓ ${confirmedTotal}</span>` : ''}
+                      ${guest.pending > 0 ? `<span class="pending">⏱ ${pendingTotal}</span>` : ''}
+                    </div>
+                  </div>
+
+                  ${guest.items.map(c => {
+                    const amount = formatCurrency0(c.amount_cents);
+                    const date = new Date(c.created_at).toLocaleString();
+
+                    return `
+                      <div class="contribution-item ${c.status}">
+                        <div class="contribution-row">
+                          <div class="contribution-info">
+                            <div class="contribution-amount">${amount}</div>
+                            <div class="contribution-meta">
+                              ${c.method ? `${escapeHtml(c.method)} • ` : ''}${date}
+                              ${c.status === 'confirmed' ? ` • <span style="color:var(--accent)">✓ Confirmed</span>` : ''}
+                              ${c.status === 'pending' ? ` • <span style="color:var(--warning)">⏱ Pending</span>` : ''}
+                              ${c.status === 'rejected' ? ` • <span style="color:var(--danger)">✗ Rejected</span>` : ''}
+                            </div>
+                            ${c.comment ? `<div class="contribution-comment">"${escapeHtml(c.comment)}"</div>` : ''}
+                          </div>
+
+                          ${c.status === 'pending' ? `
+                            <div class="contribution-actions">
+                              <button class="btn btn-confirm" onclick="confirmContribution(${c.id})">Confirm</button>
+                              <button class="btn btn-reject" onclick="rejectContribution(${c.id})">Reject</button>
+                            </div>
+                          ` : ''}
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `}
+
+        ${gt.status === 'open' ? `
+          <div class="close-grouptab-section">
+            <h3>Close this GroupTab?</h3>
+            <p style="color:var(--muted);margin-bottom:16px">Once closed, guests won't be able to submit new payments.</p>
+            <button class="btn-close" onclick="closeGrouptab()">Close GroupTab</button>
+          </div>
+        ` : `
+          <div class="close-grouptab-section">
+            <p style="color:var(--muted)">This GroupTab is closed.</p>
+            <button class="btn btn-secondary" onclick="reopenGrouptab()">Reopen GroupTab</button>
+          </div>
+        `}
+      `;
+
+      document.getElementById('content').innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function copyLink() {
+      const link = document.getElementById('public-link').textContent;
+      try {
+        await navigator.clipboard.writeText(link);
+        const btn = event.target;
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy Link';
+          btn.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy link. Please copy manually.');
+      }
+    }
+
+    async function confirmContribution(id) {
+      if (!confirm('Confirm this payment?')) return;
+
+      try {
+        const response = await fetch(`/api/grouptab-contributions/${id}/confirm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) throw new Error('Failed to confirm contribution');
+
+        await loadGrouptab();
+      } catch (err) {
+        console.error('Error confirming contribution:', err);
+        alert('Error confirming contribution: ' + err.message);
+      }
+    }
+
+    async function rejectContribution(id) {
+      const reason = prompt('Why are you rejecting this payment? (optional)');
+      if (reason === null) return;
+
+      try {
+        const response = await fetch(`/api/grouptab-contributions/${id}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+
+        if (!response.ok) throw new Error('Failed to reject contribution');
+
+        await loadGrouptab();
+      } catch (err) {
+        console.error('Error rejecting contribution:', err);
+        alert('Error rejecting contribution: ' + err.message);
+      }
+    }
+
+    async function closeGrouptab() {
+      if (!confirm('Close this GroupTab? Guests will no longer be able to submit payments.')) return;
+
+      try {
+        const response = await fetch(`/api/grouptabs/${grouptabId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'closed' })
+        });
+
+        if (!response.ok) throw new Error('Failed to close grouptab');
+
+        await loadGrouptab();
+      } catch (err) {
+        console.error('Error closing grouptab:', err);
+        alert('Error closing grouptab: ' + err.message);
+      }
+    }
+
+    async function reopenGrouptab() {
+      try {
+        const response = await fetch(`/api/grouptabs/${grouptabId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'open' })
+        });
+
+        if (!response.ok) throw new Error('Failed to reopen grouptab');
+
+        await loadGrouptab();
+      } catch (err) {
+        console.error('Error reopening grouptab:', err);
+        alert('Error reopening grouptab: ' + err.message);
+      }
+    }
+
+    loadGrouptab();
+  </script>
+</body>
+</html>
