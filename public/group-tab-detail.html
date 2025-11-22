@@ -113,7 +113,7 @@
       const pendingAmount = formatCurrency0(gt.pending_cents);
       const remainingAmount = formatCurrency0(gt.remaining_confirmed_cents);
       const eventDate = gt.event_date ? new Date(gt.event_date).toLocaleDateString() : '';
-      const fairShare = gt.attendees_count ? formatCurrency0(Math.round(gt.total_amount_cents / gt.attendees_count)) : null;
+      const fairShare = gt.people_count ? formatCurrency0(Math.round(gt.total_amount_cents / gt.people_count)) : null;
 
       // Group contributions by guest
       const byGuest = {};
@@ -137,7 +137,7 @@
             ${escapeHtml(gt.title)}
             <span class="status-badge ${gt.status}">${gt.status === 'open' ? 'Open' : 'Closed'}</span>
           </h1>
-          <div class="meta">${eventDate}${gt.attendees_count ? ` • ${gt.attendees_count} people` : ''}</div>
+          <div class="meta">${eventDate}${gt.people_count ? ` • ${gt.people_count} people` : ''}</div>
         </div>
 
         <div class="card">
@@ -222,6 +222,7 @@
                           ${c.status === 'pending' ? `
                             <div class="contribution-actions">
                               <button class="btn btn-confirm" onclick="confirmContribution(${c.id})">Confirm</button>
+                              <button class="btn btn-secondary" onclick="editAndConfirm(${c.id}, ${c.amount_cents}, '${escapeJs(c.method || '')}')">Edit & Confirm</button>
                               <button class="btn btn-reject" onclick="rejectContribution(${c.id})">Reject</button>
                             </div>
                           ` : ''}
@@ -259,6 +260,11 @@
       return div.innerHTML;
     }
 
+    function escapeJs(text) {
+      if (!text) return '';
+      return text.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
+    }
+
     async function copyLink() {
       const link = document.getElementById('public-link').textContent;
       try {
@@ -291,6 +297,40 @@
       } catch (err) {
         console.error('Error confirming contribution:', err);
         alert('Error confirming contribution: ' + err.message);
+      }
+    }
+
+    async function editAndConfirm(id, currentAmountCents, currentMethod) {
+      const currentAmountEuros = (currentAmountCents / 100).toFixed(2);
+      const newAmount = prompt(`Edit amount (current: €${currentAmountEuros}):`, currentAmountEuros);
+
+      if (newAmount === null) return; // Cancelled
+
+      const newAmountFloat = parseFloat(newAmount);
+      if (isNaN(newAmountFloat) || newAmountFloat <= 0) {
+        alert('Please enter a valid amount');
+        return;
+      }
+
+      const newMethod = prompt('Edit payment method (optional):', currentMethod || '');
+      if (newMethod === null) return; // Cancelled
+
+      try {
+        const response = await fetch(`/api/grouptab-contributions/${id}/confirm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: newAmountFloat,
+            method: newMethod || currentMethod
+          })
+        });
+
+        if (!response.ok) throw new Error('Failed to edit and confirm contribution');
+
+        await loadGrouptab();
+      } catch (err) {
+        console.error('Error editing contribution:', err);
+        alert('Error editing contribution: ' + err.message);
       }
     }
 

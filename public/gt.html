@@ -24,6 +24,8 @@
     .summary-value{font-size:20px;font-weight:700}
     .summary-value.positive{color:var(--accent)}
     .summary-value.warning{color:var(--warning)}
+    .fair-share-notice{text-align:center;color:var(--muted);font-size:14px;margin-top:12px}
+    .fair-share-notice strong{color:var(--text)}
     .bill-image{max-width:100%;max-height:300px;border-radius:12px;margin:16px 0;cursor:pointer;display:block;margin-left:auto;margin-right:auto}
     .bill-image:hover{opacity:0.9}
     .section-title{font-size:18px;font-weight:600;margin:24px 0 12px 0}
@@ -39,6 +41,10 @@
     .amount-pending{color:var(--warning);font-weight:600}
     .amount-badge{display:inline-block;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-left:8px}
     .amount-badge.overpaid{background:rgba(61,220,151,0.15);color:var(--accent);border:1px solid rgba(61,220,151,0.3)}
+    .amount-badge.partial{background:rgba(249,115,22,0.15);color:var(--warning);border:1px solid rgba(249,115,22,0.3)}
+    .amount-badge.pending-only{background:rgba(250,204,21,0.15);color:#facc15;border:1px solid rgba(250,204,21,0.3)}
+    .people-summary{text-align:center;color:var(--muted);font-size:14px;margin:16px 0;padding:12px;background:#10151d;border-radius:8px}
+    .people-summary strong{color:var(--text)}
     .your-contribution-section{background:linear-gradient(135deg,rgba(61,220,151,0.08) 0%,rgba(61,220,151,0.02) 100%);border:2px solid rgba(61,220,151,0.2);padding:24px;border-radius:16px;margin:24px 0}
     .your-contribution-section h3{margin:0 0 16px 0;color:var(--accent)}
     .name-input-group{margin-bottom:20px}
@@ -54,6 +60,10 @@
     .circle.you-paid{border-color:var(--accent);background:rgba(61,220,151,0.05)}
     .circle.you-paid .circle-value{color:var(--accent)}
     .circle.fair-share{border-color:rgba(255,255,255,0.2)}
+    .circle-status{text-align:center;margin-top:12px;font-size:14px;font-weight:600}
+    .circle-status.overpaid{color:var(--accent)}
+    .circle-status.underpaid{color:var(--warning)}
+    .circle-status.paid{color:var(--accent)}
     .contribution-form{margin-top:24px}
     .form-group{margin-bottom:16px}
     .form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:14px}
@@ -110,17 +120,17 @@
       const confirmedAmount = formatCurrency0(gt.confirmed_cents);
       const remainingAmount = formatCurrency0(gt.remaining_confirmed_cents);
       const eventDate = gt.event_date ? new Date(gt.event_date).toLocaleDateString() : '';
-      const fairSharePerPerson = gt.attendees_count ? Math.round(gt.total_amount_cents / gt.attendees_count) : null;
+      const fairSharePerPerson = gt.people_count && gt.people_count > 0 ? Math.round(gt.total_amount_cents / gt.people_count) : null;
 
-      // Find current guest's data
-      const currentGuest = yourName ? guests.find(g => g.guest_name.toLowerCase() === yourName.toLowerCase()) : null;
-      const yourConfirmed = currentGuest ? currentGuest.confirmed_cents : 0;
-      const yourPending = currentGuest ? currentGuest.pending_cents : 0;
+      // Count unique people who have reported
+      const peopleWhoReported = guests.length;
+      const peopleWhoHaventReported = gt.people_count ? Math.max(0, gt.people_count - peopleWhoReported) : null;
 
       let html = `
         <div class="page-header">
           <h2>${escapeHtml(gt.title)}</h2>
           <div class="meta">Hosted by ${escapeHtml(gt.owner_name)}${eventDate ? ` • ${eventDate}` : ''}</div>
+          ${gt.description ? `<div class="meta" style="margin-top:8px">${escapeHtml(gt.description)}</div>` : ''}
         </div>
 
         <div class="card">
@@ -139,34 +149,48 @@
             </div>
           </div>
 
+          ${fairSharePerPerson ? `
+            <div class="fair-share-notice">
+              Suggested fair share: <strong>${formatCurrency0(fairSharePerPerson)}</strong> per person
+            </div>
+          ` : ''}
+
+          ${gt.people_count ? `
+            <div class="people-summary">
+              ${gt.people_count} ${gt.people_count === 1 ? 'person' : 'people'} in total.
+              ${peopleWhoReported > 0 ? `<strong>${peopleWhoReported}</strong> ${peopleWhoReported === 1 ? 'has' : 'have'} reported payments.` : 'No one has reported payments yet.'}
+              ${peopleWhoHaventReported > 0 ? ` <strong>${peopleWhoHaventReported}</strong> ${peopleWhoHaventReported === 1 ? 'has' : 'have'} not reported yet.` : ''}
+            </div>
+          ` : ''}
+
           ${gt.bill_image_url ? `
             <img src="/${gt.bill_image_url}" alt="Bill" class="bill-image" onclick="window.open('/${gt.bill_image_url}', '_blank')" />
           ` : ''}
-
-          ${(gt.payment_bank_details || gt.payment_paypal_details || gt.payment_other_details) ? `
-            <div class="section-title">How to Pay ${escapeHtml(gt.owner_name)}</div>
-            <div class="payment-methods">
-              ${gt.payment_bank_details ? `
-                <div class="payment-method">
-                  <strong>Bank Transfer:</strong>
-                  <div class="payment-method-value">${escapeHtml(gt.payment_bank_details)}</div>
-                </div>
-              ` : ''}
-              ${gt.payment_paypal_details ? `
-                <div class="payment-method">
-                  <strong>PayPal:</strong>
-                  <div class="payment-method-value">${escapeHtml(gt.payment_paypal_details)}</div>
-                </div>
-              ` : ''}
-              ${gt.payment_other_details ? `
-                <div class="payment-method">
-                  <strong>Other Options:</strong>
-                  <div class="payment-method-value">${escapeHtml(gt.payment_other_details)}</div>
-                </div>
-              ` : ''}
-            </div>
-          ` : ''}
         </div>
+
+        ${(gt.bank_details || gt.paypal_details || gt.other_payment_details) ? `
+          <div class="section-title">How to Pay ${escapeHtml(gt.owner_name)}</div>
+          <div class="payment-methods">
+            ${gt.bank_details ? `
+              <div class="payment-method">
+                <strong>Bank Transfer:</strong>
+                <div class="payment-method-value">${escapeHtml(gt.bank_details)}</div>
+              </div>
+            ` : ''}
+            ${gt.paypal_details ? `
+              <div class="payment-method">
+                <strong>PayPal:</strong>
+                <div class="payment-method-value">${escapeHtml(gt.paypal_details)}</div>
+              </div>
+            ` : ''}
+            ${gt.other_payment_details ? `
+              <div class="payment-method">
+                <strong>Other Options:</strong>
+                <div class="payment-method-value">${escapeHtml(gt.other_payment_details)}</div>
+              </div>
+            ` : ''}
+          </div>
+        ` : ''}
 
         ${guests.length > 0 ? `
           <div class="section-title">Who's Paid (${guests.length} ${guests.length === 1 ? 'person' : 'people'})</div>
@@ -174,7 +198,21 @@
             ${guests.map(g => {
               const confirmedAmt = formatCurrency0(g.confirmed_cents);
               const pendingAmt = formatCurrency0(g.pending_cents);
-              const isOverpaid = fairSharePerPerson && g.confirmed_cents > fairSharePerPerson;
+              let statusBadge = '';
+
+              if (fairSharePerPerson) {
+                if (g.confirmed_cents > 0 && g.pending_cents === 0) {
+                  if (g.confirmed_cents >= fairSharePerPerson) {
+                    statusBadge = g.confirmed_cents > fairSharePerPerson
+                      ? '<span class="amount-badge overpaid">Overpaid</span>'
+                      : '<span class="amount-badge overpaid">Paid</span>';
+                  } else {
+                    statusBadge = '<span class="amount-badge partial">Partially paid</span>';
+                  }
+                } else if (g.confirmed_cents === 0 && g.pending_cents > 0) {
+                  statusBadge = '<span class="amount-badge pending-only">Pending</span>';
+                }
+              }
 
               return `
                 <div class="contributor-item">
@@ -182,34 +220,44 @@
                   <div class="contributor-amounts">
                     ${g.confirmed_cents > 0 ? `<span class="amount-confirmed">✓ ${confirmedAmt}</span>` : ''}
                     ${g.pending_cents > 0 ? `<span class="amount-pending">⏱ ${pendingAmt}</span>` : ''}
-                    ${isOverpaid ? `<span class="amount-badge overpaid">Overpaid</span>` : ''}
+                    ${statusBadge}
                   </div>
                 </div>
               `;
             }).join('')}
           </div>
+
+          ${peopleWhoHaventReported > 0 ? `
+            <div class="people-summary" style="margin-top:16px">
+              ${peopleWhoHaventReported} ${peopleWhoHaventReported === 1 ? 'person has' : 'people have'} not reported any payment yet.
+            </div>
+          ` : ''}
+        ` : gt.people_count ? `
+          <div class="people-summary" style="margin-top:24px">
+            ${gt.people_count} ${gt.people_count === 1 ? 'person' : 'people'} in total. No one has reported payments yet.
+          </div>
         ` : ''}
 
         <div class="your-contribution-section">
-          <h3>Your Contribution</h3>
+          <h3>Report Your Payment</h3>
 
           ${gt.status === 'closed' ? `
-            <div class="closed-notice">This GroupTab is closed and no longer accepting payments.</div>
+            <div class="closed-notice">This GroupTab has been closed by the host. You can no longer report payments.</div>
           ` : ''}
 
           <div class="name-input-group">
             <label for="your-name">Your Name</label>
-            <input type="text" id="your-name" placeholder="Enter your name" value="${escapeHtml(yourName)}" />
+            <input type="text" id="your-name" placeholder="Enter your name" value="${escapeHtml(yourName)}" ${gt.status === 'closed' ? 'disabled' : ''} />
           </div>
 
           <div id="circles-section"></div>
 
           ${gt.status === 'open' ? `
-            <form id="contribution-form">
+            <form id="contribution-form" class="contribution-form">
               <div class="form-row">
                 <div class="form-group">
                   <label for="amount">Amount You're Paying</label>
-                  <input type="number" id="amount" name="amount" step="0.01" min="0.01" placeholder="20.00" required />
+                  <input type="number" id="amount" name="amount" step="0.01" min="0.01" placeholder="${fairSharePerPerson ? (fairSharePerPerson / 100).toFixed(2) : '20.00'}" required />
                   ${fairSharePerPerson ? `<div class="hint">Fair share: ${formatCurrency0(fairSharePerPerson)}</div>` : ''}
                 </div>
 
@@ -244,10 +292,19 @@
       const nameInput = document.getElementById('your-name');
       if (nameInput) {
         nameInput.addEventListener('input', (e) => {
-          yourName = e.target.value;
-          localStorage.setItem(`gt_${slug}_name`, yourName);
+          yourName = e.target.value.trim();
+          if (yourName) {
+            localStorage.setItem(`gt_${slug}_name`, yourName);
+          } else {
+            localStorage.removeItem(`gt_${slug}_name`);
+          }
           updateCircles();
         });
+
+        // Update circles on initial load if name is set
+        if (yourName) {
+          updateCircles();
+        }
       }
 
       // Set up form submission
@@ -255,8 +312,6 @@
       if (form) {
         form.addEventListener('submit', handleSubmit);
       }
-
-      updateCircles();
     }
 
     function updateCircles() {
@@ -264,12 +319,11 @@
       if (!circlesSection || !grouptabData) return;
 
       const gt = grouptabData.grouptab;
-      const fairSharePerPerson = gt.attendees_count ? Math.round(gt.total_amount_cents / gt.attendees_count) : null;
+      const fairSharePerPerson = gt.people_count && gt.people_count > 0 ? Math.round(gt.total_amount_cents / gt.people_count) : null;
 
+      // Only show circles if name is entered AND fair share is defined
       if (!yourName || !fairSharePerPerson) {
-        circlesSection.innerHTML = yourName && !fairSharePerPerson
-          ? '<div style="text-align:center;color:var(--muted);padding:20px">Fair share not set for this GroupTab</div>'
-          : '';
+        circlesSection.innerHTML = '';
         return;
       }
 
@@ -280,6 +334,21 @@
 
       const confirmedFormatted = formatCurrency0(yourConfirmed);
       const fairShareFormatted = formatCurrency0(fairSharePerPerson);
+
+      let statusMessage = '';
+      if (yourConfirmed > fairSharePerPerson) {
+        const overpaidAmount = formatCurrency0(yourConfirmed - fairSharePerPerson);
+        statusMessage = `<div class="circle-status overpaid">You've overpaid by ${overpaidAmount} - thank you for helping cover others!</div>`;
+      } else if (yourConfirmed >= fairSharePerPerson) {
+        statusMessage = `<div class="circle-status paid">You've covered your fair share!</div>`;
+      } else if (yourConfirmed > 0) {
+        const stillOwedAmount = formatCurrency0(fairSharePerPerson - yourConfirmed);
+        statusMessage = `<div class="circle-status underpaid">You still need to pay ${stillOwedAmount} to cover your full share</div>`;
+      } else if (yourPending > 0) {
+        statusMessage = `<div class="circle-status underpaid">Your payment of ${formatCurrency0(yourPending)} is pending host confirmation</div>`;
+      } else {
+        statusMessage = `<div class="circle-status underpaid">You haven't reported any payment yet</div>`;
+      }
 
       circlesSection.innerHTML = `
         <div class="circles-container">
@@ -299,19 +368,7 @@
           </div>
         </div>
 
-        ${yourConfirmed > fairSharePerPerson ? `
-          <div style="text-align:center;color:var(--accent);margin-top:8px;font-weight:600">
-            You've overpaid by ${formatCurrency0(yourConfirmed - fairSharePerPerson)} - thank you for covering others!
-          </div>
-        ` : yourConfirmed < fairSharePerPerson ? `
-          <div style="text-align:center;color:var(--warning);margin-top:8px">
-            You still need to pay ${formatCurrency0(fairSharePerPerson - yourConfirmed)} to cover your share
-          </div>
-        ` : `
-          <div style="text-align:center;color:var(--accent);margin-top:8px;font-weight:600">
-            You've covered your fair share!
-          </div>
-        `}
+        ${statusMessage}
       `;
     }
 
@@ -343,10 +400,13 @@
           throw new Error(data.error || 'Failed to submit contribution');
         }
 
+        const amount = document.getElementById('amount').value;
+        const method = document.getElementById('method').value;
+
         // Show success message
         document.getElementById('form-messages').innerHTML = `
           <div class="success-message">
-            Thank you! Your payment of ${document.getElementById('amount').value} EUR via ${document.getElementById('method').value} has been reported and is waiting for host confirmation.
+            Thank you! Your payment of ${amount} EUR via ${method} has been reported and is waiting for host confirmation.
           </div>
         `;
 
@@ -355,6 +415,11 @@
 
         // Reload grouptab data
         await loadGrouptab();
+
+        // Scroll to circles
+        setTimeout(() => {
+          document.getElementById('circles-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 500);
       } catch (err) {
         console.error('Error submitting contribution:', err);
         document.getElementById('form-messages').innerHTML = `

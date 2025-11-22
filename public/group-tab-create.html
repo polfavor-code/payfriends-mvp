@@ -73,9 +73,9 @@
           </div>
 
           <div class="form-group">
-            <label for="attendeesCount">People Count</label>
-            <input type="number" id="attendeesCount" name="attendeesCount" min="1" placeholder="30" />
-            <div class="hint">Number of people</div>
+            <label for="peopleCount">People Count *</label>
+            <input type="number" id="peopleCount" name="peopleCount" required min="1" placeholder="30" />
+            <div class="hint">Number of people who shared the bill</div>
           </div>
         </div>
 
@@ -105,19 +105,19 @@
         <div class="section-title">How should people pay you back?</div>
 
         <div class="form-group">
-          <label for="paymentBankDetails">Bank Transfer Details</label>
-          <textarea id="paymentBankDetails" name="paymentBankDetails" placeholder="IBAN: ES00 0000 0000 0000&#10;Name: John Doe&#10;Reference: Dinner 14 Nov"></textarea>
+          <label for="bankDetails">Bank Transfer Details</label>
+          <textarea id="bankDetails" name="bankDetails" placeholder="IBAN: ES00 0000 0000 0000&#10;Name: John Doe&#10;Reference: Dinner 14 Nov"></textarea>
           <div class="hint">Include IBAN, account name, and payment reference</div>
         </div>
 
         <div class="form-group">
-          <label for="paymentPaypalDetails">PayPal Details</label>
-          <input type="text" id="paymentPaypalDetails" name="paymentPaypalDetails" placeholder="paypal.me/johndoe or email" />
+          <label for="paypalDetails">PayPal Details</label>
+          <input type="text" id="paypalDetails" name="paypalDetails" placeholder="paypal.me/johndoe or email" />
         </div>
 
         <div class="form-group">
-          <label for="paymentOtherDetails">Other Payment Options</label>
-          <textarea id="paymentOtherDetails" name="paymentOtherDetails" placeholder="Cash when we meet, or Revolut: +34 xxx"></textarea>
+          <label for="otherPaymentDetails">Other Payment Options</label>
+          <textarea id="otherPaymentDetails" name="otherPaymentDetails" placeholder="Cash when we meet, or Revolut: +34 xxx"></textarea>
         </div>
       </div>
 

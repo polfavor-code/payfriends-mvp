@@ -159,14 +159,14 @@ db.exec(`
     description TEXT,
     total_amount_cents INTEGER NOT NULL,
     currency TEXT NOT NULL DEFAULT 'EUR',
+    people_count INTEGER,
     event_date TEXT,
     bill_image_url TEXT,
-    attendees_count INTEGER,
     status TEXT NOT NULL DEFAULT 'open',
     public_slug TEXT UNIQUE NOT NULL,
-    payment_bank_details TEXT,
-    payment_paypal_details TEXT,
-    payment_other_details TEXT,
+    bank_details TEXT,
+    paypal_details TEXT,
+    other_payment_details TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY (owner_user_id) REFERENCES users(id)
@@ -3713,10 +3713,10 @@ app.post('/api/grouptabs', requireAuth, uploadGrouptab.single('billImage'), (req
       totalAmount,
       currency = 'EUR',
       eventDate,
-      attendeesCount,
-      paymentBankDetails,
-      paymentPaypalDetails,
-      paymentOtherDetails
+      peopleCount,
+      bankDetails,
+      paypalDetails,
+      otherPaymentDetails
     } = req.body;
 
     // Validation
@@ -3741,8 +3741,8 @@ app.post('/api/grouptabs', requireAuth, uploadGrouptab.single('billImage'), (req
     const result = db.prepare(`
       INSERT INTO grouptabs (
         owner_user_id, title, description, total_amount_cents, currency,
-        event_date, bill_image_url, attendees_count, status, public_slug,
-        payment_bank_details, payment_paypal_details, payment_other_details,
+        people_count, event_date, bill_image_url, status, public_slug,
+        bank_details, paypal_details, other_payment_details,
         created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?)
     `).run(
@@ -3751,13 +3751,13 @@ app.post('/api/grouptabs', requireAuth, uploadGrouptab.single('billImage'), (req
       description || null,
       totalAmountCents,
       currency,
+      peopleCount ? parseInt(peopleCount, 10) : null,
       normalizedEventDate,
       billImageUrl,
-      attendeesCount ? parseInt(attendeesCount, 10) : null,
       publicSlug,
-      paymentBankDetails || null,
-      paymentPaypalDetails || null,
-      paymentOtherDetails || null,
+      bankDetails || null,
+      paypalDetails || null,
+      otherPaymentDetails || null,
       now,
       now
     );
@@ -4029,15 +4029,15 @@ app.get('/api/public/grouptabs/:slug', (req, res) => {
         description: grouptab.description,
         total_amount_cents: grouptab.total_amount_cents,
         currency: grouptab.currency,
+        people_count: grouptab.people_count,
         event_date: grouptab.event_date,
         bill_image_url: grouptab.bill_image_url,
-        attendees_count: grouptab.attendees_count,
         status: grouptab.status,
         public_slug: grouptab.public_slug,
         owner_name: grouptab.owner_name ? grouptab.owner_name.split(' ')[0] : 'Host', // First name only
-        payment_bank_details: grouptab.payment_bank_details,
-        payment_paypal_details: grouptab.payment_paypal_details,
-        payment_other_details: grouptab.payment_other_details,
+        bank_details: grouptab.bank_details,
+        paypal_details: grouptab.paypal_details,
+        other_payment_details: grouptab.other_payment_details,
         ...totals,
         remaining_confirmed_cents: Math.max(0, grouptab.total_amount_cents - totals.confirmed_cents)
       },
