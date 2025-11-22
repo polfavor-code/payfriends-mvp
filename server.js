@@ -447,12 +447,50 @@ function getPaymentTotals(agreementId) {
 }
 
 // get the total amount due for an agreement (principal + interest if available)
-function getAgreementTotalDueCents(agreement) {
-  if (agreement.total_repay_amount != null) {
-    // total_repay_amount is stored as a REAL in euros, convert to cents
-    return Math.round(agreement.total_repay_amount * 100);
+// Uses dynamic daily interest calculation based on actual days held
+function getAgreementTotalDueCents(agreement, asOfDate = null) {
+  const principalCents = agreement.amount_cents;
+
+  // If no interest rate, just return principal
+  if (!agreement.interest_rate || agreement.interest_rate === 0) {
+    return principalCents;
   }
-  return agreement.amount_cents;
+
+  // If no loan start date, fall back to static calculation
+  if (!agreement.money_sent_date) {
+    if (agreement.total_repay_amount != null) {
+      return Math.round(agreement.total_repay_amount * 100);
+    }
+    return principalCents;
+  }
+
+  // Parse dates
+  const loanStartDate = new Date(agreement.money_sent_date);
+  loanStartDate.setHours(0, 0, 0, 0);
+
+  const today = asOfDate ? new Date(asOfDate) : new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Calculate days held (must be at least 0)
+  const daysHeld = Math.max(0, Math.floor((today - loanStartDate) / (1000 * 60 * 60 * 24)));
+
+  // Calculate interest for the actual period held
+  const annualRate = agreement.interest_rate / 100; // Convert percentage to decimal
+  const dailyRate = annualRate / 365;
+  const interestForHeldPeriod = principalCents * dailyRate * daysHeld;
+
+  // Cap interest at the planned maximum (if we have it)
+  // This prevents late payments from accruing infinite interest
+  let cappedInterest = interestForHeldPeriod;
+  if (agreement.total_repay_amount != null) {
+    const plannedMaxInterestCents = Math.round(agreement.total_repay_amount * 100) - principalCents;
+    if (plannedMaxInterestCents > 0) {
+      cappedInterest = Math.min(interestForHeldPeriod, plannedMaxInterestCents);
+    }
+  }
+
+  const totalDueCents = principalCents + Math.round(cappedInterest);
+  return totalDueCents;
 }
 
 // create a new session for a user
@@ -3335,7 +3373,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
   try {
     // Get payment and agreement
     const payment = db.prepare(`
-      SELECT p.*, a.lender_user_id, a.borrower_user_id, a.amount_cents as agreement_amount_cents, a.total_repay_amount, a.status as agreement_status,
+      SELECT p.*, a.lender_user_id, a.borrower_user_id, a.amount_cents as agreement_amount_cents, a.total_repay_amount, a.money_sent_date, a.interest_rate, a.status as agreement_status,
         u_lender.full_name as lender_full_name,
         u_borrower.full_name as borrower_full_name,
         a.friend_first_name
@@ -3406,7 +3444,9 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
     // Create agreement object for helper function
     const agreement = {
       amount_cents: payment.agreement_amount_cents,
-      total_repay_amount: payment.total_repay_amount
+      total_repay_amount: payment.total_repay_amount,
+      money_sent_date: payment.money_sent_date,
+      interest_rate: payment.interest_rate
     };
     const totalDueCents = getAgreementTotalDueCents(agreement);
     let outstanding = totalDueCents - totals.total_paid_cents;
