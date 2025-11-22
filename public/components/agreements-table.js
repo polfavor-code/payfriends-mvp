@@ -276,12 +276,22 @@ function renderAgreementsTable(agreements, currentUser, currentFilter = 'all', c
     // Get description or show fallback
     const description = agreement.description || '<span style="color:var(--muted); font-style:italic">(No description)</span>';
 
-    // Calculate outstanding amount with original amount tooltip
+    // Calculate outstanding and total due (including interest if available)
     // Use formatCurrency0 for compact display (no decimals, nl-NL locale: € 3.000)
-    const outstandingCents = agreement.outstanding_cents || agreement.amount_cents;
+    const outstandingCents = agreement.outstanding_cents || 0;
     const outstanding = formatCurrency0(outstandingCents);
-    const originalAmount = formatCurrency0(agreement.amount_cents);
-    const outstandingDisplay = `<span title="Original: ${originalAmount}">${outstanding} / ${originalAmount}</span>`;
+
+    // Use total_repay_amount (includes interest) if available, otherwise use principal only
+    const totalDueCents = agreement.total_repay_amount != null
+      ? Math.round(agreement.total_repay_amount * 100)
+      : agreement.amount_cents;
+    const totalDue = formatCurrency0(totalDueCents);
+
+    // Show principal as tooltip when interest is present
+    const principalAmount = formatCurrency0(agreement.amount_cents);
+    const hasInterest = agreement.total_repay_amount != null && agreement.total_repay_amount * 100 !== agreement.amount_cents;
+    const tooltipText = hasInterest ? `Principal: ${principalAmount}` : `Original: ${principalAmount}`;
+    const outstandingDisplay = `<span title="${tooltipText}">${outstanding} / ${totalDue}</span>`;
 
     // Format due date with countdown
     const dueDateDisplay = formatDueDate(agreement, isLender);
