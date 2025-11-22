@@ -323,7 +323,8 @@
         <div class="next-payment-info">
           <div id="next-payment-label" style="color:var(--muted); font-size:14px">Next payment due</div>
           <div id="next-payment-amount" style="font-size:28px; font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums"></div>
-          <div style="color:var(--muted); font-size:14px; white-space:nowrap">Due on <span id="next-payment-date"></span></div>
+          <div id="next-payment-subtitle" style="color:var(--muted); font-size:13px; margin-top:4px"></div>
+          <div id="next-payment-planned" style="color:var(--muted); font-size:13px; margin-top:8px; line-height:1.5"></div>
         </div>
 
         <!-- RIGHT/BOTTOM: Action buttons -->
@@ -347,10 +348,12 @@
 
       <div class="form-group">
         <label class="form-label" for="inline-payment-amount">Amount (EUR)</label>
+        <p id="amount-due-today-label" style="color:var(--muted); font-size:13px; margin:0 0 8px 0"></p>
         <div style="position:relative; width:100%; max-width:400px">
           <input type="number" id="inline-payment-amount" placeholder="e.g. 1 234,56" min="0" step="0.01" style="width:100%; padding-right:165px">
-          <span id="autofill-amount-link" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap; text-decoration:underline; text-decoration-style:dotted" title="Autofill with your next scheduled payment">Use next due amount</span>
+          <span id="autofill-amount-link" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap; text-decoration:underline; text-decoration-style:dotted" title="Autofill with the amount due today">Use amount due today</span>
         </div>
+        <p id="early-payment-tip" style="color:var(--muted); font-size:12px; margin:4px 0 0 0; font-style:italic"></p>
         <p id="amount-helper-text" style="color:var(--muted); font-size:13px; margin:8px 0 0 0; line-height:1.5"></p>
       </div>
 
@@ -1124,13 +1127,39 @@
         return;
       }
 
-      // Calculate next payment info
-      const nextPaymentInfo = getNextPaymentInfo(agreement);
+      // For one-time loans with dynamic interest, use the new fields from API
+      const isOneTimeRepayment = agreement.repayment_type === 'one_time';
 
-      if (!nextPaymentInfo) {
-        // No next payment due, hide the card
-        document.getElementById('next-payment-card').classList.add('hidden');
-        return;
+      let nextPaymentInfo;
+      let todayAmount, plannedAmount, todayInterest, plannedInterest;
+
+      if (isOneTimeRepayment && agreement.today_total_due_cents !== undefined) {
+        // Use dynamic interest fields from API
+        todayAmount = agreement.today_total_due_cents;
+        plannedAmount = agreement.planned_total_due_cents;
+        todayInterest = agreement.today_interest_cents || 0;
+        plannedInterest = agreement.planned_interest_max_cents || 0;
+
+        const outstanding = todayAmount - (agreement.total_paid_cents || 0);
+
+        if (outstanding <= 0) {
+          document.getElementById('next-payment-card').classList.add('hidden');
+          return;
+        }
+
+        nextPaymentInfo = {
+          amount_cents: outstanding,
+          due_date: agreement.due_date,
+          schedule_row: null
+        };
+      } else {
+        // Calculate next payment info using existing logic
+        nextPaymentInfo = getNextPaymentInfo(agreement);
+
+        if (!nextPaymentInfo) {
+          document.getElementById('next-payment-card').classList.add('hidden');
+          return;
+        }
       }
 
       // Populate the card with payment info
@@ -1138,12 +1167,33 @@
       const dateFormatted = formatDate(nextPaymentInfo.due_date);
 
       // Set the label based on repayment type
-      const isOneTimeRepayment = agreement.repayment_type === 'one_time';
-      const labelText = isOneTimeRepayment ? 'Payment due' : 'Next payment due';
+      const labelText = isOneTimeRepayment ? 'Payment due today' : 'Next payment due';
 
       document.getElementById('next-payment-label').textContent = labelText;
       document.getElementById('next-payment-amount').textContent = amountFormatted;
-      document.getElementById('next-payment-date').textContent = dateFormatted;
+
+      // For one-time loans with dynamic interest, show additional info
+      const subtitleEl = document.getElementById('next-payment-subtitle');
+      const plannedEl = document.getElementById('next-payment-planned');
+
+      if (isOneTimeRepayment && todayInterest !== undefined) {
+        const interestFormatted = formatCurrency2(todayInterest);
+        subtitleEl.textContent = `Includes ${interestFormatted} interest accumulated so far`;
+        subtitleEl.style.display = 'block';
+
+        // Show planned amount if different from today
+        if (plannedAmount && plannedAmount > todayAmount) {
+          const plannedFormatted = formatCurrency2(plannedAmount);
+          const plannedInterestFormatted = formatCurrency2(plannedInterest);
+          plannedEl.innerHTML = `If you wait until full repayment date (${dateFormatted}): about ${plannedFormatted} (includes ${plannedInterestFormatted} interest for the planned period)`;
+          plannedEl.style.display = 'block';
+        } else {
+          plannedEl.style.display = 'none';
+        }
+      } else {
+        subtitleEl.style.display = 'none';
+        plannedEl.style.display = 'none';
+      }
 
       // Set up the "Report payment" button to toggle inline form
       const recordBtn = document.getElementById('borrower-record-payment-btn');
@@ -1248,6 +1298,20 @@
         // Set up autofill inline link
         const autofillLink = document.getElementById('autofill-amount-link');
         const amountInput = document.getElementById('inline-payment-amount');
+
+        // Show "Amount due today" label
+        const dueTodayLabel = document.getElementById('amount-due-today-label');
+        const amountDueTodayFormatted = formatCurrency2(nextPaymentInfo.amount_cents);
+        dueTodayLabel.textContent = `Amount due today: ${amountDueTodayFormatted}`;
+
+        // Show early payment tip for one-time loans
+        const earlyPaymentTip = document.getElementById('early-payment-tip');
+        if (agreement.repayment_type === 'one_time' && agreement.interest_rate > 0) {
+          earlyPaymentTip.textContent = 'Paying earlier lowers interest and future amounts.';
+          earlyPaymentTip.style.display = 'block';
+        } else {
+          earlyPaymentTip.style.display = 'none';
+        }
 
         autofillLink.onclick = () => {
           const amountInEuros = (nextPaymentInfo.amount_cents / 100).toFixed(2);

@@ -281,15 +281,21 @@ function renderAgreementsTable(agreements, currentUser, currentFilter = 'all', c
     const outstandingCents = agreement.outstanding_cents || 0;
     const outstanding = formatCurrency0(outstandingCents);
 
-    // Use total_repay_amount (includes interest) if available, otherwise use principal only
-    const totalDueCents = agreement.total_repay_amount != null
-      ? Math.round(agreement.total_repay_amount * 100)
-      : agreement.amount_cents;
+    // For dynamic interest (one-time loans), use planned_total_cents if available
+    // Otherwise use total_repay_amount, or fall back to principal
+    let totalDueCents;
+    if (agreement.planned_total_cents !== undefined) {
+      totalDueCents = agreement.planned_total_cents;
+    } else if (agreement.total_repay_amount != null) {
+      totalDueCents = Math.round(agreement.total_repay_amount * 100);
+    } else {
+      totalDueCents = agreement.amount_cents;
+    }
     const totalDue = formatCurrency0(totalDueCents);
 
     // Show principal as tooltip when interest is present
     const principalAmount = formatCurrency0(agreement.amount_cents);
-    const hasInterest = agreement.total_repay_amount != null && agreement.total_repay_amount * 100 !== agreement.amount_cents;
+    const hasInterest = totalDueCents !== agreement.amount_cents;
     const tooltipText = hasInterest ? `Principal: ${principalAmount}` : `Original: ${principalAmount}`;
     const outstandingDisplay = `<span title="${tooltipText}">${outstanding} / ${totalDue}</span>`;
 
