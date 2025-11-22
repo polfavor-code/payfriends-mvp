@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayFriends — GroupTabs</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <link rel="stylesheet" href="/css/app.css" />
+  <link rel="stylesheet" href="/css/grouptabs.css" />
+  <script src="/js/header.js"></script>
+  <script src="/js/formatters.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+      --danger:#ef4444; --warning:#f97316;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:1200px;margin:0 auto;padding:32px 16px;}
+    .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;}
+    .page-header h1{margin:0;font-size:32px;font-weight:700}
+    .page-header .subtitle{color:var(--muted);margin-top:8px;font-size:14px}
+    .create-btn{padding:12px 24px;border-radius:10px;border:0;background:var(--accent);color:#0d130f;font-weight:700;cursor:pointer;font-size:16px;text-decoration:none;display:inline-block}
+    .create-btn:hover{filter:brightness(1.06)}
+    .grouptabs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;margin-top:24px}
+    .grouptab-card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:20px;cursor:pointer;transition:all 0.2s}
+    .grouptab-card:hover{border-color:rgba(61,220,151,0.3);transform:translateY(-2px)}
+    .grouptab-card-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:16px}
+    .grouptab-title{font-size:18px;font-weight:600;margin:0 0 8px 0}
+    .grouptab-date{color:var(--muted);font-size:13px}
+    .status-badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600}
+    .status-badge.open{background:rgba(61,220,151,0.15);color:var(--accent);border:1px solid rgba(61,220,151,0.3)}
+    .status-badge.closed{background:rgba(156,163,175,0.15);color:#9ca3af;border:1px solid rgba(156,163,175,0.3)}
+    .grouptab-stats{margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08)}
+    .stat-row{display:flex;justify-content:space-between;margin:8px 0;font-size:14px}
+    .stat-label{color:var(--muted)}
+    .stat-value{font-weight:600}
+    .stat-value.positive{color:var(--accent)}
+    .stat-value.warning{color:var(--warning)}
+    .empty-state{text-align:center;padding:80px 20px;color:var(--muted)}
+    .empty-state h2{font-size:24px;margin-bottom:12px}
+    .empty-state p{margin-bottom:24px}
+  </style>
+</head>
+<body>
+  <div id="header-container"></div>
+
+  <div class="container">
+    <div class="page-header">
+      <div>
+        <h1>GroupTabs</h1>
+        <div class="subtitle">Keep it fair in your group</div>
+      </div>
+      <a href="/group-tabs/create" class="create-btn">+ Create GroupTab</a>
+    </div>
+
+    <div id="grouptabs-list"></div>
+  </div>
+
+  <script>
+    // Initialize header
+    loadHeader();
+
+    // Fetch and display grouptabs
+    async function loadGrouptabs() {
+      try {
+        const response = await fetch('/api/grouptabs');
+        if (!response.ok) {
+          throw new Error('Failed to fetch grouptabs');
+        }
+
+        const data = await response.json();
+        const grouptabs = data.grouptabs || [];
+
+        const listContainer = document.getElementById('grouptabs-list');
+
+        if (grouptabs.length === 0) {
+          listContainer.innerHTML = `
+            <div class="empty-state">
+              <h2>No GroupTabs yet</h2>
+              <p>Create your first GroupTab to split a bill with your group</p>
+              <a href="/group-tabs/create" class="create-btn">Create GroupTab</a>
+            </div>
+          `;
+          return;
+        }
+
+        const gridHTML = `
+          <div class="grouptabs-grid">
+            ${grouptabs.map(gt => {
+              const totalAmount = formatCurrency0(gt.total_amount_cents);
+              const confirmedAmount = formatCurrency0(gt.confirmed_cents);
+              const remainingAmount = formatCurrency0(gt.remaining_confirmed_cents);
+              const eventDate = gt.event_date ? new Date(gt.event_date).toLocaleDateString() : '';
+
+              return `
+                <div class="grouptab-card" onclick="location.href='/group-tabs/${gt.id}'">
+                  <div class="grouptab-card-header">
+                    <div>
+                      <div class="grouptab-title">${escapeHtml(gt.title)}</div>
+                      <div class="grouptab-date">${eventDate}</div>
+                    </div>
+                    <span class="status-badge ${gt.status}">${gt.status === 'open' ? 'Open' : 'Closed'}</span>
+                  </div>
+
+                  <div class="grouptab-stats">
+                    <div class="stat-row">
+                      <span class="stat-label">Total bill:</span>
+                      <span class="stat-value">${totalAmount}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Confirmed paid:</span>
+                      <span class="stat-value positive">${confirmedAmount}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-label">Still missing:</span>
+                      <span class="stat-value ${gt.remaining_confirmed_cents > 0 ? 'warning' : 'positive'}">${remainingAmount}</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+
+        listContainer.innerHTML = gridHTML;
+      } catch (err) {
+        console.error('Error loading grouptabs:', err);
+        document.getElementById('grouptabs-list').innerHTML = `
+          <div class="empty-state">
+            <h2>Error loading GroupTabs</h2>
+            <p>Please try refreshing the page</p>
+          </div>
+        `;
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Load on page load
+    loadGrouptabs();
+  </script>
+</body>
+</html>
