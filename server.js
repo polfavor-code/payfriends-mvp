@@ -446,6 +446,15 @@ function getPaymentTotals(agreementId) {
   };
 }
 
+// get the total amount due for an agreement (principal + interest if available)
+function getAgreementTotalDueCents(agreement) {
+  if (agreement.total_repay_amount != null) {
+    // total_repay_amount is stored as a REAL in euros, convert to cents
+    return Math.round(agreement.total_repay_amount * 100);
+  }
+  return agreement.amount_cents;
+}
+
 // create a new session for a user
 function createSession(userId) {
   const sessionId = crypto.randomBytes(32).toString('hex');
@@ -904,10 +913,15 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       WHERE agreement_id = ? AND status = 'pending'
     `).get(agreement.id).count > 0;
 
+    // Calculate outstanding based on total due (principal + interest)
+    const totalDueCents = getAgreementTotalDueCents(agreement);
+    let outstanding_cents = totalDueCents - totals.total_paid_cents;
+    if (outstanding_cents < 0) outstanding_cents = 0;
+
     return {
       ...agreement,
       total_paid_cents: totals.total_paid_cents,
-      outstanding_cents: agreement.amount_cents - totals.total_paid_cents,
+      outstanding_cents,
       counterparty_name,
       counterparty_role,
       hasOpenDifficulty,
@@ -1619,12 +1633,16 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'Agreement not found' });
     }
 
-    // Add payment totals
+    // Add payment totals and calculate outstanding
     const totals = getPaymentTotals(id);
+    const totalDueCents = getAgreementTotalDueCents(agreement);
+    let outstanding_cents = totalDueCents - totals.total_paid_cents;
+    if (outstanding_cents < 0) outstanding_cents = 0;
+
     const agreementWithTotals = {
       ...agreement,
       total_paid_cents: totals.total_paid_cents,
-      outstanding_cents: agreement.amount_cents - totals.total_paid_cents
+      outstanding_cents
     };
 
     res.json(agreementWithTotals);
@@ -3202,10 +3220,12 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
 
       // Get payment totals (only approved payments)
       const totals = getPaymentTotals(id);
-      const outstanding = agreement.amount_cents - totals.total_paid_cents;
+      const totalDueCents = getAgreementTotalDueCents(agreement);
+      let outstanding = totalDueCents - totals.total_paid_cents;
+      if (outstanding < 0) outstanding = 0;
 
       // Auto-settle if fully paid
-      if (outstanding <= 0 && agreement.status === 'active') {
+      if (outstanding === 0 && agreement.status === 'active') {
         db.prepare(`
           UPDATE agreements
           SET status = 'settled'
@@ -3255,6 +3275,9 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
     `).get(id);
 
     const updatedTotals = getPaymentTotals(id);
+    const totalDueCents = getAgreementTotalDueCents(updatedAgreement);
+    let outstanding_cents = totalDueCents - updatedTotals.total_paid_cents;
+    if (outstanding_cents < 0) outstanding_cents = 0;
 
     res.status(201).json({
       success: true,
@@ -3262,7 +3285,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
       agreement: {
         ...updatedAgreement,
         total_paid_cents: updatedTotals.total_paid_cents,
-        outstanding_cents: updatedAgreement.amount_cents - updatedTotals.total_paid_cents
+        outstanding_cents
       }
     });
   } catch (err) {
@@ -3312,7 +3335,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
   try {
     // Get payment and agreement
     const payment = db.prepare(`
-      SELECT p.*, a.lender_user_id, a.borrower_user_id, a.amount_cents as agreement_amount_cents, a.status as agreement_status,
+      SELECT p.*, a.lender_user_id, a.borrower_user_id, a.amount_cents as agreement_amount_cents, a.total_repay_amount, a.status as agreement_status,
         u_lender.full_name as lender_full_name,
         u_borrower.full_name as borrower_full_name,
         a.friend_first_name
@@ -3380,10 +3403,17 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
 
     // Recompute totals
     const totals = getPaymentTotals(payment.agreement_id);
-    const outstanding = payment.agreement_amount_cents - totals.total_paid_cents;
+    // Create agreement object for helper function
+    const agreement = {
+      amount_cents: payment.agreement_amount_cents,
+      total_repay_amount: payment.total_repay_amount
+    };
+    const totalDueCents = getAgreementTotalDueCents(agreement);
+    let outstanding = totalDueCents - totals.total_paid_cents;
+    if (outstanding < 0) outstanding = 0;
 
     // Auto-settle if fully paid
-    if (outstanding <= 0 && payment.agreement_status === 'active') {
+    if (outstanding === 0 && payment.agreement_status === 'active') {
       db.prepare(`
         UPDATE agreements
         SET status = 'settled'
