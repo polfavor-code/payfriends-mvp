@@ -1896,25 +1896,22 @@
         summaryLine2 = `${agreement.installment_count} monthly payments, from ${firstDate} to ${finalDate}.`;
       } else {
         const dueDate = new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
-        summaryLine2 = `Due by ${dueDate}.`;
+        summaryLine2 = `Full repayment date is ${dueDate}.`;
       }
       document.getElementById('agreement-summary-line2').textContent = summaryLine2;
 
-      // Generate human-readable summary line 3 (outstanding amount with interest)
-      // Calculate outstanding = total to repay (incl. interest) - confirmed payments
-      const totalRepayCents = agreement.total_repay_amount
-        ? Math.round(agreement.total_repay_amount * 100)
-        : agreement.amount_cents;
-      const totalPaidCents = agreement.total_paid_cents || 0;
-      const outstandingCents = Math.max(0, totalRepayCents - totalPaidCents);
-      const outstanding = formatCurrency2(outstandingCents);
-      let summaryLine3 = `${outstanding} remains outstanding`;
-
-      // Add interest rate information if applicable
-      if (hasInterest) {
-        summaryLine3 += ` (incl. ${agreement.interest_rate}% interest)`;
+      // Generate human-readable summary line 3 (total repayment amount)
+      // Use planned_total_due_cents for one-time loans with dynamic interest
+      let totalRepayCents;
+      if (agreement.planned_total_due_cents !== undefined) {
+        totalRepayCents = agreement.planned_total_due_cents;
+      } else if (agreement.total_repay_amount) {
+        totalRepayCents = Math.round(agreement.total_repay_amount * 100);
+      } else {
+        totalRepayCents = agreement.amount_cents;
       }
-      summaryLine3 += '.';
+      const totalRepay = formatCurrency2(totalRepayCents);
+      const summaryLine3 = `Total repayment amount will be ${totalRepay} (incl. interest).`;
 
       document.getElementById('agreement-summary-line3').textContent = summaryLine3;
 
