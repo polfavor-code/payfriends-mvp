@@ -1916,30 +1916,16 @@
       document.getElementById('agreement-summary-line2').textContent = summaryLine2;
 
       // Generate human-readable summary line 3 (total repayment amount)
-      // Use planned_total_due_cents for one-time loans with dynamic interest
-      console.log('Agreement data for summary line 3:', {
-        planned_total_due_cents: agreement.planned_total_due_cents,
-        total_repay_amount: agreement.total_repay_amount,
-        amount_cents: agreement.amount_cents,
-        interest_rate: agreement.interest_rate
-      });
+      // Use the EXACT SAME logic as the "Total to repay" row in the details table
+      const totalRepayCents = agreement.total_repay_amount
+        ? Math.round(agreement.total_repay_amount * 100)
+        : agreement.amount_cents;
 
-      let totalRepayCents;
-      // Use planned_total_due_cents if available (from dynamic interest calculation)
-      if (agreement.planned_total_due_cents != null) {  // checks for both null and undefined
-        totalRepayCents = agreement.planned_total_due_cents;
-        console.log('Using planned_total_due_cents:', totalRepayCents);
-      }
-      // Fall back to total_repay_amount (from static calculation)
-      else if (agreement.total_repay_amount != null) {
-        totalRepayCents = Math.round(agreement.total_repay_amount * 100);
-        console.log('Using total_repay_amount:', totalRepayCents);
-      }
-      // Last resort: use principal
-      else {
-        totalRepayCents = agreement.amount_cents;
-        console.log('Using amount_cents (principal):', totalRepayCents);
-      }
+      console.log('Summary line 3 - Total to repay:', {
+        total_repay_amount: agreement.total_repay_amount,
+        totalRepayCents: totalRepayCents,
+        formatted: formatCurrency2(totalRepayCents)
+      });
 
       const totalRepay = formatCurrency2(totalRepayCents);
       const summaryLine3 = `Total repayment amount will be ${totalRepay} (incl. interest).`;
