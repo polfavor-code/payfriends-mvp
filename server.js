@@ -447,12 +447,94 @@ function getPaymentTotals(agreementId) {
 }
 
 // get the total amount due for an agreement (principal + interest if available)
+// DEPRECATED: Use getAgreementInterestInfo instead for dynamic interest calculation
 function getAgreementTotalDueCents(agreement) {
   if (agreement.total_repay_amount != null) {
     // total_repay_amount is stored as a REAL in euros, convert to cents
     return Math.round(agreement.total_repay_amount * 100);
   }
   return agreement.amount_cents;
+}
+
+/**
+ * Calculate dynamic daily interest for an agreement as of a specific date
+ * For one-time loans, interest accrues daily based on actual time the money was held
+ * Interest is capped at the planned maximum (from start date to full repayment date)
+ *
+ * @param {Object} agreement - Agreement object from database
+ * @param {Date} asOfDate - Date to calculate interest for (defaults to today)
+ * @returns {Object} Interest information including principal, interest, totals
+ */
+function getAgreementInterestInfo(agreement, asOfDate = new Date()) {
+  const principalCents = agreement.amount_cents;
+
+  // For installments or agreements without interest rate, use static calculation
+  if (agreement.repayment_type === 'installments' || !agreement.interest_rate) {
+    const plannedTotalDueCents = getAgreementTotalDueCents(agreement);
+    const plannedInterestMaxCents = plannedTotalDueCents - principalCents;
+
+    return {
+      principal_cents: principalCents,
+      interest_cents: plannedInterestMaxCents,
+      total_due_cents: plannedTotalDueCents,
+      planned_interest_max_cents: plannedInterestMaxCents,
+      planned_total_due_cents: plannedTotalDueCents,
+      as_of_date: asOfDate
+    };
+  }
+
+  // One-time loan with interest - calculate dynamic daily interest
+  const annualRate = agreement.interest_rate / 100; // Convert percentage to decimal
+  const loanStartDate = agreement.money_sent_date ? new Date(agreement.money_sent_date) : null;
+  const plannedDueDate = agreement.due_date ? new Date(agreement.due_date) : null;
+
+  // If no start date or it's in the future, no interest yet
+  if (!loanStartDate || loanStartDate > asOfDate) {
+    return {
+      principal_cents: principalCents,
+      interest_cents: 0,
+      total_due_cents: principalCents,
+      planned_interest_max_cents: 0,
+      planned_total_due_cents: principalCents,
+      as_of_date: asOfDate
+    };
+  }
+
+  // Calculate days held (from start date to asOfDate)
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const loanStartDateOnly = new Date(loanStartDate.getFullYear(), loanStartDate.getMonth(), loanStartDate.getDate());
+  const asOfDateOnly = new Date(asOfDate.getFullYear(), asOfDate.getMonth(), asOfDate.getDate());
+  const daysHeld = Math.max(0, Math.floor((asOfDateOnly - loanStartDateOnly) / msPerDay));
+
+  // Calculate planned maximum interest (from start to due date)
+  let plannedDays = 0;
+  let plannedInterestMaxCents = 0;
+
+  if (plannedDueDate) {
+    const plannedDueDateOnly = new Date(plannedDueDate.getFullYear(), plannedDueDate.getMonth(), plannedDueDate.getDate());
+    plannedDays = Math.max(0, Math.floor((plannedDueDateOnly - loanStartDateOnly) / msPerDay));
+    const dailyRate = annualRate / 365;
+    plannedInterestMaxCents = Math.round(principalCents * dailyRate * plannedDays);
+  }
+
+  // Calculate actual interest for days held
+  const dailyRate = annualRate / 365;
+  const rawInterestCents = principalCents * dailyRate * daysHeld;
+
+  // Cap interest at planned maximum
+  const interestCents = Math.min(Math.round(rawInterestCents), plannedInterestMaxCents);
+
+  const totalDueCents = principalCents + interestCents;
+  const plannedTotalDueCents = principalCents + plannedInterestMaxCents;
+
+  return {
+    principal_cents: principalCents,
+    interest_cents: interestCents,
+    total_due_cents: totalDueCents,
+    planned_interest_max_cents: plannedInterestMaxCents,
+    planned_total_due_cents: plannedTotalDueCents,
+    as_of_date: asOfDate
+  };
 }
 
 // create a new session for a user
@@ -913,15 +995,20 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       WHERE agreement_id = ? AND status = 'pending'
     `).get(agreement.id).count > 0;
 
-    // Calculate outstanding based on total due (principal + interest)
-    const totalDueCents = getAgreementTotalDueCents(agreement);
-    let outstanding_cents = totalDueCents - totals.total_paid_cents;
+    // Calculate outstanding based on dynamic interest
+    const interestInfo = getAgreementInterestInfo(agreement, new Date());
+    const totalDueCentsToday = interestInfo.total_due_cents;
+    const plannedTotalCents = interestInfo.planned_total_due_cents;
+
+    let outstanding_cents = totalDueCentsToday - totals.total_paid_cents;
     if (outstanding_cents < 0) outstanding_cents = 0;
 
     return {
       ...agreement,
       total_paid_cents: totals.total_paid_cents,
       outstanding_cents,
+      // For dashboard display: use planned total as the "Total" in "Outstanding / Total"
+      planned_total_cents: plannedTotalCents,
       counterparty_name,
       counterparty_role,
       hasOpenDifficulty,
@@ -1633,16 +1720,23 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'Agreement not found' });
     }
 
-    // Add payment totals and calculate outstanding
+    // Add payment totals and calculate outstanding with dynamic interest
     const totals = getPaymentTotals(id);
-    const totalDueCents = getAgreementTotalDueCents(agreement);
-    let outstanding_cents = totalDueCents - totals.total_paid_cents;
+    const interestInfo = getAgreementInterestInfo(agreement, new Date());
+
+    const totalDueCentsToday = interestInfo.total_due_cents;
+    let outstanding_cents = totalDueCentsToday - totals.total_paid_cents;
     if (outstanding_cents < 0) outstanding_cents = 0;
 
     const agreementWithTotals = {
       ...agreement,
       total_paid_cents: totals.total_paid_cents,
-      outstanding_cents
+      outstanding_cents,
+      // Dynamic interest fields for manage view
+      today_total_due_cents: interestInfo.total_due_cents,
+      today_interest_cents: interestInfo.interest_cents,
+      planned_total_due_cents: interestInfo.planned_total_due_cents,
+      planned_interest_max_cents: interestInfo.planned_interest_max_cents
     };
 
     res.json(agreementWithTotals);
@@ -3220,8 +3314,9 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
 
       // Get payment totals (only approved payments)
       const totals = getPaymentTotals(id);
-      const totalDueCents = getAgreementTotalDueCents(agreement);
-      let outstanding = totalDueCents - totals.total_paid_cents;
+      const interestInfo = getAgreementInterestInfo(agreement, new Date());
+      const totalDueCentsToday = interestInfo.total_due_cents;
+      let outstanding = totalDueCentsToday - totals.total_paid_cents;
       if (outstanding < 0) outstanding = 0;
 
       // Auto-settle if fully paid
@@ -3335,7 +3430,10 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
   try {
     // Get payment and agreement
     const payment = db.prepare(`
-      SELECT p.*, a.lender_user_id, a.borrower_user_id, a.amount_cents as agreement_amount_cents, a.total_repay_amount, a.status as agreement_status,
+      SELECT p.*,
+        a.lender_user_id, a.borrower_user_id, a.amount_cents as agreement_amount_cents,
+        a.total_repay_amount, a.status as agreement_status,
+        a.repayment_type, a.interest_rate, a.money_sent_date, a.due_date,
         u_lender.full_name as lender_full_name,
         u_borrower.full_name as borrower_full_name,
         a.friend_first_name
@@ -3406,10 +3504,15 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
     // Create agreement object for helper function
     const agreement = {
       amount_cents: payment.agreement_amount_cents,
-      total_repay_amount: payment.total_repay_amount
+      total_repay_amount: payment.total_repay_amount,
+      repayment_type: payment.repayment_type,
+      interest_rate: payment.interest_rate,
+      money_sent_date: payment.money_sent_date,
+      due_date: payment.due_date
     };
-    const totalDueCents = getAgreementTotalDueCents(agreement);
-    let outstanding = totalDueCents - totals.total_paid_cents;
+    const interestInfo = getAgreementInterestInfo(agreement, new Date());
+    const totalDueCentsToday = interestInfo.total_due_cents;
+    let outstanding = totalDueCentsToday - totals.total_paid_cents;
     if (outstanding < 0) outstanding = 0;
 
     // Auto-settle if fully paid

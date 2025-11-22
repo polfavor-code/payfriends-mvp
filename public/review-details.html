@@ -323,7 +323,8 @@
         <div class="next-payment-info">
           <div id="next-payment-label" style="color:var(--muted); font-size:14px">Next payment due</div>
           <div id="next-payment-amount" style="font-size:28px; font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums"></div>
-          <div style="color:var(--muted); font-size:14px; white-space:nowrap">Due on <span id="next-payment-date"></span></div>
+          <div id="next-payment-subtitle" style="color:var(--muted); font-size:13px; margin-top:4px"></div>
+          <div id="next-payment-planned" style="color:var(--muted); font-size:13px; margin-top:8px; line-height:1.5"></div>
         </div>
 
         <!-- RIGHT/BOTTOM: Action buttons -->
@@ -347,10 +348,12 @@
 
       <div class="form-group">
         <label class="form-label" for="inline-payment-amount">Amount (EUR)</label>
+        <p id="amount-due-today-label" style="color:var(--muted); font-size:13px; margin:0 0 8px 0"></p>
         <div style="position:relative; width:100%; max-width:400px">
           <input type="number" id="inline-payment-amount" placeholder="e.g. 1 234,56" min="0" step="0.01" style="width:100%; padding-right:165px">
-          <span id="autofill-amount-link" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap; text-decoration:underline; text-decoration-style:dotted" title="Autofill with your next scheduled payment">Use next due amount</span>
+          <span id="autofill-amount-link" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap; text-decoration:underline; text-decoration-style:dotted" title="Autofill with the amount due today">Use amount due today</span>
         </div>
+        <p id="early-payment-tip" style="color:var(--muted); font-size:12px; margin:4px 0 0 0; font-style:italic"></p>
         <p id="amount-helper-text" style="color:var(--muted); font-size:13px; margin:8px 0 0 0; line-height:1.5"></p>
       </div>
 
@@ -1124,13 +1127,39 @@
         return;
       }
 
-      // Calculate next payment info
-      const nextPaymentInfo = getNextPaymentInfo(agreement);
+      // For one-time loans with dynamic interest, use the new fields from API
+      const isOneTimeRepayment = agreement.repayment_type === 'one_time';
 
-      if (!nextPaymentInfo) {
-        // No next payment due, hide the card
-        document.getElementById('next-payment-card').classList.add('hidden');
-        return;
+      let nextPaymentInfo;
+      let todayAmount, plannedAmount, todayInterest, plannedInterest;
+
+      if (isOneTimeRepayment && agreement.today_total_due_cents !== undefined) {
+        // Use dynamic interest fields from API
+        todayAmount = agreement.today_total_due_cents;
+        plannedAmount = agreement.planned_total_due_cents;
+        todayInterest = agreement.today_interest_cents || 0;
+        plannedInterest = agreement.planned_interest_max_cents || 0;
+
+        const outstanding = todayAmount - (agreement.total_paid_cents || 0);
+
+        if (outstanding <= 0) {
+          document.getElementById('next-payment-card').classList.add('hidden');
+          return;
+        }
+
+        nextPaymentInfo = {
+          amount_cents: outstanding,
+          due_date: agreement.due_date,
+          schedule_row: null
+        };
+      } else {
+        // Calculate next payment info using existing logic
+        nextPaymentInfo = getNextPaymentInfo(agreement);
+
+        if (!nextPaymentInfo) {
+          document.getElementById('next-payment-card').classList.add('hidden');
+          return;
+        }
       }
 
       // Populate the card with payment info
@@ -1138,12 +1167,33 @@
       const dateFormatted = formatDate(nextPaymentInfo.due_date);
 
       // Set the label based on repayment type
-      const isOneTimeRepayment = agreement.repayment_type === 'one_time';
-      const labelText = isOneTimeRepayment ? 'Payment due' : 'Next payment due';
+      const labelText = isOneTimeRepayment ? 'Payment due today' : 'Next payment due';
 
       document.getElementById('next-payment-label').textContent = labelText;
       document.getElementById('next-payment-amount').textContent = amountFormatted;
-      document.getElementById('next-payment-date').textContent = dateFormatted;
+
+      // For one-time loans with dynamic interest, show additional info
+      const subtitleEl = document.getElementById('next-payment-subtitle');
+      const plannedEl = document.getElementById('next-payment-planned');
+
+      if (isOneTimeRepayment && todayInterest !== undefined) {
+        const interestFormatted = formatCurrency2(todayInterest);
+        subtitleEl.textContent = `Includes ${interestFormatted} interest accumulated so far`;
+        subtitleEl.style.display = 'block';
+
+        // Show planned amount if different from today
+        if (plannedAmount && plannedAmount > todayAmount) {
+          const plannedFormatted = formatCurrency2(plannedAmount);
+          const plannedInterestFormatted = formatCurrency2(plannedInterest);
+          plannedEl.innerHTML = `If you wait until full repayment date (${dateFormatted}): about ${plannedFormatted} (includes ${plannedInterestFormatted} interest for the planned period)`;
+          plannedEl.style.display = 'block';
+        } else {
+          plannedEl.style.display = 'none';
+        }
+      } else {
+        subtitleEl.style.display = 'none';
+        plannedEl.style.display = 'none';
+      }
 
       // Set up the "Report payment" button to toggle inline form
       const recordBtn = document.getElementById('borrower-record-payment-btn');
@@ -1248,6 +1298,20 @@
         // Set up autofill inline link
         const autofillLink = document.getElementById('autofill-amount-link');
         const amountInput = document.getElementById('inline-payment-amount');
+
+        // Show "Amount due today" label
+        const dueTodayLabel = document.getElementById('amount-due-today-label');
+        const amountDueTodayFormatted = formatCurrency2(nextPaymentInfo.amount_cents);
+        dueTodayLabel.textContent = `Amount due today: ${amountDueTodayFormatted}`;
+
+        // Show early payment tip for one-time loans
+        const earlyPaymentTip = document.getElementById('early-payment-tip');
+        if (agreement.repayment_type === 'one_time' && agreement.interest_rate > 0) {
+          earlyPaymentTip.textContent = 'Paying earlier lowers interest and future amounts.';
+          earlyPaymentTip.style.display = 'block';
+        } else {
+          earlyPaymentTip.style.display = 'none';
+        }
 
         autofillLink.onclick = () => {
           const amountInEuros = (nextPaymentInfo.amount_cents / 100).toFixed(2);
@@ -1801,6 +1865,20 @@
     }
 
     async function populateDetails() {
+      // Debug: Log the entire agreement object to see what fields are available
+      console.log('=== POPULATE DETAILS DEBUG ===');
+      console.log('Full agreement object:', agreement);
+      console.log('Key fields:', {
+        amount_cents: agreement.amount_cents,
+        total_repay_amount: agreement.total_repay_amount,
+        planned_total_due_cents: agreement.planned_total_due_cents,
+        today_total_due_cents: agreement.today_total_due_cents,
+        today_interest_cents: agreement.today_interest_cents,
+        planned_interest_max_cents: agreement.planned_interest_max_cents,
+        interest_rate: agreement.interest_rate,
+        repayment_type: agreement.repayment_type
+      });
+
       const amount = formatCurrency2(agreement.amount_cents);
       const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
@@ -1825,32 +1903,32 @@
       document.getElementById('agreement-summary-line1').textContent = summaryLine1;
 
       // Generate human-readable summary line 2 (payment schedule)
+      // Use 'en-GB' locale for capitalized month names (e.g., "22 Feb 2026")
       let summaryLine2 = '';
       if (isInstallments && agreement.installment_count) {
-        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         summaryLine2 = `${agreement.installment_count} monthly payments, from ${firstDate} to ${finalDate}.`;
       } else {
-        const dueDate = new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
-        summaryLine2 = `Due by ${dueDate}.`;
+        const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        summaryLine2 = `Full repayment date is ${dueDate}.`;
       }
       document.getElementById('agreement-summary-line2').textContent = summaryLine2;
 
-      // Generate human-readable summary line 3 (outstanding amount with interest)
-      // Calculate outstanding = total to repay (incl. interest) - confirmed payments
+      // Generate human-readable summary line 3 (total repayment amount)
+      // Use the EXACT SAME logic as the "Total to repay" row in the details table
       const totalRepayCents = agreement.total_repay_amount
         ? Math.round(agreement.total_repay_amount * 100)
         : agreement.amount_cents;
-      const totalPaidCents = agreement.total_paid_cents || 0;
-      const outstandingCents = Math.max(0, totalRepayCents - totalPaidCents);
-      const outstanding = formatCurrency2(outstandingCents);
-      let summaryLine3 = `${outstanding} remains outstanding`;
 
-      // Add interest rate information if applicable
-      if (hasInterest) {
-        summaryLine3 += ` (incl. ${agreement.interest_rate}% interest)`;
-      }
-      summaryLine3 += '.';
+      console.log('Summary line 3 - Total to repay:', {
+        total_repay_amount: agreement.total_repay_amount,
+        totalRepayCents: totalRepayCents,
+        formatted: formatCurrency2(totalRepayCents)
+      });
+
+      const totalRepay = formatCurrency2(totalRepayCents);
+      const summaryLine3 = `Total repayment amount will be ${totalRepay} (incl. interest).`;
 
       document.getElementById('agreement-summary-line3').textContent = summaryLine3;
 
