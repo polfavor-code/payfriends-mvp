@@ -311,6 +311,31 @@ try {
   // Column already exists, ignore
 }
 
+// Add overpayment tracking columns to payments table
+try {
+  db.exec(`ALTER TABLE payments ADD COLUMN applied_amount_cents INTEGER NOT NULL DEFAULT 0;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE payments ADD COLUMN overpaid_amount_cents INTEGER NOT NULL DEFAULT 0;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Migrate existing payment data: set applied_amount_cents = amount_cents for all existing rows where applied_amount_cents is still 0
+try {
+  const existingPayments = db.prepare(`SELECT id, amount_cents, applied_amount_cents FROM payments WHERE applied_amount_cents = 0`).all();
+  if (existingPayments.length > 0) {
+    const updateStmt = db.prepare(`UPDATE payments SET applied_amount_cents = amount_cents WHERE id = ?`);
+    for (const payment of existingPayments) {
+      updateStmt.run(payment.id);
+    }
+  }
+} catch (e) {
+  // Migration already done or error, ignore
+}
+
 // --- multer setup for file uploads ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -434,9 +459,10 @@ function toCents(amountStr) {
 // - formatEuro0(euros), formatEuro2(euros) - for euro amounts (not cents)
 
 // compute payment totals for an agreement (only approved payments)
+// Uses applied_amount_cents to ensure overpayments don't reduce outstanding below 0
 function getPaymentTotals(agreementId) {
   const result = db.prepare(`
-    SELECT COALESCE(SUM(amount_cents), 0) as total_paid_cents
+    SELECT COALESCE(SUM(applied_amount_cents), 0) as total_paid_cents
     FROM payments
     WHERE agreement_id = ? AND status = 'approved'
   `).get(agreementId);
@@ -3288,6 +3314,16 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
     // Set status based on who is recording
     const paymentStatus = isBorrower ? 'pending' : 'approved';
 
+    // Calculate current outstanding BEFORE this payment
+    const totals = getPaymentTotals(id);
+    const interestInfo = getAgreementInterestInfo(agreement, new Date());
+    const currentOutstandingCents = Math.max(0, interestInfo.total_due_cents - totals.total_paid_cents);
+
+    // Compute overpayment handling
+    const reportedAmountCents = amountCents;
+    const appliedAmountCents = Math.min(reportedAmountCents, currentOutstandingCents);
+    const overpaidAmountCents = Math.max(0, reportedAmountCents - appliedAmountCents);
+
     // Handle proof of payment file if uploaded
     let proofFilePath = null;
     let proofOriginalName = null;
@@ -3299,11 +3335,11 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
       proofMimeType = req.file.mimetype;
     }
 
-    // Insert payment with proof fields
+    // Insert payment with proof fields and overpayment tracking
     const result = db.prepare(`
-      INSERT INTO payments (agreement_id, recorded_by_user_id, amount_cents, method, note, created_at, status, proof_file_path, proof_original_name, proof_mime_type)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, req.user.id, amountCents, method || null, note || null, now, paymentStatus, proofFilePath, proofOriginalName, proofMimeType);
+      INSERT INTO payments (agreement_id, recorded_by_user_id, amount_cents, applied_amount_cents, overpaid_amount_cents, method, note, created_at, status, proof_file_path, proof_original_name, proof_mime_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, req.user.id, reportedAmountCents, appliedAmountCents, overpaidAmountCents, method || null, note || null, now, paymentStatus, proofFilePath, proofOriginalName, proofMimeType);
 
     const paymentId = result.lastInsertRowid;
 
@@ -3312,7 +3348,20 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
       // Borrower reported a payment - pending approval
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
       const lenderName = agreement.lender_full_name || agreement.lender_name;
-      const amountFormatted = formatCurrency2(amountCents);
+      const amountFormatted = formatCurrency2(reportedAmountCents);
+
+      // Build message with optional overpayment note
+      let borrowerMsg = `You reported a payment of ${amountFormatted}`;
+      let lenderMsg = `${borrowerName} reported a payment of ${amountFormatted}`;
+
+      if (overpaidAmountCents > 0) {
+        const overpaidFormatted = formatCurrency2(overpaidAmountCents);
+        borrowerMsg += `. This fully repaid the loan. Includes ${overpaidFormatted} overpayment`;
+        lenderMsg += `. The loan is now fully repaid. Includes ${overpaidFormatted} overpayment`;
+      } else {
+        borrowerMsg += ` — waiting for ${lenderName.split(' ')[0] || lenderName}'s confirmation`;
+        lenderMsg += ` — please review`;
+      }
 
       // Activity for borrower
       db.prepare(`
@@ -3322,7 +3371,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
         req.user.id,
         id,
         'Payment reported',
-        `You reported a payment of ${amountFormatted} — waiting for ${lenderName.split(' ')[0] || lenderName}'s confirmation.`,
+        borrowerMsg + '.',
         now,
         'PAYMENT_REPORTED_BORROWER'
       );
@@ -3335,7 +3384,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
         agreement.lender_user_id,
         id,
         'Payment reported by borrower',
-        `${borrowerName} reported a payment of ${amountFormatted} — please review.`,
+        lenderMsg + '.',
         now,
         'PAYMENT_REPORTED_LENDER'
       );
@@ -3343,7 +3392,17 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
       // Lender added a received payment - approved immediately
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
       const lenderName = agreement.lender_full_name || agreement.lender_name;
-      const amountFormatted = formatCurrency2(amountCents);
+      const amountFormatted = formatCurrency2(reportedAmountCents);
+
+      // Build message with optional overpayment note
+      let lenderMsg = `You recorded a payment of ${amountFormatted} from ${borrowerName}`;
+      let borrowerMsg = `${lenderName.split(' ')[0] || lenderName} confirmed a payment of ${amountFormatted}`;
+
+      if (overpaidAmountCents > 0) {
+        const overpaidFormatted = formatCurrency2(overpaidAmountCents);
+        lenderMsg += `. The loan is now fully repaid. Includes ${overpaidFormatted} overpayment`;
+        borrowerMsg += `. The loan is now fully repaid. Includes ${overpaidFormatted} overpayment`;
+      }
 
       // Create activity messages for both parties
       // Activity for lender
@@ -3354,7 +3413,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
         req.user.id,
         id,
         'Payment recorded',
-        `You recorded a payment of ${amountFormatted} from ${borrowerName}.`,
+        lenderMsg + '.',
         now,
         'PAYMENT_RECORDED_LENDER'
       );
@@ -3368,21 +3427,18 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
           agreement.borrower_user_id,
           id,
           'Payment confirmed',
-          `${lenderName.split(' ')[0] || lenderName} confirmed a payment of ${amountFormatted}.`,
+          borrowerMsg + '.',
           now,
           'PAYMENT_RECORDED_BORROWER'
         );
       }
 
-      // Get payment totals (only approved payments)
-      const totals = getPaymentTotals(id);
-      const interestInfo = getAgreementInterestInfo(agreement, new Date());
-      const totalDueCentsToday = interestInfo.total_due_cents;
-      let outstanding = totalDueCentsToday - totals.total_paid_cents;
-      if (outstanding < 0) outstanding = 0;
+      // Check if loan is now fully paid after applying this payment
+      // Use currentOutstandingCents - appliedAmountCents (calculated before payment was inserted)
+      const newOutstanding = currentOutstandingCents - appliedAmountCents;
 
       // Auto-settle if fully paid
-      if (outstanding === 0 && agreement.status === 'active') {
+      if (newOutstanding <= 0 && agreement.status === 'active') {
         db.prepare(`
           UPDATE agreements
           SET status = 'settled'
@@ -3470,6 +3526,7 @@ app.get('/api/agreements/:id/payments', requireAuth, (req, res) => {
     // Get all payments for this agreement with user info
     const payments = db.prepare(`
       SELECT p.*,
+        p.amount_cents as reported_amount_cents,
         u.full_name as recorded_by_name,
         u.email as recorded_by_email
       FROM payments p
@@ -3490,7 +3547,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
   const { id } = req.params;
 
   try {
-    // Get payment and agreement
+    // Get payment and agreement with overpayment fields
     const payment = db.prepare(`
       SELECT p.*,
         a.lender_user_id, a.borrower_user_id, a.amount_cents as agreement_amount_cents,
@@ -3533,6 +3590,19 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
     const lenderName = payment.lender_full_name || req.user.full_name;
     const borrowerName = payment.borrower_full_name || payment.friend_first_name;
 
+    // Check for overpayment
+    const hasOverpayment = payment.overpaid_amount_cents > 0;
+    const overpaidFormatted = hasOverpayment ? formatCurrency2(payment.overpaid_amount_cents) : null;
+
+    // Build message with optional overpayment note
+    let lenderMsg = `You confirmed a payment of ${amountFormatted} from ${borrowerName}`;
+    let borrowerMsg = `${lenderName.split(' ')[0] || lenderName} confirmed your payment of ${amountFormatted}`;
+
+    if (hasOverpayment) {
+      lenderMsg += `. The loan is now fully repaid. Includes ${overpaidFormatted} overpayment`;
+      borrowerMsg += `. The loan is now fully repaid. Includes ${overpaidFormatted} overpayment`;
+    }
+
     // Create activity for lender
     db.prepare(`
       INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
@@ -3541,7 +3611,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
       req.user.id,
       payment.agreement_id,
       'Payment confirmed',
-      `You confirmed a payment of ${amountFormatted} from ${borrowerName}.`,
+      lenderMsg + '.',
       now,
       'PAYMENT_APPROVED_LENDER'
     );
@@ -3555,13 +3625,13 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
         payment.borrower_user_id,
         payment.agreement_id,
         'Payment confirmed',
-        `${lenderName.split(' ')[0] || lenderName} confirmed your payment of ${amountFormatted}.`,
+        borrowerMsg + '.',
         now,
         'PAYMENT_APPROVED_BORROWER'
       );
     }
 
-    // Recompute totals
+    // Recompute totals (including this newly approved payment)
     const totals = getPaymentTotals(payment.agreement_id);
     // Create agreement object for helper function
     const agreement = {

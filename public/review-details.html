@@ -1532,12 +1532,31 @@
       const nextDueAmount = (nextDueCents / 100).toFixed(2);
       const nextDueDate = formatDate(nextPaymentInfo.due_date);
 
+      // Get total outstanding amount (use today_total_due_cents if available, otherwise outstanding_cents)
+      const totalOutstandingCents = agreement.today_total_due_cents
+        ? (agreement.today_total_due_cents - (agreement.total_paid_cents || 0))
+        : (agreement.outstanding_cents || nextDueCents);
+
       // Clear helper text and hide impact box initially
       helperText.textContent = '';
       impactBox.classList.add('hidden');
 
       if (inputCents === 0) {
         // No input yet
+        return;
+      }
+
+      // Check for overpayment vs total outstanding first
+      if (inputCents > totalOutstandingCents && totalOutstandingCents > 0) {
+        // True overpayment - exceeds total outstanding
+        const reportedFormatted = formatCurrency2(inputCents);
+        const outstandingFormatted = formatCurrency2(totalOutstandingCents);
+        const overpaidCents = inputCents - totalOutstandingCents;
+        const overpaidFormatted = formatCurrency2(overpaidCents);
+
+        helperText.innerHTML = `<strong>Note:</strong> You are reporting ${reportedFormatted} while you only owe ${outstandingFormatted}. The extra ${overpaidFormatted} will be recorded as an overpayment. Your loan will be marked as fully repaid.`;
+        helperText.style.color = '#3ddc97';
+        // Don't show impact box for true overpayment
         return;
       }
 
@@ -1551,7 +1570,7 @@
         helperText.innerHTML = `You're reporting <strong>less</strong> than the next due amount. <strong>€${remaining}</strong> remains due on <strong>${nextDueDate}</strong>.`;
         helperText.style.color = 'var(--muted)';
       } else {
-        // Overpayment
+        // Paying more than next scheduled (but not more than total outstanding)
         helperText.innerHTML = 'Great — paying more than scheduled reduces your total interest.';
         const loanType = agreement.repayment_type;
         if (loanType === 'installments') {
@@ -3787,6 +3806,21 @@
         const method = methodDisplay ? `<div class="payment-method" style="color:var(--muted); margin-top:4px">Method: ${methodDisplay}</div>` : '';
         const note = payment.note ? `<div class="payment-note" style="color:var(--muted); margin-top:4px">Note: ${payment.note}</div>` : '';
 
+        // Overpayment note (if applicable)
+        let overpaymentNote = '';
+        if (payment.overpaid_amount_cents && payment.overpaid_amount_cents > 0) {
+          const overpaidFormatted = formatCurrency2(payment.overpaid_amount_cents);
+          const recordedByBorrower = payment.recorded_by_user_id === agreement.borrower_user_id;
+
+          if (recordedByBorrower || !currentUser || currentUser.id === agreement.borrower_user_id) {
+            // Borrower view
+            overpaymentNote = `<div style="background:rgba(61,220,151,0.1); border-left:2px solid var(--accent); padding:8px 12px; margin-top:8px; font-size:13px; line-height:1.6">Includes ${overpaidFormatted} overpayment. Any amount above what you owed is treated as extra, not as a new loan.</div>`;
+          } else {
+            // Lender view
+            overpaymentNote = `<div style="background:rgba(61,220,151,0.1); border-left:2px solid var(--accent); padding:8px 12px; margin-top:8px; font-size:13px; line-height:1.6">Includes ${overpaidFormatted} overpayment. This amount is above what was needed to settle the loan.</div>`;
+          }
+        }
+
         // Determine who recorded the payment
         const recordedByBorrower = payment.recorded_by_user_id === agreement.borrower_user_id;
         const recordedByLender = payment.recorded_by_user_id === agreement.lender_user_id;
@@ -3860,6 +3894,7 @@
             </div>
             ${method}
             ${note}
+            ${overpaymentNote}
             <div style="margin-top:8px; color:var(--muted)">
               ${metaText}
             </div>
