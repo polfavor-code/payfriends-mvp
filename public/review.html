@@ -161,8 +161,20 @@
             <span style="color:var(--text)" id="description-display">—</span>
           </div>
           <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Lender</span>
+            <span style="color:var(--text)" id="lender-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Amount</span>
+            <span style="color:var(--text)" id="amount-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
             <span style="color:var(--muted)">Money transfer date (Loan start)</span>
             <span style="color:var(--text)" id="money-sent-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Loan duration</span>
+            <span style="color:var(--text)" id="loan-duration-display">—</span>
           </div>
           <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
             <span style="color:var(--muted)">Installment plan</span>
@@ -175,18 +187,6 @@
           <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
             <span style="color:var(--muted)">Total to repay</span>
             <span style="color:var(--text); font-weight:600" id="total-repay-display">—</span>
-          </div>
-          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
-            <span style="color:var(--muted)">Lender</span>
-            <span style="color:var(--text)" id="lender-display">—</span>
-          </div>
-          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
-            <span style="color:var(--muted)">Amount</span>
-            <span style="color:var(--text)" id="amount-display">—</span>
-          </div>
-          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
-            <span style="color:var(--muted)">Loan duration</span>
-            <span style="color:var(--text)" id="loan-duration-display">—</span>
           </div>
         </div>
       </section>
@@ -494,18 +494,28 @@
       // (1) Description
       document.getElementById('description-display').textContent = agreement.description || '—';
 
-      // (2) Money transfer date
-      let moneySentDateText = '—';
-      if (agreement.money_sent_date) {
-        if (agreement.money_sent_date === 'on-acceptance') {
-          moneySentDateText = 'Upon agreement acceptance';
-        } else {
-          moneySentDateText = formatISOToHuman(agreement.money_sent_date);
-        }
+      // (2) Lender
+      document.getElementById('lender-display').textContent = agreement.lender_full_name || '—';
+
+      // (3) Amount
+      document.getElementById('amount-display').textContent = formatEuro2(principalEuros);
+
+      // (4) Money transfer date
+      let moneySentDateText;
+      if (agreement.money_sent_date === 'on-acceptance') {
+        moneySentDateText = 'Upon agreement acceptance';
+      } else if (agreement.money_sent_date) {
+        moneySentDateText = formatISOToHuman(agreement.money_sent_date);
+      } else {
+        moneySentDateText = 'Not set yet';
       }
       document.getElementById('money-sent-display').textContent = moneySentDateText;
 
-      // (3) Installment plan - human-readable summary
+      // (5) Loan duration - using helper function
+      const loanDurationText = getLoanDurationLabel(agreement) || '—';
+      document.getElementById('loan-duration-display').textContent = loanDurationText;
+
+      // (6) Installment plan - human-readable summary
       let installmentPlanText = '—';
       if (agreement.repayment_type === 'installments' && agreement.installment_count) {
         const count = agreement.installment_count;
@@ -538,7 +548,7 @@
       }
       document.getElementById('installment-plan-display').textContent = installmentPlanText;
 
-      // (4) Interest - APR format
+      // (7) Interest - APR format
       let interestText = '—';
       if (agreement.interest_rate && agreement.interest_rate > 0) {
         interestText = `${agreement.interest_rate}% per year`;
@@ -547,19 +557,9 @@
       }
       document.getElementById('interest-display').textContent = interestText;
 
-      // (5) Total to repay
+      // (8) Total to repay
       const totalToRepay = agreement.total_repay_amount || principalEuros;
       document.getElementById('total-repay-display').textContent = formatEuro2(totalToRepay);
-
-      // (6) Lender
-      document.getElementById('lender-display').textContent = agreement.lender_full_name || '—';
-
-      // (7) Amount
-      document.getElementById('amount-display').textContent = formatEuro2(principalEuros);
-
-      // (8) Loan duration - using helper function
-      const loanDurationText = getLoanDurationLabel(agreement) || '—';
-      document.getElementById('loan-duration-display').textContent = loanDurationText;
 
       // Show interest calculation card with schedule if interest > 0
       if (agreement.interest_rate && agreement.interest_rate > 0) {

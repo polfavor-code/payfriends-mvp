@@ -425,6 +425,14 @@
           <span class="detail-label">Borrower name</span>
           <span class="detail-value" id="borrower-name"></span>
         </div>
+        <div class="detail-row" id="borrower-email-row" style="display:none">
+          <span class="detail-label">Borrower email</span>
+          <span class="detail-value" id="borrower-email-display"></span>
+        </div>
+        <div class="detail-row" id="borrower-phone-row" style="display:none">
+          <span class="detail-label">Borrower phone</span>
+          <span class="detail-value" id="borrower-phone-display"></span>
+        </div>
         <div class="detail-row" id="description-row">
           <span class="detail-label">Description</span>
           <span class="detail-value" id="description-display"></span>
@@ -1983,6 +1991,22 @@
       // 2. Borrower name
       document.getElementById('borrower-name').textContent = borrowerName;
 
+      // 2a. Borrower email (LENDER VIEW ONLY)
+      if (isLender && agreement.borrower_email) {
+        document.getElementById('borrower-email-display').textContent = agreement.borrower_email;
+        document.getElementById('borrower-email-row').style.display = 'flex';
+      } else {
+        document.getElementById('borrower-email-row').style.display = 'none';
+      }
+
+      // 2b. Borrower phone (LENDER VIEW ONLY)
+      if (isLender && agreement.borrower_phone) {
+        document.getElementById('borrower-phone-display').textContent = agreement.borrower_phone;
+        document.getElementById('borrower-phone-row').style.display = 'flex';
+      } else {
+        document.getElementById('borrower-phone-row').style.display = 'none';
+      }
+
       // 3. Description (show if available)
       if (agreement.description) {
         document.getElementById('description-display').textContent = agreement.description;
@@ -1994,19 +2018,17 @@
       // 4. Amount
       document.getElementById('amount-display').textContent = amount;
 
-      // 5. Money transfer date (show if available)
-      if (agreement.money_sent_date) {
-        let moneySentDateText;
-        if (agreement.money_sent_date === 'on-acceptance') {
-          moneySentDateText = 'Upon agreement acceptance';
-        } else {
-          moneySentDateText = new Date(agreement.money_sent_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
-        }
-        document.getElementById('money-sent-display').textContent = moneySentDateText;
-        document.getElementById('money-sent-row').style.display = 'flex';
+      // 5. Money transfer date (always show, with fallback)
+      let moneySentDateText;
+      if (agreement.money_sent_date === 'on-acceptance') {
+        moneySentDateText = 'Upon agreement acceptance';
+      } else if (agreement.money_sent_date) {
+        moneySentDateText = new Date(agreement.money_sent_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
       } else {
-        document.getElementById('money-sent-row').style.display = 'none';
+        moneySentDateText = 'Not set yet';
       }
+      document.getElementById('money-sent-display').textContent = moneySentDateText;
+      document.getElementById('money-sent-row').style.display = 'flex';
 
       // 6. Loan duration (hide for one-time loans, show for installments)
       const isOneTimePayment = agreement.repayment_type === 'one_time';
@@ -2036,8 +2058,8 @@
         const frequency = agreement.payment_frequency || 'monthly';
         const frequencyText = formatRepaymentFrequency(frequency);
         const installmentAmount = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
-        const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         const installmentPlan = `${agreement.installment_count} ${frequencyText.toLowerCase()} payments of ${installmentAmount} from ${firstDate} to ${finalDate}`;
         document.getElementById('installment-plan-display').textContent = installmentPlan;
         document.getElementById('installment-plan-row').style.display = 'flex';
@@ -2074,12 +2096,12 @@
         document.getElementById('payment-frequency-row').style.display = 'flex';
 
         // 13. First repayment date
-        const firstPaymentDate = new Date(agreement.first_payment_date || agreement.first_repayment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        const firstPaymentDate = new Date(agreement.first_payment_date || agreement.first_repayment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         document.getElementById('first-payment-display').textContent = firstPaymentDate;
         document.getElementById('first-payment-row').style.display = 'flex';
 
         // 14. Final due date
-        const finalDueDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        const finalDueDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         document.getElementById('final-due-display').textContent = finalDueDate;
         document.getElementById('final-due-countdown').textContent = getDueDateCountdown(agreement.final_due_date);
         document.getElementById('final-due-row').style.display = 'flex';
@@ -2132,7 +2154,7 @@
           document.getElementById('full-due-countdown').textContent = '';
         } else {
           // Show concrete date with countdown
-          const dueDate = new Date(agreement.due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+          const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
           document.getElementById('full-due-display').textContent = dueDate;
           document.getElementById('full-due-countdown').textContent = getDueDateCountdown(agreement.due_date);
         }
