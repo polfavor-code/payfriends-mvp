@@ -311,6 +311,31 @@ try {
   // Column already exists, ignore
 }
 
+// Add overpayment tracking columns to payments table
+try {
+  db.exec(`ALTER TABLE payments ADD COLUMN applied_amount_cents INTEGER NOT NULL DEFAULT 0;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE payments ADD COLUMN overpaid_amount_cents INTEGER NOT NULL DEFAULT 0;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Migrate existing payment data: set applied_amount_cents = amount_cents for all existing rows where applied_amount_cents is still 0
+try {
+  const existingPayments = db.prepare(`SELECT id, amount_cents, applied_amount_cents FROM payments WHERE applied_amount_cents = 0`).all();
+  if (existingPayments.length > 0) {
+    const updateStmt = db.prepare(`UPDATE payments SET applied_amount_cents = amount_cents WHERE id = ?`);
+    for (const payment of existingPayments) {
+      updateStmt.run(payment.id);
+    }
+  }
+} catch (e) {
+  // Migration already done or error, ignore
+}
+
 // --- multer setup for file uploads ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -434,9 +459,10 @@ function toCents(amountStr) {
 // - formatEuro0(euros), formatEuro2(euros) - for euro amounts (not cents)
 
 // compute payment totals for an agreement (only approved payments)
+// Uses applied_amount_cents to ensure overpayments don't reduce outstanding below 0
 function getPaymentTotals(agreementId) {
   const result = db.prepare(`
-    SELECT COALESCE(SUM(amount_cents), 0) as total_paid_cents
+    SELECT COALESCE(SUM(applied_amount_cents), 0) as total_paid_cents
     FROM payments
     WHERE agreement_id = ? AND status = 'approved'
   `).get(agreementId);
@@ -447,12 +473,145 @@ function getPaymentTotals(agreementId) {
 }
 
 // get the total amount due for an agreement (principal + interest if available)
+// DEPRECATED: Use getAgreementInterestInfo instead for dynamic interest calculation
 function getAgreementTotalDueCents(agreement) {
   if (agreement.total_repay_amount != null) {
     // total_repay_amount is stored as a REAL in euros, convert to cents
     return Math.round(agreement.total_repay_amount * 100);
   }
   return agreement.amount_cents;
+}
+
+/**
+ * Calculate dynamic daily interest for an agreement as of a specific date
+ * For one-time loans, interest accrues daily based on actual time the money was held
+ * Interest is capped at the planned maximum (from start date to full repayment date)
+ *
+ * @param {Object} agreement - Agreement object from database
+ * @param {Date} asOfDate - Date to calculate interest for (defaults to today)
+ * @returns {Object} Interest information including principal, interest, totals
+ */
+function getAgreementInterestInfo(agreement, asOfDate = new Date()) {
+  const principalCents = agreement.amount_cents;
+
+  // For installments or agreements without interest rate, use static calculation
+  if (agreement.repayment_type === 'installments' || !agreement.interest_rate) {
+    const plannedTotalDueCents = getAgreementTotalDueCents(agreement);
+    const plannedInterestMaxCents = plannedTotalDueCents - principalCents;
+
+    return {
+      principal_cents: principalCents,
+      interest_cents: plannedInterestMaxCents,
+      total_due_cents: plannedTotalDueCents,
+      planned_interest_max_cents: plannedInterestMaxCents,
+      planned_total_due_cents: plannedTotalDueCents,
+      as_of_date: asOfDate
+    };
+  }
+
+  // One-time loan with interest - calculate dynamic daily interest
+  const annualRate = agreement.interest_rate / 100; // Convert percentage to decimal
+  const loanStartDate = agreement.money_sent_date ? new Date(agreement.money_sent_date) : null;
+  const plannedDueDate = agreement.due_date ? new Date(agreement.due_date) : null;
+
+  // If no start date or it's in the future, no interest yet
+  if (!loanStartDate || loanStartDate > asOfDate) {
+    return {
+      principal_cents: principalCents,
+      interest_cents: 0,
+      total_due_cents: principalCents,
+      planned_interest_max_cents: 0,
+      planned_total_due_cents: principalCents,
+      as_of_date: asOfDate
+    };
+  }
+
+  // Calculate days held (from start date to asOfDate)
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const loanStartDateOnly = new Date(loanStartDate.getFullYear(), loanStartDate.getMonth(), loanStartDate.getDate());
+  const asOfDateOnly = new Date(asOfDate.getFullYear(), asOfDate.getMonth(), asOfDate.getDate());
+  const daysHeld = Math.max(0, Math.floor((asOfDateOnly - loanStartDateOnly) / msPerDay));
+
+  // Calculate planned maximum interest (from start to due date)
+  let plannedDays = 0;
+  let plannedInterestMaxCents = 0;
+
+  if (plannedDueDate) {
+    const plannedDueDateOnly = new Date(plannedDueDate.getFullYear(), plannedDueDate.getMonth(), plannedDueDate.getDate());
+    plannedDays = Math.max(0, Math.floor((plannedDueDateOnly - loanStartDateOnly) / msPerDay));
+    const dailyRate = annualRate / 365;
+    plannedInterestMaxCents = Math.round(principalCents * dailyRate * plannedDays);
+  }
+
+  // Calculate actual interest for days held
+  const dailyRate = annualRate / 365;
+  const rawInterestCents = principalCents * dailyRate * daysHeld;
+
+  // Cap interest at planned maximum
+  const interestCents = Math.min(Math.round(rawInterestCents), plannedInterestMaxCents);
+
+  const totalDueCents = principalCents + interestCents;
+  const plannedTotalDueCents = principalCents + plannedInterestMaxCents;
+
+  return {
+    principal_cents: principalCents,
+    interest_cents: interestCents,
+    total_due_cents: totalDueCents,
+    planned_interest_max_cents: plannedInterestMaxCents,
+    planned_total_due_cents: plannedTotalDueCents,
+    as_of_date: asOfDate
+  };
+}
+
+/**
+ * Derive the loan start date display string based on agreement status and money_sent_date
+ *
+ * Rules:
+ * - PENDING: Show wizard choice ("Upon agreement acceptance" or concrete date)
+ * - ACTIVE/SETTLED: Show actual start date (derived from accepted_at if needed) or soft fallback
+ *
+ * @param {Object} agreement - Agreement object from database
+ * @param {string|null} acceptedAt - ISO timestamp when agreement was accepted (from agreement_invites)
+ * @returns {string} Display-ready loan start date string
+ */
+function getLoanStartDateDisplay(agreement, acceptedAt = null) {
+  const status = agreement.status;
+  const moneySentDate = agreement.money_sent_date;
+
+  // PENDING state: Show the wizard choice
+  if (status === 'pending') {
+    if (moneySentDate === 'on-acceptance') {
+      return 'Upon agreement acceptance';
+    } else if (moneySentDate) {
+      // Format the concrete date
+      const date = new Date(moneySentDate);
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    } else {
+      // Should not happen in normal flow, but handle gracefully
+      return 'To be confirmed';
+    }
+  }
+
+  // ACTIVE or SETTLED state: Show actual start date
+  if (status === 'active' || status === 'settled') {
+    // If we have a concrete stored date (not "on-acceptance"), use it
+    if (moneySentDate && moneySentDate !== 'on-acceptance') {
+      const date = new Date(moneySentDate);
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // If wizard choice was "on-acceptance", derive from accepted_at
+    if (moneySentDate === 'on-acceptance' && acceptedAt) {
+      const date = new Date(acceptedAt);
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // Edge case fallback (should be rare)
+    return 'To be confirmed with lender';
+  }
+
+  // For other statuses (cancelled, declined, etc.), show soft message
+  return 'To be confirmed';
 }
 
 // create a new session for a user
@@ -913,15 +1072,20 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       WHERE agreement_id = ? AND status = 'pending'
     `).get(agreement.id).count > 0;
 
-    // Calculate outstanding based on total due (principal + interest)
-    const totalDueCents = getAgreementTotalDueCents(agreement);
-    let outstanding_cents = totalDueCents - totals.total_paid_cents;
+    // Calculate outstanding based on dynamic interest
+    const interestInfo = getAgreementInterestInfo(agreement, new Date());
+    const totalDueCentsToday = interestInfo.total_due_cents;
+    const plannedTotalCents = interestInfo.planned_total_due_cents;
+
+    let outstanding_cents = totalDueCentsToday - totals.total_paid_cents;
     if (outstanding_cents < 0) outstanding_cents = 0;
 
     return {
       ...agreement,
       total_paid_cents: totals.total_paid_cents,
       outstanding_cents,
+      // For dashboard display: use planned total as the "Total" in "Outstanding / Total"
+      planned_total_cents: plannedTotalCents,
       counterparty_name,
       counterparty_role,
       hasOpenDifficulty,
@@ -1633,16 +1797,34 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'Agreement not found' });
     }
 
-    // Add payment totals and calculate outstanding
+    // Get invite accepted_at timestamp
+    const invite = db.prepare(`
+      SELECT accepted_at FROM agreement_invites WHERE agreement_id = ? ORDER BY created_at DESC LIMIT 1
+    `).get(id);
+    const acceptedAt = invite ? invite.accepted_at : null;
+
+    // Add payment totals and calculate outstanding with dynamic interest
     const totals = getPaymentTotals(id);
-    const totalDueCents = getAgreementTotalDueCents(agreement);
-    let outstanding_cents = totalDueCents - totals.total_paid_cents;
+    const interestInfo = getAgreementInterestInfo(agreement, new Date());
+
+    const totalDueCentsToday = interestInfo.total_due_cents;
+    let outstanding_cents = totalDueCentsToday - totals.total_paid_cents;
     if (outstanding_cents < 0) outstanding_cents = 0;
+
+    // Derive loan start date display
+    const loanStartDateDisplay = getLoanStartDateDisplay(agreement, acceptedAt);
 
     const agreementWithTotals = {
       ...agreement,
       total_paid_cents: totals.total_paid_cents,
-      outstanding_cents
+      outstanding_cents,
+      // Dynamic interest fields for manage view
+      today_total_due_cents: interestInfo.total_due_cents,
+      today_interest_cents: interestInfo.interest_cents,
+      planned_total_due_cents: interestInfo.planned_total_due_cents,
+      planned_interest_max_cents: interestInfo.planned_interest_max_cents,
+      // Loan start date display
+      loan_start_date_display: loanStartDateDisplay
     };
 
     res.json(agreementWithTotals);
@@ -3132,6 +3314,16 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
     // Set status based on who is recording
     const paymentStatus = isBorrower ? 'pending' : 'approved';
 
+    // Calculate current outstanding BEFORE this payment
+    const totals = getPaymentTotals(id);
+    const interestInfo = getAgreementInterestInfo(agreement, new Date());
+    const currentOutstandingCents = Math.max(0, interestInfo.total_due_cents - totals.total_paid_cents);
+
+    // Compute overpayment handling
+    const reportedAmountCents = amountCents;
+    const appliedAmountCents = Math.min(reportedAmountCents, currentOutstandingCents);
+    const overpaidAmountCents = Math.max(0, reportedAmountCents - appliedAmountCents);
+
     // Handle proof of payment file if uploaded
     let proofFilePath = null;
     let proofOriginalName = null;
@@ -3143,11 +3335,11 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
       proofMimeType = req.file.mimetype;
     }
 
-    // Insert payment with proof fields
+    // Insert payment with proof fields and overpayment tracking
     const result = db.prepare(`
-      INSERT INTO payments (agreement_id, recorded_by_user_id, amount_cents, method, note, created_at, status, proof_file_path, proof_original_name, proof_mime_type)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, req.user.id, amountCents, method || null, note || null, now, paymentStatus, proofFilePath, proofOriginalName, proofMimeType);
+      INSERT INTO payments (agreement_id, recorded_by_user_id, amount_cents, applied_amount_cents, overpaid_amount_cents, method, note, created_at, status, proof_file_path, proof_original_name, proof_mime_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, req.user.id, reportedAmountCents, appliedAmountCents, overpaidAmountCents, method || null, note || null, now, paymentStatus, proofFilePath, proofOriginalName, proofMimeType);
 
     const paymentId = result.lastInsertRowid;
 
@@ -3156,7 +3348,20 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
       // Borrower reported a payment - pending approval
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
       const lenderName = agreement.lender_full_name || agreement.lender_name;
-      const amountFormatted = formatCurrency2(amountCents);
+      const amountFormatted = formatCurrency2(reportedAmountCents);
+
+      // Build message with optional overpayment note
+      let borrowerMsg = `You reported a payment of ${amountFormatted}`;
+      let lenderMsg = `${borrowerName} reported a payment of ${amountFormatted}`;
+
+      if (overpaidAmountCents > 0) {
+        const overpaidFormatted = formatCurrency2(overpaidAmountCents);
+        borrowerMsg += `. This fully repaid the loan. Includes ${overpaidFormatted} overpayment`;
+        lenderMsg += `. The loan is now fully repaid. Includes ${overpaidFormatted} overpayment`;
+      } else {
+        borrowerMsg += ` — waiting for ${lenderName.split(' ')[0] || lenderName}'s confirmation`;
+        lenderMsg += ` — please review`;
+      }
 
       // Activity for borrower
       db.prepare(`
@@ -3166,7 +3371,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
         req.user.id,
         id,
         'Payment reported',
-        `You reported a payment of ${amountFormatted} — waiting for ${lenderName.split(' ')[0] || lenderName}'s confirmation.`,
+        borrowerMsg + '.',
         now,
         'PAYMENT_REPORTED_BORROWER'
       );
@@ -3179,7 +3384,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
         agreement.lender_user_id,
         id,
         'Payment reported by borrower',
-        `${borrowerName} reported a payment of ${amountFormatted} — please review.`,
+        lenderMsg + '.',
         now,
         'PAYMENT_REPORTED_LENDER'
       );
@@ -3187,7 +3392,17 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
       // Lender added a received payment - approved immediately
       const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
       const lenderName = agreement.lender_full_name || agreement.lender_name;
-      const amountFormatted = formatCurrency2(amountCents);
+      const amountFormatted = formatCurrency2(reportedAmountCents);
+
+      // Build message with optional overpayment note
+      let lenderMsg = `You recorded a payment of ${amountFormatted} from ${borrowerName}`;
+      let borrowerMsg = `${lenderName.split(' ')[0] || lenderName} confirmed a payment of ${amountFormatted}`;
+
+      if (overpaidAmountCents > 0) {
+        const overpaidFormatted = formatCurrency2(overpaidAmountCents);
+        lenderMsg += `. The loan is now fully repaid. Includes ${overpaidFormatted} overpayment`;
+        borrowerMsg += `. The loan is now fully repaid. Includes ${overpaidFormatted} overpayment`;
+      }
 
       // Create activity messages for both parties
       // Activity for lender
@@ -3198,7 +3413,7 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
         req.user.id,
         id,
         'Payment recorded',
-        `You recorded a payment of ${amountFormatted} from ${borrowerName}.`,
+        lenderMsg + '.',
         now,
         'PAYMENT_RECORDED_LENDER'
       );
@@ -3212,20 +3427,18 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
           agreement.borrower_user_id,
           id,
           'Payment confirmed',
-          `${lenderName.split(' ')[0] || lenderName} confirmed a payment of ${amountFormatted}.`,
+          borrowerMsg + '.',
           now,
           'PAYMENT_RECORDED_BORROWER'
         );
       }
 
-      // Get payment totals (only approved payments)
-      const totals = getPaymentTotals(id);
-      const totalDueCents = getAgreementTotalDueCents(agreement);
-      let outstanding = totalDueCents - totals.total_paid_cents;
-      if (outstanding < 0) outstanding = 0;
+      // Check if loan is now fully paid after applying this payment
+      // Use currentOutstandingCents - appliedAmountCents (calculated before payment was inserted)
+      const newOutstanding = currentOutstandingCents - appliedAmountCents;
 
       // Auto-settle if fully paid
-      if (outstanding === 0 && agreement.status === 'active') {
+      if (newOutstanding <= 0 && agreement.status === 'active') {
         db.prepare(`
           UPDATE agreements
           SET status = 'settled'
@@ -3313,6 +3526,7 @@ app.get('/api/agreements/:id/payments', requireAuth, (req, res) => {
     // Get all payments for this agreement with user info
     const payments = db.prepare(`
       SELECT p.*,
+        p.amount_cents as reported_amount_cents,
         u.full_name as recorded_by_name,
         u.email as recorded_by_email
       FROM payments p
@@ -3333,9 +3547,12 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
   const { id } = req.params;
 
   try {
-    // Get payment and agreement
+    // Get payment and agreement with overpayment fields
     const payment = db.prepare(`
-      SELECT p.*, a.lender_user_id, a.borrower_user_id, a.amount_cents as agreement_amount_cents, a.total_repay_amount, a.status as agreement_status,
+      SELECT p.*,
+        a.lender_user_id, a.borrower_user_id, a.amount_cents as agreement_amount_cents,
+        a.total_repay_amount, a.status as agreement_status,
+        a.repayment_type, a.interest_rate, a.money_sent_date, a.due_date,
         u_lender.full_name as lender_full_name,
         u_borrower.full_name as borrower_full_name,
         a.friend_first_name
@@ -3373,6 +3590,19 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
     const lenderName = payment.lender_full_name || req.user.full_name;
     const borrowerName = payment.borrower_full_name || payment.friend_first_name;
 
+    // Check for overpayment
+    const hasOverpayment = payment.overpaid_amount_cents > 0;
+    const overpaidFormatted = hasOverpayment ? formatCurrency2(payment.overpaid_amount_cents) : null;
+
+    // Build message with optional overpayment note
+    let lenderMsg = `You confirmed a payment of ${amountFormatted} from ${borrowerName}`;
+    let borrowerMsg = `${lenderName.split(' ')[0] || lenderName} confirmed your payment of ${amountFormatted}`;
+
+    if (hasOverpayment) {
+      lenderMsg += `. The loan is now fully repaid. Includes ${overpaidFormatted} overpayment`;
+      borrowerMsg += `. The loan is now fully repaid. Includes ${overpaidFormatted} overpayment`;
+    }
+
     // Create activity for lender
     db.prepare(`
       INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
@@ -3381,7 +3611,7 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
       req.user.id,
       payment.agreement_id,
       'Payment confirmed',
-      `You confirmed a payment of ${amountFormatted} from ${borrowerName}.`,
+      lenderMsg + '.',
       now,
       'PAYMENT_APPROVED_LENDER'
     );
@@ -3395,21 +3625,26 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
         payment.borrower_user_id,
         payment.agreement_id,
         'Payment confirmed',
-        `${lenderName.split(' ')[0] || lenderName} confirmed your payment of ${amountFormatted}.`,
+        borrowerMsg + '.',
         now,
         'PAYMENT_APPROVED_BORROWER'
       );
     }
 
-    // Recompute totals
+    // Recompute totals (including this newly approved payment)
     const totals = getPaymentTotals(payment.agreement_id);
     // Create agreement object for helper function
     const agreement = {
       amount_cents: payment.agreement_amount_cents,
-      total_repay_amount: payment.total_repay_amount
+      total_repay_amount: payment.total_repay_amount,
+      repayment_type: payment.repayment_type,
+      interest_rate: payment.interest_rate,
+      money_sent_date: payment.money_sent_date,
+      due_date: payment.due_date
     };
-    const totalDueCents = getAgreementTotalDueCents(agreement);
-    let outstanding = totalDueCents - totals.total_paid_cents;
+    const interestInfo = getAgreementInterestInfo(agreement, new Date());
+    const totalDueCentsToday = interestInfo.total_due_cents;
+    let outstanding = totalDueCentsToday - totals.total_paid_cents;
     if (outstanding < 0) outstanding = 0;
 
     // Auto-settle if fully paid
@@ -3606,6 +3841,13 @@ app.get('/api/invites/:token', (req, res) => {
     // Get lender user info
     const lender = db.prepare('SELECT id, email, full_name FROM users WHERE id = ?').get(invite.lender_user_id);
 
+    // Build agreement object for loan start date derivation
+    const agreementForDisplay = {
+      status: invite.status,
+      money_sent_date: invite.money_sent_date
+    };
+    const loanStartDateDisplay = getLoanStartDateDisplay(agreementForDisplay, invite.accepted_at);
+
     res.json({
       invite: {
         id: invite.invite_id,
@@ -3618,6 +3860,7 @@ app.get('/api/invites/:token', (req, res) => {
         id: invite.agreement_id,
         lender_user_id: invite.lender_user_id,
         lender_name: invite.lender_name,
+        lender_full_name: lender ? lender.full_name : null,
         borrower_email: invite.borrower_email,
         borrower_user_id: invite.borrower_user_id,
         friend_first_name: invite.friend_first_name,
@@ -3644,7 +3887,8 @@ app.get('/api/invites/:token', (req, res) => {
         reminder_offsets: invite.reminder_offsets,
         proof_required: invite.proof_required,
         debt_collection_clause: invite.debt_collection_clause,
-        created_at: invite.created_at
+        created_at: invite.created_at,
+        loan_start_date_display: loanStartDateDisplay
       },
       lender: lender || null
     });

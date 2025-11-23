@@ -15,6 +15,8 @@
   <script src="/js/formatters.js"></script>
   <!-- Derived field utilities -->
   <script src="/js/derived-fields.js"></script>
+  <!-- Fairness icon component -->
+  <script src="/components/fairness-icon.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -159,8 +161,20 @@
             <span style="color:var(--text)" id="description-display">—</span>
           </div>
           <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Lender</span>
+            <span style="color:var(--text)" id="lender-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Amount</span>
+            <span style="color:var(--text)" id="amount-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
             <span style="color:var(--muted)">Money transfer date (Loan start)</span>
             <span style="color:var(--text)" id="money-sent-display">—</span>
+          </div>
+          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
+            <span style="color:var(--muted)">Loan duration</span>
+            <span style="color:var(--text)" id="loan-duration-display">—</span>
           </div>
           <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
             <span style="color:var(--muted)">Installment plan</span>
@@ -173,18 +187,6 @@
           <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
             <span style="color:var(--muted)">Total to repay</span>
             <span style="color:var(--text); font-weight:600" id="total-repay-display">—</span>
-          </div>
-          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
-            <span style="color:var(--muted)">Lender</span>
-            <span style="color:var(--text)" id="lender-display">—</span>
-          </div>
-          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
-            <span style="color:var(--muted)">Amount</span>
-            <span style="color:var(--text)" id="amount-display">—</span>
-          </div>
-          <div class="summary-grid-row" style="display:grid; grid-template-columns:1fr 2fr; gap:12px; padding:8px 0">
-            <span style="color:var(--muted)">Loan duration</span>
-            <span style="color:var(--text)" id="loan-duration-display">—</span>
           </div>
         </div>
       </section>
@@ -214,9 +216,15 @@
       <!-- Fairness Between Friends (collapsible) -->
       <div id="fairness-card" style="margin:16px 0">
         <button onclick="toggleReviewSection('fairness-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-          <span>Fairness Between Friends</span>
+          <div style="display:flex; align-items:center; gap:8px; color:var(--accent)">
+            <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
+            <span>Fairness Between Friends (How it Works)</span>
+          </div>
           <span id="fairness-detail-toggle">▼</span>
         </button>
+        <script>
+          document.currentScript.previousElementSibling.querySelector('div > span:first-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
+        </script>
         <div id="fairness-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
           <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
             PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
@@ -486,18 +494,20 @@
       // (1) Description
       document.getElementById('description-display').textContent = agreement.description || '—';
 
-      // (2) Money transfer date
-      let moneySentDateText = '—';
-      if (agreement.money_sent_date) {
-        if (agreement.money_sent_date === 'on-acceptance') {
-          moneySentDateText = 'Upon agreement acceptance';
-        } else {
-          moneySentDateText = formatISOToHuman(agreement.money_sent_date);
-        }
-      }
-      document.getElementById('money-sent-display').textContent = moneySentDateText;
+      // (2) Lender
+      document.getElementById('lender-display').textContent = agreement.lender_full_name || '—';
 
-      // (3) Installment plan - human-readable summary
+      // (3) Amount
+      document.getElementById('amount-display').textContent = formatEuro2(principalEuros);
+
+      // (4) Money transfer date (use backend-derived display value)
+      document.getElementById('money-sent-display').textContent = agreement.loan_start_date_display || 'To be confirmed';
+
+      // (5) Loan duration - using helper function
+      const loanDurationText = getLoanDurationLabel(agreement) || '—';
+      document.getElementById('loan-duration-display').textContent = loanDurationText;
+
+      // (6) Installment plan - human-readable summary
       let installmentPlanText = '—';
       if (agreement.repayment_type === 'installments' && agreement.installment_count) {
         const count = agreement.installment_count;
@@ -530,7 +540,7 @@
       }
       document.getElementById('installment-plan-display').textContent = installmentPlanText;
 
-      // (4) Interest - APR format
+      // (7) Interest - APR format
       let interestText = '—';
       if (agreement.interest_rate && agreement.interest_rate > 0) {
         interestText = `${agreement.interest_rate}% per year`;
@@ -539,19 +549,9 @@
       }
       document.getElementById('interest-display').textContent = interestText;
 
-      // (5) Total to repay
+      // (8) Total to repay
       const totalToRepay = agreement.total_repay_amount || principalEuros;
       document.getElementById('total-repay-display').textContent = formatEuro2(totalToRepay);
-
-      // (6) Lender
-      document.getElementById('lender-display').textContent = agreement.lender_full_name || '—';
-
-      // (7) Amount
-      document.getElementById('amount-display').textContent = formatEuro2(principalEuros);
-
-      // (8) Loan duration - using helper function
-      const loanDurationText = getLoanDurationLabel(agreement) || '—';
-      document.getElementById('loan-duration-display').textContent = loanDurationText;
 
       // Show interest calculation card with schedule if interest > 0
       if (agreement.interest_rate && agreement.interest_rate > 0) {
@@ -626,14 +626,18 @@
       // Build HTML
       let html = `<p style="margin-bottom:16px; font-size:14px; color:var(--muted); line-height:1.5">${leadInSentence}</p>`;
 
+      const isOneTime = agreement.repayment_type === 'one_time';
+
       html += '<div style="overflow-x:auto; border:1px solid #374151; border-radius:8px">';
       html += '<table class="payment-schedule-table">';
       html += '<thead><tr>';
       html += '<th>Due date</th>';
-      html += '<th class="text-right">Payment total</th>';
       html += '<th class="text-right">Loan repayment</th>';
       html += '<th class="text-right">Interest</th>';
-      html += '<th class="text-right">Outstanding</th>';
+      html += '<th class="text-right">Payment total</th>';
+      if (!isOneTime) {
+        html += '<th class="text-right">Outstanding</th>';
+      }
       html += '</tr></thead>';
       html += '<tbody>';
 
@@ -641,10 +645,12 @@
         const rowClass = index % 2 === 0 ? '' : 'style="background:rgba(255,255,255,0.02)"';
         html += `<tr ${rowClass}>`;
         html += `<td>${formatScheduleDate(row.dateISO)}</td>`;
-        html += `<td class="text-right" style="font-weight:600">${formatCurrency2(row.paymentCents)}</td>`;
         html += `<td class="text-right">${formatCurrency2(row.principalCents)}</td>`;
         html += `<td class="text-right">${formatCurrency2(row.interestCents)}</td>`;
-        html += `<td class="text-right">${formatCurrency2(row.remainingCents)}</td>`;
+        html += `<td class="text-right" style="font-weight:600">${formatCurrency2(row.paymentCents)}</td>`;
+        if (!isOneTime) {
+          html += `<td class="text-right">${formatCurrency2(row.remainingCents)}</td>`;
+        }
         html += '</tr>';
       });
 
