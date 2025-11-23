@@ -20,6 +20,8 @@
   <script src="/js/derived-fields.js"></script>
   <!-- Renegotiation module -->
   <script src="/js/renegotiation.js"></script>
+  <!-- Fairness icon component -->
+  <script src="/components/fairness-icon.js"></script>
   <!-- Payment methods display component -->
   <script src="/components/payment-methods-display.js"></script>
   <style>
@@ -532,9 +534,15 @@
       <!-- Fairness Between Friends (collapsible) -->
       <div id="fairness-card" style="margin:16px 0">
         <button onclick="toggleReviewSection('fairness-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-          <span>Fairness Between Friends</span>
+          <div style="display:flex; align-items:center; gap:8px; color:var(--accent)">
+            <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
+            <span>Fairness Between Friends (How it Works)</span>
+          </div>
           <span id="fairness-detail-toggle">▼</span>
         </button>
+        <script>
+          document.currentScript.previousElementSibling.querySelector('div > span:first-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
+        </script>
         <div id="fairness-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
           <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
             PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
