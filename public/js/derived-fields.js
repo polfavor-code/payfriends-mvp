@@ -397,17 +397,20 @@ function getNextInstallmentStatus({ agreement, payments = null, now = null, time
     return { status: 'none', amountDue, dueDate: null };
   }
 
-  // Determine if overdue or upcoming using timezone-aware comparison
-  const currentDate = now || new Date();
-  const dueDateObj = new Date(dueDate);
+  // Determine if overdue or upcoming using calendar day comparison
+  // Parse due date as calendar date (no timezone conversion)
+  const dateParts = dueDate.split('T')[0].split('-');
+  const dueDateYear = parseInt(dateParts[0], 10);
+  const dueDateMonth = parseInt(dateParts[1], 10) - 1; // Month is 0-indexed
+  const dueDateDay = parseInt(dateParts[2], 10);
 
-  // Normalize both dates to midnight for accurate day comparison
-  // This uses local timezone (or could be enhanced to use provided timezone)
+  const currentDate = now || new Date();
+
+  // Create both dates at midnight in local time for accurate day comparison
   const currentDateMidnight = new Date(currentDate);
   currentDateMidnight.setHours(0, 0, 0, 0);
 
-  const dueDateMidnight = new Date(dueDateObj);
-  dueDateMidnight.setHours(0, 0, 0, 0);
+  const dueDateMidnight = new Date(dueDateYear, dueDateMonth, dueDateDay, 0, 0, 0, 0);
 
   const diffMs = dueDateMidnight - currentDateMidnight;
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
