@@ -203,12 +203,18 @@ try {
   // Column already exists, ignore
 }
 
-// Generate public IDs for existing users that don't have one
-const usersWithoutPublicId = db.prepare('SELECT id FROM users WHERE public_id IS NULL').all();
+// Generate public IDs for existing users that don't have one OR have invalid ones
+// A valid public_id should be 32 characters (16 bytes hex = 32 chars)
+const usersWithoutPublicId = db.prepare(`
+  SELECT id, public_id FROM users
+  WHERE public_id IS NULL OR LENGTH(public_id) != 32
+`).all();
 if (usersWithoutPublicId.length > 0) {
+  console.log(`[Startup] Generating public_ids for ${usersWithoutPublicId.length} users`);
   const updateStmt = db.prepare('UPDATE users SET public_id = ? WHERE id = ?');
   for (const user of usersWithoutPublicId) {
     const publicId = crypto.randomBytes(16).toString('hex');
+    console.log(`[Startup] User ${user.id}: old public_id="${user.public_id}" -> new public_id="${publicId}"`);
     updateStmt.run(publicId, user.id);
   }
 }
