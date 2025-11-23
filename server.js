@@ -1668,6 +1668,202 @@ app.post('/api/agreements/:id/payment-methods/:method/decline-removal', requireA
   }
 });
 
+// ========================
+// FRIENDS ENDPOINTS
+// ========================
+
+// Get list of friends for the current user
+app.get('/api/friends', requireAuth, (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get all unique users this person has agreements with
+    const friendsAsLender = db.prepare(`
+      SELECT DISTINCT
+        u.id as friend_id,
+        u.full_name,
+        u.email,
+        u.profile_picture
+      FROM agreements a
+      JOIN users u ON a.borrower_user_id = u.id
+      WHERE a.lender_user_id = ? AND a.borrower_user_id IS NOT NULL
+    `).all(userId);
+
+    const friendsAsBorrower = db.prepare(`
+      SELECT DISTINCT
+        u.id as friend_id,
+        u.full_name,
+        u.email,
+        u.profile_picture
+      FROM agreements a
+      JOIN users u ON a.lender_user_id = u.id
+      WHERE a.borrower_user_id = ? AND a.lender_user_id IS NOT NULL
+    `).all(userId);
+
+    // Combine and deduplicate friends
+    const friendMap = new Map();
+
+    for (const friend of friendsAsLender) {
+      if (!friendMap.has(friend.friend_id)) {
+        friendMap.set(friend.friend_id, {
+          friendId: friend.friend_id,
+          name: friend.full_name || friend.email,
+          avatarUrl: friend.profile_picture,
+          isLender: false,
+          isBorrower: false,
+          activeAgreementsCount: 0,
+          settledAgreementsCount: 0
+        });
+      }
+      friendMap.get(friend.friend_id).isLender = true;
+    }
+
+    for (const friend of friendsAsBorrower) {
+      if (!friendMap.has(friend.friend_id)) {
+        friendMap.set(friend.friend_id, {
+          friendId: friend.friend_id,
+          name: friend.full_name || friend.email,
+          avatarUrl: friend.profile_picture,
+          isLender: false,
+          isBorrower: false,
+          activeAgreementsCount: 0,
+          settledAgreementsCount: 0
+        });
+      }
+      friendMap.get(friend.friend_id).isBorrower = true;
+    }
+
+    // Get agreement counts for each friend
+    for (const [friendId, friendData] of friendMap.entries()) {
+      const counts = db.prepare(`
+        SELECT
+          SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_count,
+          SUM(CASE WHEN status = 'settled' THEN 1 ELSE 0 END) as settled_count
+        FROM agreements
+        WHERE (lender_user_id = ? AND borrower_user_id = ?)
+           OR (lender_user_id = ? AND borrower_user_id = ?)
+      `).get(userId, friendId, friendId, userId);
+
+      friendData.activeAgreementsCount = counts.active_count || 0;
+      friendData.settledAgreementsCount = counts.settled_count || 0;
+
+      // Determine role summary
+      if (friendData.isLender && friendData.isBorrower) {
+        friendData.roleSummary = 'both';
+      } else if (friendData.isLender) {
+        friendData.roleSummary = 'you lent';
+      } else {
+        friendData.roleSummary = 'you borrowed';
+      }
+
+      // Clean up temporary flags
+      delete friendData.isLender;
+      delete friendData.isBorrower;
+    }
+
+    const friends = Array.from(friendMap.values());
+    res.json({ friends });
+
+  } catch (err) {
+    console.error('Error fetching friends:', err);
+    res.status(500).json({ error: 'Server error fetching friends.' });
+  }
+});
+
+// Get profile for a specific friend
+app.get('/api/friends/:friendId', requireAuth, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const friendId = parseInt(req.params.friendId, 10);
+
+    if (isNaN(friendId)) {
+      return res.status(400).json({ error: 'Invalid friend ID.' });
+    }
+
+    // Check if this user actually has agreements with this friend
+    const hasRelationship = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM agreements
+      WHERE (lender_user_id = ? AND borrower_user_id = ?)
+         OR (lender_user_id = ? AND borrower_user_id = ?)
+    `).get(userId, friendId, friendId, userId);
+
+    if (hasRelationship.count === 0) {
+      return res.status(404).json({ error: 'Friend not found.' });
+    }
+
+    // Get friend's basic info
+    const friend = db.prepare(`
+      SELECT id, full_name, email, phone_number, timezone, profile_picture
+      FROM users
+      WHERE id = ?
+    `).get(friendId);
+
+    if (!friend) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Check if current user is lender in any agreement with this friend
+    const isLenderInAny = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM agreements
+      WHERE lender_user_id = ? AND borrower_user_id = ?
+    `).get(userId, friendId);
+
+    const canSeeContact = isLenderInAny.count > 0;
+
+    // Get all agreements with this friend
+    const agreements = db.prepare(`
+      SELECT
+        id,
+        lender_user_id,
+        borrower_user_id,
+        amount_cents,
+        status,
+        description,
+        created_at,
+        repayment_type,
+        total_repay_amount
+      FROM agreements
+      WHERE (lender_user_id = ? AND borrower_user_id = ?)
+         OR (lender_user_id = ? AND borrower_user_id = ?)
+      ORDER BY created_at DESC
+    `).all(userId, friendId, friendId, userId);
+
+    // Format agreements for response
+    const agreementsWithThisFriend = agreements.map(agr => ({
+      agreementId: agr.id,
+      roleForCurrentUser: agr.lender_user_id === userId ? 'lender' : 'borrower',
+      amountCents: agr.amount_cents,
+      totalRepayAmountCents: agr.total_repay_amount ? Math.round(agr.total_repay_amount * 100) : agr.amount_cents,
+      status: agr.status,
+      description: agr.description || 'Loan',
+      repaymentType: agr.repayment_type
+    }));
+
+    // Build response
+    const response = {
+      friendId: friend.id,
+      name: friend.full_name || friend.email,
+      avatarUrl: friend.profile_picture,
+      timezone: friend.timezone || null,
+      agreementsWithThisFriend
+    };
+
+    // Only include contact details if current user is lender
+    if (canSeeContact) {
+      response.friendCurrentEmail = friend.email;
+      response.friendCurrentPhone = friend.phone_number || null;
+    }
+
+    res.json(response);
+
+  } catch (err) {
+    console.error('Error fetching friend profile:', err);
+    res.status(500).json({ error: 'Server error fetching friend profile.' });
+  }
+});
+
 // Get messages for logged-in user
 app.get('/api/messages', requireAuth, (req, res) => {
   const rows = db.prepare(`

@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayFriends — Your Friends</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- App-wide styles -->
+  <link rel="stylesheet" href="/css/app.css" />
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
+  <!-- Centralized currency formatters -->
+  <script src="/js/formatters.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:1200px; margin:0 auto; padding:32px 16px;}
+    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
+    h1{margin:0 0 8px 0; font-size:28px; font-weight:600}
+    .subtitle{color:var(--muted); font-size:14px; margin:0 0 24px 0; line-height:1.6}
+    .friends-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px; margin-top:24px}
+    .friend-card{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; transition:all 0.2s ease; cursor:pointer}
+    .friend-card:hover{background:rgba(255,255,255,0.04); border-color:rgba(61,220,151,0.3); transform:translateY(-2px)}
+    .friend-header{display:flex; align-items:center; gap:12px; margin-bottom:12px}
+    .friend-avatar{width:48px; height:48px; border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center}
+    .friend-avatar img{width:100%; height:100%; object-fit:cover}
+    .friend-avatar-initials{width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:18px; text-transform:uppercase}
+    .friend-avatar-initials.color-1{background:#6366f1}
+    .friend-avatar-initials.color-2{background:#8b5cf6}
+    .friend-avatar-initials.color-3{background:#ec4899}
+    .friend-avatar-initials.color-4{background:#f59e0b}
+    .friend-avatar-initials.color-5{background:#10b981}
+    .friend-avatar-initials.color-6{background:#3b82f6}
+    .friend-avatar-initials.color-7{background:#14b8a6}
+    .friend-name{font-size:16px; font-weight:600; color:var(--text)}
+    .friend-role-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; margin-top:4px}
+    .friend-role-badge.lent{background:rgba(61,123,220,0.15); color:#6b9cff; border:1px solid rgba(61,123,220,0.3)}
+    .friend-role-badge.borrowed{background:rgba(230,126,34,0.15); color:#f39c63; border:1px solid rgba(230,126,34,0.3)}
+    .friend-role-badge.both{background:rgba(61,220,151,0.15); color:#3ddc97; border:1px solid rgba(61,220,151,0.3)}
+    .friend-stats{margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); font-size:13px; color:var(--muted)}
+    .friend-stats-item{display:inline-block; margin-right:16px}
+    .friend-stats-value{color:var(--accent); font-weight:600}
+    .friend-actions{margin-top:12px}
+    .btn-view-profile{width:100%; padding:10px 16px; border-radius:8px; border:1px solid rgba(61,220,151,0.3); background:transparent; color:var(--accent); font-weight:600; cursor:pointer; font-size:14px; transition:all 0.2s ease}
+    .btn-view-profile:hover{background:rgba(61,220,151,0.1); border-color:var(--accent)}
+    .empty-state{text-align:center; padding:64px 32px; color:var(--muted)}
+    .empty-state-icon{font-size:48px; margin-bottom:16px; opacity:0.5}
+    .empty-state-text{font-size:16px; margin-bottom:8px}
+    .empty-state-subtext{font-size:14px; color:rgba(167,176,189,0.7)}
+    .loading{text-align:center; padding:32px; color:var(--muted)}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; gap:12px; align-items:center}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
+    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
+    .top-header-user-info{color:var(--text); font-size:14px; line-height:1; white-space:nowrap; display:inline-flex; align-items:center; height:40px}
+    .top-header-actions{display:flex; gap:12px; align-items:center}
+    .inbox-count{color:var(--accent); font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header will be loaded dynamically by header.js -->
+
+    <div class="card">
+      <h1>Your friends</h1>
+      <p class="subtitle">People you have money agreements with.</p>
+
+      <div id="loading" class="loading">Loading your friends...</div>
+
+      <div id="friends-container" style="display:none">
+        <div id="friends-grid" class="friends-grid"></div>
+      </div>
+
+      <div id="empty-state" class="empty-state" style="display:none">
+        <div class="empty-state-icon">👥</div>
+        <div class="empty-state-text">You have no agreements yet</div>
+        <div class="empty-state-subtext">Start by creating an agreement, and your counterparties will appear here.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize header
+    if (typeof initializeHeader === 'function') {
+      initializeHeader({ hasActivitySection: false });
+    }
+
+    // Utility: Get avatar initials
+    function getAvatarInitials(name) {
+      if (!name) return '';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    // Utility: Get avatar color class
+    function getAvatarColor(name) {
+      if (!name) return 'color-1';
+      const colors = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5', 'color-6', 'color-7'];
+      const charCode = name.charCodeAt(0) || 0;
+      return colors[charCode % colors.length];
+    }
+
+    // Utility: Generate avatar HTML
+    function generateAvatarHTML(friend) {
+      if (friend.avatarUrl) {
+        return `<img src="/api/profile/picture/${friend.friendId}" alt="${friend.name}" />`;
+      }
+      const initials = getAvatarInitials(friend.name);
+      const colorClass = getAvatarColor(friend.name);
+      return `<div class="friend-avatar-initials ${colorClass}">${initials}</div>`;
+    }
+
+    // Utility: Get role badge text and class
+    function getRoleBadge(roleSummary) {
+      if (roleSummary === 'both') {
+        return { text: 'You both lent each other', className: 'both' };
+      } else if (roleSummary === 'you lent') {
+        return { text: 'You lent them money', className: 'lent' };
+      } else {
+        return { text: 'They lent you money', className: 'borrowed' };
+      }
+    }
+
+    // Render friends list
+    function renderFriends(friends) {
+      const friendsGrid = document.getElementById('friends-grid');
+      friendsGrid.innerHTML = '';
+
+      friends.forEach(friend => {
+        const badge = getRoleBadge(friend.roleSummary);
+        const avatarHTML = generateAvatarHTML(friend);
+
+        const card = document.createElement('div');
+        card.className = 'friend-card';
+        card.onclick = () => {
+          window.location.href = `/friend-profile.html?id=${friend.friendId}`;
+        };
+
+        card.innerHTML = `
+          <div class="friend-header">
+            <div class="friend-avatar">${avatarHTML}</div>
+            <div>
+              <div class="friend-name">${escapeHTML(friend.name)}</div>
+              <div class="friend-role-badge ${badge.className}">${badge.text}</div>
+            </div>
+          </div>
+          <div class="friend-stats">
+            <span class="friend-stats-item">Active: <span class="friend-stats-value">${friend.activeAgreementsCount}</span></span>
+            <span class="friend-stats-item">Settled: <span class="friend-stats-value">${friend.settledAgreementsCount}</span></span>
+          </div>
+          <div class="friend-actions">
+            <button class="btn-view-profile" onclick="event.stopPropagation(); window.location.href='/friend-profile.html?id=${friend.friendId}'">Open profile</button>
+          </div>
+        `;
+
+        friendsGrid.appendChild(card);
+      });
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHTML(str) {
+      if (str == null || str === '') return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        .replace(/\//g, '&#x2F;');
+    }
+
+    // Load friends on page load
+    async function loadFriends() {
+      try {
+        const response = await fetch('/api/friends');
+        if (!response.ok) {
+          throw new Error('Failed to fetch friends');
+        }
+
+        const data = await response.json();
+        const friends = data.friends || [];
+
+        document.getElementById('loading').style.display = 'none';
+
+        if (friends.length === 0) {
+          document.getElementById('empty-state').style.display = 'block';
+        } else {
+          document.getElementById('friends-container').style.display = 'block';
+          renderFriends(friends);
+        }
+      } catch (error) {
+        console.error('Error loading friends:', error);
+        document.getElementById('loading').innerHTML = '<p style="color:#ff6b6b">Error loading friends. Please try again.</p>';
+      }
+    }
+
+    // Initialize on page load
+    loadFriends();
+  </script>
+</body>
+</html>

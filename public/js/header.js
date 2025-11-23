@@ -259,11 +259,18 @@
     }
 
     // Dropdown menu item actions
+    const friendsItem = document.getElementById('user-menu-friends');
     const profileItem = document.getElementById('user-menu-profile');
     const settingsItem = document.getElementById('user-menu-settings');
     const securityItem = document.getElementById('user-menu-security');
     const legalItem = document.getElementById('user-menu-legal');
     const logoutItem = document.getElementById('user-menu-logout');
+
+    if (friendsItem) {
+      friendsItem.addEventListener('click', () => {
+        window.location.href = '/friends.html';
+      });
+    }
 
     if (profileItem) {
       profileItem.addEventListener('click', () => {

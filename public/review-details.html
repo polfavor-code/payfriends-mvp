@@ -421,17 +421,21 @@
           <span class="detail-label">Lender name</span>
           <span class="detail-value" id="lender-name"></span>
         </div>
+        <div class="detail-row" id="lender-profile-link-row" style="display:none">
+          <span class="detail-label"></span>
+          <span class="detail-value">
+            <a href="#" id="lender-profile-link" style="color:var(--accent); text-decoration:none; font-size:13px">View full profile →</a>
+          </span>
+        </div>
         <div class="detail-row">
           <span class="detail-label">Borrower name</span>
           <span class="detail-value" id="borrower-name"></span>
         </div>
-        <div class="detail-row" id="borrower-email-row" style="display:none">
-          <span class="detail-label">Borrower email</span>
-          <span class="detail-value" id="borrower-email-display"></span>
-        </div>
-        <div class="detail-row" id="borrower-phone-row" style="display:none">
-          <span class="detail-label">Borrower phone</span>
-          <span class="detail-value" id="borrower-phone-display"></span>
+        <div class="detail-row" id="borrower-profile-link-row" style="display:none">
+          <span class="detail-label"></span>
+          <span class="detail-value">
+            <a href="#" id="borrower-profile-link" style="color:var(--accent); text-decoration:none; font-size:13px">View full profile →</a>
+          </span>
         </div>
         <div class="detail-row" id="description-row">
           <span class="detail-label">Description</span>
@@ -2010,20 +2014,24 @@
       // 2. Borrower name
       document.getElementById('borrower-name').textContent = borrowerName;
 
-      // 2a. Borrower email (LENDER VIEW ONLY)
-      if (isLender && agreement.borrower_email) {
-        document.getElementById('borrower-email-display').textContent = agreement.borrower_email;
-        document.getElementById('borrower-email-row').style.display = 'flex';
+      // 2a. Borrower profile link (LENDER VIEW ONLY)
+      if (isLender && agreement.borrower_user_id) {
+        const borrowerFirstName = borrowerName.split(' ')[0];
+        document.getElementById('borrower-profile-link').textContent = `View full profile of ${borrowerFirstName} →`;
+        document.getElementById('borrower-profile-link').href = `/friend-profile.html?id=${agreement.borrower_user_id}`;
+        document.getElementById('borrower-profile-link-row').style.display = 'flex';
       } else {
-        document.getElementById('borrower-email-row').style.display = 'none';
+        document.getElementById('borrower-profile-link-row').style.display = 'none';
       }
 
-      // 2b. Borrower phone (LENDER VIEW ONLY)
-      if (isLender && agreement.borrower_phone) {
-        document.getElementById('borrower-phone-display').textContent = agreement.borrower_phone;
-        document.getElementById('borrower-phone-row').style.display = 'flex';
+      // 2b. Lender profile link (BORROWER VIEW ONLY)
+      if (!isLender && agreement.lender_user_id) {
+        const lenderFirstName = lenderName.split(' ')[0];
+        document.getElementById('lender-profile-link').textContent = `View full profile of ${lenderFirstName} →`;
+        document.getElementById('lender-profile-link').href = `/friend-profile.html?id=${agreement.lender_user_id}`;
+        document.getElementById('lender-profile-link-row').style.display = 'flex';
       } else {
-        document.getElementById('borrower-phone-row').style.display = 'none';
+        document.getElementById('lender-profile-link-row').style.display = 'none';
       }
 
       // 3. Description (show if available)
