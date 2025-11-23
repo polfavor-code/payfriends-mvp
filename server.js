@@ -869,9 +869,11 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       u_lender.full_name as lender_full_name,
       u_lender.email as lender_email,
       u_lender.profile_picture as lender_profile_picture,
+      u_lender.phone_number as lender_phone_number,
       u_borrower.full_name as borrower_full_name,
       u_borrower.email as borrower_email,
-      u_borrower.profile_picture as borrower_profile_picture
+      u_borrower.profile_picture as borrower_profile_picture,
+      u_borrower.phone_number as borrower_phone_number
     FROM agreements a
     LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
     LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
@@ -1620,9 +1622,11 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
         u_lender.full_name as lender_full_name,
         u_lender.email as lender_email,
         u_lender.profile_picture as lender_profile_picture,
+        u_lender.phone_number as lender_phone_number,
         u_borrower.full_name as borrower_full_name,
         u_borrower.email as borrower_email,
-        u_borrower.profile_picture as borrower_profile_picture
+        u_borrower.profile_picture as borrower_profile_picture,
+        u_borrower.phone_number as borrower_phone_number
       FROM agreements a
       LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
       LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
