@@ -43,7 +43,8 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     created_at TEXT NOT NULL,
-    full_name TEXT
+    full_name TEXT,
+    public_id TEXT UNIQUE
   );
 
   CREATE TABLE IF NOT EXISTS sessions (
