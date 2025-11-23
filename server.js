@@ -195,6 +195,23 @@ try {
   // Column already exists, ignore
 }
 
+// Add public_id column to users if it doesn't exist (for friend profile URLs)
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN public_id TEXT UNIQUE;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Generate public IDs for existing users that don't have one
+const usersWithoutPublicId = db.prepare('SELECT id FROM users WHERE public_id IS NULL').all();
+if (usersWithoutPublicId.length > 0) {
+  const updateStmt = db.prepare('UPDATE users SET public_id = ? WHERE id = ?');
+  for (const user of usersWithoutPublicId) {
+    const publicId = crypto.randomBytes(16).toString('hex');
+    updateStmt.run(publicId, user.id);
+  }
+}
+
 // Add installment and interest fields to agreements if they don't exist (for existing databases)
 try {
   db.exec(`ALTER TABLE agreements ADD COLUMN installment_count INTEGER;`);
@@ -732,12 +749,13 @@ app.post('/auth/signup', async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
     const createdAt = new Date().toISOString();
+    const publicId = crypto.randomBytes(16).toString('hex');
 
     // Create user
     const result = db.prepare(`
-      INSERT INTO users (email, password_hash, created_at, full_name, phone_number, timezone)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(email, passwordHash, createdAt, fullName || null, phoneNumber || null, timezone || null);
+      INSERT INTO users (email, password_hash, created_at, full_name, phone_number, timezone, public_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(email, passwordHash, createdAt, fullName || null, phoneNumber || null, timezone || null, publicId);
 
     const userId = result.lastInsertRowid;
 
@@ -1681,6 +1699,7 @@ app.get('/api/friends', requireAuth, (req, res) => {
     const friendsAsLender = db.prepare(`
       SELECT DISTINCT
         u.id as friend_id,
+        u.public_id as friend_public_id,
         u.full_name,
         u.email,
         u.profile_picture
@@ -1692,6 +1711,7 @@ app.get('/api/friends', requireAuth, (req, res) => {
     const friendsAsBorrower = db.prepare(`
       SELECT DISTINCT
         u.id as friend_id,
+        u.public_id as friend_public_id,
         u.full_name,
         u.email,
         u.profile_picture
@@ -1706,7 +1726,8 @@ app.get('/api/friends', requireAuth, (req, res) => {
     for (const friend of friendsAsLender) {
       if (!friendMap.has(friend.friend_id)) {
         friendMap.set(friend.friend_id, {
-          friendId: friend.friend_id,
+          friendId: friend.friend_id, // Internal use only
+          friendPublicId: friend.friend_public_id, // For URLs
           name: friend.full_name || friend.email,
           avatarUrl: friend.profile_picture,
           isLender: false,
@@ -1721,7 +1742,8 @@ app.get('/api/friends', requireAuth, (req, res) => {
     for (const friend of friendsAsBorrower) {
       if (!friendMap.has(friend.friend_id)) {
         friendMap.set(friend.friend_id, {
-          friendId: friend.friend_id,
+          friendId: friend.friend_id, // Internal use only
+          friendPublicId: friend.friend_public_id, // For URLs
           name: friend.full_name || friend.email,
           avatarUrl: friend.profile_picture,
           isLender: false,
@@ -1771,16 +1793,29 @@ app.get('/api/friends', requireAuth, (req, res) => {
 });
 
 // Get profile for a specific friend
-app.get('/api/friends/:friendId', requireAuth, (req, res) => {
+app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
   try {
     const userId = req.user.id;
-    const friendId = parseInt(req.params.friendId, 10);
+    const friendPublicId = req.params.friendPublicId;
 
-    if (isNaN(friendId)) {
+    if (!friendPublicId || typeof friendPublicId !== 'string') {
       return res.status(400).json({ error: 'Invalid friend ID.' });
     }
 
-    // Check if this user actually has agreements with this friend
+    // Look up friend by public ID
+    const friend = db.prepare(`
+      SELECT id, public_id, full_name, email, phone_number, timezone, profile_picture
+      FROM users
+      WHERE public_id = ?
+    `).get(friendPublicId);
+
+    if (!friend) {
+      return res.status(404).json({ error: 'Friend not found.' });
+    }
+
+    const friendId = friend.id;
+
+    // SECURITY: Check if current user actually has agreements with this friend
     const hasRelationship = db.prepare(`
       SELECT COUNT(*) as count
       FROM agreements
@@ -1789,18 +1824,8 @@ app.get('/api/friends/:friendId', requireAuth, (req, res) => {
     `).get(userId, friendId, friendId, userId);
 
     if (hasRelationship.count === 0) {
+      // User is trying to access someone they have no agreements with
       return res.status(404).json({ error: 'Friend not found.' });
-    }
-
-    // Get friend's basic info
-    const friend = db.prepare(`
-      SELECT id, full_name, email, phone_number, timezone, profile_picture
-      FROM users
-      WHERE id = ?
-    `).get(friendId);
-
-    if (!friend) {
-      return res.status(404).json({ error: 'User not found.' });
     }
 
     // Check if current user is lender in any agreement with this friend
@@ -1811,6 +1836,22 @@ app.get('/api/friends/:friendId', requireAuth, (req, res) => {
     `).get(userId, friendId);
 
     const canSeeContact = isLenderInAny.count > 0;
+
+    // Get invite phone from agreements (fallback if profile phone is missing)
+    let invitePhone = null;
+    if (canSeeContact) {
+      const agreementWithPhone = db.prepare(`
+        SELECT borrower_phone
+        FROM agreements
+        WHERE lender_user_id = ? AND borrower_user_id = ? AND borrower_phone IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+      `).get(userId, friendId);
+
+      if (agreementWithPhone && agreementWithPhone.borrower_phone) {
+        invitePhone = agreementWithPhone.borrower_phone;
+      }
+    }
 
     // Get all agreements with this friend
     const agreements = db.prepare(`
@@ -1843,7 +1884,7 @@ app.get('/api/friends/:friendId', requireAuth, (req, res) => {
 
     // Build response
     const response = {
-      friendId: friend.id,
+      friendPublicId: friend.public_id,
       name: friend.full_name || friend.email,
       avatarUrl: friend.profile_picture,
       timezone: friend.timezone || null,
@@ -1854,6 +1895,7 @@ app.get('/api/friends/:friendId', requireAuth, (req, res) => {
     if (canSeeContact) {
       response.friendCurrentEmail = friend.email;
       response.friendCurrentPhone = friend.phone_number || null;
+      response.friendInvitePhone = invitePhone; // Fallback phone from agreement invite
     }
 
     res.json(response);
@@ -1980,9 +2022,11 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
         u_lender.full_name as lender_full_name,
         u_lender.email as lender_email,
         u_lender.profile_picture as lender_profile_picture,
+        u_lender.public_id as lender_public_id,
         u_borrower.full_name as borrower_full_name,
         u_borrower.email as borrower_email,
-        u_borrower.profile_picture as borrower_profile_picture
+        u_borrower.profile_picture as borrower_profile_picture,
+        u_borrower.public_id as borrower_public_id
       FROM agreements a
       LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
       LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
@@ -4350,6 +4394,11 @@ app.get('/agreements/:id/manage', (req, res) => {
 // Legacy redirect: /view → /manage
 app.get('/agreements/:id/view', (req, res) => {
   res.redirect(302, `/agreements/${req.params.id}/manage`);
+});
+
+// Friend profile route (serves friend-profile.html for clean URLs)
+app.get('/friends/:publicId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'friend-profile.html'));
 });
 
 // Serve other static files from "public" folder

@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
   <title>PayFriends — Friend Profile</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <!-- Shared control styles -->
@@ -145,11 +146,11 @@
       initializeHeader({ hasActivitySection: false });
     }
 
-    // Get friend ID from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const friendId = urlParams.get('id');
+    // Get friend public ID from URL path
+    const pathParts = window.location.pathname.split('/');
+    const friendPublicId = pathParts[pathParts.length - 1];
 
-    if (!friendId) {
+    if (!friendPublicId || friendPublicId === 'friend-profile.html') {
       document.getElementById('loading').style.display = 'none';
       document.getElementById('error').textContent = 'No friend ID provided.';
       document.getElementById('error').style.display = 'block';
@@ -223,15 +224,11 @@
 
     // Render friend profile
     function renderProfile(data) {
-      // Avatar
+      // Avatar - use initials always (no user ID needed for image)
       const avatarEl = document.getElementById('friend-avatar');
-      if (data.avatarUrl) {
-        avatarEl.innerHTML = `<img src="/api/profile/picture/${data.friendId}" alt="${escapeHTML(data.name)}" />`;
-      } else {
-        const initials = getAvatarInitials(data.name);
-        const colorClass = getAvatarColor(data.name);
-        avatarEl.innerHTML = `<div class="profile-avatar-initials ${colorClass}">${initials}</div>`;
-      }
+      const initials = getAvatarInitials(data.name);
+      const colorClass = getAvatarColor(data.name);
+      avatarEl.innerHTML = `<div class="profile-avatar-initials ${colorClass}">${initials}</div>`;
 
       // Name
       document.getElementById('friend-name').textContent = data.name;
@@ -253,11 +250,18 @@
       }
 
       // Contact details or communication box
-      if (data.friendCurrentEmail || data.friendCurrentPhone) {
+      if (data.friendCurrentEmail || data.friendCurrentPhone || data.friendInvitePhone) {
         // User is lender - show contact details
         document.getElementById('contact-details').style.display = 'block';
         document.getElementById('friend-email').textContent = data.friendCurrentEmail || 'No email provided yet';
-        document.getElementById('friend-phone').textContent = data.friendCurrentPhone || 'No phone provided yet';
+
+        // Phone: use profile phone if available, otherwise use invite phone
+        const phoneDisplay = data.friendCurrentPhone
+          ? data.friendCurrentPhone
+          : data.friendInvitePhone
+            ? `${data.friendInvitePhone} (from agreement invite)`
+            : 'No phone provided yet';
+        document.getElementById('friend-phone').textContent = phoneDisplay;
       } else {
         // User is borrower - show communication box
         document.getElementById('communication-box').style.display = 'block';
@@ -315,13 +319,18 @@
 
     // Load friend profile
     async function loadFriendProfile() {
-      if (!friendId) return;
+      if (!friendPublicId) return;
 
       try {
-        const response = await fetch(`/api/friends/${friendId}`);
+        const response = await fetch(`/api/friends/${friendPublicId}`);
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error('Friend not found. You may not have any agreements with this person.');
+          }
+          if (response.status === 401) {
+            // Redirect to login if not authenticated
+            window.location.href = '/';
+            return;
           }
           throw new Error('Failed to fetch friend profile');
         }

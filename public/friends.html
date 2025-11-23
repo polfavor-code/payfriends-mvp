@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
   <title>PayFriends — Your Friends</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <!-- Shared control styles -->
@@ -112,9 +113,7 @@
 
     // Utility: Generate avatar HTML
     function generateAvatarHTML(friend) {
-      if (friend.avatarUrl) {
-        return `<img src="/api/profile/picture/${friend.friendId}" alt="${friend.name}" />`;
-      }
+      // Always use initials (no user ID needed)
       const initials = getAvatarInitials(friend.name);
       const colorClass = getAvatarColor(friend.name);
       return `<div class="friend-avatar-initials ${colorClass}">${initials}</div>`;
@@ -143,7 +142,7 @@
         const card = document.createElement('div');
         card.className = 'friend-card';
         card.onclick = () => {
-          window.location.href = `/friend-profile.html?id=${friend.friendId}`;
+          window.location.href = `/friends/${friend.friendPublicId}`;
         };
 
         card.innerHTML = `
@@ -159,7 +158,7 @@
             <span class="friend-stats-item">Settled: <span class="friend-stats-value">${friend.settledAgreementsCount}</span></span>
           </div>
           <div class="friend-actions">
-            <button class="btn-view-profile" onclick="event.stopPropagation(); window.location.href='/friend-profile.html?id=${friend.friendId}'">Open profile</button>
+            <button class="btn-view-profile" onclick="event.stopPropagation(); window.location.href='/friends/${friend.friendPublicId}'">Open profile</button>
           </div>
         `;
 

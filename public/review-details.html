@@ -2015,20 +2015,20 @@
       document.getElementById('borrower-name').textContent = borrowerName;
 
       // 2a. Borrower profile link (LENDER VIEW ONLY)
-      if (isLender && agreement.borrower_user_id) {
+      if (isLender && agreement.borrower_public_id) {
         const borrowerFirstName = borrowerName.split(' ')[0];
         document.getElementById('borrower-profile-link').textContent = `View full profile of ${borrowerFirstName} →`;
-        document.getElementById('borrower-profile-link').href = `/friend-profile.html?id=${agreement.borrower_user_id}`;
+        document.getElementById('borrower-profile-link').href = `/friends/${agreement.borrower_public_id}`;
         document.getElementById('borrower-profile-link-row').style.display = 'flex';
       } else {
         document.getElementById('borrower-profile-link-row').style.display = 'none';
       }
 
       // 2b. Lender profile link (BORROWER VIEW ONLY)
-      if (!isLender && agreement.lender_user_id) {
+      if (!isLender && agreement.lender_public_id) {
         const lenderFirstName = lenderName.split(' ')[0];
         document.getElementById('lender-profile-link').textContent = `View full profile of ${lenderFirstName} →`;
-        document.getElementById('lender-profile-link').href = `/friend-profile.html?id=${agreement.lender_user_id}`;
+        document.getElementById('lender-profile-link').href = `/friends/${agreement.lender_public_id}`;
         document.getElementById('lender-profile-link-row').style.display = 'flex';
       } else {
         document.getElementById('lender-profile-link-row').style.display = 'none';
