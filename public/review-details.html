@@ -955,6 +955,14 @@
         }
         agreement = await res.json();
 
+        console.log('[Agreement Data] Received agreement:', {
+          id: agreement.id,
+          lender_public_id: agreement.lender_public_id,
+          borrower_public_id: agreement.borrower_public_id,
+          lender_user_id: agreement.lender_user_id,
+          borrower_user_id: agreement.borrower_user_id
+        });
+
         if (!agreement || typeof agreement !== 'object') {
           showError('Invalid agreement data received.');
           return;
@@ -1994,6 +2002,7 @@
 
       // Make lender avatar clickable if borrower is viewing
       if (!isLender && agreement.lender_public_id) {
+        console.log('[Avatar Link] Borrower viewing - lender_public_id:', agreement.lender_public_id);
         lenderAvatarHtml = `<a href="/friends/${agreement.lender_public_id}" style="display:block; text-decoration:none; cursor:pointer">${lenderAvatarHtml}</a>`;
       }
       document.getElementById('summary-avatar-lender').innerHTML = lenderAvatarHtml;
@@ -2010,7 +2019,10 @@
 
       // Make borrower avatar clickable if lender is viewing
       if (isLender && agreement.borrower_public_id) {
+        console.log('[Avatar Link] Lender viewing - borrower_public_id:', agreement.borrower_public_id);
         borrowerAvatarHtml = `<a href="/friends/${agreement.borrower_public_id}" style="display:block; text-decoration:none; cursor:pointer">${borrowerAvatarHtml}</a>`;
+      } else if (isLender) {
+        console.log('[Avatar Link] Lender viewing but borrower_public_id is missing!');
       }
       document.getElementById('summary-avatar-borrower').innerHTML = borrowerAvatarHtml;
 

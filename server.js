@@ -1799,10 +1799,12 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
     const userId = req.user.id;
     const friendPublicId = req.params.friendPublicId;
 
+    console.log('[Friend Profile] ========== START ==========');
     console.log('[Friend Profile] Request from userId:', userId, 'for friendPublicId:', friendPublicId);
+    console.log('[Friend Profile] friendPublicId length:', friendPublicId ? friendPublicId.length : 'null');
 
     if (!friendPublicId || typeof friendPublicId !== 'string') {
-      console.log('[Friend Profile] Invalid friend ID');
+      console.log('[Friend Profile] Invalid friend ID - empty or wrong type');
       return res.status(400).json({ error: 'Invalid friend ID.' });
     }
 
@@ -1814,11 +1816,17 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
     `).get(friendPublicId);
 
     if (!friend) {
-      console.log('[Friend Profile] Friend not found for public_id:', friendPublicId);
-      return res.status(404).json({ error: 'Friend not found.' });
+      console.log('[Friend Profile] Friend NOT found for public_id:', friendPublicId);
+      console.log('[Friend Profile] Checking if any user has this public_id...');
+      const anyUser = db.prepare(`SELECT COUNT(*) as count FROM users WHERE public_id = ?`).get(friendPublicId);
+      console.log('[Friend Profile] Users with this public_id:', anyUser.count);
+      console.log('[Friend Profile] Checking if public_id is NULL for any users...');
+      const nullCount = db.prepare(`SELECT COUNT(*) as count FROM users WHERE public_id IS NULL`).get();
+      console.log('[Friend Profile] Users with NULL public_id:', nullCount.count);
+      return res.status(404).json({ error: 'Friend not found or no longer accessible.' });
     }
 
-    console.log('[Friend Profile] Found friend:', friend.id, friend.full_name);
+    console.log('[Friend Profile] Found friend - id:', friend.id, 'name:', friend.full_name, 'public_id:', friend.public_id);
 
     const friendId = friend.id;
 
@@ -2027,6 +2035,8 @@ app.get('/api/agreements/:id/invite', requireAuth, (req, res) => {
 app.get('/api/agreements/:id', requireAuth, (req, res) => {
   const { id } = req.params;
 
+  console.log('[Agreement API] Fetching agreement', id, 'for user', req.user.id);
+
   try {
     const agreement = db.prepare(`
       SELECT a.*,
@@ -2045,8 +2055,11 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
     `).get(id, req.user.id, req.user.id);
 
     if (!agreement) {
+      console.log('[Agreement API] Agreement not found or user lacks access');
       return res.status(404).json({ error: 'Agreement not found' });
     }
+
+    console.log('[Agreement API] Agreement found - lender_public_id:', agreement.lender_public_id, 'borrower_public_id:', agreement.borrower_public_id);
 
     // Get invite accepted_at timestamp
     const invite = db.prepare(`

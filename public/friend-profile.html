@@ -321,24 +321,40 @@
     async function loadFriendProfile() {
       if (!friendPublicId) return;
 
+      console.log('[Friend Profile Load] Fetching profile for public_id:', friendPublicId);
+
       try {
         const response = await fetch(`/api/friends/${friendPublicId}`);
+        console.log('[Friend Profile Load] Response status:', response.status);
+
         if (!response.ok) {
+          let errorData = {};
+          try {
+            errorData = await response.json();
+            console.log('[Friend Profile Load] Error response:', errorData);
+          } catch (e) {
+            console.log('[Friend Profile Load] Could not parse error response');
+          }
+
           if (response.status === 404) {
-            throw new Error('Friend not found. You may not have any agreements with this person.');
+            throw new Error(errorData.error || 'Friend not found or no longer accessible.');
           }
           if (response.status === 401) {
             // Redirect to login if not authenticated
             window.location.href = '/';
             return;
           }
-          throw new Error('Failed to fetch friend profile');
+          if (response.status >= 500) {
+            throw new Error('Server error. Please try again later.');
+          }
+          throw new Error(errorData.error || 'Failed to fetch friend profile. Please try again.');
         }
 
         const data = await response.json();
+        console.log('[Friend Profile Load] Success - received data for:', data.name);
         renderProfile(data);
       } catch (error) {
-        console.error('Error loading friend profile:', error);
+        console.error('[Friend Profile Load] Error:', error);
         document.getElementById('loading').style.display = 'none';
         document.getElementById('error').textContent = error.message;
         document.getElementById('error').style.display = 'block';
