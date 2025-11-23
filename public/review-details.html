@@ -343,7 +343,7 @@
       </p>
       <p style="color:var(--muted); font-size:13px; margin:0 0 20px 0; line-height:1.6; display:flex; align-items:start; gap:4px">
         <img src="/images/payfriends-handshake.svg" style="display:inline-block; height:16px; width:16px; margin-top:2px; flex-shrink:0" alt="PayFriends fairness icon" />
-        <span><strong style="color:var(--accent)">Fairness recalculations activated:</strong> Paying more than the due amount lowers interest and adjusts future installments. (Try adding a higher amount to see the changes)</span>
+        <span id="fairness-explanation-text"><strong style="color:var(--accent)">Fairness recalculations activated:</strong> <span id="fairness-explanation-detail"></span></span>
       </p>
 
       <div class="form-group">
@@ -1222,6 +1222,14 @@
         // Set lender name in submit button
         const submitBtn = document.getElementById('inline-payment-submit');
         submitBtn.textContent = `Report repayment to ${lenderName}`;
+
+        // Set fairness explanation text based on repayment type
+        const fairnessDetail = document.getElementById('fairness-explanation-detail');
+        if (agreement.repayment_type === 'one_time') {
+          fairnessDetail.textContent = 'Paying earlier reduces interest, so your total repayment becomes lower.';
+        } else {
+          fairnessDetail.textContent = 'Paying more than the due amount lowers interest and adjusts future installments. (Try adding a higher amount to see the changes)';
+        }
 
         // Populate payment methods based on agreement
         const paymentMethodSelect = document.getElementById('inline-payment-method');
