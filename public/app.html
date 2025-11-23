@@ -2105,56 +2105,74 @@
       return null;
     }
 
-    // Generate payment dates for installments using month-based calculation
+    // Generate payment dates for installments using payment frequency
     function generateInstallmentPaymentDates(params) {
       const {
         loanStartDate,
-        durationMonths,
         numberOfPayments,
         firstPaymentOption,
-        firstPaymentDate
+        firstPaymentDate,
+        paymentFrequency
       } = params;
 
-      const paymentDates = [];
-      const intervalMonths = durationMonths / numberOfPayments;
-
-      // Determine first payment offset in months
-      let firstOffsetMonths;
-
-      if (firstPaymentOption === 'custom' && firstPaymentDate) {
-        // For custom dates, calculate the offset from loan start to first payment
-        const loanStart = new Date(loanStartDate);
-        const firstPayment = new Date(firstPaymentDate);
-        loanStart.setHours(0, 0, 0, 0);
-        firstPayment.setHours(0, 0, 0, 0);
-
-        // Calculate approximate month difference
-        const yearDiff = firstPayment.getFullYear() - loanStart.getFullYear();
-        const monthDiff = firstPayment.getMonth() - loanStart.getMonth();
-        firstOffsetMonths = yearDiff * 12 + monthDiff;
-
-        // Adjust for day of month differences
-        if (firstPayment.getDate() < loanStart.getDate()) {
-          firstOffsetMonths -= 1;
-        }
-      } else {
-        // For preset options, get the offset directly
-        firstOffsetMonths = getFirstPaymentOffsetMonths(firstPaymentOption);
-
-        // If offset is null or not a clean month value, default to intervalMonths
-        if (firstOffsetMonths === null || firstOffsetMonths < 0.5) {
-          firstOffsetMonths = intervalMonths;
-        }
-      }
-
-      // Generate dates using month-based offsets
+      // Determine first due date based on first payment option
       const loanStart = new Date(loanStartDate);
       loanStart.setHours(0, 0, 0, 0);
 
+      let firstDue;
+
+      if (firstPaymentOption === 'custom' && firstPaymentDate) {
+        // Use custom date directly
+        firstDue = new Date(firstPaymentDate);
+        firstDue.setHours(0, 0, 0, 0);
+      } else {
+        // Calculate first due date from loan start + offset
+        switch (firstPaymentOption) {
+          case 'today':
+            firstDue = new Date(loanStart);
+            break;
+          case 'tomorrow':
+            firstDue = new Date(loanStart);
+            firstDue.setDate(firstDue.getDate() + 1);
+            break;
+          case '3days':
+            firstDue = new Date(loanStart);
+            firstDue.setDate(firstDue.getDate() + 3);
+            break;
+          case '7days':
+            firstDue = new Date(loanStart);
+            firstDue.setDate(firstDue.getDate() + 7);
+            break;
+          case '1month':
+            firstDue = addMonthsKeepingDay(loanStart, 1);
+            break;
+          case '2months':
+            firstDue = addMonthsKeepingDay(loanStart, 2);
+            break;
+          case '3months':
+            firstDue = addMonthsKeepingDay(loanStart, 3);
+            break;
+          case '6months':
+            firstDue = addMonthsKeepingDay(loanStart, 6);
+            break;
+          case '12months':
+            firstDue = addMonthsKeepingDay(loanStart, 12);
+            break;
+          default:
+            // Default to 1 month if option not recognized
+            firstDue = addMonthsKeepingDay(loanStart, 1);
+        }
+      }
+
+      // Generate subsequent dates using payment frequency
+      const paymentDates = [];
+      let currentDate = new Date(firstDue);
+
       for (let i = 0; i < numberOfPayments; i++) {
-        const offsetMonths = firstOffsetMonths + (i * intervalMonths);
-        const dueDate = addMonthsKeepingDay(loanStart, offsetMonths);
-        paymentDates.push(dueDate);
+        paymentDates.push(new Date(currentDate));
+        if (i < numberOfPayments - 1) {
+          currentDate = addOnePeriod(currentDate, paymentFrequency);
+        }
       }
 
       return paymentDates;
@@ -2894,10 +2912,10 @@
 
           paymentDates = generateInstallmentPaymentDates({
             loanStartDate: wizardData.moneySentDate,
-            durationMonths: durationMonths,
             numberOfPayments: n,
             firstPaymentOption: wizardData.firstPaymentOption || '1month',
-            firstPaymentDate: wizardData.firstPaymentDate
+            firstPaymentDate: wizardData.firstPaymentDate,
+            paymentFrequency: wizardData.paymentFrequency
           });
 
           // Update wizardData with calculated dates
