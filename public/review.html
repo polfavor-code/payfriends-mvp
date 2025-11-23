@@ -634,14 +634,18 @@
       // Build HTML
       let html = `<p style="margin-bottom:16px; font-size:14px; color:var(--muted); line-height:1.5">${leadInSentence}</p>`;
 
+      const isOneTime = agreement.repayment_type === 'one_time';
+
       html += '<div style="overflow-x:auto; border:1px solid #374151; border-radius:8px">';
       html += '<table class="payment-schedule-table">';
       html += '<thead><tr>';
       html += '<th>Due date</th>';
-      html += '<th class="text-right">Payment total</th>';
       html += '<th class="text-right">Loan repayment</th>';
       html += '<th class="text-right">Interest</th>';
-      html += '<th class="text-right">Outstanding</th>';
+      html += '<th class="text-right">Payment total</th>';
+      if (!isOneTime) {
+        html += '<th class="text-right">Outstanding</th>';
+      }
       html += '</tr></thead>';
       html += '<tbody>';
 
@@ -649,10 +653,12 @@
         const rowClass = index % 2 === 0 ? '' : 'style="background:rgba(255,255,255,0.02)"';
         html += `<tr ${rowClass}>`;
         html += `<td>${formatScheduleDate(row.dateISO)}</td>`;
-        html += `<td class="text-right" style="font-weight:600">${formatCurrency2(row.paymentCents)}</td>`;
         html += `<td class="text-right">${formatCurrency2(row.principalCents)}</td>`;
         html += `<td class="text-right">${formatCurrency2(row.interestCents)}</td>`;
-        html += `<td class="text-right">${formatCurrency2(row.remainingCents)}</td>`;
+        html += `<td class="text-right" style="font-weight:600">${formatCurrency2(row.paymentCents)}</td>`;
+        if (!isOneTime) {
+          html += `<td class="text-right">${formatCurrency2(row.remainingCents)}</td>`;
+        }
         html += '</tr>';
       });
 
