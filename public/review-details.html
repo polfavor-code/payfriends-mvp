@@ -598,7 +598,8 @@
     <!-- Loan Timeline (for all agreements) -->
     <div id="loan-timeline" class="card hidden">
       <h2>Loan Timeline</h2>
-      <p style="color:var(--muted); font-size:14px; margin-bottom:16px">Complete history of this loan, including all negotiations and changes.</p>
+      <p style="color:var(--muted); font-size:14px; margin-bottom:4px">Complete history of this loan, including all negotiations and changes.</p>
+      <p id="timeline-timezone-info" style="color:var(--muted); font-size:13px; margin-bottom:16px"></p>
       <div id="timeline-events">
         <p style="color:var(--muted); font-size:14px">Loading timeline...</p>
       </div>
@@ -1632,9 +1633,6 @@
       const nextDueAmount = (nextDueCents / 100).toFixed(2);
       const nextDueDate = formatDate(nextPaymentInfo.due_date);
 
-      const tooltipText = "Change in repayment recalculated automatically. Both friends see updates instantly.";
-      const tooltip = `<span class="payment-impact-tooltip" data-tooltip="${tooltipText}">ℹ️</span>`;
-
       // Partial payment
       if (paymentCents < nextDueCents) {
         const remaining = ((nextDueCents - paymentCents) / 100).toFixed(2);
@@ -1650,32 +1648,15 @@
         return ''; // No annotation needed for exact payments
       }
 
-      // Overpayment - calculate impact
-      const impact = calculatePaymentImpact(agreementSnapshot, paymentCents);
-      if (!impact) {
-        return ''; // No interest, can't show meaningful impact
-      }
+      // Overpayment - show simple message
+      const overpaymentCents = paymentCents - nextDueCents;
+      const overpaymentAmount = formatCurrency2(overpaymentCents);
 
-      const excess = ((paymentCents - nextDueCents) / 100).toFixed(2);
-      const interestBadge = parseFloat(impact.interestSaved) > 0
-        ? `<span class="payment-impact-badge">Interest saved</span>`
-        : '';
-
-      if (loanType === 'installments') {
-        return `
-          <div class="payment-impact-annotation">
-            Overpaid by €${excess} → Interest −€${impact.interestSaved}; repayment (excl. interest) €${impact.repaymentBefore} → €${impact.repaymentAfter}.${interestBadge}${tooltip}
-          </div>
-        `;
-      } else {
-        // One-time loan
-        const newTotal = impact.balanceAfter;
-        return `
-          <div class="payment-impact-annotation">
-            Overpaid by €${excess} → Interest −€${impact.futureInterestSaved}. New total due: €${newTotal}.${interestBadge}${tooltip}
-          </div>
-        `;
-      }
+      return `
+        <div class="payment-impact-annotation" style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.3); border-radius:6px; padding:10px; margin-top:8px">
+          Includes ${overpaymentAmount} overpayment.
+        </div>
+      `;
     }
 
     function cancelInlinePaymentForm() {
@@ -3531,6 +3512,14 @@
       try {
         const timelineContainer = document.getElementById('timeline-events');
         const timelineSection = document.getElementById('loan-timeline');
+        const timezoneInfo = document.getElementById('timeline-timezone-info');
+
+        // Set timezone helper text
+        if (currentUser.timezone) {
+          timezoneInfo.textContent = `Times shown in your timezone: ${currentUser.timezone}.`;
+        } else {
+          timezoneInfo.textContent = 'Times shown in your browser\'s timezone.';
+        }
 
         // Collect all timeline events
         const events = [];
@@ -3568,10 +3557,10 @@
         }
 
         // Event 5: Loan settled
-        if (agreement.status === 'settled') {
+        if (agreement.status === 'settled' && agreement.settled_at) {
           events.push({
             type: 'settled',
-            date: agreement.updated_at,
+            date: agreement.settled_at,
             title: 'Loan fully repaid',
             description: 'The loan has been completely repaid and settled'
           });
@@ -3584,10 +3573,12 @@
         if (events.length === 0) {
           timelineContainer.innerHTML = '<p style="color:var(--muted); font-size:14px">No timeline events yet.</p>';
         } else {
+          // Get user's timezone for formatting
+          const userTimezone = currentUser.timezone || null;
+
           timelineContainer.innerHTML = events.map((event, idx) => {
-            const eventDate = new Date(event.date).toLocaleDateString('en-GB', {
-              day: 'numeric', month: 'short', year: 'numeric'
-            });
+            // Use formatTimestamp for date + time display with timezone
+            const eventDate = formatTimestamp(event.date, userTimezone);
             const eventClass = event.type === 'issue' ? 'timeline-event--issue' :
                                event.type === 'resolved' ? 'timeline-event--resolved' :
                                event.type === 'settled' ? 'timeline-event--settled' : '';

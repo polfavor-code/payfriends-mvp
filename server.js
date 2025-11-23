@@ -279,6 +279,11 @@ try {
   // Column already exists, ignore
 }
 try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN settled_at TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
   db.exec(`ALTER TABLE agreements ADD COLUMN debt_collection_clause INTEGER DEFAULT 0;`);
 } catch (e) {
   // Column already exists, ignore
@@ -3228,9 +3233,9 @@ app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (r
       if (outstanding === 0 && agreement.status === 'active') {
         db.prepare(`
           UPDATE agreements
-          SET status = 'settled'
+          SET status = 'settled', settled_at = ?
           WHERE id = ?
-        `).run(id);
+        `).run(now, id);
 
         // Create activity messages for both parties
         db.prepare(`
@@ -3416,9 +3421,9 @@ app.post('/api/payments/:id/approve', requireAuth, (req, res) => {
     if (outstanding === 0 && payment.agreement_status === 'active') {
       db.prepare(`
         UPDATE agreements
-        SET status = 'settled'
+        SET status = 'settled', settled_at = ?
         WHERE id = ?
-      `).run(payment.agreement_id);
+      `).run(now, payment.agreement_id);
 
       // Create activity messages for both parties
       db.prepare(`
