@@ -142,8 +142,8 @@
 
   <script>
     // Initialize header
-    if (typeof initializeHeader === 'function') {
-      initializeHeader({ hasActivitySection: false });
+    if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
+      window.PayFriendsHeader.initialize({ hasActivitySection: false });
     }
 
     // Get friend public ID from URL path

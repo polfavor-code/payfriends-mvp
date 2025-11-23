@@ -418,23 +418,23 @@
       <!-- Details section -->
       <div style="margin:0 0 16px 0">
         <div class="detail-row">
-          <span class="detail-label">Lender name</span>
-          <span class="detail-value" id="lender-name"></span>
-        </div>
-        <div class="detail-row" id="lender-profile-link-row" style="display:none">
-          <span class="detail-label"></span>
+          <span class="detail-label">Lender</span>
           <span class="detail-value">
-            <a href="#" id="lender-profile-link" style="color:var(--accent); text-decoration:none; font-size:13px">View full profile →</a>
+            <span id="lender-name"></span>
+            <span id="lender-profile-link-inline" style="display:none">
+              <span style="color:var(--muted)"> - </span>
+              <a href="#" id="lender-profile-link-inline-a" style="color:var(--accent); text-decoration:none; font-size:inherit">View profile</a>
+            </span>
           </span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">Borrower name</span>
-          <span class="detail-value" id="borrower-name"></span>
-        </div>
-        <div class="detail-row" id="borrower-profile-link-row" style="display:none">
-          <span class="detail-label"></span>
+          <span class="detail-label">Borrower</span>
           <span class="detail-value">
-            <a href="#" id="borrower-profile-link" style="color:var(--accent); text-decoration:none; font-size:13px">View full profile →</a>
+            <span id="borrower-name"></span>
+            <span id="borrower-profile-link-inline" style="display:none">
+              <span style="color:var(--muted)"> - </span>
+              <a href="#" id="borrower-profile-link-inline-a" style="color:var(--accent); text-decoration:none; font-size:inherit">View profile</a>
+            </span>
           </span>
         </div>
         <div class="detail-row" id="description-row">
@@ -1991,6 +1991,11 @@
         const lenderColorClass = getAvatarColor(lenderName);
         lenderAvatarHtml = `<div class="user-avatar size-xl"><div class="user-avatar-initials ${lenderColorClass}">${lenderInitials}</div></div>`;
       }
+
+      // Make lender avatar clickable if borrower is viewing
+      if (!isLender && agreement.lender_public_id) {
+        lenderAvatarHtml = `<a href="/friends/${agreement.lender_public_id}" style="text-decoration:none; cursor:pointer">${lenderAvatarHtml}</a>`;
+      }
       document.getElementById('summary-avatar-lender').innerHTML = lenderAvatarHtml;
 
       // Create borrower avatar (always right)
@@ -2001,6 +2006,11 @@
         const borrowerInitials = getInitials(borrowerName);
         const borrowerColorClass = getAvatarColor(borrowerName);
         borrowerAvatarHtml = `<div class="user-avatar size-xl"><div class="user-avatar-initials ${borrowerColorClass}">${borrowerInitials}</div></div>`;
+      }
+
+      // Make borrower avatar clickable if lender is viewing
+      if (isLender && agreement.borrower_public_id) {
+        borrowerAvatarHtml = `<a href="/friends/${agreement.borrower_public_id}" style="text-decoration:none; cursor:pointer">${borrowerAvatarHtml}</a>`;
       }
       document.getElementById('summary-avatar-borrower').innerHTML = borrowerAvatarHtml;
 
@@ -2016,22 +2026,18 @@
 
       // 2a. Borrower profile link (LENDER VIEW ONLY)
       if (isLender && agreement.borrower_public_id) {
-        const borrowerFirstName = borrowerName.split(' ')[0];
-        document.getElementById('borrower-profile-link').textContent = `View full profile of ${borrowerFirstName} →`;
-        document.getElementById('borrower-profile-link').href = `/friends/${agreement.borrower_public_id}`;
-        document.getElementById('borrower-profile-link-row').style.display = 'flex';
+        document.getElementById('borrower-profile-link-inline-a').href = `/friends/${agreement.borrower_public_id}`;
+        document.getElementById('borrower-profile-link-inline').style.display = 'inline';
       } else {
-        document.getElementById('borrower-profile-link-row').style.display = 'none';
+        document.getElementById('borrower-profile-link-inline').style.display = 'none';
       }
 
       // 2b. Lender profile link (BORROWER VIEW ONLY)
       if (!isLender && agreement.lender_public_id) {
-        const lenderFirstName = lenderName.split(' ')[0];
-        document.getElementById('lender-profile-link').textContent = `View full profile of ${lenderFirstName} →`;
-        document.getElementById('lender-profile-link').href = `/friends/${agreement.lender_public_id}`;
-        document.getElementById('lender-profile-link-row').style.display = 'flex';
+        document.getElementById('lender-profile-link-inline-a').href = `/friends/${agreement.lender_public_id}`;
+        document.getElementById('lender-profile-link-inline').style.display = 'inline';
       } else {
-        document.getElementById('lender-profile-link-row').style.display = 'none';
+        document.getElementById('lender-profile-link-inline').style.display = 'none';
       }
 
       // 3. Description (show if available)

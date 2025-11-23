@@ -91,8 +91,8 @@
 
   <script>
     // Initialize header
-    if (typeof initializeHeader === 'function') {
-      initializeHeader({ hasActivitySection: false });
+    if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
+      window.PayFriendsHeader.initialize({ hasActivitySection: false });
     }
 
     // Utility: Get avatar initials

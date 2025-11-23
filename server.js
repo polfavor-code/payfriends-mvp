@@ -1799,7 +1799,10 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
     const userId = req.user.id;
     const friendPublicId = req.params.friendPublicId;
 
+    console.log('[Friend Profile] Request from userId:', userId, 'for friendPublicId:', friendPublicId);
+
     if (!friendPublicId || typeof friendPublicId !== 'string') {
+      console.log('[Friend Profile] Invalid friend ID');
       return res.status(400).json({ error: 'Invalid friend ID.' });
     }
 
@@ -1811,8 +1814,11 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
     `).get(friendPublicId);
 
     if (!friend) {
+      console.log('[Friend Profile] Friend not found for public_id:', friendPublicId);
       return res.status(404).json({ error: 'Friend not found.' });
     }
+
+    console.log('[Friend Profile] Found friend:', friend.id, friend.full_name);
 
     const friendId = friend.id;
 
@@ -1824,8 +1830,11 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
          OR (lender_user_id = ? AND borrower_user_id = ?)
     `).get(userId, friendId, friendId, userId);
 
+    console.log('[Friend Profile] Relationship check - agreements count:', hasRelationship.count);
+
     if (hasRelationship.count === 0) {
       // User is trying to access someone they have no agreements with
+      console.log('[Friend Profile] No relationship found between userId:', userId, 'and friendId:', friendId);
       return res.status(404).json({ error: 'Friend not found.' });
     }
 
@@ -1899,6 +1908,7 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
       response.friendInvitePhone = invitePhone; // Fallback phone from agreement invite
     }
 
+    console.log('[Friend Profile] Returning profile with', agreementsWithThisFriend.length, 'agreements');
     res.json(response);
 
   } catch (err) {
