@@ -537,6 +537,57 @@ function getAgreementInterestInfo(agreement, asOfDate = new Date()) {
   };
 }
 
+/**
+ * Derive the loan start date display string based on agreement status and money_sent_date
+ *
+ * Rules:
+ * - PENDING: Show wizard choice ("Upon agreement acceptance" or concrete date)
+ * - ACTIVE/SETTLED: Show actual start date (derived from accepted_at if needed) or soft fallback
+ *
+ * @param {Object} agreement - Agreement object from database
+ * @param {string|null} acceptedAt - ISO timestamp when agreement was accepted (from agreement_invites)
+ * @returns {string} Display-ready loan start date string
+ */
+function getLoanStartDateDisplay(agreement, acceptedAt = null) {
+  const status = agreement.status;
+  const moneySentDate = agreement.money_sent_date;
+
+  // PENDING state: Show the wizard choice
+  if (status === 'pending') {
+    if (moneySentDate === 'on-acceptance') {
+      return 'Upon agreement acceptance';
+    } else if (moneySentDate) {
+      // Format the concrete date
+      const date = new Date(moneySentDate);
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    } else {
+      // Should not happen in normal flow, but handle gracefully
+      return 'To be confirmed';
+    }
+  }
+
+  // ACTIVE or SETTLED state: Show actual start date
+  if (status === 'active' || status === 'settled') {
+    // If we have a concrete stored date (not "on-acceptance"), use it
+    if (moneySentDate && moneySentDate !== 'on-acceptance') {
+      const date = new Date(moneySentDate);
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // If wizard choice was "on-acceptance", derive from accepted_at
+    if (moneySentDate === 'on-acceptance' && acceptedAt) {
+      const date = new Date(acceptedAt);
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // Edge case fallback (should be rare)
+    return 'To be confirmed with lender';
+  }
+
+  // For other statuses (cancelled, declined, etc.), show soft message
+  return 'To be confirmed';
+}
+
 // create a new session for a user
 function createSession(userId) {
   const sessionId = crypto.randomBytes(32).toString('hex');
@@ -1720,6 +1771,12 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'Agreement not found' });
     }
 
+    // Get invite accepted_at timestamp
+    const invite = db.prepare(`
+      SELECT accepted_at FROM agreement_invites WHERE agreement_id = ? ORDER BY created_at DESC LIMIT 1
+    `).get(id);
+    const acceptedAt = invite ? invite.accepted_at : null;
+
     // Add payment totals and calculate outstanding with dynamic interest
     const totals = getPaymentTotals(id);
     const interestInfo = getAgreementInterestInfo(agreement, new Date());
@@ -1727,6 +1784,9 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
     const totalDueCentsToday = interestInfo.total_due_cents;
     let outstanding_cents = totalDueCentsToday - totals.total_paid_cents;
     if (outstanding_cents < 0) outstanding_cents = 0;
+
+    // Derive loan start date display
+    const loanStartDateDisplay = getLoanStartDateDisplay(agreement, acceptedAt);
 
     const agreementWithTotals = {
       ...agreement,
@@ -1736,7 +1796,9 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
       today_total_due_cents: interestInfo.total_due_cents,
       today_interest_cents: interestInfo.interest_cents,
       planned_total_due_cents: interestInfo.planned_total_due_cents,
-      planned_interest_max_cents: interestInfo.planned_interest_max_cents
+      planned_interest_max_cents: interestInfo.planned_interest_max_cents,
+      // Loan start date display
+      loan_start_date_display: loanStartDateDisplay
     };
 
     res.json(agreementWithTotals);
@@ -3709,6 +3771,13 @@ app.get('/api/invites/:token', (req, res) => {
     // Get lender user info
     const lender = db.prepare('SELECT id, email, full_name FROM users WHERE id = ?').get(invite.lender_user_id);
 
+    // Build agreement object for loan start date derivation
+    const agreementForDisplay = {
+      status: invite.status,
+      money_sent_date: invite.money_sent_date
+    };
+    const loanStartDateDisplay = getLoanStartDateDisplay(agreementForDisplay, invite.accepted_at);
+
     res.json({
       invite: {
         id: invite.invite_id,
@@ -3721,6 +3790,7 @@ app.get('/api/invites/:token', (req, res) => {
         id: invite.agreement_id,
         lender_user_id: invite.lender_user_id,
         lender_name: invite.lender_name,
+        lender_full_name: lender ? lender.full_name : null,
         borrower_email: invite.borrower_email,
         borrower_user_id: invite.borrower_user_id,
         friend_first_name: invite.friend_first_name,
@@ -3747,7 +3817,8 @@ app.get('/api/invites/:token', (req, res) => {
         reminder_offsets: invite.reminder_offsets,
         proof_required: invite.proof_required,
         debt_collection_clause: invite.debt_collection_clause,
-        created_at: invite.created_at
+        created_at: invite.created_at,
+        loan_start_date_display: loanStartDateDisplay
       },
       lender: lender || null
     });

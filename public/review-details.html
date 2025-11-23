@@ -2018,16 +2018,8 @@
       // 4. Amount
       document.getElementById('amount-display').textContent = amount;
 
-      // 5. Money transfer date (always show, with fallback)
-      let moneySentDateText;
-      if (agreement.money_sent_date === 'on-acceptance') {
-        moneySentDateText = 'Upon agreement acceptance';
-      } else if (agreement.money_sent_date) {
-        moneySentDateText = new Date(agreement.money_sent_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-      } else {
-        moneySentDateText = 'Not set yet';
-      }
-      document.getElementById('money-sent-display').textContent = moneySentDateText;
+      // 5. Money transfer date (use backend-derived display value)
+      document.getElementById('money-sent-display').textContent = agreement.loan_start_date_display || 'To be confirmed';
       document.getElementById('money-sent-row').style.display = 'flex';
 
       // 6. Loan duration (hide for one-time loans, show for installments)
