@@ -351,11 +351,94 @@ function getNextPaymentInfoSimple(agreement) {
   };
 }
 
+/**
+ * Get the comprehensive status of the next installment for an installment loan
+ * Uses the fairness engine and repayment schedule logic
+ * @param {Object} params - Parameters
+ * @param {Object} params.agreement - Agreement object with repayment details
+ * @param {Array} params.payments - Array of payment objects (optional, for future use)
+ * @param {Date} params.now - Current date/time (optional, defaults to now)
+ * @param {string} params.timezone - IANA timezone string (optional)
+ * @returns {Object} Status object with:
+ *   - status: "upcoming" | "overdue" | "paidOff" | "none"
+ *   - amountDue: number (cents) | null
+ *   - dueDate: string (ISO date) | null
+ *   - daysUntilDue: number (optional, if upcoming)
+ *   - daysOverdue: number (optional, if overdue)
+ *   - nextPaymentInfo: object | null (full payment info from getNextPaymentInfo)
+ */
+function getNextInstallmentStatus({ agreement, payments = null, now = null, timezone = null }) {
+  if (!agreement) {
+    return { status: 'none', amountDue: null, dueDate: null };
+  }
+
+  // Only for installment loans
+  if (agreement.repayment_type !== 'installments') {
+    return { status: 'none', amountDue: null, dueDate: null };
+  }
+
+  // Only for active agreements
+  if (agreement.status !== 'active') {
+    return { status: 'none', amountDue: null, dueDate: null };
+  }
+
+  // Get next payment info using existing fairness engine logic
+  const nextPaymentInfo = getNextPaymentInfo(agreement);
+
+  // If no next payment, loan is paid off
+  if (!nextPaymentInfo) {
+    return { status: 'paidOff', amountDue: null, dueDate: null };
+  }
+
+  const amountDue = nextPaymentInfo.amount_cents;
+  const dueDate = nextPaymentInfo.due_date;
+
+  if (!dueDate) {
+    return { status: 'none', amountDue, dueDate: null };
+  }
+
+  // Determine if overdue or upcoming using timezone-aware comparison
+  const currentDate = now || new Date();
+  const dueDateObj = new Date(dueDate);
+
+  // Normalize both dates to midnight for accurate day comparison
+  // This uses local timezone (or could be enhanced to use provided timezone)
+  const currentDateMidnight = new Date(currentDate);
+  currentDateMidnight.setHours(0, 0, 0, 0);
+
+  const dueDateMidnight = new Date(dueDateObj);
+  dueDateMidnight.setHours(0, 0, 0, 0);
+
+  const diffMs = dueDateMidnight - currentDateMidnight;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    // Overdue
+    return {
+      status: 'overdue',
+      amountDue,
+      dueDate,
+      daysOverdue: Math.abs(diffDays),
+      nextPaymentInfo
+    };
+  } else {
+    // Upcoming (includes today)
+    return {
+      status: 'upcoming',
+      amountDue,
+      dueDate,
+      daysUntilDue: diffDays,
+      nextPaymentInfo
+    };
+  }
+}
+
 // Export functions for use in other files
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     getLoanDurationLabel,
     formatRepaymentFrequency,
-    getNextPaymentInfo
+    getNextPaymentInfo,
+    getNextInstallmentStatus
   };
 }

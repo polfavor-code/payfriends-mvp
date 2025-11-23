@@ -325,6 +325,7 @@
         <div class="next-payment-info">
           <div id="next-payment-label" style="color:var(--muted); font-size:14px">Next payment due</div>
           <div id="next-payment-amount" style="font-size:28px; font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums"></div>
+          <div id="next-payment-due-date" style="color:var(--muted); font-size:14px; margin-top:4px"></div>
           <div id="next-payment-subtitle" style="color:var(--muted); font-size:13px; margin-top:4px"></div>
           <div id="next-payment-planned" style="color:var(--muted); font-size:13px; margin-top:8px; line-height:1.5"></div>
         </div>
@@ -1143,9 +1144,86 @@
         return;
       }
 
-      // For one-time loans with dynamic interest, use the new fields from API
+      const isInstallmentLoan = agreement.repayment_type === 'installments';
       const isOneTimeRepayment = agreement.repayment_type === 'one_time';
 
+      // For installment loans, use the new unified helper
+      if (isInstallmentLoan) {
+        const installmentStatus = getNextInstallmentStatus({ agreement });
+
+        if (installmentStatus.status === 'paidOff' || installmentStatus.status === 'none') {
+          document.getElementById('next-payment-card').classList.add('hidden');
+          return;
+        }
+
+        const cardEl = document.getElementById('next-payment-card');
+        const labelEl = document.getElementById('next-payment-label');
+        const amountEl = document.getElementById('next-payment-amount');
+        const dueDateEl = document.getElementById('next-payment-due-date');
+        const subtitleEl = document.getElementById('next-payment-subtitle');
+        const plannedEl = document.getElementById('next-payment-planned');
+
+        const amountFormatted = formatCurrency2(installmentStatus.amountDue);
+        const dateFormatted = formatDate(installmentStatus.dueDate);
+
+        // Handle overdue state
+        if (installmentStatus.status === 'overdue') {
+          // Red warning styling for overdue
+          cardEl.style.border = '1px solid #dc2626';
+          cardEl.style.backgroundColor = 'rgba(220, 38, 38, 0.05)';
+
+          labelEl.textContent = 'Payment overdue';
+          labelEl.style.color = '#dc2626';
+
+          amountEl.textContent = amountFormatted;
+          amountEl.style.color = '#dc2626';
+
+          const daysText = installmentStatus.daysOverdue === 1 ? 'day' : 'days';
+          dueDateEl.textContent = `was due on ${dateFormatted} (${installmentStatus.daysOverdue} ${daysText} ago). Extra interest is being calculated fairly according to your agreement.`;
+          dueDateEl.style.color = '#dc2626';
+          dueDateEl.style.display = 'block';
+
+          subtitleEl.style.display = 'none';
+          plannedEl.style.display = 'none';
+        } else {
+          // Upcoming state - green/normal styling
+          cardEl.style.border = '';
+          cardEl.style.backgroundColor = '';
+
+          labelEl.textContent = 'Next payment of';
+          labelEl.style.color = 'var(--muted)';
+
+          amountEl.textContent = amountFormatted;
+          amountEl.style.color = 'var(--accent)';
+
+          // Format due date line
+          let dueDateText;
+          if (installmentStatus.daysUntilDue === 0) {
+            dueDateText = `due today`;
+          } else {
+            const daysText = installmentStatus.daysUntilDue === 1 ? 'day' : 'days';
+            dueDateText = `due on ${dateFormatted} (in ${installmentStatus.daysUntilDue} ${daysText})`;
+          }
+
+          dueDateEl.textContent = dueDateText;
+          dueDateEl.style.color = 'var(--muted)';
+          dueDateEl.style.display = 'block';
+
+          subtitleEl.style.display = 'none';
+          plannedEl.style.display = 'none';
+        }
+
+        // Set up the "Report payment" button
+        const recordBtn = document.getElementById('borrower-record-payment-btn');
+        const lenderName = (agreement.lender_full_name || agreement.lender_name || agreement.lender_email).split(' ')[0];
+        recordBtn.onclick = () => toggleInlinePaymentForm(lenderName, installmentStatus.nextPaymentInfo);
+
+        // Show the card
+        cardEl.classList.remove('hidden');
+        return;
+      }
+
+      // For one-time loans with dynamic interest, use the existing logic
       let nextPaymentInfo;
       let todayAmount, plannedAmount, todayInterest, plannedInterest;
 
@@ -1178,6 +1256,11 @@
         }
       }
 
+      // Reset card styling for one-time loans
+      const cardEl = document.getElementById('next-payment-card');
+      cardEl.style.border = '';
+      cardEl.style.backgroundColor = '';
+
       // Populate the card with payment info
       const amountFormatted = formatCurrency2(nextPaymentInfo.amount_cents);
       const dateFormatted = formatDate(nextPaymentInfo.due_date);
@@ -1185,8 +1268,17 @@
       // Set the label based on repayment type
       const labelText = isOneTimeRepayment ? 'Payment due today' : 'Next payment due';
 
-      document.getElementById('next-payment-label').textContent = labelText;
-      document.getElementById('next-payment-amount').textContent = amountFormatted;
+      const labelEl = document.getElementById('next-payment-label');
+      const amountEl = document.getElementById('next-payment-amount');
+      const dueDateEl = document.getElementById('next-payment-due-date');
+
+      labelEl.textContent = labelText;
+      labelEl.style.color = 'var(--muted)';
+
+      amountEl.textContent = amountFormatted;
+      amountEl.style.color = 'var(--accent)';
+
+      dueDateEl.style.display = 'none';
 
       // For one-time loans with dynamic interest, show additional info
       const subtitleEl = document.getElementById('next-payment-subtitle');
@@ -1217,7 +1309,7 @@
       recordBtn.onclick = () => toggleInlinePaymentForm(lenderName, nextPaymentInfo);
 
       // Show the card
-      document.getElementById('next-payment-card').classList.remove('hidden');
+      cardEl.classList.remove('hidden');
     }
 
     function toggleInlinePaymentForm(lenderName, nextPaymentInfo) {
