@@ -4654,13 +4654,30 @@
               const isOnAcceptanceLoan = isLoanStartUponAcceptance(agreement);
               const isPending = agreement.status !== 'active';
 
+              // Debug logging for schedule rendering
+              if (i === 0) {
+                console.log('[Schedule Rendering] First row debug:', {
+                  isOnAcceptanceLoan,
+                  isPending,
+                  status: agreement.status,
+                  willShowRelative: isOnAcceptanceLoan && isPending,
+                  rowDateISO: row.dateISO
+                });
+              }
+
               let dateStr;
               if (isOnAcceptanceLoan && isPending) {
                 // Show relative label for pending agreements with loan start on acceptance
                 dateStr = getRelativeInstallmentLabel(agreement, i);
+                if (i === 0) {
+                  console.log('[Schedule Rendering] Using relative label:', dateStr);
+                }
               } else {
                 // Use formatFinancialDate to avoid timezone issues with due dates
                 dateStr = formatFinancialDate(row.dateISO);
+                if (i === 0) {
+                  console.log('[Schedule Rendering] Using concrete date:', dateStr);
+                }
               }
 
               // Highlight current period
