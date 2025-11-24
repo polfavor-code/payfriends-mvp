@@ -239,10 +239,10 @@
 
     tfoot td {
       padding: 16px 12px;
-      border-top: 2px solid rgba(59, 130, 246, 0.5);
-      background: rgba(59, 130, 246, 0.1);
+      border-top: 2px solid rgba(16, 185, 129, 0.6);
+      background: rgba(16, 185, 129, 0.1);
       font-weight: 700;
-      color: #fff;
+      color: #e5fdf4;
       font-size: 14px;
     }
 
@@ -254,7 +254,7 @@
     tfoot td:first-child {
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #60a5fa;
+      color: #34d399;
     }
 
     .badge {
@@ -422,7 +422,7 @@
         <div class="card">
           <div class="schedule-header">
             <h2>Repayment schedule & interest calculation</h2>
-            <span id="modeBadge"></span>
+            <span id="modeBadge"><span class="badge badge-preview">Preview</span></span>
           </div>
           <div style="font-size: 14px; margin-bottom: 16px; margin-top: 4px; color: #9ca3af;">
             <div id="loanStartLabel">Click "Calculate schedule" to generate...</div>
@@ -1072,7 +1072,12 @@
       document.getElementById('frequency').value = 'every-month';
       document.getElementById('firstPaymentDue').value = '1-year';
       document.getElementById('loanStartMode').value = 'upon_acceptance';
-      document.getElementById('contextMode').value = 'preview';
+
+      // Context mode dropdown was removed on calculator.html, but keep this safe
+      const contextModeSelect = document.getElementById('contextMode');
+      if (contextModeSelect) {
+        contextModeSelect.value = 'preview';
+      }
 
       // Hide and clear date pickers
       document.getElementById('loanStartDateGroup').classList.add('hidden');
@@ -1363,7 +1368,7 @@
         const firstPaymentDate = document.getElementById('firstPaymentDate').value;
         const loanStartMode = document.getElementById('loanStartMode').value;
         const contextModeElement = document.getElementById('contextMode');
-        const contextMode = contextModeElement ? contextModeElement.value : 'actual';
+        const contextMode = contextModeElement ? contextModeElement.value : 'preview';
         const explicitLoanStartDate = document.getElementById('loanStartDate').value;
 
         // Validation - graceful handling for auto-updates
