@@ -1178,6 +1178,36 @@ Click "Calculate schedule" to see calculation details...
       }
     });
 
+    // Make loan start date input field open the datepicker on click/focus
+    const loanStartDateInput = document.getElementById('loanStartDate');
+    ['click', 'focus'].forEach(eventType => {
+      loanStartDateInput.addEventListener(eventType, function(e) {
+        // Only trigger if the field is visible and not already showing picker
+        if (!this.closest('.hidden') && typeof this.showPicker === 'function') {
+          try {
+            this.showPicker();
+          } catch (err) {
+            // showPicker() may fail in some contexts, silently ignore
+          }
+        }
+      });
+    });
+
+    // Make first payment date input field open the datepicker on click/focus
+    const firstPaymentDateInput = document.getElementById('firstPaymentDate');
+    ['click', 'focus'].forEach(eventType => {
+      firstPaymentDateInput.addEventListener(eventType, function(e) {
+        // Only trigger if the field is visible and not already showing picker
+        if (!this.closest('.hidden') && typeof this.showPicker === 'function') {
+          try {
+            this.showPicker();
+          } catch (err) {
+            // showPicker() may fail in some contexts, silently ignore
+          }
+        }
+      });
+    });
+
     /**
      * Helper function to calculate loan start date from dropdown
      */
