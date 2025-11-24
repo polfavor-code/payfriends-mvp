@@ -417,7 +417,10 @@
         </div>
 
         <div class="form-group">
-          <button class="btn" onclick="calculateSchedule()">Calculate schedule</button>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-secondary" onclick="resetCalculator()" style="flex: 1; background: rgba(75, 85, 99, 0.8); color: #e5e7eb;">Reset calculator</button>
+            <button class="btn" onclick="calculateSchedule()" style="flex: 2;">Calculate schedule</button>
+          </div>
         </div>
 
         <div class="info-box">
@@ -432,11 +435,11 @@
         <!-- Schedule table -->
         <div class="card">
           <div class="schedule-header">
-            <h2>Repayment Schedule</h2>
+            <h2>Repayment schedule & interest calculation</h2>
             <span id="modeBadge"></span>
           </div>
-          <div class="schedule-subtitle" id="loanStartLabel">
-            Loan start: Click "Calculate schedule" to generate...
+          <div class="schedule-subtitle" id="loanStartLabel" style="font-size: 14px; margin-bottom: 16px; margin-top: 8px;">
+            Click "Calculate schedule" to generate...
           </div>
           <div class="schedule-table">
             <table>
@@ -854,6 +857,74 @@ Click "Calculate schedule" to see calculation details...
     };
 
     /**
+     * Calculate plan length from schedule
+     */
+    function calculatePlanLength(rows, loanStartDate, effectiveMode) {
+      if (!rows || rows.length === 0) {
+        return null;
+      }
+
+      if (rows.length === 1) {
+        // Single payment
+        if (effectiveMode === 'actual' && rows[0].dueDate) {
+          return {
+            summary: '1 payment',
+            detail: formatDateDisplay(rows[0].dueDate)
+          };
+        }
+        return { summary: '1 payment', detail: null };
+      }
+
+      // Multiple payments - calculate duration
+      const firstPayment = rows[0];
+      const lastPayment = rows[rows.length - 1];
+
+      if (effectiveMode === 'actual' && loanStartDate && lastPayment.dueDate) {
+        // Real dates available
+        const startDate = new Date(loanStartDate);
+        const endDate = new Date(lastPayment.dueDate);
+
+        // Calculate months difference
+        const yearsDiff = endDate.getFullYear() - startDate.getFullYear();
+        const monthsDiff = endDate.getMonth() - startDate.getMonth();
+        const totalMonths = yearsDiff * 12 + monthsDiff;
+
+        const startStr = formatDateDisplay(startDate);
+        const endStr = formatDateDisplay(endDate);
+
+        if (totalMonths === 0) {
+          return { summary: 'Less than 1 month', detail: `${startStr} to ${endStr}` };
+        } else if (totalMonths === 1) {
+          return { summary: '1 month', detail: `${startStr} to ${endStr}` };
+        } else {
+          return { summary: `${totalMonths} months`, detail: `${startStr} to ${endStr}` };
+        }
+      } else {
+        // Preview mode - approximate from payment count and frequency
+        const numPayments = rows.length;
+        return { summary: `${numPayments} payments`, detail: null };
+      }
+    }
+
+    /**
+     * Get loan start label with context
+     */
+    function getLoanStartLabelWithContext(loanStartDate, effectiveMode, loanStartMode) {
+      if (!loanStartDate && loanStartMode === 'upon_acceptance') {
+        return effectiveMode === 'preview'
+          ? 'When agreement is accepted (preview)'
+          : 'When agreement is accepted';
+      }
+
+      if (loanStartDate) {
+        const dateStr = formatDateDisplay(loanStartDate);
+        return effectiveMode === 'preview' ? `${dateStr} (preview)` : dateStr;
+      }
+
+      return 'Unknown';
+    }
+
+    /**
      * Update UI based on repayment type
      */
     function updateRepaymentTypeUI() {
@@ -868,8 +939,8 @@ Click "Calculate schedule" to see calculation details...
       if (isOneTime) {
         // 1-time payment mode
 
-        // 1) Change label to "Repayment due date" (without "after loan start")
-        paymentTimingLabel.textContent = 'Repayment due date';
+        // 1) Change label to "Full repayment due (after loan start)"
+        paymentTimingLabel.textContent = 'Full repayment due (after loan start)';
 
         // 2) Lock installments to 1 and hide
         document.getElementById('numInstallments').value = 1;
@@ -895,6 +966,45 @@ Click "Calculate schedule" to see calculation details...
         // 4) Hide hint
         installmentsHint.style.display = 'none';
       }
+    }
+
+    /**
+     * Reset calculator to defaults
+     */
+    function resetCalculator() {
+      // Reset form fields to defaults
+      document.getElementById('principal').value = 6000;
+      document.getElementById('interest').value = 5;
+      document.getElementById('repaymentType').value = 'installments';
+      document.getElementById('numInstallments').value = 12;
+      document.getElementById('frequency').value = 'every-month';
+      document.getElementById('firstPaymentDue').value = '1-month';
+      document.getElementById('loanStartMode').value = 'upon_acceptance';
+      document.getElementById('contextMode').value = 'preview';
+
+      // Hide date pickers
+      document.getElementById('loanStartDateGroup').style.display = 'none';
+      document.getElementById('firstPaymentDateGroup').style.display = 'none';
+
+      // Clear date inputs
+      document.getElementById('loanStartDate').value = '';
+      document.getElementById('firstPaymentDate').value = '';
+
+      // Update UI based on repayment type
+      updateRepaymentTypeUI();
+
+      // Clear output areas
+      document.getElementById('modeBadge').innerHTML = '';
+      document.getElementById('loanStartLabel').textContent = 'Click "Calculate schedule" to generate...';
+
+      const tbody = document.getElementById('scheduleBody');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Configure parameters and click "Calculate schedule"...</td></tr>';
+
+      // Hide totals row
+      document.getElementById('scheduleTotals').style.display = 'none';
+
+      // Reset debug console
+      document.getElementById('debugConsole').textContent = 'Waiting for calculation...';
     }
 
     // Show/hide conditional fields based on repayment type
@@ -1056,7 +1166,26 @@ Click "Calculate schedule" to see calculation details...
           ? '<span class="badge badge-preview">Preview</span>'
           : '<span class="badge badge-actual">Actual</span>';
         document.getElementById('modeBadge').innerHTML = badge;
-        document.getElementById('loanStartLabel').textContent = `Loan start: ${result.loanStartLabel}`;
+
+        // Build loan start label with plan length
+        const loanStartText = getLoanStartLabelWithContext(
+          calculatedLoanStartDate,
+          result.effectiveMode,
+          loanStartMode
+        );
+
+        const planLength = calculatePlanLength(result.rows, calculatedLoanStartDate, result.effectiveMode);
+        let loanStartLabelHTML = `Loan start: ${loanStartText}`;
+
+        if (planLength) {
+          if (planLength.detail) {
+            loanStartLabelHTML += ` • Plan length: ${planLength.summary} (${planLength.detail})`;
+          } else {
+            loanStartLabelHTML += ` • Plan length: ${planLength.summary}`;
+          }
+        }
+
+        document.getElementById('loanStartLabel').innerHTML = loanStartLabelHTML;
 
         // Update UI - Schedule table body
         const tbody = document.getElementById('scheduleBody');
@@ -1101,6 +1230,13 @@ Click "Calculate schedule" to see calculation details...
           `  → Real date: ${calculatedLoanStartDate ? formatDateDisplay(calculatedLoanStartDate) : 'Unknown (preview mode)'}`,
           `Context mode: ${contextMode === 'actual' ? 'Actual (known loan start)' : 'Preview (no real date)'}`,
           `Effective mode: ${result.effectiveMode === 'actual' ? 'Actual (real calendar dates)' : 'Preview (relative labels)'}`,
+          '',
+          '=== PLAN LENGTH ===',
+          planLength && planLength.detail
+            ? `${planLength.summary} (${planLength.detail})`
+            : planLength
+              ? planLength.summary
+              : 'N/A',
           '',
           '=== TOTALS ===',
           `Total principal: ${formatMoney(result.totals.principal)}`,
