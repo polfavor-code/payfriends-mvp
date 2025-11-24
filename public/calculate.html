@@ -429,7 +429,7 @@
         <div class="form-group">
           <div style="display: flex; gap: 12px;">
             <button class="btn btn-secondary" onclick="resetCalculator()" style="flex: 1; background: rgba(75, 85, 99, 0.8); color: #e5e7eb;">Reset</button>
-            <button class="btn" onclick="calculateSchedule()" style="flex: 2;">Calculate schedule</button>
+            <button class="btn" onclick="runRepaymentCalculation()" style="flex: 2;">Calculate schedule</button>
           </div>
         </div>
       </div>
@@ -1139,21 +1139,70 @@ Click "Calculate schedule" to see calculation details...
       // Update UI based on repayment type
       updateRepaymentTypeUI();
 
-      // Clear output areas
-      document.getElementById('modeBadge').innerHTML = '';
-      document.getElementById('loanStartLabel').textContent = 'Click "Calculate schedule" to generate...';
-      document.getElementById('loanDurationLabel').style.display = 'none';
-      document.getElementById('loanDurationLabel').innerHTML = '';
-
-      const tbody = document.getElementById('scheduleBody');
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Configure parameters and click "Calculate schedule"...</td></tr>';
-
-      // Hide totals row
-      document.getElementById('scheduleTotals').style.display = 'none';
-
-      // Reset debug console
-      document.getElementById('debugConsole').textContent = 'Waiting for calculation...';
+      // Trigger auto-calculation with default values
+      runRepaymentCalculation();
     }
+
+    /**
+     * Debounce utility for input events
+     * Delays execution until user stops typing for specified milliseconds
+     */
+    function debounce(func, delay) {
+      let timeoutId;
+      return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+      };
+    }
+
+    /**
+     * Main calculation function wrapper for auto-updates
+     * This is the single entry point for all recalculations
+     */
+    function runRepaymentCalculation() {
+      calculateSchedule();
+    }
+
+    // Create debounced version for input events (text/number fields)
+    const debouncedCalculation = debounce(runRepaymentCalculation, 300);
+
+    // ============================================================================
+    // AUTO-UPDATE: Event listeners for all configuration inputs
+    // ============================================================================
+
+    // Loan amount - use debounced for smooth typing
+    document.getElementById('principal').addEventListener('input', debouncedCalculation);
+
+    // Annual interest rate - use debounced for smooth typing
+    document.getElementById('interest').addEventListener('input', debouncedCalculation);
+
+    // Loan start date mode - immediate update
+    document.getElementById('loanStartMode').addEventListener('change', runRepaymentCalculation);
+
+    // Loan start date picker - immediate update
+    document.getElementById('loanStartDate').addEventListener('change', runRepaymentCalculation);
+
+    // Repayment type - immediate update
+    document.getElementById('repaymentType').addEventListener('change', runRepaymentCalculation);
+
+    // First payment due - immediate update
+    document.getElementById('firstPaymentDue').addEventListener('change', runRepaymentCalculation);
+
+    // First payment date picker - immediate update
+    document.getElementById('firstPaymentDate').addEventListener('change', runRepaymentCalculation);
+
+    // Payment frequency - immediate update
+    document.getElementById('frequency').addEventListener('change', runRepaymentCalculation);
+
+    // Number of installments - use debounced for smooth typing
+    document.getElementById('numInstallments').addEventListener('input', debouncedCalculation);
+
+    // Context mode - immediate update
+    document.getElementById('contextMode').addEventListener('change', runRepaymentCalculation);
+
+    // ============================================================================
+    // UI-only event listeners (these also trigger recalculation via events above)
+    // ============================================================================
 
     // Show/hide conditional fields based on repayment type
     document.getElementById('repaymentType').addEventListener('change', updateRepaymentTypeUI);
@@ -1312,16 +1361,25 @@ Click "Calculate schedule" to see calculation details...
         const contextMode = document.getElementById('contextMode').value;
         const explicitLoanStartDate = document.getElementById('loanStartDate').value;
 
-        // Validation
-        const errors = [];
+        // Validation - graceful handling for auto-updates
+        // Skip calculation silently if required inputs are empty (user might be typing)
         if (!loanAmount || loanAmount <= 0 || isNaN(loanAmount)) {
-          errors.push('Please enter a positive loan amount.');
+          // Silently skip - user might be typing
+          return;
         }
-        if (isNaN(annualInterestRate) || annualInterestRate < 0) {
-          errors.push('Interest rate cannot be negative.');
+        if (isNaN(annualInterestRate)) {
+          // Silently skip - user might be clearing the field
+          return;
         }
         if (repaymentType === 'installments' && (!numberOfInstallments || numberOfInstallments < 1 || isNaN(numberOfInstallments))) {
-          errors.push('Number of installments must be at least 1.');
+          // Silently skip - user might be typing
+          return;
+        }
+
+        // Show errors only for invalid values (not empty)
+        const errors = [];
+        if (annualInterestRate < 0) {
+          errors.push('Interest rate cannot be negative.');
         }
         if (loanStartMode === 'pick-date' && !explicitLoanStartDate) {
           errors.push('Loan start date is required when "Pick a date…" is selected.');
@@ -1498,7 +1556,7 @@ Click "Calculate schedule" to see calculation details...
     updateRepaymentTypeUI();
 
     // Trigger initial calculation to show results on page load
-    calculateSchedule();
+    runRepaymentCalculation();
 
     // Loan amount formatting with thousands separator
     const principalInput = document.getElementById('principal');
