@@ -217,6 +217,71 @@
     .timeline-event-details-row:last-child{border-bottom:none}
     .timeline-event-label{color:var(--muted); font-size:13px}
     .timeline-event-value{color:var(--text); font-size:13px; font-weight:500}
+
+    /* Payments card styles */
+    .payment-row{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      gap: 16px;
+    }
+    .payment-row:last-child{border-bottom: none}
+    .payment-row-left{
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+    .payment-row-label{
+      font-weight: 600;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .payment-row-date{
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .payment-row-right{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 0 0 auto;
+      margin-left: auto;
+    }
+    .payment-row-amount{
+      font-weight: 600;
+      color: var(--text);
+      font-size: 15px;
+      text-align: right;
+    }
+    .payment-row-status{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .payment-row-status.paid{
+      background: rgba(61, 220, 151, 0.15);
+      color: #3ddc97;
+    }
+    .payment-row-status.partial{
+      background: rgba(249, 115, 22, 0.15);
+      color: #f97316;
+    }
+    .payment-row-status.upcoming{
+      background: rgba(167, 176, 189, 0.15);
+      color: var(--muted);
+    }
+    .payment-row-status svg{
+      width: 14px;
+      height: 14px;
+    }
     .timeline-comparison-table{width:100%; border-collapse:collapse; margin-top:8px}
     .timeline-comparison-table th{text-align:left; padding:8px; font-size:12px; color:var(--muted); font-weight:600; border-bottom:1px solid rgba(255,255,255,0.08)}
     .timeline-comparison-table td{padding:8px; font-size:13px; border-bottom:1px solid rgba(255,255,255,0.04)}
@@ -612,6 +677,14 @@
       <h2>Payment History</h2>
       <div id="payments-list">
         <p style="color:var(--muted); font-size:14px">No payments recorded yet.</p>
+      </div>
+    </div>
+
+    <!-- Payments summary card (for all agreements with repayment schedules) -->
+    <div id="payments-card" class="card hidden">
+      <h2>Payments</h2>
+      <div id="payments-summary">
+        <p style="color:var(--muted); font-size:14px">Loading payments...</p>
       </div>
     </div>
 
@@ -1024,6 +1097,9 @@
         document.getElementById('borrower-actions').classList.remove('hidden');
         document.getElementById('lender-actions').classList.add('hidden');
       }
+
+      // Show payments summary card for review mode
+      displayPaymentsCard();
     }
 
     async function showViewSection() {
@@ -1110,6 +1186,9 @@
         // Show next payment card for borrower on active agreements
         // This card now includes both action buttons inside
         showNextPaymentCard();
+
+        // Show payments summary card for all agreements
+        displayPaymentsCard();
 
         // Show payment action button for lenders on active agreements
         if (isLender && agreement.status === 'active') {
@@ -1232,6 +1311,202 @@
 
       console.log('[isLoanStartUponAcceptance] No match - returning false');
       return false;
+    }
+
+    /**
+     * Build payments summary for the Payments card
+     * Returns an array of payment rows with status and labels
+     */
+    function buildPaymentsSummary() {
+      if (!agreement) return null;
+
+      const isInstallmentLoan = agreement.repayment_type === 'installments';
+      const isOneTimeLoan = agreement.repayment_type === 'one_time';
+
+      if (!isInstallmentLoan && !isOneTimeLoan) {
+        return null;
+      }
+
+      // Determine if we should use relative labels
+      const isLoanStartOnAcceptance = isLoanStartUponAcceptance(agreement);
+      const isPendingAgreement = agreement.status !== 'active' && agreement.status !== 'settled';
+      const useRelativeLabels = isLoanStartOnAcceptance && isPendingAgreement;
+
+      const totalPaid = agreement.total_paid_cents || 0;
+      const paymentRows = [];
+
+      if (isOneTimeLoan) {
+        // Single payment for one-time loan
+        const totalOwedCents = agreement.total_repay_amount
+          ? Math.round(agreement.total_repay_amount * 100)
+          : agreement.amount_cents || 0;
+
+        const outstanding = totalOwedCents - totalPaid;
+        let status = 'upcoming';
+        if (outstanding <= 0) {
+          status = 'paid';
+        } else if (totalPaid > 0) {
+          status = 'partial';
+        }
+
+        let dateLabel;
+        if (useRelativeLabels) {
+          dateLabel = getRelativeInstallmentLabel(agreement, 0);
+        } else {
+          const dueDate = new Date(agreement.due_date);
+          dateLabel = dueDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        paymentRows.push({
+          index: 0,
+          label: 'Payment',
+          dateLabel: dateLabel,
+          amountTotal: formatCurrency2(totalOwedCents),
+          status: status
+        });
+
+        return paymentRows;
+      }
+
+      // For installment loans, build the schedule
+      const installmentCount = agreement.installment_count || 0;
+      if (installmentCount === 0) {
+        return null;
+      }
+
+      // Determine start date
+      let startDate;
+      if (agreement.money_sent_date && agreement.money_sent_date !== 'on-acceptance') {
+        startDate = new Date(agreement.money_sent_date);
+      } else if (agreement.first_payment_date) {
+        startDate = new Date(agreement.first_payment_date);
+      } else {
+        startDate = new Date();
+      }
+
+      // Build payment dates
+      let paymentDates = [];
+      if (agreement.first_payment_date) {
+        const frequency = agreement.payment_frequency || 'monthly';
+
+        // Check if generatePaymentDates is available
+        if (typeof generatePaymentDates === 'function') {
+          const dateResult = generatePaymentDates({
+            transferDate: startDate,
+            firstDueDate: agreement.first_payment_date,
+            frequency: frequency,
+            count: installmentCount
+          });
+          paymentDates = dateResult.paymentDates;
+        }
+      }
+
+      // Build the complete amortization schedule
+      let schedule = null;
+      if (typeof buildRepaymentSchedule === 'function' && paymentDates.length > 0) {
+        const scheduleResult = buildRepaymentSchedule({
+          principalCents: agreement.amount_cents,
+          aprPercent: agreement.interest_rate || 0,
+          count: installmentCount,
+          paymentDates: paymentDates,
+          startDate: startDate
+        });
+        schedule = scheduleResult.rows;
+      }
+
+      if (!schedule || schedule.length === 0) {
+        // Fallback if schedule building failed
+        return null;
+      }
+
+      // Determine which payments have been made by comparing cumulative principal to total paid
+      let cumulativePrincipal = 0;
+      for (let i = 0; i < schedule.length; i++) {
+        const row = schedule[i];
+        cumulativePrincipal += row.principalCents;
+
+        // Determine status for this installment
+        let status = 'upcoming';
+        if (totalPaid >= cumulativePrincipal) {
+          // This installment is fully paid
+          status = 'paid';
+        } else if (totalPaid > (cumulativePrincipal - row.principalCents)) {
+          // Partial payment has been made toward this installment
+          status = 'partial';
+        }
+
+        // Determine date label
+        let dateLabel;
+        if (useRelativeLabels) {
+          dateLabel = getRelativeInstallmentLabel(agreement, i);
+        } else {
+          const dueDate = new Date(row.dateISO);
+          dateLabel = dueDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        paymentRows.push({
+          index: i,
+          label: `Payment ${i + 1}`,
+          dateLabel: dateLabel,
+          amountTotal: formatCurrency2(row.paymentCents),
+          status: status
+        });
+      }
+
+      return paymentRows;
+    }
+
+    /**
+     * Display the Payments card
+     */
+    function displayPaymentsCard() {
+      const card = document.getElementById('payments-card');
+      const summaryDiv = document.getElementById('payments-summary');
+
+      const paymentsSummary = buildPaymentsSummary();
+
+      if (!paymentsSummary || paymentsSummary.length === 0) {
+        card.classList.add('hidden');
+        return;
+      }
+
+      // Build HTML for payment rows
+      let html = '';
+      for (const row of paymentsSummary) {
+        let statusHTML = '';
+        let statusClass = row.status;
+        let statusText = '';
+        let statusIcon = '';
+
+        if (row.status === 'paid') {
+          statusText = 'Paid';
+          statusIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>';
+        } else if (row.status === 'partial') {
+          statusText = 'Partially paid';
+          statusIcon = '';
+        } else {
+          statusText = 'Upcoming';
+          statusIcon = '';
+        }
+
+        statusHTML = `<div class="payment-row-status ${statusClass}">${statusIcon}${statusText}</div>`;
+
+        html += `
+          <div class="payment-row">
+            <div class="payment-row-left">
+              <div class="payment-row-label">${row.label}</div>
+              <div class="payment-row-date">${row.dateLabel}</div>
+            </div>
+            <div class="payment-row-right">
+              <div class="payment-row-amount">${row.amountTotal}</div>
+              ${statusHTML}
+            </div>
+          </div>
+        `;
+      }
+
+      summaryDiv.innerHTML = html;
+      card.classList.remove('hidden');
     }
 
     function showNextPaymentCard() {
