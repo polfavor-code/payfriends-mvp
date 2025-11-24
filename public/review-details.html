@@ -4646,38 +4646,42 @@
           html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Balance</div>';
           html += '</div>';
 
+          // Detect pending agreements with loan start on acceptance
+          // Be explicit about the conditions to make the logic crystal clear
+          const isPendingStartOnAcceptance =
+            (agreement.status === 'pending_review' ||
+             agreement.status === 'pending_acceptance' ||
+             agreement.status === 'pending') &&
+            (agreement.money_sent_date === 'on-acceptance' ||
+             agreement.loanStartType === 'UPON_AGREEMENT_ACCEPTANCE' ||
+             agreement.loan_start_type === 'UPON_AGREEMENT_ACCEPTANCE');
+
+          // Debug log once
+          console.log('[Schedule Table] Rendering decision:', {
+            status: agreement.status,
+            money_sent_date: agreement.money_sent_date,
+            loanStartType: agreement.loanStartType,
+            isPendingStartOnAcceptance
+          });
+
           // Data rows - use dates from the schedule (from buildRepaymentSchedule)
           for (let i = 0; i < installmentCount; i++) {
             const row = schedule[i];
             if (row) {
-              // Check if we should show relative dates for pending agreements with loan start on acceptance
-              const isOnAcceptanceLoan = isLoanStartUponAcceptance(agreement);
-              const isPending = agreement.status !== 'active';
-
-              // Debug logging for schedule rendering
-              if (i === 0) {
-                console.log('[Schedule Rendering] First row debug:', {
-                  isOnAcceptanceLoan,
-                  isPending,
-                  status: agreement.status,
-                  willShowRelative: isOnAcceptanceLoan && isPending,
-                  rowDateISO: row.dateISO
-                });
-              }
-
               let dateStr;
-              if (isOnAcceptanceLoan && isPending) {
-                // Show relative label for pending agreements with loan start on acceptance
-                dateStr = getRelativeInstallmentLabel(agreement, i);
-                if (i === 0) {
-                  console.log('[Schedule Rendering] Using relative label:', dateStr);
-                }
+
+              if (isPendingStartOnAcceptance) {
+                // Agreement is pending and loan starts "upon acceptance"
+                // We don't know real calendar dates yet, so show relative labels
+                // Assume: first payment 1 month after start, then monthly
+                const monthNumber = i + 1;
+                dateStr = monthNumber === 1
+                  ? "1 month after loan start"
+                  : `${monthNumber} months after loan start`;
               } else {
-                // Use formatFinancialDate to avoid timezone issues with due dates
+                // For active agreements, fixed start dates, or settled agreements:
+                // Show actual calendar dates
                 dateStr = formatFinancialDate(row.dateISO);
-                if (i === 0) {
-                  console.log('[Schedule Rendering] Using concrete date:', dateStr);
-                }
               }
 
               // Highlight current period
