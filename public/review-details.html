@@ -170,8 +170,8 @@
     .user-avatar-initials.color-6{background:#3b82f6}
     .user-avatar-initials.color-7{background:#14b8a6}
     /* Override avatar margins inside summary section to allow overlap */
-    #summary-section #summary-avatar-lender > *,
-    #summary-section #summary-avatar-borrower > * {margin:0 !important}
+    #summary-section #summary-avatar-lender *,
+    #summary-section #summary-avatar-borrower * {margin:0 !important}
     .counterparty-cell{display:flex; align-items:center; gap:10px}
     .due-date-overdue{color:#f87171}
     .due-date-upcoming{color:var(--muted)}
@@ -308,8 +308,8 @@
     <div id="summary-section" class="hidden" style="background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px; padding:20px; margin:20px 0; display:flex; align-items:center; gap:16px">
       <!-- Both avatars: Lender (left) + Borrower (right) with slight overlap -->
       <div style="flex-shrink:0; position:relative; display:flex; align-items:center">
-        <div id="summary-avatar-lender" style="position:relative; z-index:0"></div>
-        <div id="summary-avatar-borrower" style="position:relative; margin-left:-16px; z-index:1"></div>
+        <div id="summary-avatar-lender" style="position:relative; z-index:10"></div>
+        <div id="summary-avatar-borrower" style="position:relative; margin-left:-16px; z-index:20"></div>
       </div>
       <div style="flex:1">
         <p id="agreement-summary-line1" style="margin:0 0 12px 0; font-size:15px; line-height:1.6; color:var(--accent)"></p>
@@ -418,20 +418,24 @@
       <!-- Details section -->
       <div style="margin:0 0 16px 0">
         <div class="detail-row">
-          <span class="detail-label">Lender name</span>
-          <span class="detail-value" id="lender-name"></span>
+          <span class="detail-label">Lender</span>
+          <span class="detail-value">
+            <span id="lender-name"></span>
+            <span id="lender-profile-link-inline" style="display:none">
+              <span style="color:var(--muted)"> - </span>
+              <a href="#" id="lender-profile-link-inline-a" style="color:var(--accent); text-decoration:none; font-size:inherit">View profile</a>
+            </span>
+          </span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">Borrower name</span>
-          <span class="detail-value" id="borrower-name"></span>
-        </div>
-        <div class="detail-row" id="borrower-email-row" style="display:none">
-          <span class="detail-label">Borrower email</span>
-          <span class="detail-value" id="borrower-email-display"></span>
-        </div>
-        <div class="detail-row" id="borrower-phone-row" style="display:none">
-          <span class="detail-label">Borrower phone</span>
-          <span class="detail-value" id="borrower-phone-display"></span>
+          <span class="detail-label">Borrower</span>
+          <span class="detail-value">
+            <span id="borrower-name"></span>
+            <span id="borrower-profile-link-inline" style="display:none">
+              <span style="color:var(--muted)"> - </span>
+              <a href="#" id="borrower-profile-link-inline-a" style="color:var(--accent); text-decoration:none; font-size:inherit">View profile</a>
+            </span>
+          </span>
         </div>
         <div class="detail-row" id="description-row">
           <span class="detail-label">Description</span>
@@ -950,6 +954,14 @@
           return;
         }
         agreement = await res.json();
+
+        console.log('[Agreement Data] Received agreement:', {
+          id: agreement.id,
+          lender_public_id: agreement.lender_public_id,
+          borrower_public_id: agreement.borrower_public_id,
+          lender_user_id: agreement.lender_user_id,
+          borrower_user_id: agreement.borrower_user_id
+        });
 
         if (!agreement || typeof agreement !== 'object') {
           showError('Invalid agreement data received.');
@@ -1987,6 +1999,12 @@
         const lenderColorClass = getAvatarColor(lenderName);
         lenderAvatarHtml = `<div class="user-avatar size-xl"><div class="user-avatar-initials ${lenderColorClass}">${lenderInitials}</div></div>`;
       }
+
+      // Make lender avatar clickable if borrower is viewing
+      if (!isLender && agreement.lender_public_id) {
+        console.log('[Avatar Link] Borrower viewing - lender_public_id:', agreement.lender_public_id);
+        lenderAvatarHtml = `<a href="/friends/${agreement.lender_public_id}" style="display:block; text-decoration:none; cursor:pointer">${lenderAvatarHtml}</a>`;
+      }
       document.getElementById('summary-avatar-lender').innerHTML = lenderAvatarHtml;
 
       // Create borrower avatar (always right)
@@ -1997,6 +2015,14 @@
         const borrowerInitials = getInitials(borrowerName);
         const borrowerColorClass = getAvatarColor(borrowerName);
         borrowerAvatarHtml = `<div class="user-avatar size-xl"><div class="user-avatar-initials ${borrowerColorClass}">${borrowerInitials}</div></div>`;
+      }
+
+      // Make borrower avatar clickable if lender is viewing
+      if (isLender && agreement.borrower_public_id) {
+        console.log('[Avatar Link] Lender viewing - borrower_public_id:', agreement.borrower_public_id);
+        borrowerAvatarHtml = `<a href="/friends/${agreement.borrower_public_id}" style="display:block; text-decoration:none; cursor:pointer">${borrowerAvatarHtml}</a>`;
+      } else if (isLender) {
+        console.log('[Avatar Link] Lender viewing but borrower_public_id is missing!');
       }
       document.getElementById('summary-avatar-borrower').innerHTML = borrowerAvatarHtml;
 
@@ -2010,20 +2036,20 @@
       // 2. Borrower name
       document.getElementById('borrower-name').textContent = borrowerName;
 
-      // 2a. Borrower email (LENDER VIEW ONLY)
-      if (isLender && agreement.borrower_email) {
-        document.getElementById('borrower-email-display').textContent = agreement.borrower_email;
-        document.getElementById('borrower-email-row').style.display = 'flex';
+      // 2a. Borrower profile link (LENDER VIEW ONLY)
+      if (isLender && agreement.borrower_public_id) {
+        document.getElementById('borrower-profile-link-inline-a').href = `/friends/${agreement.borrower_public_id}`;
+        document.getElementById('borrower-profile-link-inline').style.display = 'inline';
       } else {
-        document.getElementById('borrower-email-row').style.display = 'none';
+        document.getElementById('borrower-profile-link-inline').style.display = 'none';
       }
 
-      // 2b. Borrower phone (LENDER VIEW ONLY)
-      if (isLender && agreement.borrower_phone) {
-        document.getElementById('borrower-phone-display').textContent = agreement.borrower_phone;
-        document.getElementById('borrower-phone-row').style.display = 'flex';
+      // 2b. Lender profile link (BORROWER VIEW ONLY)
+      if (!isLender && agreement.lender_public_id) {
+        document.getElementById('lender-profile-link-inline-a').href = `/friends/${agreement.lender_public_id}`;
+        document.getElementById('lender-profile-link-inline').style.display = 'inline';
       } else {
-        document.getElementById('borrower-phone-row').style.display = 'none';
+        document.getElementById('lender-profile-link-inline').style.display = 'none';
       }
 
       // 3. Description (show if available)

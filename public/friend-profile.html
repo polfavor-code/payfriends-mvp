@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>PayFriends — Friend Profile</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- App-wide styles -->
+  <link rel="stylesheet" href="/css/app.css" />
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
+  <!-- Centralized currency formatters -->
+  <script src="/js/formatters.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:1200px; margin:0 auto; padding:32px 16px;}
+    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
+    h1{margin:0 0 8px 0; font-size:28px; font-weight:600}
+    h2{margin:0 0 16px 0; font-size:20px; font-weight:600}
+    .back-link{display:inline-flex; align-items:center; gap:8px; color:var(--accent); text-decoration:none; margin-bottom:24px; font-size:14px; transition:all 0.2s ease}
+    .back-link:hover{opacity:0.8}
+    .profile-header{display:flex; align-items:center; gap:16px; margin-bottom:24px; padding-bottom:24px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .profile-avatar{width:80px; height:80px; border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center}
+    .profile-avatar img{width:100%; height:100%; object-fit:cover}
+    .profile-avatar-initials{width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:32px; text-transform:uppercase}
+    .profile-avatar-initials.color-1{background:#6366f1}
+    .profile-avatar-initials.color-2{background:#8b5cf6}
+    .profile-avatar-initials.color-3{background:#ec4899}
+    .profile-avatar-initials.color-4{background:#f59e0b}
+    .profile-avatar-initials.color-5{background:#10b981}
+    .profile-avatar-initials.color-6{background:#3b82f6}
+    .profile-avatar-initials.color-7{background:#14b8a6}
+    .profile-info{flex:1}
+    .profile-name{font-size:24px; font-weight:600; margin-bottom:8px}
+    .profile-timezone{font-size:14px; color:var(--muted); display:flex; align-items:center; gap:6px}
+    .info-box{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:16px}
+    .info-box-title{font-size:16px; font-weight:600; margin-bottom:12px; color:var(--text)}
+    .info-row{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05)}
+    .info-row:last-child{border-bottom:none}
+    .info-label{color:var(--muted); font-size:14px}
+    .info-value{color:var(--text); font-size:14px; font-weight:500}
+    .communication-box{background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-radius:12px; padding:20px; margin-bottom:16px}
+    .communication-box-title{font-size:16px; font-weight:600; margin-bottom:12px; color:var(--text)}
+    .communication-box-text{color:var(--text); font-size:14px; line-height:1.6}
+    .agreements-section{margin-top:24px}
+    .agreement-card{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; margin-bottom:12px; transition:all 0.2s ease}
+    .agreement-card:hover{background:rgba(255,255,255,0.04); border-color:rgba(61,220,151,0.2)}
+    .agreement-header{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px}
+    .agreement-role{display:inline-block; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600}
+    .agreement-role.lender{background:rgba(61,123,220,0.15); color:#6b9cff; border:1px solid rgba(61,123,220,0.3)}
+    .agreement-role.borrower{background:rgba(230,126,34,0.15); color:#f39c63; border:1px solid rgba(230,126,34,0.3)}
+    .agreement-status{display:inline-block; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600}
+    .agreement-status.active{background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3)}
+    .agreement-status.settled{background:rgba(156,163,175,0.15); color:#9ca3af; border:1px solid rgba(156,163,175,0.3)}
+    .agreement-status.pending{background:rgba(249,115,22,0.15); color:#f97316; border:1px solid rgba(249,115,22,0.3)}
+    .agreement-description{font-size:15px; font-weight:600; color:var(--text); margin-bottom:6px}
+    .agreement-amount{font-size:14px; color:var(--muted); margin-bottom:8px}
+    .agreement-amount-value{color:var(--accent); font-weight:600}
+    .agreement-actions{margin-top:12px}
+    .btn-open-agreement{padding:8px 16px; border-radius:8px; border:1px solid rgba(61,220,151,0.3); background:transparent; color:var(--accent); font-weight:600; cursor:pointer; font-size:13px; transition:all 0.2s ease}
+    .btn-open-agreement:hover{background:rgba(61,220,151,0.1); border-color:var(--accent)}
+    .loading{text-align:center; padding:32px; color:var(--muted)}
+    .error{text-align:center; padding:32px; color:#ff6b6b}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; gap:12px; align-items:center}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
+    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
+    .top-header-user-info{color:var(--text); font-size:14px; line-height:1; white-space:nowrap; display:inline-flex; align-items:center; height:40px}
+    .top-header-actions{display:flex; gap:12px; align-items:center}
+    .inbox-count{color:var(--accent); font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header will be loaded dynamically by header.js -->
+
+    <a href="/friends.html" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+      </svg>
+      Back to Friends
+    </a>
+
+    <div id="loading" class="loading">Loading friend profile...</div>
+    <div id="error" class="error" style="display:none"></div>
+
+    <div id="profile-container" style="display:none">
+      <!-- Main profile card with big avatar -->
+      <div style="margin-top:24px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); background:rgba(21,26,33,0.6); padding:24px; display:flex; align-items:center; gap:20px">
+        <div id="friend-avatar" style="flex-shrink:0"></div>
+        <div style="flex:1">
+          <div id="friend-name" style="font-size:24px; font-weight:600; margin-bottom:8px"></div>
+          <div id="friend-role" style="display:inline-block; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; margin-bottom:12px"></div>
+
+          <!-- Timezone, Email, Phone with consistent spacing -->
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div id="friend-timezone" style="font-size:14px; color:var(--muted)"></div>
+
+            <!-- Contact details (lender only) -->
+            <div id="contact-details" style="display:none">
+              <div style="font-size:14px; color:var(--muted)">
+                <span style="font-weight:500; color:rgba(255,255,255,0.7)">Email:</span> <span id="friend-email"></span>
+              </div>
+              <div style="font-size:14px; color:var(--muted); margin-top:6px">
+                <span style="font-weight:500; color:rgba(255,255,255,0.7)">Phone:</span> <span id="friend-phone"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Communication box (borrower only) -->
+      <div id="communication-box" style="display:none; margin-top:16px">
+        <div class="communication-box">
+          <div class="communication-box-title">Contact about this loan</div>
+          <div class="communication-box-text">
+            Please keep loan communications inside PayFriends.<br>
+            You both agreed to use this space so things stay organised, fair, and comfortable for the lender.
+          </div>
+        </div>
+      </div>
+
+      <!-- Agreements section -->
+      <div class="agreements-section">
+        <h2>Agreements with this friend</h2>
+        <div id="agreements-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize header
+    if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
+      window.PayFriendsHeader.initialize({ hasActivitySection: false });
+    }
+
+    // Get friend public ID from URL path
+    const pathParts = window.location.pathname.split('/');
+    const friendPublicId = pathParts[pathParts.length - 1];
+
+    if (!friendPublicId || friendPublicId === 'friend-profile.html') {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').textContent = 'No friend ID provided.';
+      document.getElementById('error').style.display = 'block';
+    }
+
+    // Utility: Get avatar initials
+    function getAvatarInitials(name) {
+      if (!name) return '';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    // Utility: Get avatar color class
+    function getAvatarColor(name) {
+      if (!name) return 'color-1';
+      const colors = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5', 'color-6', 'color-7'];
+      const charCode = name.charCodeAt(0) || 0;
+      return colors[charCode % colors.length];
+    }
+
+    // Utility: Format international phone number for better readability
+    function formatInternationalPhone(raw) {
+      if (!raw) return '';
+      // If it already contains spaces, just return as-is
+      if (/\s/.test(raw)) return raw;
+
+      // Basic pattern: +[1-3 digit country code][rest]
+      const match = raw.match(/^\+(\d{1,3})(\d{3,})$/);
+      if (!match) return raw;
+
+      const country = match[1];
+      const rest = match[2];
+
+      // Group remaining digits in blocks of 3: 123456789 -> 123 456 789
+      const grouped = rest.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
+      return `+${country} ${grouped}`;
+    }
+
+    // Utility: Get local time for timezone
+    function getLocalTime(timezone) {
+      if (!timezone) return '';
+      try {
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+          timeZone: timezone,
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+        return formatter.format(new Date());
+      } catch (e) {
+        console.error('Error formatting time for timezone:', timezone, e);
+        return '';
+      }
+    }
+
+    // Utility: Get country flag emoji from timezone (simple heuristic)
+    function getCountryFlag(timezone) {
+      if (!timezone) return '';
+
+      // Simple mapping of common timezones to country codes
+      const timezoneToCountry = {
+        'Europe/Amsterdam': '🇳🇱',
+        'Europe/London': '🇬🇧',
+        'Europe/Paris': '🇫🇷',
+        'Europe/Berlin': '🇩🇪',
+        'America/New_York': '🇺🇸',
+        'America/Los_Angeles': '🇺🇸',
+        'America/Chicago': '🇺🇸',
+        'Asia/Tokyo': '🇯🇵',
+        'Asia/Shanghai': '🇨🇳',
+        'Australia/Sydney': '🇦🇺'
+      };
+
+      return timezoneToCountry[timezone] || '';
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHTML(str) {
+      if (str == null || str === '') return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        .replace(/\//g, '&#x2F;');
+    }
+
+    // Render friend profile
+    function renderProfile(data) {
+      // Avatar - use profile picture if available, otherwise show initials (same logic as friends overview)
+      const avatarEl = document.getElementById('friend-avatar');
+      if (data.avatarUrl && data.friendId) {
+        // Friend has uploaded a profile picture - show it
+        avatarEl.innerHTML = `<img src="/api/profile/picture/${data.friendId}" alt="${escapeHTML(data.name)}" style="width:110px; height:110px; border-radius:50%; object-fit:cover" />`;
+      } else {
+        // No profile picture - show initials with color
+        const initials = getAvatarInitials(data.name);
+        const colorClass = getAvatarColor(data.name);
+        avatarEl.innerHTML = `<div style="width:110px; height:110px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:36px; text-transform:uppercase" class="${colorClass}">${initials}</div>`;
+      }
+
+      // Name
+      document.getElementById('friend-name').textContent = data.name;
+
+      // Role badge
+      const roleEl = document.getElementById('friend-role');
+      // Determine role from agreements (are they borrower or lender from my perspective?)
+      let role = 'Friend';
+      if (data.agreementsWithThisFriend && data.agreementsWithThisFriend.length > 0) {
+        // Check the first agreement to determine primary role
+        const firstAgreement = data.agreementsWithThisFriend[0];
+        if (firstAgreement.roleForCurrentUser === 'lender') {
+          role = 'Borrower'; // I'm the lender, so they're the borrower
+          roleEl.style.background = 'rgba(230,126,34,0.15)';
+          roleEl.style.color = '#f39c63';
+          roleEl.style.border = '1px solid rgba(230,126,34,0.3)';
+        } else {
+          role = 'Lender'; // I'm the borrower, so they're the lender
+          roleEl.style.background = 'rgba(61,123,220,0.15)';
+          roleEl.style.color = '#6b9cff';
+          roleEl.style.border = '1px solid rgba(61,123,220,0.3)';
+        }
+      }
+      roleEl.textContent = role;
+
+      // Timezone and local time
+      const timezoneEl = document.getElementById('friend-timezone');
+      if (data.timezone) {
+        const flag = getCountryFlag(data.timezone);
+        const localTime = getLocalTime(data.timezone);
+        timezoneEl.innerHTML = `${flag ? flag + ' ' : ''}${escapeHTML(data.timezone)} • Local time: ${localTime}`;
+
+        // Update local time every minute
+        setInterval(() => {
+          const newLocalTime = getLocalTime(data.timezone);
+          timezoneEl.innerHTML = `${flag ? flag + ' ' : ''}${escapeHTML(data.timezone)} • Local time: ${newLocalTime}`;
+        }, 60000);
+      } else {
+        timezoneEl.textContent = 'Timezone not set';
+      }
+
+      // Contact details or communication box
+      if (data.friendCurrentEmail || data.friendCurrentPhone || data.friendAgreementPhone) {
+        // User is lender - show contact details
+        document.getElementById('contact-details').style.display = 'block';
+        document.getElementById('friend-email').textContent = data.friendCurrentEmail || 'No email provided yet';
+
+        // Phone fallback logic:
+        // 1. Prefer verified phone from user profile (friendCurrentPhone)
+        // 2. Fall back to phone from agreement (friendAgreementPhone - entered by lender during wizard)
+        // 3. Show "No phone provided yet" if neither exists
+        let phoneDisplay = '';
+        if (data.friendCurrentPhone) {
+          phoneDisplay = formatInternationalPhone(data.friendCurrentPhone); // Verified phone from borrower's account
+        } else if (data.friendAgreementPhone) {
+          phoneDisplay = `${formatInternationalPhone(data.friendAgreementPhone)} <span style="color:rgba(255,255,255,0.4)">(provided by you)</span>`;
+        } else {
+          phoneDisplay = 'No phone provided yet';
+        }
+        document.getElementById('friend-phone').innerHTML = phoneDisplay;
+      } else {
+        // User is borrower - show communication box
+        document.getElementById('communication-box').style.display = 'block';
+      }
+
+      // Agreements
+      renderAgreements(data.agreementsWithThisFriend, data.name);
+
+      // Show profile container
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('profile-container').style.display = 'block';
+    }
+
+    // Render agreements
+    function renderAgreements(agreements, friendName) {
+      const agreementsList = document.getElementById('agreements-list');
+      agreementsList.innerHTML = '';
+
+      if (agreements.length === 0) {
+        agreementsList.innerHTML = '<p style="color:var(--muted); text-align:center; padding:32px">No agreements with this friend yet.</p>';
+        return;
+      }
+
+      // Extract first name from friend's name
+      const firstName = friendName ? friendName.trim().split(/\s+/)[0] : 'them';
+
+      agreements.forEach(agreement => {
+        const card = document.createElement('div');
+        card.className = 'agreement-card';
+
+        const roleClass = agreement.roleForCurrentUser === 'lender' ? 'lender' : 'borrower';
+        const roleText = agreement.roleForCurrentUser === 'lender' ? `You lent ${firstName}` : 'You borrowed';
+
+        const statusClass = agreement.status || 'pending';
+        const statusText = agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1);
+
+        const amountText = formatCurrency2(agreement.amountCents);
+        const totalRepayText = formatCurrency2(agreement.totalRepayAmountCents);
+
+        // Route to /review if pending (borrower hasn't accepted yet), otherwise /manage
+        // Status 'pending' means awaiting borrower acceptance
+        const agreementUrl = agreement.status === 'pending'
+          ? `/agreements/${agreement.agreementId}/review`
+          : `/agreements/${agreement.agreementId}/manage`;
+
+        card.innerHTML = `
+          <div class="agreement-header">
+            <span class="agreement-role ${roleClass}">${roleText}</span>
+            <span class="agreement-status ${statusClass}">${statusText}</span>
+          </div>
+          <div class="agreement-description">${escapeHTML(agreement.description)}</div>
+          <div class="agreement-amount">
+            Amount: <span class="agreement-amount-value">${amountText}</span>
+            ${agreement.totalRepayAmountCents !== agreement.amountCents ? ` • Total to repay: <span class="agreement-amount-value">${totalRepayText}</span>` : ''}
+          </div>
+          <div class="agreement-actions">
+            <button class="btn-open-agreement" onclick="window.location.href='${agreementUrl}'">Open agreement</button>
+          </div>
+        `;
+
+        agreementsList.appendChild(card);
+      });
+    }
+
+    // Load friend profile
+    async function loadFriendProfile() {
+      if (!friendPublicId) return;
+
+      console.log('[Friend Profile Load] Fetching profile for public_id:', friendPublicId);
+
+      try {
+        const response = await fetch(`/api/friends/${friendPublicId}`);
+        console.log('[Friend Profile Load] Response status:', response.status);
+
+        if (!response.ok) {
+          let errorData = {};
+          try {
+            errorData = await response.json();
+            console.log('[Friend Profile Load] Error response:', errorData);
+          } catch (e) {
+            console.log('[Friend Profile Load] Could not parse error response');
+          }
+
+          if (response.status === 404) {
+            throw new Error(errorData.error || 'Friend not found or no longer accessible.');
+          }
+          if (response.status === 401) {
+            // Redirect to login if not authenticated
+            window.location.href = '/';
+            return;
+          }
+          if (response.status >= 500) {
+            throw new Error('Server error. Please try again later.');
+          }
+          throw new Error(errorData.error || 'Failed to fetch friend profile. Please try again.');
+        }
+
+        const data = await response.json();
+        console.log('[Friend Profile Load] Success - received data for:', data.name);
+        renderProfile(data);
+      } catch (error) {
+        console.error('[Friend Profile Load] Error:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').textContent = error.message;
+        document.getElementById('error').style.display = 'block';
+      }
+    }
+
+    // Initialize on page load
+    loadFriendProfile();
+  </script>
+</body>
+</html>

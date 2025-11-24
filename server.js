@@ -43,7 +43,8 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     created_at TEXT NOT NULL,
-    full_name TEXT
+    full_name TEXT,
+    public_id TEXT UNIQUE
   );
 
   CREATE TABLE IF NOT EXISTS sessions (
@@ -195,6 +196,29 @@ try {
   // Column already exists, ignore
 }
 
+// Add public_id column to users if it doesn't exist (for friend profile URLs)
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN public_id TEXT UNIQUE;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Generate public IDs for existing users that don't have one OR have invalid ones
+// A valid public_id should be 32 characters (16 bytes hex = 32 chars)
+const usersWithoutPublicId = db.prepare(`
+  SELECT id, public_id FROM users
+  WHERE public_id IS NULL OR LENGTH(public_id) != 32
+`).all();
+if (usersWithoutPublicId.length > 0) {
+  console.log(`[Startup] Generating public_ids for ${usersWithoutPublicId.length} users`);
+  const updateStmt = db.prepare('UPDATE users SET public_id = ? WHERE id = ?');
+  for (const user of usersWithoutPublicId) {
+    const publicId = crypto.randomBytes(16).toString('hex');
+    console.log(`[Startup] User ${user.id}: old public_id="${user.public_id}" -> new public_id="${publicId}"`);
+    updateStmt.run(publicId, user.id);
+  }
+}
+
 // Add installment and interest fields to agreements if they don't exist (for existing databases)
 try {
   db.exec(`ALTER TABLE agreements ADD COLUMN installment_count INTEGER;`);
@@ -295,6 +319,11 @@ try {
 }
 try {
   db.exec(`ALTER TABLE agreements ADD COLUMN fairness_accepted INTEGER DEFAULT 0;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN borrower_phone TEXT;`);
 } catch (e) {
   // Column already exists, ignore
 }
@@ -732,12 +761,13 @@ app.post('/auth/signup', async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
     const createdAt = new Date().toISOString();
+    const publicId = crypto.randomBytes(16).toString('hex');
 
     // Create user
     const result = db.prepare(`
-      INSERT INTO users (email, password_hash, created_at, full_name, phone_number, timezone)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(email, passwordHash, createdAt, fullName || null, phoneNumber || null, timezone || null);
+      INSERT INTO users (email, password_hash, created_at, full_name, phone_number, timezone, public_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(email, passwordHash, createdAt, fullName || null, phoneNumber || null, timezone || null, publicId);
 
     const userId = result.lastInsertRowid;
 
@@ -1141,27 +1171,24 @@ app.post('/api/agreements', requireAuth, (req, res) => {
   const finalLenderName = req.user.full_name || lenderName || req.user.email;
 
   try {
-    // Update user's phone number if provided
-    if (phoneNumber) {
-      // Basic phone validation: must contain at least some digits
-      if (!/\d/.test(phoneNumber)) {
-        return res.status(400).json({ error: 'Phone number must contain at least one digit' });
-      }
-      db.prepare('UPDATE users SET phone_number = ? WHERE id = ?')
-        .run(phoneNumber, req.user.id);
+    // Note: phoneNumber parameter is the BORROWER's phone (entered by lender in wizard)
+    // We store it in the agreements table, not the users table
+    // Validate borrower phone if provided
+    if (phoneNumber && !/\d/.test(phoneNumber)) {
+      return res.status(400).json({ error: 'Phone number must contain at least one digit' });
     }
 
     // Create agreement
     const agreementStmt = db.prepare(`
       INSERT INTO agreements (
-        lender_user_id, lender_name, borrower_email, friend_first_name,
+        lender_user_id, lender_name, borrower_email, borrower_phone, friend_first_name,
         direction, repayment_type, amount_cents, money_sent_date, due_date, created_at, status, description,
         plan_length, plan_unit, installment_count, installment_amount, first_payment_date, final_due_date,
         interest_rate, total_interest, total_repay_amount,
         payment_preference_method, payment_methods_json, payment_other_description, reminder_mode, reminder_offsets,
         proof_required, debt_collection_clause, payment_frequency, one_time_due_option
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     // Normalize financial dates to YYYY-MM-DD format (pure dates, no time component)
@@ -1174,6 +1201,7 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       req.user.id,
       finalLenderName,
       borrowerEmail,
+      phoneNumber || null, // Borrower's phone entered by lender
       friendFirstName || null,
       direction || 'lend',
       repaymentType || 'one_time',
@@ -1668,6 +1696,259 @@ app.post('/api/agreements/:id/payment-methods/:method/decline-removal', requireA
   }
 });
 
+// ========================
+// FRIENDS ENDPOINTS
+// ========================
+
+// Get list of friends for the current user
+app.get('/api/friends', requireAuth, (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get all unique users this person has agreements with
+    const friendsAsLender = db.prepare(`
+      SELECT DISTINCT
+        u.id as friend_id,
+        u.public_id as friend_public_id,
+        u.full_name,
+        u.email,
+        u.profile_picture
+      FROM agreements a
+      JOIN users u ON a.borrower_user_id = u.id
+      WHERE a.lender_user_id = ? AND a.borrower_user_id IS NOT NULL
+    `).all(userId);
+
+    const friendsAsBorrower = db.prepare(`
+      SELECT DISTINCT
+        u.id as friend_id,
+        u.public_id as friend_public_id,
+        u.full_name,
+        u.email,
+        u.profile_picture
+      FROM agreements a
+      JOIN users u ON a.lender_user_id = u.id
+      WHERE a.borrower_user_id = ? AND a.lender_user_id IS NOT NULL
+    `).all(userId);
+
+    // Combine and deduplicate friends
+    const friendMap = new Map();
+
+    for (const friend of friendsAsLender) {
+      if (!friendMap.has(friend.friend_id)) {
+        friendMap.set(friend.friend_id, {
+          friendId: friend.friend_id, // Internal use only
+          friendPublicId: friend.friend_public_id, // For URLs
+          name: friend.full_name || friend.email,
+          avatarUrl: friend.profile_picture,
+          isLender: false,
+          isBorrower: false,
+          activeAgreementsCount: 0,
+          settledAgreementsCount: 0
+        });
+      }
+      friendMap.get(friend.friend_id).isLender = true;
+    }
+
+    for (const friend of friendsAsBorrower) {
+      if (!friendMap.has(friend.friend_id)) {
+        friendMap.set(friend.friend_id, {
+          friendId: friend.friend_id, // Internal use only
+          friendPublicId: friend.friend_public_id, // For URLs
+          name: friend.full_name || friend.email,
+          avatarUrl: friend.profile_picture,
+          isLender: false,
+          isBorrower: false,
+          activeAgreementsCount: 0,
+          settledAgreementsCount: 0
+        });
+      }
+      friendMap.get(friend.friend_id).isBorrower = true;
+    }
+
+    // Get agreement counts for each friend
+    for (const [friendId, friendData] of friendMap.entries()) {
+      const counts = db.prepare(`
+        SELECT
+          SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_count,
+          SUM(CASE WHEN status = 'settled' THEN 1 ELSE 0 END) as settled_count
+        FROM agreements
+        WHERE (lender_user_id = ? AND borrower_user_id = ?)
+           OR (lender_user_id = ? AND borrower_user_id = ?)
+      `).get(userId, friendId, friendId, userId);
+
+      friendData.activeAgreementsCount = counts.active_count || 0;
+      friendData.settledAgreementsCount = counts.settled_count || 0;
+
+      // Determine role summary
+      if (friendData.isLender && friendData.isBorrower) {
+        friendData.roleSummary = 'both';
+      } else if (friendData.isLender) {
+        friendData.roleSummary = 'you lent';
+      } else {
+        friendData.roleSummary = 'you borrowed';
+      }
+
+      // Clean up temporary flags
+      delete friendData.isLender;
+      delete friendData.isBorrower;
+    }
+
+    const friends = Array.from(friendMap.values());
+    res.json({ friends });
+
+  } catch (err) {
+    console.error('Error fetching friends:', err);
+    res.status(500).json({ error: 'Server error fetching friends.' });
+  }
+});
+
+// Get profile for a specific friend
+app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const friendPublicId = req.params.friendPublicId;
+
+    console.log('[Friend Profile] ========== START ==========');
+    console.log('[Friend Profile] Request from userId:', userId, 'for friendPublicId:', friendPublicId);
+    console.log('[Friend Profile] friendPublicId length:', friendPublicId ? friendPublicId.length : 'null');
+
+    if (!friendPublicId || typeof friendPublicId !== 'string') {
+      console.log('[Friend Profile] Invalid friend ID - empty or wrong type');
+      return res.status(400).json({ error: 'Invalid friend ID.' });
+    }
+
+    // Validate public_id format (should be 32-character hex string)
+    if (friendPublicId.length !== 32 || !/^[a-f0-9]{32}$/.test(friendPublicId)) {
+      console.log('[Friend Profile] Invalid friend ID format - expected 32 hex chars, got:', friendPublicId);
+      return res.status(400).json({ error: 'Friend not found or no longer accessible.' });
+    }
+
+    // Look up friend by public ID
+    const friend = db.prepare(`
+      SELECT id, public_id, full_name, email, phone_number, timezone, profile_picture
+      FROM users
+      WHERE public_id = ?
+    `).get(friendPublicId);
+
+    if (!friend) {
+      console.log('[Friend Profile] Friend NOT found for public_id:', friendPublicId);
+      console.log('[Friend Profile] Checking if any user has this public_id...');
+      const anyUser = db.prepare(`SELECT COUNT(*) as count FROM users WHERE public_id = ?`).get(friendPublicId);
+      console.log('[Friend Profile] Users with this public_id:', anyUser.count);
+      console.log('[Friend Profile] Checking if public_id is NULL for any users...');
+      const nullCount = db.prepare(`SELECT COUNT(*) as count FROM users WHERE public_id IS NULL`).get();
+      console.log('[Friend Profile] Users with NULL public_id:', nullCount.count);
+      return res.status(404).json({ error: 'Friend not found or no longer accessible.' });
+    }
+
+    console.log('[Friend Profile] Found friend - id:', friend.id, 'name:', friend.full_name, 'public_id:', friend.public_id);
+
+    const friendId = friend.id;
+
+    // SECURITY: Check if current user actually has agreements with this friend
+    const hasRelationship = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM agreements
+      WHERE (lender_user_id = ? AND borrower_user_id = ?)
+         OR (lender_user_id = ? AND borrower_user_id = ?)
+    `).get(userId, friendId, friendId, userId);
+
+    console.log('[Friend Profile] Relationship check - agreements count:', hasRelationship.count);
+
+    if (hasRelationship.count === 0) {
+      // User is trying to access someone they have no agreements with
+      console.log('[Friend Profile] No relationship found between userId:', userId, 'and friendId:', friendId);
+      return res.status(404).json({ error: 'Friend not found or no longer accessible.' });
+    }
+
+    // Check if current user is lender in any agreement with this friend
+    const isLenderInAny = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM agreements
+      WHERE lender_user_id = ? AND borrower_user_id = ?
+    `).get(userId, friendId);
+
+    const canSeeContact = isLenderInAny.count > 0;
+
+    // Get borrower phone from agreement if lender is viewing
+    // This is the phone the lender entered during agreement creation
+    let agreementBorrowerPhone = null;
+    if (canSeeContact) {
+      const agreementWithPhone = db.prepare(`
+        SELECT borrower_phone
+        FROM agreements
+        WHERE lender_user_id = ? AND borrower_user_id = ? AND borrower_phone IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+      `).get(userId, friendId);
+
+      if (agreementWithPhone && agreementWithPhone.borrower_phone) {
+        agreementBorrowerPhone = agreementWithPhone.borrower_phone;
+      }
+    }
+
+    // Get all agreements with this friend
+    const agreements = db.prepare(`
+      SELECT
+        id,
+        lender_user_id,
+        borrower_user_id,
+        amount_cents,
+        status,
+        description,
+        created_at,
+        repayment_type,
+        total_repay_amount
+      FROM agreements
+      WHERE (lender_user_id = ? AND borrower_user_id = ?)
+         OR (lender_user_id = ? AND borrower_user_id = ?)
+      ORDER BY created_at DESC
+    `).all(userId, friendId, friendId, userId);
+
+    // Format agreements for response
+    console.log('[Friend Profile] Found', agreements.length, 'agreements');
+    const agreementsWithThisFriend = agreements.map(agr => {
+      console.log('[Friend Profile] Processing agreement', agr.id, '- lender:', agr.lender_user_id, 'borrower:', agr.borrower_user_id);
+      return {
+        agreementId: agr.id,
+        roleForCurrentUser: agr.lender_user_id === userId ? 'lender' : 'borrower',
+        amountCents: agr.amount_cents || 0,
+        totalRepayAmountCents: agr.total_repay_amount ? Math.round(agr.total_repay_amount * 100) : (agr.amount_cents || 0),
+        status: agr.status || 'pending',
+        description: agr.description || 'Loan',
+        repaymentType: agr.repayment_type || 'one_time'
+      };
+    });
+
+    // Build response
+    const response = {
+      friendId: friend.id, // Internal ID for profile picture endpoint
+      friendPublicId: friend.public_id,
+      name: friend.full_name || friend.email,
+      avatarUrl: friend.profile_picture,
+      timezone: friend.timezone || null,
+      agreementsWithThisFriend
+    };
+
+    // Only include contact details if current user is lender
+    if (canSeeContact) {
+      response.friendCurrentEmail = friend.email;
+      response.friendCurrentPhone = friend.phone_number || null; // Verified phone from user profile
+      response.friendAgreementPhone = agreementBorrowerPhone; // Phone entered by lender during wizard
+    }
+
+    console.log('[Friend Profile] Returning profile with', agreementsWithThisFriend.length, 'agreements');
+    res.json(response);
+
+  } catch (err) {
+    console.error('[Friend Profile] EXCEPTION caught:', err);
+    console.error('[Friend Profile] Error stack:', err.stack);
+    console.error('[Friend Profile] Error message:', err.message);
+    console.error('[Friend Profile] Request params - userId:', req.user.id, 'friendPublicId:', req.params.friendPublicId);
+    res.status(500).json({ error: 'Server error. Please try again later.' });
+  }
+});
+
 // Get messages for logged-in user
 app.get('/api/messages', requireAuth, (req, res) => {
   const rows = db.prepare(`
@@ -1778,15 +2059,19 @@ app.get('/api/agreements/:id/invite', requireAuth, (req, res) => {
 app.get('/api/agreements/:id', requireAuth, (req, res) => {
   const { id } = req.params;
 
+  console.log('[Agreement API] Fetching agreement', id, 'for user', req.user.id);
+
   try {
     const agreement = db.prepare(`
       SELECT a.*,
         u_lender.full_name as lender_full_name,
         u_lender.email as lender_email,
         u_lender.profile_picture as lender_profile_picture,
+        u_lender.public_id as lender_public_id,
         u_borrower.full_name as borrower_full_name,
         u_borrower.email as borrower_email,
-        u_borrower.profile_picture as borrower_profile_picture
+        u_borrower.profile_picture as borrower_profile_picture,
+        u_borrower.public_id as borrower_public_id
       FROM agreements a
       LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
       LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
@@ -1794,8 +2079,11 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
     `).get(id, req.user.id, req.user.id);
 
     if (!agreement) {
+      console.log('[Agreement API] Agreement not found or user lacks access');
       return res.status(404).json({ error: 'Agreement not found' });
     }
+
+    console.log('[Agreement API] Agreement found - lender_public_id:', agreement.lender_public_id, 'borrower_public_id:', agreement.borrower_public_id);
 
     // Get invite accepted_at timestamp
     const invite = db.prepare(`
@@ -4154,6 +4442,11 @@ app.get('/agreements/:id/manage', (req, res) => {
 // Legacy redirect: /view → /manage
 app.get('/agreements/:id/view', (req, res) => {
   res.redirect(302, `/agreements/${req.params.id}/manage`);
+});
+
+// Friend profile route (serves friend-profile.html for clean URLs)
+app.get('/friends/:publicId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'friend-profile.html'));
 });
 
 // Serve other static files from "public" folder
