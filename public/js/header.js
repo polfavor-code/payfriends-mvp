@@ -274,19 +274,19 @@
 
     if (profileItem) {
       profileItem.addEventListener('click', () => {
-        window.location.href = '/profile';
+        window.location.href = '/app/profile';
       });
     }
 
     if (settingsItem) {
       settingsItem.addEventListener('click', () => {
-        window.location.href = '/settings';
+        window.location.href = '/app/settings';
       });
     }
 
     if (securityItem) {
       securityItem.addEventListener('click', () => {
-        window.location.href = '/security';
+        window.location.href = '/app/security';
       });
     }
 
