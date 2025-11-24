@@ -351,7 +351,7 @@
         <div class="form-group">
           <label for="repaymentType">Repayment type</label>
           <select id="repaymentType">
-            <option value="one_time" selected>1-time payment</option>
+            <option value="one_time" selected>One-time payment</option>
             <option value="installments">Installments</option>
           </select>
         </div>
@@ -410,7 +410,7 @@
           <label for="numInstallments">Number of installments</label>
           <input type="number" id="numInstallments" value="12" min="1" max="120" step="1">
           <div class="form-hint" id="installmentsHint" style="display: none;">
-            For 1-time payments the loan is repaid in a single payment.
+            For one-time payments the loan is repaid in a single payment.
           </div>
         </div>
 
@@ -706,7 +706,7 @@
       }
 
       debugMessages.push(`Annual interest rate: ${annualInterestRate}%`);
-      debugMessages.push(`Repayment type: ${repaymentType === 'one_time' ? '1-time payment' : 'Installments'}`);
+      debugMessages.push(`Repayment type: ${repaymentType === 'one_time' ? 'One-time payment' : 'Installments'}`);
       debugMessages.push(`Number of installments: ${numberOfInstallments}`);
       debugMessages.push(`Payment frequency: ${periodLabel}`);
       debugMessages.push(`First payment timing: ${firstPaymentDays} days after loan start`);
@@ -1356,12 +1356,13 @@
       // Loan amount
       lines.push(`<p><strong>Loan amount:</strong> ${formatMoney(summary.loanAmount)}</p>`);
 
-      // Repayment type and duration
-      const repaymentTypeLabel = summary.repaymentType === 'one_time' ? '1-time payment' : `${summary.numberOfInstallments} installments`;
+      // Repayment type
+      const repaymentTypeLabel = summary.repaymentType === 'one_time' ? 'One-time payment' : 'Installments';
+      lines.push(`<p><strong>Repayment type:</strong> ${repaymentTypeLabel}</p>`);
+
+      // Loan duration
       if (summary.loanDuration) {
-        lines.push(`<p><strong>Repayment type:</strong> ${repaymentTypeLabel}, ${summary.loanDuration}</p>`);
-      } else {
-        lines.push(`<p><strong>Repayment type:</strong> ${repaymentTypeLabel}</p>`);
+        lines.push(`<p><strong>Loan duration:</strong> ${summary.loanDuration}</p>`);
       }
 
       // Interest rate
@@ -1574,7 +1575,7 @@
           '=== PARAMETERS ===',
           `Loan amount: ${formatMoney(loanAmount * 100)}`,
           `Annual interest rate: ${annualInterestRate.toFixed(2)}%`,
-          `Repayment type: ${repaymentType === 'one_time' ? '1-time payment' : 'Installments'}`,
+          `Repayment type: ${repaymentType === 'one_time' ? 'One-time payment' : 'Installments'}`,
           `Number of installments: ${numberOfInstallments}`,
           `Payment frequency: ${frequencyLabel}`,
           `First payment due: ${firstPaymentDueLabel}`,
