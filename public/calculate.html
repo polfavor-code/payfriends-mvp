@@ -142,7 +142,7 @@
 
     .totals {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -168,6 +168,19 @@
       font-weight: 700;
       color: #fff;
       font-variant-numeric: tabular-nums;
+    }
+
+    .schedule-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .schedule-subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 16px;
     }
 
     .schedule-table {
@@ -218,6 +231,18 @@
 
     tbody tr:hover {
       background: rgba(55, 65, 81, 0.3);
+    }
+
+    tfoot td {
+      padding: 12px;
+      border-top: 2px solid rgba(255, 255, 255, 0.2);
+      font-weight: 600;
+      color: #fff;
+    }
+
+    tfoot td.align-right {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
     }
 
     .badge {
@@ -316,7 +341,7 @@
             <option value="biweekly">Every 2 weeks</option>
             <option value="weekly">Every week</option>
             <option value="every_3_days">Every 3 days</option>
-            <option value="once_only" style="display: none;">Once only</option>
+            <option value="once" style="display: none;">Once</option>
           </select>
         </div>
 
@@ -352,7 +377,8 @@
 
         <div class="info-box">
           <strong>Preview mode:</strong> Shows relative labels like "1 month after loan start"<br>
-          <strong>Actual mode:</strong> Shows real calendar dates when loan start date is known
+          <strong>Actual mode:</strong> Shows real calendar dates when loan start date is known<br>
+          <strong>Note:</strong> Fixed date mode always uses real dates regardless of context setting
         </div>
       </div>
 
@@ -365,18 +391,20 @@
             <div class="total-value" id="totalInterest">€ 0,00</div>
           </div>
           <div class="total-card">
-            <div class="total-label">Total to Repay</div>
-            <div class="total-value" id="totalToRepay">€ 0,00</div>
-          </div>
-          <div class="total-card">
-            <div class="total-label">Loan Start</div>
-            <div class="total-value" id="loanStartLabel" style="font-size: 16px;">—</div>
+            <div class="total-label">Total Repayment</div>
+            <div class="total-value" id="totalRepayment">€ 0,00</div>
           </div>
         </div>
 
         <!-- Schedule table -->
         <div class="card">
-          <h2>Repayment Schedule <span id="contextBadge"></span></h2>
+          <div class="schedule-header">
+            <h2>Repayment Schedule</h2>
+            <span id="modeBadge"></span>
+          </div>
+          <div class="schedule-subtitle" id="loanStartLabel">
+            Loan start: —
+          </div>
           <div class="schedule-table">
             <table>
               <thead>
@@ -396,6 +424,15 @@
                   </td>
                 </tr>
               </tbody>
+              <tfoot id="scheduleTotals" style="display: none;">
+                <tr>
+                  <td colspan="2" style="text-align: left;">Loan totals</td>
+                  <td class="align-right" id="footerPrincipal">€ 0,00</td>
+                  <td class="align-right" id="footerInterest">€ 0,00</td>
+                  <td class="align-right" id="footerTotal">€ 0,00</td>
+                  <td></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
@@ -413,12 +450,250 @@ Click "Calculate schedule" to see calculation details...
 
   <script src="/js/formatters.js"></script>
   <script>
-    // Calculator Playground Logic
-    // Uses the formatCurrency functions from the global window object loaded by formatters.js
+    // Calculator Playground Logic - Single Source of Truth
+    // This generateRepaymentSchedule function can be reused across wizard, manage, and review pages
 
     // Get formatting functions from window
     const formatMoney = window.formatCurrency2;
-    const formatMoneyRound = window.formatCurrency0;
+
+    /**
+     * Add months to a date, handling month-end edge cases
+     */
+    function addMonths(date, months) {
+      const result = new Date(date);
+      const targetMonth = result.getMonth() + months;
+      const targetYear = result.getFullYear() + Math.floor(targetMonth / 12);
+      const normalizedMonth = ((targetMonth % 12) + 12) % 12;
+
+      const originalDay = result.getDate();
+      result.setFullYear(targetYear, normalizedMonth, 1);
+      const daysInTargetMonth = new Date(targetYear, normalizedMonth + 1, 0).getDate();
+      const clampedDay = Math.min(originalDay, daysInTargetMonth);
+      result.setDate(clampedDay);
+
+      return result;
+    }
+
+    /**
+     * Format date for display
+     */
+    function formatDateDisplay(dateInput) {
+      const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+      const day = date.getDate();
+      const month = date.toLocaleDateString('en-GB', { month: 'short' });
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    }
+
+    /**
+     * SINGLE SOURCE OF TRUTH: Generate complete repayment schedule
+     * This function is reusable across wizard, manage, and review pages
+     *
+     * @param {Object} config - Configuration object
+     * @returns {Object} - Complete schedule data with rows, totals, and labels
+     */
+    function generateRepaymentSchedule({
+      loanAmount,
+      annualInterestRate,
+      repaymentType,
+      numberOfInstallments,
+      paymentFrequency,
+      firstPaymentDays,
+      loanStartMode,
+      contextMode,
+      explicitLoanStartDate
+    }) {
+      const debugMessages = [];
+
+      // STEP 1: Determine effective mode
+      // Rule: If loan start is fixed-date, ALWAYS use actual mode (real dates)
+      let effectiveMode = contextMode;
+      if (loanStartMode === 'fixed_date') {
+        effectiveMode = 'actual';
+        debugMessages.push('Loan start mode is fixed-date, forcing actual mode (real dates)');
+      }
+
+      // STEP 2: Determine loan start date
+      let loanStartDate = null;
+
+      if (loanStartMode === 'fixed_date') {
+        // Fixed date: use the explicit date from date picker
+        loanStartDate = explicitLoanStartDate ? new Date(explicitLoanStartDate) : null;
+      } else if (loanStartMode === 'upon_acceptance' && effectiveMode === 'actual') {
+        // Upon acceptance + actual mode: use explicit date if provided, otherwise today
+        loanStartDate = explicitLoanStartDate ? new Date(explicitLoanStartDate) : new Date();
+      }
+      // Otherwise (preview + upon_acceptance): loanStartDate stays null
+
+      // STEP 3: Determine loan start label
+      let loanStartLabel;
+      if (loanStartMode === 'fixed_date' || (loanStartMode === 'upon_acceptance' && effectiveMode === 'actual')) {
+        loanStartLabel = loanStartDate ? formatDateDisplay(loanStartDate) : 'To be confirmed';
+      } else {
+        // upon_acceptance + preview
+        loanStartLabel = 'When agreement is accepted';
+      }
+
+      // STEP 4: Setup interest calculation
+      const annualRate = annualInterestRate / 100;
+      const dailyRate = annualRate / 365;
+
+      // Determine period configuration
+      let periodDays;
+      let periodType; // 'days' or 'months'
+      let periodLabel;
+
+      switch (paymentFrequency) {
+        case 'monthly':
+          periodDays = 30; // approximate for interest
+          periodType = 'months';
+          periodLabel = 'month';
+          break;
+        case 'every_4_weeks':
+          periodDays = 28;
+          periodType = 'days';
+          periodLabel = '4 weeks';
+          break;
+        case 'biweekly':
+          periodDays = 14;
+          periodType = 'days';
+          periodLabel = '2 weeks';
+          break;
+        case 'weekly':
+          periodDays = 7;
+          periodType = 'days';
+          periodLabel = 'week';
+          break;
+        case 'every_3_days':
+          periodDays = 3;
+          periodType = 'days';
+          periodLabel = '3 days';
+          break;
+        case 'once':
+          periodDays = firstPaymentDays;
+          periodType = 'days';
+          periodLabel = 'one-time';
+          break;
+        default:
+          periodDays = 30;
+          periodType = 'months';
+          periodLabel = 'month';
+      }
+
+      debugMessages.push(`Annual interest rate: ${annualInterestRate}%`);
+      debugMessages.push(`Repayment type: ${repaymentType === 'one_time' ? '1-time payment' : 'Installments'}`);
+      debugMessages.push(`Number of installments: ${numberOfInstallments}`);
+      debugMessages.push(`Payment frequency: Every ${periodLabel}`);
+      debugMessages.push(`First payment: ${firstPaymentDays} days after loan start`);
+      debugMessages.push(`Loan start mode: ${loanStartMode === 'fixed_date' ? 'Fixed date' : 'Upon agreement acceptance'}`);
+      debugMessages.push(`Effective context mode: ${effectiveMode === 'actual' ? 'Actual (real dates)' : 'Preview (relative labels)'}`);
+
+      // STEP 5: Generate schedule rows
+      const rows = [];
+      const principalPerPayment = loanAmount / numberOfInstallments;
+      let remainingBalance = loanAmount;
+      let totalInterest = 0;
+
+      for (let i = 0; i < numberOfInstallments; i++) {
+        const paymentIndex = i + 1;
+
+        // Calculate interest for this period
+        const daysForThisPeriod = (i === 0) ? firstPaymentDays : periodDays;
+        const interestForPeriod = remainingBalance * dailyRate * daysForThisPeriod;
+        const principalPayment = principalPerPayment;
+        const totalPayment = principalPayment + interestForPeriod;
+
+        totalInterest += interestForPeriod;
+        remainingBalance -= principalPayment;
+        if (remainingBalance < 0.01) remainingBalance = 0;
+
+        // Generate due date label
+        let dueDateLabel;
+        let dueDate = null;
+
+        if (effectiveMode === 'preview') {
+          // PREVIEW MODE: Use relative labels, no real dates
+          if (periodType === 'months') {
+            // Monthly frequency
+            const monthsAfterStart = i + Math.round(firstPaymentDays / 30);
+            if (monthsAfterStart === 0) {
+              dueDateLabel = 'On loan start';
+            } else if (monthsAfterStart === 1) {
+              dueDateLabel = '1 month after loan start';
+            } else {
+              dueDateLabel = `${monthsAfterStart} months after loan start`;
+            }
+          } else {
+            // Day-based frequency
+            const totalDays = (i === 0) ? firstPaymentDays : (firstPaymentDays + i * periodDays);
+            if (totalDays === 0) {
+              dueDateLabel = 'On loan start';
+            } else if (periodLabel === '3 days') {
+              dueDateLabel = `${totalDays} days after loan start`;
+            } else if (periodLabel === 'week') {
+              const weeks = Math.round(totalDays / 7);
+              dueDateLabel = weeks === 1 ? '1 week after loan start' : `${weeks} weeks after loan start`;
+            } else if (periodLabel === '2 weeks') {
+              const weeks = Math.round(totalDays / 7);
+              dueDateLabel = weeks === 2 ? '2 weeks after loan start' : `${weeks} weeks after loan start`;
+            } else if (periodLabel === '4 weeks') {
+              const weeks = Math.round(totalDays / 7);
+              dueDateLabel = weeks === 4 ? '4 weeks after loan start' : `${weeks} weeks after loan start`;
+            } else {
+              dueDateLabel = `${totalDays} days after loan start`;
+            }
+          }
+        } else {
+          // ACTUAL MODE: Calculate real calendar dates
+          if (loanStartDate) {
+            if (periodType === 'months') {
+              // Monthly: add months properly
+              const monthsToAdd = i + Math.round(firstPaymentDays / 30);
+              dueDate = addMonths(loanStartDate, monthsToAdd);
+            } else {
+              // Day-based: add days
+              const daysToAdd = (i === 0) ? firstPaymentDays : (firstPaymentDays + i * periodDays);
+              dueDate = new Date(loanStartDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+            }
+            dueDateLabel = formatDateDisplay(dueDate);
+          } else {
+            dueDateLabel = 'Date not available';
+          }
+        }
+
+        rows.push({
+          index: paymentIndex,
+          label: dueDateLabel,
+          dueDate: dueDate,
+          principal: Math.round(principalPayment * 100), // cents
+          interest: Math.round(interestForPeriod * 100), // cents
+          totalPayment: Math.round(totalPayment * 100), // cents
+          balance: Math.round(remainingBalance * 100) // cents
+        });
+      }
+
+      // STEP 6: Calculate totals
+      const totals = {
+        principal: Math.round(loanAmount * 100), // should equal sum of all principal
+        interest: Math.round(totalInterest * 100),
+        totalRepayment: Math.round((loanAmount + totalInterest) * 100)
+      };
+
+      debugMessages.push(`Generated ${rows.length} payment(s)`);
+
+      return {
+        rows,
+        totals,
+        loanStartLabel,
+        effectiveMode,
+        debugMessages
+      };
+    }
+
+    // Export for potential reuse in other pages
+    window.PayFriendsRepayment = {
+      generateRepaymentSchedule
+    };
 
     // Show/hide conditional fields based on repayment type
     document.getElementById('repaymentType').addEventListener('change', function() {
@@ -428,25 +703,21 @@ Click "Calculate schedule" to see calculation details...
       const installmentsHint = document.getElementById('installmentsHint');
 
       if (isOneTime) {
-        // 1-time payment: force 1 installment and "once only" frequency
         numInstallmentsInput.value = 1;
         numInstallmentsInput.disabled = true;
         installmentsHint.style.display = 'block';
 
-        // Show and select "once only" option
-        const onceOnlyOption = frequencySelect.querySelector('option[value="once_only"]');
-        onceOnlyOption.style.display = 'block';
-        frequencySelect.value = 'once_only';
+        const onceOption = frequencySelect.querySelector('option[value="once"]');
+        onceOption.style.display = 'block';
+        frequencySelect.value = 'once';
         frequencySelect.disabled = true;
       } else {
-        // Installments: enable fields
         numInstallmentsInput.disabled = false;
         installmentsHint.style.display = 'none';
 
-        // Hide "once only" and select monthly
-        const onceOnlyOption = frequencySelect.querySelector('option[value="once_only"]');
-        onceOnlyOption.style.display = 'none';
-        if (frequencySelect.value === 'once_only') {
+        const onceOption = frequencySelect.querySelector('option[value="once"]');
+        onceOption.style.display = 'none';
+        if (frequencySelect.value === 'once') {
           frequencySelect.value = 'monthly';
         }
         frequencySelect.disabled = false;
@@ -460,199 +731,6 @@ Click "Calculate schedule" to see calculation details...
     });
 
     /**
-     * Main calculator function - generates complete repayment schedule
-     * @param {Object} config - Configuration object
-     * @returns {Object} - Result with schedule rows, totals, and debug messages
-     */
-    function generateRepaymentSchedule(config) {
-      const {
-        loanAmount,
-        annualInterestRate,
-        repaymentType,
-        numberOfInstallments,
-        paymentFrequency,
-        firstPaymentDaysAfterStart,
-        loanStartMode,
-        contextMode,
-        fixedLoanStartDate
-      } = config;
-
-      const debugMessages = [];
-
-      // Interest calculation setup
-      const annualRate = annualInterestRate / 100;
-      debugMessages.push(`Using annual interest rate: ${annualInterestRate}%`);
-
-      // Determine period rate based on frequency
-      // For simplicity, we use approximate day-based calculations
-      let periodDays;
-      let periodLabel;
-
-      switch (paymentFrequency) {
-        case 'monthly':
-          periodDays = 30;
-          periodLabel = 'month';
-          break;
-        case 'every_4_weeks':
-          periodDays = 28;
-          periodLabel = '4 weeks';
-          break;
-        case 'biweekly':
-          periodDays = 14;
-          periodLabel = '2 weeks';
-          break;
-        case 'weekly':
-          periodDays = 7;
-          periodLabel = 'week';
-          break;
-        case 'every_3_days':
-          periodDays = 3;
-          periodLabel = '3 days';
-          break;
-        case 'once_only':
-          // For one-time, we'll calculate based on first payment offset
-          periodDays = firstPaymentDaysAfterStart;
-          periodLabel = 'one-time';
-          break;
-        default:
-          periodDays = 30;
-          periodLabel = 'month';
-      }
-
-      // Daily interest rate for accurate calculation
-      const dailyRate = annualRate / 365;
-      debugMessages.push(`Payment frequency: Every ${periodLabel}`);
-      debugMessages.push(`Period days: ${periodDays}`);
-      debugMessages.push(`Daily interest rate: ${(dailyRate * 100).toFixed(6)}%`);
-
-      // Generate schedule rows
-      const scheduleRows = [];
-      const principalPerPayment = loanAmount / numberOfInstallments;
-      let remainingBalance = loanAmount;
-      let totalInterest = 0;
-
-      // First payment is offset by firstPaymentDaysAfterStart
-      let currentDayOffset = firstPaymentDaysAfterStart;
-
-      for (let i = 1; i <= numberOfInstallments; i++) {
-        // Calculate interest for this period based on actual days
-        const daysForThisPeriod = (i === 1) ? firstPaymentDaysAfterStart : periodDays;
-        const interestForPeriod = remainingBalance * dailyRate * daysForThisPeriod;
-        const principalPayment = principalPerPayment;
-        const totalPayment = principalPayment + interestForPeriod;
-
-        totalInterest += interestForPeriod;
-        remainingBalance -= principalPayment;
-        if (remainingBalance < 0.01) remainingBalance = 0;
-
-        // Generate due date label
-        let dueDateLabel;
-        if (contextMode === 'preview' || (loanStartMode === 'upon_acceptance' && !fixedLoanStartDate)) {
-          // Preview mode: use relative labels
-          dueDateLabel = getRelativeDateLabel(i, paymentFrequency, firstPaymentDaysAfterStart, periodDays);
-        } else {
-          // Actual mode with fixed date: calculate real calendar date
-          dueDateLabel = calculateActualDate(fixedLoanStartDate, currentDayOffset);
-        }
-
-        scheduleRows.push({
-          index: i,
-          dueDateLabel,
-          principal: Math.round(principalPayment * 100), // cents
-          interest: Math.round(interestForPeriod * 100), // cents
-          totalPayment: Math.round(totalPayment * 100), // cents
-          balance: Math.round(remainingBalance * 100) // cents
-        });
-
-        // Update offset for next payment
-        if (i > 1) {
-          currentDayOffset += periodDays;
-        }
-      }
-
-      debugMessages.push(`Generated ${scheduleRows.length} payment(s)`);
-      debugMessages.push(`Total interest: ${formatMoney(Math.round(totalInterest * 100))}`);
-      debugMessages.push(`Total to repay: ${formatMoney(Math.round((loanAmount + totalInterest) * 100))}`);
-
-      // Determine loan start display
-      let loanStartDisplayValue;
-      if (loanStartMode === 'upon_acceptance') {
-        loanStartDisplayValue = 'When agreement is accepted';
-        if (contextMode === 'preview') {
-          debugMessages.push('Loan start date not fixed. Showing relative dates.');
-        }
-      } else if (fixedLoanStartDate) {
-        loanStartDisplayValue = formatDate(fixedLoanStartDate);
-      } else {
-        loanStartDisplayValue = 'To be confirmed';
-      }
-
-      return {
-        scheduleRows,
-        totalInterest: Math.round(totalInterest * 100), // cents
-        totalToRepay: Math.round((loanAmount + totalInterest) * 100), // cents
-        loanStartDisplayValue,
-        debugMessages
-      };
-    }
-
-    /**
-     * Generate relative date label for preview mode
-     */
-    function getRelativeDateLabel(paymentIndex, frequency, firstOffset, periodDays) {
-      let totalDays = firstOffset + (paymentIndex - 1) * periodDays;
-
-      if (totalDays === 0) {
-        return 'On loan start';
-      }
-
-      switch (frequency) {
-        case 'monthly':
-          const months = Math.round(totalDays / 30);
-          return months === 1 ? '1 month after loan start' : `${months} months after loan start`;
-        case 'every_4_weeks':
-          const fourWeekPeriods = Math.round(totalDays / 28);
-          const weeks = fourWeekPeriods * 4;
-          return weeks === 4 ? '4 weeks after loan start' : `${weeks} weeks after loan start`;
-        case 'biweekly':
-          const biweekPeriods = Math.round(totalDays / 14);
-          const biWeeks = biweekPeriods * 2;
-          return biWeeks === 2 ? '2 weeks after loan start' : `${biWeeks} weeks after loan start`;
-        case 'weekly':
-          const weekCount = Math.round(totalDays / 7);
-          return weekCount === 1 ? '1 week after loan start' : `${weekCount} weeks after loan start`;
-        case 'every_3_days':
-          return totalDays === 3 ? '3 days after loan start' : `${totalDays} days after loan start`;
-        case 'once_only':
-          if (totalDays === 365) return '1 year after loan start';
-          if (totalDays === 30) return '1 month after loan start';
-          return `${totalDays} days after loan start`;
-        default:
-          return `${totalDays} days after loan start`;
-      }
-    }
-
-    /**
-     * Calculate actual calendar date
-     */
-    function calculateActualDate(startDateStr, offsetDays) {
-      const startDate = new Date(startDateStr);
-      const dueDate = new Date(startDate.getTime() + offsetDays * 24 * 60 * 60 * 1000);
-      return formatDate(dueDate);
-    }
-
-    /**
-     * Format date for display
-     */
-    function formatDate(dateInput) {
-      const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-      const day = date.getDate();
-      const month = date.toLocaleDateString('en-GB', { month: 'short' });
-      const year = date.getFullYear();
-      return `${day} ${month} ${year}`;
-    }
-
-    /**
      * Main calculation function triggered by button click
      */
     function calculateSchedule() {
@@ -663,10 +741,10 @@ Click "Calculate schedule" to see calculation details...
         const repaymentType = document.getElementById('repaymentType').value;
         const numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
         const paymentFrequency = document.getElementById('frequency').value;
-        const firstPaymentDaysAfterStart = parseInt(document.getElementById('firstPaymentOffset').value);
+        const firstPaymentDays = parseInt(document.getElementById('firstPaymentOffset').value);
         const loanStartMode = document.getElementById('loanStartMode').value;
         const contextMode = document.getElementById('contextMode').value;
-        const fixedLoanStartDate = document.getElementById('loanStartDate').value;
+        const explicitLoanStartDate = document.getElementById('loanStartDate').value;
 
         // Validation
         const errors = [];
@@ -679,57 +757,53 @@ Click "Calculate schedule" to see calculation details...
         if (!numberOfInstallments || numberOfInstallments < 1 || isNaN(numberOfInstallments)) {
           errors.push('Number of installments must be at least 1.');
         }
-        if (isNaN(firstPaymentDaysAfterStart) || firstPaymentDaysAfterStart < 0) {
+        if (isNaN(firstPaymentDays) || firstPaymentDays < 0) {
           errors.push('First payment timing cannot be negative.');
         }
-        if (contextMode === 'actual' && loanStartMode === 'fixed_date' && !fixedLoanStartDate) {
-          errors.push('Please select a loan start date for actual mode with fixed date.');
+        if (loanStartMode === 'fixed_date' && !explicitLoanStartDate) {
+          errors.push('Please select a loan start date when using fixed date mode.');
         }
 
         if (errors.length > 0) {
-          // Show validation errors
           document.getElementById('debugConsole').innerHTML =
             '<span class="error-message">⚠ Validation errors:</span>\n' +
             errors.map(e => `  • ${e}`).join('\n');
           return;
         }
 
-        // Build configuration
-        const config = {
+        // Generate schedule using single source of truth
+        const result = generateRepaymentSchedule({
           loanAmount,
           annualInterestRate,
           repaymentType,
           numberOfInstallments,
           paymentFrequency,
-          firstPaymentDaysAfterStart,
+          firstPaymentDays,
           loanStartMode,
           contextMode,
-          fixedLoanStartDate: (contextMode === 'actual' && fixedLoanStartDate) ? fixedLoanStartDate : null
-        };
+          explicitLoanStartDate: explicitLoanStartDate || null
+        });
 
-        // Generate schedule
-        const result = generateRepaymentSchedule(config);
+        // Update UI - Top summary cards
+        document.getElementById('totalInterest').textContent = formatMoney(result.totals.interest);
+        document.getElementById('totalRepayment').textContent = formatMoney(result.totals.totalRepayment);
 
-        // Update UI - Totals
-        document.getElementById('totalInterest').textContent = formatMoney(result.totalInterest);
-        document.getElementById('totalToRepay').textContent = formatMoney(result.totalToRepay);
-        document.getElementById('loanStartLabel').textContent = result.loanStartDisplayValue;
-
-        // Update UI - Context badge
-        const badge = contextMode === 'preview'
+        // Update UI - Schedule header
+        const badge = result.effectiveMode === 'preview'
           ? '<span class="badge badge-preview">Preview</span>'
           : '<span class="badge badge-actual">Actual</span>';
-        document.getElementById('contextBadge').innerHTML = badge;
+        document.getElementById('modeBadge').innerHTML = badge;
+        document.getElementById('loanStartLabel').textContent = `Loan start: ${result.loanStartLabel}`;
 
-        // Update UI - Schedule table
+        // Update UI - Schedule table body
         const tbody = document.getElementById('scheduleBody');
         tbody.innerHTML = '';
 
-        result.scheduleRows.forEach(row => {
+        result.rows.forEach(row => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${row.index}</td>
-            <td>${row.dueDateLabel}</td>
+            <td>${row.label}</td>
             <td class="align-right">${formatMoney(row.principal)}</td>
             <td class="align-right">${formatMoney(row.interest)}</td>
             <td class="align-right" style="font-weight: 600;">${formatMoney(row.totalPayment)}</td>
@@ -738,13 +812,15 @@ Click "Calculate schedule" to see calculation details...
           tbody.appendChild(tr);
         });
 
+        // Update UI - Schedule table footer (totals row)
+        document.getElementById('scheduleTotals').style.display = 'table-footer-group';
+        document.getElementById('footerPrincipal').textContent = formatMoney(result.totals.principal);
+        document.getElementById('footerInterest').textContent = formatMoney(result.totals.interest);
+        document.getElementById('footerTotal').textContent = formatMoney(result.totals.totalRepayment);
+
         // Update UI - Debug console
         const debugOutput = '✔ Calculation completed successfully\n\n' +
-          result.debugMessages.join('\n') + '\n\n' +
-          `Configuration:\n` +
-          `  • Repayment type: ${repaymentType === 'one_time' ? '1-time payment' : 'Installments'}\n` +
-          `  • Number of payments: ${numberOfInstallments}\n` +
-          `  • Context mode: ${contextMode}`;
+          result.debugMessages.join('\n');
 
         document.getElementById('debugConsole').textContent = debugOutput;
 
