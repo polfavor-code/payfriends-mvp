@@ -3817,9 +3817,14 @@
 
     function toggleNewAgreement() {
       const section = document.getElementById('new-agreement-section');
+      const listSection = document.getElementById('list-section');
       if (section.classList.contains('hidden')) {
         section.classList.remove('hidden');
         document.getElementById('new-agreement-btn').style.display = 'none';
+        // Hide the My Agreements section when showing the wizard
+        if (listSection) {
+          listSection.style.display = 'none';
+        }
         // Scroll the wizard into view
         setTimeout(() => {
           section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3839,9 +3844,9 @@
         welcomeCard.style.display = 'none';
       }
 
-      // Show the list section (container) so the new agreement wizard has a proper context
+      // Hide the list section when showing the wizard
       if (listSection) {
-        listSection.style.display = 'block';
+        listSection.style.display = 'none';
       }
 
       // Show the new agreement wizard
@@ -3875,6 +3880,11 @@
         welcomeCard.style.display = 'block';
         if (listSection) {
           listSection.style.display = 'none';
+        }
+      } else {
+        // If there are agreements, show the list section
+        if (listSection) {
+          listSection.style.display = 'block';
         }
       }
     }
