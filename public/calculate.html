@@ -346,41 +346,40 @@
           <select id="frequency">
             <optgroup label="Day-based">
               <option value="every-3-days">Every 3 days</option>
-              <option value="every-7-days">Every 7 days (weekly)</option>
+              <option value="every-7-days">Every 7 days</option>
               <option value="every-14-days">Every 14 days</option>
               <option value="every-30-days">Every 30 days</option>
-              <option value="every-60-days">Every 60 days</option>
             </optgroup>
-            <optgroup label="Month-based">
-              <option value="every-month" selected>Every month (same day of month)</option>
-              <option value="every-2-months">Every 2 months</option>
+            <optgroup label="Month-based (same day of month)">
+              <option value="every-month" selected>Every month</option>
               <option value="every-3-months">Every 3 months</option>
               <option value="every-6-months">Every 6 months</option>
               <option value="every-12-months">Every 12 months</option>
             </optgroup>
-            <optgroup label="Weekday-based">
-              <option value="every-week">Every week (same weekday)</option>
+            <optgroup label="Weekday-based (same weekday)">
+              <option value="every-week">Every week</option>
               <option value="every-2-weeks">Every 2 weeks</option>
               <option value="every-4-weeks">Every 4 weeks</option>
             </optgroup>
-            <optgroup label="Year-based">
-              <option value="every-year">Every year (same date)</option>
+            <optgroup label="Year-based (same date)">
+              <option value="every-year">Every year</option>
+              <option value="every-2-years">Every 2 years</option>
+              <option value="every-3-years">Every 3 years</option>
             </optgroup>
           </select>
         </div>
 
         <div class="form-group" id="firstPaymentGroup">
           <label for="firstPaymentDue">
-            <span id="paymentTimingLabel">First payment due</span>
+            <span id="paymentTimingLabel">First payment due (after loan start)</span>
           </label>
           <select id="firstPaymentDue">
-            <option value="3-days">In 3 days after loan start</option>
-            <option value="7-days">In 7 days after loan start</option>
-            <option value="1-month" selected>In 1 month after loan start</option>
-            <option value="2-months">In 2 months after loan start</option>
-            <option value="3-months">In 3 months after loan start</option>
-            <option value="6-months">In 6 months after loan start</option>
-            <option value="12-months">In 12 months after loan start</option>
+            <option value="3-days">In 3 days</option>
+            <option value="7-days">In 7 days</option>
+            <option value="1-month" selected>In 1 month</option>
+            <option value="3-months">In 3 months</option>
+            <option value="6-months">In 6 months</option>
+            <option value="12-months">In 12 months</option>
             <option value="pick-date">Pick a date…</option>
           </select>
           <div class="form-hint">Select when the repayment is due after the loan starts.</div>
@@ -632,25 +631,12 @@ Click "Calculate schedule" to see calculation details...
           periodMultiplier = 1;
           periodLabel = 'Every 30 days';
           break;
-        case 'every-60-days':
-          periodDays = 60;
-          periodType = 'days';
-          periodMultiplier = 1;
-          periodLabel = 'Every 60 days';
-          break;
-
         // Month-based frequencies
         case 'every-month':
           periodDays = 30; // approximate for interest
           periodType = 'months';
           periodMultiplier = 1;
-          periodLabel = 'Every month (same day of month)';
-          break;
-        case 'every-2-months':
-          periodDays = 60;
-          periodType = 'months';
-          periodMultiplier = 2;
-          periodLabel = 'Every 2 months';
+          periodLabel = 'Every month';
           break;
         case 'every-3-months':
           periodDays = 91;
@@ -691,12 +677,24 @@ Click "Calculate schedule" to see calculation details...
           periodLabel = 'Every 4 weeks';
           break;
 
-        // Year-based frequency
+        // Year-based frequencies
         case 'every-year':
           periodDays = 365; // approximate for interest
           periodType = 'years';
           periodMultiplier = 1;
-          periodLabel = 'Every year (same date)';
+          periodLabel = 'Every year';
+          break;
+        case 'every-2-years':
+          periodDays = 730; // approximate for interest (2 years)
+          periodType = 'years';
+          periodMultiplier = 2;
+          periodLabel = 'Every 2 years';
+          break;
+        case 'every-3-years':
+          periodDays = 1095; // approximate for interest (3 years)
+          periodType = 'years';
+          periodMultiplier = 3;
+          periodLabel = 'Every 3 years';
           break;
 
         default:
@@ -749,7 +747,7 @@ Click "Calculate schedule" to see calculation details...
           // PREVIEW MODE: Use relative labels, no real dates
           if (periodType === 'years') {
             // Yearly frequency
-            const yearsAfterStart = i + 1;
+            const yearsAfterStart = (i + 1) * periodMultiplier;
             if (yearsAfterStart === 1) {
               dueDateLabel = '1 year after loan start';
             } else {
@@ -794,8 +792,9 @@ Click "Calculate schedule" to see calculation details...
           // ACTUAL MODE: Calculate real calendar dates
           if (loanStartDate) {
             if (periodType === 'years') {
-              // Yearly: add years properly
-              dueDate = addYears(loanStartDate, i + 1);
+              // Yearly: add years properly (with multiplier)
+              const yearsToAdd = (i + 1) * periodMultiplier;
+              dueDate = addYears(loanStartDate, yearsToAdd);
             } else if (periodType === 'months') {
               // Monthly: add months properly (with multiplier)
               let monthsToAdd;
@@ -869,7 +868,7 @@ Click "Calculate schedule" to see calculation details...
       if (isOneTime) {
         // 1-time payment mode
 
-        // 1) Change label to "Repayment due date"
+        // 1) Change label to "Repayment due date" (without "after loan start")
         paymentTimingLabel.textContent = 'Repayment due date';
 
         // 2) Lock installments to 1 and hide
@@ -884,8 +883,8 @@ Click "Calculate schedule" to see calculation details...
       } else {
         // Installments mode
 
-        // 1) Change label to "First payment due"
-        paymentTimingLabel.textContent = 'First payment due';
+        // 1) Change label to "First payment due (after loan start)"
+        paymentTimingLabel.textContent = 'First payment due (after loan start)';
 
         // 2) Show and enable installments
         numInstallmentsGroup.style.display = 'block';
@@ -950,8 +949,6 @@ Click "Calculate schedule" to see calculation details...
           return { days: 7, months: 0, isMonthBased: false };
         case '1-month':
           return { days: 30, months: 1, isMonthBased: true };
-        case '2-months':
-          return { days: 60, months: 2, isMonthBased: true };
         case '3-months':
           return { days: 91, months: 3, isMonthBased: true };
         case '6-months':
