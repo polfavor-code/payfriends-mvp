@@ -315,16 +315,37 @@
       <div class="card">
         <h2>Configuration</h2>
 
+        <!-- 1. Loan amount -->
         <div class="form-group">
           <label for="principal">Loan amount (€)</label>
           <input type="number" id="principal" value="6000" min="100" step="100">
         </div>
 
+        <!-- 2. Annual interest rate -->
         <div class="form-group">
           <label for="interest">Annual interest rate (%)</label>
           <input type="number" id="interest" value="5" min="0" max="100" step="0.1">
         </div>
 
+        <!-- 3. Loan start date -->
+        <div class="form-group">
+          <label for="loanStartMode">Loan start date (when borrower receives the money)</label>
+          <select id="loanStartMode">
+            <option value="upon_acceptance" selected>When agreement is accepted</option>
+            <option value="today">Today</option>
+            <option value="tomorrow">Tomorrow</option>
+            <option value="in-1-week">In 1 week</option>
+            <option value="pick-date">Pick a date…</option>
+          </select>
+          <div class="form-hint">This marks the date the loan officially begins for interest and repayment calculations.</div>
+        </div>
+
+        <div class="form-group" id="loanStartDateGroup" style="display: none;">
+          <label for="loanStartDate">Loan start date</label>
+          <input type="date" id="loanStartDate">
+        </div>
+
+        <!-- 4. Repayment type -->
         <div class="form-group">
           <label for="repaymentType">Repayment type</label>
           <select id="repaymentType">
@@ -333,19 +354,33 @@
           </select>
         </div>
 
-        <div class="form-group" id="installmentsGroup">
-          <label for="numInstallments">Number of installments</label>
-          <input type="number" id="numInstallments" value="12" min="1" max="120" step="1">
-          <div class="form-hint" id="installmentsHint" style="display: none;">
-            For 1-time payments the loan is repaid in a single payment.
-          </div>
+        <!-- 5. First payment due -->
+        <div class="form-group" id="firstPaymentGroup">
+          <label for="firstPaymentDue">
+            <span id="paymentTimingLabel">First payment due (after loan start)</span>
+          </label>
+          <select id="firstPaymentDue">
+            <option value="1-week">In 1 week</option>
+            <option value="1-month" selected>In 1 month</option>
+            <option value="6-months">In 6 months</option>
+            <option value="1-year">In 1 year</option>
+            <option value="2-years">In 2 years</option>
+            <option value="3-years">In 3 years</option>
+            <option value="pick-date">Pick a date…</option>
+          </select>
+          <div class="form-hint">When the first repayment is due after the loan starts.</div>
         </div>
 
+        <div class="form-group" id="firstPaymentDateGroup" style="display: none;">
+          <label for="firstPaymentDate">First payment date</label>
+          <input type="date" id="firstPaymentDate">
+        </div>
+
+        <!-- 6. Payment frequency -->
         <div class="form-group" id="frequencyGroup">
           <label for="frequency">Payment frequency</label>
           <select id="frequency">
             <optgroup label="Day-based">
-              <option value="every-3-days">Every 3 days</option>
               <option value="every-7-days">Every 7 days</option>
               <option value="every-14-days">Every 14 days</option>
               <option value="every-30-days">Every 30 days</option>
@@ -354,7 +389,6 @@
               <option value="every-month" selected>Every month</option>
               <option value="every-3-months">Every 3 months</option>
               <option value="every-6-months">Every 6 months</option>
-              <option value="every-12-months">Every 12 months</option>
             </optgroup>
             <optgroup label="Weekday-based (same weekday)">
               <option value="every-week">Every week</option>
@@ -369,45 +403,16 @@
           </select>
         </div>
 
-        <div class="form-group" id="firstPaymentGroup">
-          <label for="firstPaymentDue">
-            <span id="paymentTimingLabel">First payment due (after loan start)</span>
-          </label>
-          <select id="firstPaymentDue">
-            <option value="3-days">In 3 days</option>
-            <option value="7-days">In 7 days</option>
-            <option value="1-month" selected>In 1 month</option>
-            <option value="3-months">In 3 months</option>
-            <option value="6-months">In 6 months</option>
-            <option value="12-months">In 12 months</option>
-            <option value="pick-date">Pick a date…</option>
-          </select>
-          <div class="form-hint">Select when the repayment is due after the loan starts.</div>
+        <!-- 7. Number of installments -->
+        <div class="form-group" id="installmentsGroup">
+          <label for="numInstallments">Number of installments</label>
+          <input type="number" id="numInstallments" value="12" min="1" max="120" step="1">
+          <div class="form-hint" id="installmentsHint" style="display: none;">
+            For 1-time payments the loan is repaid in a single payment.
+          </div>
         </div>
 
-        <div class="form-group" id="firstPaymentDateGroup" style="display: none;">
-          <label for="firstPaymentDate">First payment date</label>
-          <input type="date" id="firstPaymentDate">
-        </div>
-
-        <div class="form-group">
-          <label for="loanStartMode">Loan start date (when borrower receives the money)</label>
-          <select id="loanStartMode">
-            <option value="upon_acceptance" selected>When agreement is accepted</option>
-            <option value="today">Today</option>
-            <option value="tomorrow">Tomorrow</option>
-            <option value="in-3-days">In 3 days</option>
-            <option value="in-7-days">In 7 days</option>
-            <option value="pick-date">Pick a date…</option>
-          </select>
-          <div class="form-hint">This marks the date the loan officially begins for interest and repayment calculations.</div>
-        </div>
-
-        <div class="form-group" id="loanStartDateGroup" style="display: none;">
-          <label for="loanStartDate">Loan start date</label>
-          <input type="date" id="loanStartDate">
-        </div>
-
+        <!-- 8. Context mode -->
         <div class="form-group">
           <label for="contextMode">Context mode</label>
           <select id="contextMode">
@@ -416,6 +421,7 @@
           </select>
         </div>
 
+        <!-- 9. Buttons -->
         <div class="form-group">
           <div style="display: flex; gap: 12px;">
             <button class="btn btn-secondary" onclick="resetCalculator()" style="flex: 1; background: rgba(75, 85, 99, 0.8); color: #e5e7eb;">Reset calculator</button>
@@ -567,6 +573,8 @@ Click "Calculate schedule" to see calculation details...
       paymentFrequency,
       firstPaymentDays,
       firstPaymentMonths = 1,
+      firstPaymentYears = 0,
+      firstPaymentIsYearBased = false,
       loanStartMode,
       contextMode,
       explicitLoanStartDate
@@ -610,12 +618,6 @@ Click "Calculate schedule" to see calculation details...
 
       switch (paymentFrequency) {
         // Day-based frequencies
-        case 'every-3-days':
-          periodDays = 3;
-          periodType = 'days';
-          periodMultiplier = 1;
-          periodLabel = 'Every 3 days';
-          break;
         case 'every-7-days':
           periodDays = 7;
           periodType = 'days';
@@ -652,12 +654,6 @@ Click "Calculate schedule" to see calculation details...
           periodType = 'months';
           periodMultiplier = 6;
           periodLabel = 'Every 6 months';
-          break;
-        case 'every-12-months':
-          periodDays = 365;
-          periodType = 'months';
-          periodMultiplier = 12;
-          periodLabel = 'Every 12 months';
           break;
 
         // Weekday-based frequencies
@@ -748,13 +744,34 @@ Click "Calculate schedule" to see calculation details...
 
         if (effectiveMode === 'preview') {
           // PREVIEW MODE: Use relative labels, no real dates
-          if (periodType === 'years') {
-            // Yearly frequency
-            const yearsAfterStart = (i + 1) * periodMultiplier;
-            if (yearsAfterStart === 1) {
+          if (i === 0 && firstPaymentIsYearBased) {
+            // First payment is year-based
+            if (firstPaymentYears === 1) {
               dueDateLabel = '1 year after loan start';
             } else {
-              dueDateLabel = `${yearsAfterStart} years after loan start`;
+              dueDateLabel = `${firstPaymentYears} years after loan start`;
+            }
+          } else if (periodType === 'years') {
+            // Yearly frequency
+            if (i === 0 && firstPaymentIsYearBased) {
+              // Handled above
+            } else if (i === 0) {
+              // First payment uses firstPaymentYears if year-based, else show in years
+              const yearsAfterStart = firstPaymentYears || 1;
+              if (yearsAfterStart === 1) {
+                dueDateLabel = '1 year after loan start';
+              } else {
+                dueDateLabel = `${yearsAfterStart} years after loan start`;
+              }
+            } else {
+              // Subsequent payments
+              const baseYears = firstPaymentYears || 0;
+              const yearsAfterStart = baseYears + (i * periodMultiplier);
+              if (yearsAfterStart === 1) {
+                dueDateLabel = '1 year after loan start';
+              } else {
+                dueDateLabel = `${yearsAfterStart} years after loan start`;
+              }
             }
           } else if (periodType === 'months') {
             // Monthly frequency - show months after start
@@ -779,6 +796,8 @@ Click "Calculate schedule" to see calculation details...
             const totalDays = (i === 0) ? firstPaymentDays : (firstPaymentDays + i * periodDays);
             if (totalDays === 0) {
               dueDateLabel = 'On loan start';
+            } else if (totalDays === 7) {
+              dueDateLabel = '1 week after loan start';
             } else {
               dueDateLabel = `${totalDays} days after loan start`;
             }
@@ -787,6 +806,8 @@ Click "Calculate schedule" to see calculation details...
             const totalDays = (i === 0) ? firstPaymentDays : (firstPaymentDays + i * periodDays);
             if (totalDays === 0) {
               dueDateLabel = 'On loan start';
+            } else if (totalDays === 7) {
+              dueDateLabel = '1 week after loan start';
             } else {
               dueDateLabel = `${totalDays} days after loan start`;
             }
@@ -794,10 +815,18 @@ Click "Calculate schedule" to see calculation details...
         } else {
           // ACTUAL MODE: Calculate real calendar dates
           if (loanStartDate) {
-            if (periodType === 'years') {
+            if (i === 0 && firstPaymentIsYearBased) {
+              // First payment is year-based
+              dueDate = addYears(loanStartDate, firstPaymentYears);
+            } else if (periodType === 'years') {
               // Yearly: add years properly (with multiplier)
-              const yearsToAdd = (i + 1) * periodMultiplier;
-              dueDate = addYears(loanStartDate, yearsToAdd);
+              if (i === 0) {
+                dueDate = addYears(loanStartDate, firstPaymentYears || periodMultiplier);
+              } else {
+                const baseYears = firstPaymentYears || 0;
+                const yearsToAdd = baseYears + (i * periodMultiplier);
+                dueDate = addYears(loanStartDate, yearsToAdd);
+              }
             } else if (periodType === 'months') {
               // Monthly: add months properly (with multiplier)
               let monthsToAdd;
@@ -857,30 +886,17 @@ Click "Calculate schedule" to see calculation details...
     };
 
     /**
-     * Calculate plan length from schedule
+     * Calculate loan duration from schedule (loan start to last payment)
      */
-    function calculatePlanLength(rows, loanStartDate, effectiveMode) {
+    function calculateLoanDuration(rows, loanStartDate, effectiveMode) {
       if (!rows || rows.length === 0) {
         return null;
       }
 
-      if (rows.length === 1) {
-        // Single payment
-        if (effectiveMode === 'actual' && rows[0].dueDate) {
-          return {
-            summary: '1 payment',
-            detail: formatDateDisplay(rows[0].dueDate)
-          };
-        }
-        return { summary: '1 payment', detail: null };
-      }
-
-      // Multiple payments - calculate duration
-      const firstPayment = rows[0];
       const lastPayment = rows[rows.length - 1];
 
       if (effectiveMode === 'actual' && loanStartDate && lastPayment.dueDate) {
-        // Real dates available
+        // Actual mode: calculate from loan start to last payment date
         const startDate = new Date(loanStartDate);
         const endDate = new Date(lastPayment.dueDate);
 
@@ -893,16 +909,47 @@ Click "Calculate schedule" to see calculation details...
         const endStr = formatDateDisplay(endDate);
 
         if (totalMonths === 0) {
-          return { summary: 'Less than 1 month', detail: `${startStr} to ${endStr}` };
+          // Less than a month, show days
+          const daysDiff = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
+          if (daysDiff === 1) {
+            return `1 day (${startStr} to ${endStr})`;
+          } else {
+            return `${daysDiff} days (${startStr} to ${endStr})`;
+          }
         } else if (totalMonths === 1) {
-          return { summary: '1 month', detail: `${startStr} to ${endStr}` };
+          return `1 month (${startStr} to ${endStr})`;
         } else {
-          return { summary: `${totalMonths} months`, detail: `${startStr} to ${endStr}` };
+          return `${totalMonths} months (${startStr} to ${endStr})`;
         }
       } else {
-        // Preview mode - approximate from payment count and frequency
-        const numPayments = rows.length;
-        return { summary: `${numPayments} payments`, detail: null };
+        // Preview mode: describe duration relative to agreement acceptance
+        // Calculate the offset from loan start to last payment
+        const lastPaymentLabel = lastPayment.label;
+
+        // Extract months/days from the label (e.g., "12 months after loan start")
+        const monthsMatch = lastPaymentLabel.match(/(\d+)\s+months?\s+after/);
+        const daysMatch = lastPaymentLabel.match(/(\d+)\s+days?\s+after/);
+        const yearsMatch = lastPaymentLabel.match(/(\d+)\s+years?\s+after/);
+
+        if (yearsMatch) {
+          const years = parseInt(yearsMatch[1]);
+          return years === 1
+            ? `1 year after agreement is accepted`
+            : `${years} years after agreement is accepted`;
+        } else if (monthsMatch) {
+          const months = parseInt(monthsMatch[1]);
+          return months === 1
+            ? `1 month after agreement is accepted`
+            : `${months} months after agreement is accepted`;
+        } else if (daysMatch) {
+          const days = parseInt(daysMatch[1]);
+          return days === 1
+            ? `1 day after agreement is accepted`
+            : `${days} days after agreement is accepted`;
+        }
+
+        // Fallback
+        return `${rows.length} payments after agreement is accepted`;
       }
     }
 
@@ -973,7 +1020,7 @@ Click "Calculate schedule" to see calculation details...
      */
     function resetCalculator() {
       // Reset form fields to defaults
-      document.getElementById('principal').value = 6000;
+      document.getElementById('principal').value = formatLoanAmount(6000);
       document.getElementById('interest').value = 5;
       document.getElementById('repaymentType').value = 'installments';
       document.getElementById('numInstallments').value = 12;
@@ -1036,9 +1083,7 @@ Click "Calculate schedule" to see calculation details...
           return today;
         case 'tomorrow':
           return addDays(today, 1);
-        case 'in-3-days':
-          return addDays(today, 3);
-        case 'in-7-days':
+        case 'in-1-week':
           return addDays(today, 7);
         case 'pick-date':
           return explicitLoanStartDate ? new Date(explicitLoanStartDate) : null;
@@ -1048,34 +1093,44 @@ Click "Calculate schedule" to see calculation details...
     }
 
     /**
+     * Parse formatted loan amount value back to number
+     */
+    function parseLoanAmount(value) {
+      // Remove all dots (thousands separators)
+      const cleaned = value.replace(/\./g, '');
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    /**
      * Helper function to calculate first payment timing
-     * Returns {days, months, isMonthBased}
+     * Returns {days, months, years, isMonthBased, isYearBased}
      */
     function calculateFirstPaymentTiming(firstPaymentDue, firstPaymentDate, loanStartDate) {
       switch (firstPaymentDue) {
-        case '3-days':
-          return { days: 3, months: 0, isMonthBased: false };
-        case '7-days':
-          return { days: 7, months: 0, isMonthBased: false };
+        case '1-week':
+          return { days: 7, months: 0, years: 0, isMonthBased: false, isYearBased: false };
         case '1-month':
-          return { days: 30, months: 1, isMonthBased: true };
-        case '3-months':
-          return { days: 91, months: 3, isMonthBased: true };
+          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false };
         case '6-months':
-          return { days: 182, months: 6, isMonthBased: true };
-        case '12-months':
-          return { days: 365, months: 12, isMonthBased: true };
+          return { days: 182, months: 6, years: 0, isMonthBased: true, isYearBased: false };
+        case '1-year':
+          return { days: 365, months: 12, years: 1, isMonthBased: false, isYearBased: true };
+        case '2-years':
+          return { days: 730, months: 24, years: 2, isMonthBased: false, isYearBased: true };
+        case '3-years':
+          return { days: 1095, months: 36, years: 3, isMonthBased: false, isYearBased: true };
         case 'pick-date':
           if (firstPaymentDate && loanStartDate) {
             const start = new Date(loanStartDate);
             const payment = new Date(firstPaymentDate);
             const daysDiff = Math.round((payment - start) / (1000 * 60 * 60 * 24));
-            return { days: daysDiff, months: 0, isMonthBased: false };
+            return { days: daysDiff, months: 0, years: 0, isMonthBased: false, isYearBased: false };
           }
           // If loan start is unknown, just use 30 days as default
-          return { days: 30, months: 1, isMonthBased: true };
+          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false };
         default:
-          return { days: 30, months: 1, isMonthBased: true };
+          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false };
       }
     }
 
@@ -1085,7 +1140,8 @@ Click "Calculate schedule" to see calculation details...
     function calculateSchedule() {
       try {
         // Gather form data
-        const loanAmount = parseFloat(document.getElementById('principal').value);
+        const principalValue = document.getElementById('principal').value;
+        const loanAmount = parseLoanAmount(principalValue);
         const annualInterestRate = parseFloat(document.getElementById('interest').value);
         const repaymentType = document.getElementById('repaymentType').value;
         const numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
@@ -1132,6 +1188,8 @@ Click "Calculate schedule" to see calculation details...
         );
         const firstPaymentDays = firstPaymentTiming.days;
         const firstPaymentMonths = firstPaymentTiming.months;
+        const firstPaymentYears = firstPaymentTiming.years || 0;
+        const firstPaymentIsYearBased = firstPaymentTiming.isYearBased || false;
 
         // Determine effective mode and loan start date
         // Rule: If loan start is known (not upon_acceptance), always use actual mode
@@ -1156,6 +1214,8 @@ Click "Calculate schedule" to see calculation details...
           paymentFrequency,
           firstPaymentDays,
           firstPaymentMonths,
+          firstPaymentYears,
+          firstPaymentIsYearBased,
           loanStartMode: effectiveLoanStartMode,
           contextMode: effectiveContextMode,
           explicitLoanStartDate: calculatedLoanStartDate
@@ -1167,22 +1227,18 @@ Click "Calculate schedule" to see calculation details...
           : '<span class="badge badge-actual">Actual</span>';
         document.getElementById('modeBadge').innerHTML = badge;
 
-        // Build loan start label with plan length
+        // Build loan start label with duration
         const loanStartText = getLoanStartLabelWithContext(
           calculatedLoanStartDate,
           result.effectiveMode,
           loanStartMode
         );
 
-        const planLength = calculatePlanLength(result.rows, calculatedLoanStartDate, result.effectiveMode);
+        const loanDuration = calculateLoanDuration(result.rows, calculatedLoanStartDate, result.effectiveMode);
         let loanStartLabelHTML = `Loan start: ${loanStartText}`;
 
-        if (planLength) {
-          if (planLength.detail) {
-            loanStartLabelHTML += ` • Plan length: ${planLength.summary} (${planLength.detail})`;
-          } else {
-            loanStartLabelHTML += ` • Plan length: ${planLength.summary}`;
-          }
+        if (loanDuration) {
+          loanStartLabelHTML += ` · Loan duration: ${loanDuration}`;
         }
 
         document.getElementById('loanStartLabel').innerHTML = loanStartLabelHTML;
@@ -1225,18 +1281,14 @@ Click "Calculate schedule" to see calculation details...
           `Number of installments: ${numberOfInstallments}`,
           `Payment frequency: ${frequencyLabel}`,
           `First payment due: ${firstPaymentDueLabel}`,
-          `  → Days: ${firstPaymentDays}, Months: ${firstPaymentMonths}`,
+          `  → Days: ${firstPaymentDays}, Months: ${firstPaymentMonths}, Years: ${firstPaymentYears}`,
           `Loan start: ${loanStartModeLabel}`,
           `  → Real date: ${calculatedLoanStartDate ? formatDateDisplay(calculatedLoanStartDate) : 'Unknown (preview mode)'}`,
           `Context mode: ${contextMode === 'actual' ? 'Actual (known loan start)' : 'Preview (no real date)'}`,
           `Effective mode: ${result.effectiveMode === 'actual' ? 'Actual (real calendar dates)' : 'Preview (relative labels)'}`,
           '',
-          '=== PLAN LENGTH ===',
-          planLength && planLength.detail
-            ? `${planLength.summary} (${planLength.detail})`
-            : planLength
-              ? planLength.summary
-              : 'N/A',
+          '=== LOAN DURATION ===',
+          loanDuration || 'N/A',
           '',
           '=== TOTALS ===',
           `Total principal: ${formatMoney(result.totals.principal)}`,
@@ -1273,6 +1325,47 @@ Click "Calculate schedule" to see calculation details...
 
     // Initialize: set initial UI state based on repayment type
     updateRepaymentTypeUI();
+
+    // Loan amount formatting with thousands separator
+    const principalInput = document.getElementById('principal');
+    let rawPrincipalValue = principalInput.value;
+
+    // Format number with EU-style thousands separator
+    function formatLoanAmount(value) {
+      const num = parseFloat(value);
+      if (isNaN(num)) return '';
+      // Use EU style: 6.000 instead of 6,000
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    // On focus: remove formatting to let user type freely
+    principalInput.addEventListener('focus', function() {
+      const num = parseLoanAmount(this.value);
+      if (num > 0) {
+        this.value = num.toString();
+      }
+    });
+
+    // On blur: format the value with thousands separator
+    principalInput.addEventListener('blur', function() {
+      const num = parseLoanAmount(this.value);
+      if (num > 0) {
+        this.value = formatLoanAmount(num);
+        rawPrincipalValue = num.toString();
+      } else {
+        this.value = '';
+        rawPrincipalValue = '';
+      }
+    });
+
+    // Format initial value on page load
+    if (principalInput.value) {
+      const num = parseFloat(principalInput.value);
+      if (num > 0) {
+        principalInput.value = formatLoanAmount(num);
+        rawPrincipalValue = num.toString();
+      }
+    }
   </script>
 </body>
 </html>
