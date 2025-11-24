@@ -309,7 +309,7 @@
             ${agreement.totalRepayAmountCents !== agreement.amountCents ? ` • Total to repay: <span class="agreement-amount-value">${totalRepayText}</span>` : ''}
           </div>
           <div class="agreement-actions">
-            <button class="btn-open-agreement" onclick="window.location.href='/review-details.html?id=${agreement.agreementId}'">Open agreement</button>
+            <button class="btn-open-agreement" onclick="window.location.href='/agreements/${agreement.agreementId}/manage'">Open agreement</button>
           </div>
         `;
 

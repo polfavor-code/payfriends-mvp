@@ -1814,6 +1814,12 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
       return res.status(400).json({ error: 'Invalid friend ID.' });
     }
 
+    // Validate public_id format (should be 32-character hex string)
+    if (friendPublicId.length !== 32 || !/^[a-f0-9]{32}$/.test(friendPublicId)) {
+      console.log('[Friend Profile] Invalid friend ID format - expected 32 hex chars, got:', friendPublicId);
+      return res.status(400).json({ error: 'Friend not found or no longer accessible.' });
+    }
+
     // Look up friend by public ID
     const friend = db.prepare(`
       SELECT id, public_id, full_name, email, phone_number, timezone, profile_picture
@@ -1849,7 +1855,7 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
     if (hasRelationship.count === 0) {
       // User is trying to access someone they have no agreements with
       console.log('[Friend Profile] No relationship found between userId:', userId, 'and friendId:', friendId);
-      return res.status(404).json({ error: 'Friend not found.' });
+      return res.status(404).json({ error: 'Friend not found or no longer accessible.' });
     }
 
     // Check if current user is lender in any agreement with this friend
@@ -1896,15 +1902,19 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
     `).all(userId, friendId, friendId, userId);
 
     // Format agreements for response
-    const agreementsWithThisFriend = agreements.map(agr => ({
-      agreementId: agr.id,
-      roleForCurrentUser: agr.lender_user_id === userId ? 'lender' : 'borrower',
-      amountCents: agr.amount_cents,
-      totalRepayAmountCents: agr.total_repay_amount ? Math.round(agr.total_repay_amount * 100) : agr.amount_cents,
-      status: agr.status,
-      description: agr.description || 'Loan',
-      repaymentType: agr.repayment_type
-    }));
+    console.log('[Friend Profile] Found', agreements.length, 'agreements');
+    const agreementsWithThisFriend = agreements.map(agr => {
+      console.log('[Friend Profile] Processing agreement', agr.id, '- lender:', agr.lender_user_id, 'borrower:', agr.borrower_user_id);
+      return {
+        agreementId: agr.id,
+        roleForCurrentUser: agr.lender_user_id === userId ? 'lender' : 'borrower',
+        amountCents: agr.amount_cents || 0,
+        totalRepayAmountCents: agr.total_repay_amount ? Math.round(agr.total_repay_amount * 100) : (agr.amount_cents || 0),
+        status: agr.status || 'pending',
+        description: agr.description || 'Loan',
+        repaymentType: agr.repayment_type || 'one_time'
+      };
+    });
 
     // Build response
     const response = {
@@ -1926,8 +1936,11 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
     res.json(response);
 
   } catch (err) {
-    console.error('Error fetching friend profile:', err);
-    res.status(500).json({ error: 'Server error fetching friend profile.' });
+    console.error('[Friend Profile] EXCEPTION caught:', err);
+    console.error('[Friend Profile] Error stack:', err.stack);
+    console.error('[Friend Profile] Error message:', err.message);
+    console.error('[Friend Profile] Request params - userId:', req.user.id, 'friendPublicId:', req.params.friendPublicId);
+    res.status(500).json({ error: 'Server error. Please try again later.' });
   }
 });
 
