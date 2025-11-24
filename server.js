@@ -1867,21 +1867,9 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
 
     const canSeeContact = isLenderInAny.count > 0;
 
-    // Get invite phone from agreements (fallback if profile phone is missing)
-    let invitePhone = null;
-    if (canSeeContact) {
-      const agreementWithPhone = db.prepare(`
-        SELECT borrower_phone
-        FROM agreements
-        WHERE lender_user_id = ? AND borrower_user_id = ? AND borrower_phone IS NOT NULL
-        ORDER BY created_at DESC
-        LIMIT 1
-      `).get(userId, friendId);
-
-      if (agreementWithPhone && agreementWithPhone.borrower_phone) {
-        invitePhone = agreementWithPhone.borrower_phone;
-      }
-    }
+    // Note: The borrower_phone column doesn't exist in the agreements table,
+    // so we only use the phone_number from the users table (friend.phone_number).
+    // This is sufficient for contact details display.
 
     // Get all agreements with this friend
     const agreements = db.prepare(`
@@ -1929,7 +1917,6 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
     if (canSeeContact) {
       response.friendCurrentEmail = friend.email;
       response.friendCurrentPhone = friend.phone_number || null;
-      response.friendInvitePhone = invitePhone; // Fallback phone from agreement invite
     }
 
     console.log('[Friend Profile] Returning profile with', agreementsWithThisFriend.length, 'agreements');

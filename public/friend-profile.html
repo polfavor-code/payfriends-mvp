@@ -250,18 +250,11 @@
       }
 
       // Contact details or communication box
-      if (data.friendCurrentEmail || data.friendCurrentPhone || data.friendInvitePhone) {
+      if (data.friendCurrentEmail || data.friendCurrentPhone) {
         // User is lender - show contact details
         document.getElementById('contact-details').style.display = 'block';
         document.getElementById('friend-email').textContent = data.friendCurrentEmail || 'No email provided yet';
-
-        // Phone: use profile phone if available, otherwise use invite phone
-        const phoneDisplay = data.friendCurrentPhone
-          ? data.friendCurrentPhone
-          : data.friendInvitePhone
-            ? `${data.friendInvitePhone} (from agreement invite)`
-            : 'No phone provided yet';
-        document.getElementById('friend-phone').textContent = phoneDisplay;
+        document.getElementById('friend-phone').textContent = data.friendCurrentPhone || 'No phone provided yet';
       } else {
         // User is borrower - show communication box
         document.getElementById('communication-box').style.display = 'block';
