@@ -105,10 +105,10 @@
           <div class="profile-row">
             <label>Phone number</label>
             <div class="phone-input-wrapper" data-phone-id="phone-number">
-              <div class="pf-phone-row">
-                <button type="button" class="pf-phone-country phone-country-button"></button>
-                <span class="pf-phone-prefix phone-prefix"></span>
-                <input type="tel" class="pf-phone-input phone-number-input" placeholder="612345678" />
+              <div class="phone-input-row">
+                <button type="button" class="phone-country-button"></button>
+                <span class="phone-prefix"></span>
+                <input type="tel" class="phone-number-input" placeholder="612345678" />
                 <input type="hidden" id="phone-number" name="phone-number" class="phone-number-full" />
               </div>
               <div class="phone-dropdown">
@@ -157,9 +157,11 @@
         if (fullNameInput) fullNameInput.value = currentUser.full_name || '';
         if (emailInput) emailInput.value = currentUser.email;
 
-        // Phone input is auto-initialized by PhoneInputManager
-        // Get reference to the instance
-        phoneInput = window.PhoneInputManager ? window.PhoneInputManager.getInstance('phone-number') : null;
+        // Initialize phone input using PhoneInputManager
+        if (window.PhoneInputManager) {
+          window.PhoneInputManager.initialize();
+          phoneInput = window.PhoneInputManager.getInstance('phone-number');
+        }
 
         // Set phone number - use profile phone if set, otherwise use invite phone fallback
         const phoneToDisplay = currentUser.phone_number || currentUser.invitePhoneFallback || '';

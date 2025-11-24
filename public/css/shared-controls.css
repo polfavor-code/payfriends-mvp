@@ -67,110 +67,6 @@
   background: #1a2028;
 }
 
-/* Phone input controls - ensure all three elements align perfectly */
-.pf-phone-row {
-  display: flex;
-  gap: 8px;
-  align-items: stretch;
-  flex-wrap: wrap;
-}
-
-@media (min-width: 640px) {
-  .pf-phone-row {
-    flex-wrap: nowrap;
-  }
-}
-
-/* Country select button */
-.pf-phone-country {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  min-height: 40px;
-  padding: 0 12px;
-  background: #10151d;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  color: var(--text);
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  width: auto;
-  min-width: 220px;
-  box-sizing: border-box;
-  vertical-align: middle;
-  line-height: 1;
-}
-
-.pf-phone-country:hover,
-.pf-phone-country:focus {
-  border-color: rgba(61, 220, 151, 0.4);
-  outline: none;
-}
-
-/* Dial code prefix display */
-.pf-phone-prefix {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 40px;
-  min-height: 40px;
-  padding: 0 12px;
-  background: #10151d;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  color: var(--muted);
-  font-size: 15px;
-  width: 80px;
-  min-width: 80px;
-  box-sizing: border-box;
-  vertical-align: middle;
-  line-height: 1;
-}
-
-/* Phone number input */
-.pf-phone-input {
-  flex: 1;
-  height: 40px;
-  min-height: 40px;
-  padding: 0 12px;
-  background: #10151d;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  color: var(--text);
-  font-size: 15px;
-  font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
-  box-sizing: border-box;
-  vertical-align: middle;
-  line-height: 1;
-}
-
-.pf-phone-input:focus {
-  outline: none;
-  border-color: rgba(61, 220, 151, 0.4);
-  background: #10151d;
-}
-
-.pf-phone-input:hover {
-  background: #10151d;
-}
-
-.pf-phone-input:-webkit-autofill,
-.pf-phone-input:-webkit-autofill:hover,
-.pf-phone-input:-webkit-autofill:focus,
-.pf-phone-input:-webkit-autofill:active {
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: var(--text);
-  transition: background-color 5000s ease-in-out 0s;
-  box-shadow: inset 0 0 20px 20px #10151d;
-}
-
-.pf-phone-input.phone-input-invalid {
-  border-color: #ff6b6b;
-}
-
 /* Universal autofill normalization for all controls */
 .pf-control:-webkit-autofill,
 .pf-control:-webkit-autofill:hover,
@@ -196,8 +92,6 @@ select:-webkit-autofill:active {
 
 /* Consistent green focus ring for all controls */
 .pf-control:focus,
-.pf-phone-country:focus,
-.pf-phone-input:focus,
 .pf-btn-header:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(61, 220, 151, 0.5);
