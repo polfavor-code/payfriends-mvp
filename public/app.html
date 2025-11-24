@@ -571,237 +571,261 @@
         <p id="step1-status" class="status"></p>
       </div>
 
-      <!-- Step 2: Loan terms + interest + repayment preview (merged super-step) -->
+      <!-- Step 2: Loan terms + interest + repayment preview (2-column layout) -->
       <div id="wizard-step-2" class="wizard-content hidden">
         <div id="readonly-banner-2" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
           ⚠️ This agreement has already been sent to <span id="readonly-name-2"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
         </div>
-        <h3 style="margin-top:0">Define loan terms, interest, and repayment schedule.</h3>
+        <h3 style="margin-top:0; margin-bottom:32px">Define loan terms, interest, and repayment schedule.</h3>
 
-        <!-- SECTION 1: Loan Basics -->
-        <h4 style="font-size:15px; font-weight:600; margin:24px 0 16px 0; color:var(--text)">Loan basics</h4>
+        <!-- 2-COLUMN LAYOUT -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:32px; margin-bottom:32px">
 
-        <div class="row">
-          <label>Loan amount (€)</label>
-          <input id="amount" type="text" placeholder="e.g. 6.000" required onblur="formatAmountInput(); validateAmountField();" onfocus="unformatAmountInput()" oninput="updateStep2Calculations()" />
-        </div>
-        <p style="color:var(--muted); font-size:12px; margin:6px 0 4px 172px">Enter the amount in euros.</p>
-        <p id="amount-error" class="hidden" style="color:#f87171; font-size:13px; margin:0 0 16px 172px"></p>
+          <!-- LEFT COLUMN: Configuration -->
+          <div style="display:flex; flex-direction:column; gap:24px">
 
-        <div class="row">
-          <label>Loan start date</label>
-          <select id="loan-start-select" onchange="updateLoanStartOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); cursor:pointer">
-            <option value="on-acceptance">When agreement is accepted</option>
-            <option value="today">Today</option>
-            <option value="tomorrow">Tomorrow</option>
-            <option value="3days">In 3 days</option>
-            <option value="7days">In 7 days</option>
-            <option value="pick-date">Pick a date…</option>
-          </select>
-        </div>
-        <div id="custom-loan-start-date" class="hidden" style="margin:16px 0">
-          <div class="row">
-            <label>Pick a date</label>
-            <input id="loan-start-date-input" type="date" required onchange="updateStep2Calculations()" style="cursor:pointer" />
-          </div>
-        </div>
-        <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">Date used for interest and repayment calculations.</p>
+            <!-- SECTION 1: Loan Basics -->
+            <div>
+              <h4 style="font-size:15px; font-weight:600; margin:0 0 16px 0; color:var(--text)">Loan basics</h4>
 
-        <div style="margin:16px 0 24px 0">
-          <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">Repayment type</label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:8px; transition:all 0.2s" id="repayment-onetime-card">
-            <input type="radio" name="repayment-type" value="one_time" onchange="toggleRepaymentType()" checked />
-            <span>One-time payment</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); transition:all 0.2s" id="repayment-installments-card">
-            <input type="radio" name="repayment-type" value="installments" onchange="toggleRepaymentType()" />
-            <span>Installments</span>
-          </label>
-        </div>
+              <div class="row">
+                <label>Loan amount (€)</label>
+                <input id="amount" type="text" placeholder="e.g. 6.000" required onblur="formatAmountInput(); validateAmountField();" onfocus="unformatAmountInput()" oninput="updateStep2Calculations()" />
+              </div>
+              <p style="color:var(--muted); font-size:12px; margin:6px 0 16px 172px">Enter the amount in euros.</p>
+              <p id="amount-error" class="hidden" style="color:#f87171; font-size:13px; margin:0 0 16px 172px"></p>
 
-        <!-- One-time payment fields -->
-        <div id="one-time-fields-step2">
-          <div class="row">
-            <label>Full repayment due</label>
-            <select id="one-time-due-select" onchange="updateStep2Calculations()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="in_1_week">In 1 week</option>
-              <option value="in_1_month">In 1 month</option>
-              <option value="in_6_months">In 6 months</option>
-              <option value="in_1_year" selected>In 1 year</option>
-              <option value="in_2_years">In 2 years</option>
-              <option value="in_3_years">In 3 years</option>
-              <option value="pick-date">Pick a date…</option>
-            </select>
-          </div>
-          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">When the first repayment is due after the loan starts.</p>
+              <div class="row">
+                <label>Loan start date (when borrower receives the money)</label>
+                <select id="loan-start-select" onchange="updateLoanStartOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); cursor:pointer">
+                  <option value="on-acceptance">When agreement is accepted</option>
+                  <option value="today">Today</option>
+                  <option value="tomorrow">Tomorrow</option>
+                  <option value="3days">In 3 days</option>
+                  <option value="7days">In 7 days</option>
+                  <option value="pick-date">Pick a date…</option>
+                </select>
+              </div>
+              <div id="custom-loan-start-date" class="hidden" style="margin:16px 0 16px 172px">
+                <input id="loan-start-date-input" type="date" required onchange="updateStep2Calculations()" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); cursor:pointer" />
+              </div>
 
-          <div id="custom-one-time-date" class="hidden" style="margin:16px 0">
-            <div class="row">
-              <label>Pick a date</label>
-              <input id="one-time-date-input" type="date" required onchange="updateStep2Calculations()" />
+              <div style="margin:24px 0 0 0">
+                <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">Repayment type</label>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:8px; transition:all 0.2s" id="repayment-onetime-card">
+                  <input type="radio" name="repayment-type" value="one_time" onchange="toggleRepaymentType()" checked />
+                  <span>One-time payment</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); transition:all 0.2s" id="repayment-installments-card">
+                  <input type="radio" name="repayment-type" value="installments" onchange="toggleRepaymentType()" />
+                  <span>Installments</span>
+                </label>
+              </div>
+
+              <!-- One-time payment fields -->
+              <div id="one-time-fields-step2" style="margin-top:16px">
+                <div class="row">
+                  <label>Full repayment due</label>
+                  <select id="one-time-due-select" onchange="updateStep2Calculations()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+                    <option value="in_1_week">In 1 week</option>
+                    <option value="in_1_month">In 1 month</option>
+                    <option value="in_6_months">In 6 months</option>
+                    <option value="in_1_year" selected>In 1 year</option>
+                    <option value="in_2_years">In 2 years</option>
+                    <option value="in_3_years">In 3 years</option>
+                    <option value="pick-date">Pick a date…</option>
+                  </select>
+                </div>
+                <p style="color:var(--muted); font-size:12px; margin:6px 0 0 172px">When the full repayment is due after the loan starts.</p>
+
+                <div id="custom-one-time-date" class="hidden" style="margin:16px 0 0 172px">
+                  <input id="one-time-date-input" type="date" required onchange="updateStep2Calculations()" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); cursor:pointer" />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <!-- SECTION 2: Repayment Structure (only if installments) -->
-        <div id="installment-fields-step2" class="hidden">
-          <h4 style="font-size:15px; font-weight:600; margin:32px 0 16px 0; color:var(--text)">Repayment structure</h4>
+            <!-- SECTION 2: Repayment Configuration (only if installments) -->
+            <div id="installment-fields-step2" class="hidden">
+              <h4 style="font-size:15px; font-weight:600; margin:0 0 16px 0; color:var(--text)">Repayment configuration</h4>
 
-          <div class="row">
-            <label>First payment due (after loan start)</label>
-            <select id="first-payment-select" onchange="updateStep2Calculations()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="in_1_week">In 1 week</option>
-              <option value="in_1_month" selected>In 1 month</option>
-              <option value="in_6_months">In 6 months</option>
-              <option value="in_1_year">In 1 year</option>
-              <option value="in_2_years">In 2 years</option>
-              <option value="in_3_years">In 3 years</option>
-              <option value="pick-date">Pick a date…</option>
-            </select>
-          </div>
-          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">When the first repayment is due after the loan starts.</p>
+              <div class="row">
+                <label>First payment due (after loan start)</label>
+                <select id="first-payment-select" onchange="updateStep2Calculations()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+                  <option value="in_1_week">In 1 week</option>
+                  <option value="in_1_month" selected>In 1 month</option>
+                  <option value="in_6_months">In 6 months</option>
+                  <option value="in_1_year">In 1 year</option>
+                  <option value="in_2_years">In 2 years</option>
+                  <option value="in_3_years">In 3 years</option>
+                </select>
+              </div>
+              <p style="color:var(--muted); font-size:12px; margin:6px 0 16px 172px">When the first repayment is due after the loan starts.</p>
 
-          <div id="custom-first-payment-date" class="hidden" style="margin:16px 0">
-            <div class="row">
-              <label>Pick a date</label>
-              <input id="first-payment-date-input" type="date" required onchange="updateStep2Calculations()" />
+              <div class="row">
+                <label>Payment frequency</label>
+                <select id="frequency-select" onchange="updateStep2Calculations()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
+                  <option value="every-month" selected>Every month</option>
+                  <option value="every-4-weeks">Every 4 weeks</option>
+                  <option value="every-2-weeks">Every 2 weeks</option>
+                  <option value="every-week">Every week</option>
+                </select>
+              </div>
+              <p style="color:var(--muted); font-size:12px; margin:6px 0 16px 172px">How often payments are made.</p>
+
+              <div class="row">
+                <label>Number of installments</label>
+                <input id="installments-count" type="number" min="2" max="120" step="1" value="12" placeholder="e.g. 12" oninput="updateStep2Calculations()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
+              </div>
+              <p style="color:var(--muted); font-size:12px; margin:6px 0 0 172px">How many separate payments the borrower will make.</p>
             </div>
-          </div>
 
-          <div class="row">
-            <label>Payment frequency</label>
-            <select id="frequency-select" onchange="updateStep2Calculations()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="every-month" selected>Every month</option>
-              <option value="every-4-weeks">Every 4 weeks</option>
-              <option value="every-2-weeks">Every 2 weeks</option>
-              <option value="every-week">Every week</option>
-            </select>
-          </div>
-          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">How often payments are made.</p>
+            <!-- SECTION 3: Interest Settings -->
+            <div>
+              <h4 style="font-size:15px; font-weight:600; margin:0 0 16px 0; color:var(--text)">Interest settings</h4>
 
-          <div class="row">
-            <label>Number of installments</label>
-            <input id="installments-count" type="number" min="2" max="120" step="1" value="12" placeholder="e.g. 12" oninput="updateStep2Calculations()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
-          </div>
-          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">How many separate payments the borrower will make.</p>
-        </div>
+              <div style="margin-bottom:16px">
+                <div id="interest-mode-toggle" style="display:inline-flex; background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:4px; gap:4px">
+                  <button id="mode-rate" onclick="setInterestModeNew('rate')" style="padding:10px 20px; border-radius:8px; border:none; background:var(--accent); color:#000; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
+                    Set interest rate
+                  </button>
+                  <button id="mode-none" onclick="setInterestModeNew('none')" style="padding:10px 20px; border-radius:8px; border:none; background:transparent; color:var(--text); font-weight:500; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
+                    No interest
+                  </button>
+                </div>
+              </div>
 
-        <!-- SECTION 3: Interest Settings -->
-        <h4 style="font-size:15px; font-weight:600; margin:32px 0 16px 0; color:var(--text)">Interest settings</h4>
+              <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+                <input id="interest-rate-input" type="number" min="0" max="99" step="0.1" placeholder="5" value="5" oninput="updateStep2Calculations()" style="width:80px; height:44px; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-size:16px; text-align:center" />
+                <span style="color:var(--text); font-size:16px; font-weight:500">% per year</span>
+                <button id="fair-range-pill" onclick="toggleFairRangeExplainer()" aria-expanded="false" style="display:inline-flex; align-items:center; gap:6px; height:44px; padding:0 16px; border-radius:22px; font-size:13px; font-weight:600; white-space:nowrap; border:none; cursor:pointer; transition:all 0.2s ease; background:rgba(61,220,151,0.15); color:var(--accent)">
+                  <span id="fair-range-text">Fair range (4–7%)</span>
+                  <svg style="width:14px; height:14px; opacity:0.8" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+                    <circle cx="8" cy="8" r="6.5" stroke-width="1.5"/>
+                    <path d="M8 7.5v4M8 5v0.5" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
 
-        <div style="margin-top:20px; margin-bottom:24px">
-          <div id="interest-mode-toggle" style="display:inline-flex; background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:4px; gap:4px">
-            <button id="mode-rate" onclick="setInterestModeNew('rate')" style="padding:10px 20px; border-radius:8px; border:none; background:var(--accent); color:#000; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
-              Set interest rate
-            </button>
-            <button id="mode-none" onclick="setInterestModeNew('none')" style="padding:10px 20px; border-radius:8px; border:none; background:transparent; color:var(--text); font-weight:500; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
-              No interest
-            </button>
-          </div>
-        </div>
-
-        <div style="margin-top:20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap">
-          <input id="interest-rate-input" type="number" min="0" max="99" step="0.1" placeholder="5" value="5" oninput="updateStep2Calculations()" style="width:80px; height:44px; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-size:16px; text-align:center" />
-          <span style="color:var(--text); font-size:16px; font-weight:500">% per year</span>
-          <button id="fair-range-pill" onclick="toggleFairRangeExplainer()" aria-expanded="false" style="display:inline-flex; align-items:center; gap:6px; height:44px; padding:0 16px; border-radius:22px; font-size:13px; font-weight:600; white-space:nowrap; border:none; cursor:pointer; transition:all 0.2s ease; background:rgba(61,220,151,0.15); color:var(--accent)">
-            <span id="fair-range-text">Fair range (4–7%)</span>
-            <svg style="width:14px; height:14px; opacity:0.8" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-              <circle cx="8" cy="8" r="6.5" stroke-width="1.5"/>
-              <path d="M8 7.5v4M8 5v0.5" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Fair range explainer box -->
-        <div id="fair-range-explainer" class="hidden" style="margin-top:12px; background:rgba(61,220,151,0.08); border:1px solid rgba(61,220,151,0.2); border-radius:10px; padding:16px; transition:all 0.2s ease">
-          <p style="margin:0 0 12px 0; font-size:13px; font-weight:600; color:var(--text)">Why this rate?</p>
-          <ul style="margin:0 0 12px 0; padding-left:20px; font-size:13px; line-height:1.6; color:var(--text)">
-            <li style="margin-bottom:6px">Larger loan amounts increase risk ↑</li>
-            <li style="margin-bottom:6px">Longer durations increase uncertainty ↑</li>
-            <li style="margin-bottom:6px">More installments reduce repayment risk ↓</li>
-          </ul>
-          <p id="fair-range-summary" style="margin:0; font-size:13px; color:var(--muted); line-height:1.6"></p>
-        </div>
-
-        <!-- SECTION 4: Loan Summary Box -->
-        <div id="loan-summary-card" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin:24px 0">
-          <h4 style="margin:0 0 16px 0; font-size:16px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px">Loan summary</h4>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted)">Loan amount</span>
-            <span style="font-weight:600" id="summary-loan-amount">€ 0,00</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted)">Duration</span>
-            <span style="font-weight:600" id="summary-duration">—</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted)">Interest rate</span>
-            <span style="font-weight:600" id="summary-interest-rate">5% per year</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid rgba(255,255,255,0.08); margin-top:8px; padding-top:12px">
-            <span style="color:var(--muted)">Total interest</span>
-            <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px">
-              <span style="font-weight:600" id="summary-total-interest">€ 0,00</span>
-              <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
+              <!-- Fair range explainer box -->
+              <div id="fair-range-explainer" class="hidden" style="margin-top:12px; background:rgba(61,220,151,0.08); border:1px solid rgba(61,220,151,0.2); border-radius:10px; padding:16px; transition:all 0.2s ease">
+                <p style="margin:0 0 12px 0; font-size:13px; font-weight:600; color:var(--text)">Why this rate?</p>
+                <ul style="margin:0 0 12px 0; padding-left:20px; font-size:13px; line-height:1.6; color:var(--text)">
+                  <li style="margin-bottom:6px">Larger loan amounts increase risk ↑</li>
+                  <li style="margin-bottom:6px">Longer durations increase uncertainty ↑</li>
+                  <li style="margin-bottom:6px">More installments reduce repayment risk ↓</li>
+                </ul>
+                <p id="fair-range-summary" style="margin:0; font-size:13px; color:var(--muted); line-height:1.6"></p>
+              </div>
             </div>
+
           </div>
-          <script>
-            document.currentScript.previousElementSibling.querySelector('div > span:last-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
-          </script>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted); font-weight:600">Total to repay</span>
-            <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px; color:var(--accent)">
-              <span style="font-weight:700; font-size:18px;" id="summary-total-repay">€ 0,00</span>
-              <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
+
+          <!-- RIGHT COLUMN: Preview -->
+          <div style="display:flex; flex-direction:column; gap:20px">
+
+            <!-- Header -->
+            <div>
+              <h4 style="font-size:16px; font-weight:600; margin:0 0 12px 0; color:var(--text)">Repayment schedule & interest calculation</h4>
+              <div style="font-size:13px; color:var(--muted); line-height:1.6">
+                <div>Loan start: <span id="preview-loan-start">When agreement is accepted</span></div>
+                <div>Loan duration: <span id="preview-duration">—</span></div>
+              </div>
             </div>
+
+            <!-- Repayment schedule table -->
+            <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px">
+              <h5 style="margin:0 0 16px 0; font-size:14px; font-weight:600">Repayment schedule</h5>
+              <div style="max-height:400px; overflow-y:auto">
+                <table style="width:100%; font-size:13px">
+                  <thead>
+                    <tr id="payment-breakdown-thead" style="border-bottom:1px solid rgba(255,255,255,0.08)">
+                    </tr>
+                  </thead>
+                  <tbody id="payment-breakdown-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Loan summary card -->
+            <div id="loan-summary-card" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px">
+              <h5 style="margin:0 0 16px 0; font-size:14px; font-weight:600; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px">Loan summary</h5>
+              <div style="display:flex; justify-content:space-between; padding:8px 0">
+                <span style="color:var(--muted); font-size:13px">Loan amount</span>
+                <span style="font-weight:600; font-size:13px" id="summary-loan-amount">€ 0,00</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0">
+                <span style="color:var(--muted); font-size:13px">Duration</span>
+                <span style="font-weight:600; font-size:13px" id="summary-duration">—</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0">
+                <span style="color:var(--muted); font-size:13px">Interest rate</span>
+                <span style="font-weight:600; font-size:13px" id="summary-interest-rate">5% per year</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid rgba(255,255,255,0.08); margin-top:8px; padding-top:12px">
+                <span style="color:var(--muted); font-size:13px">Total interest</span>
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px">
+                  <span style="font-weight:600; font-size:13px" id="summary-total-interest">€ 0,00</span>
+                  <span style="display:inline-flex; align-items:center; width:16px; height:16px; flex-shrink:0;" title="Fairness Between Friends"></span>
+                </div>
+              </div>
+              <script>
+                document.currentScript.previousElementSibling.querySelector('div > span:last-child').innerHTML = fairnessIconSVG('', {width:'16px', height:'16px', display:'block'});
+              </script>
+              <div style="display:flex; justify-content:space-between; padding:8px 0">
+                <span style="color:var(--muted); font-weight:600; font-size:13px">Total to repay</span>
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px; color:var(--accent)">
+                  <span style="font-weight:700; font-size:16px;" id="summary-total-repay">€ 0,00</span>
+                  <span style="display:inline-flex; align-items:center; width:16px; height:16px; flex-shrink:0;" title="Fairness Between Friends"></span>
+                </div>
+              </div>
+              <script>
+                document.currentScript.previousElementSibling.querySelector('div > span:last-child').innerHTML = fairnessIconSVG('', {width:'16px', height:'16px', display:'block'});
+              </script>
+            </div>
+
+            <!-- Fairness Between Friends helper -->
+            <div>
+              <p style="margin:0 0 8px 0; color:var(--muted); font-size:12px; line-height:1.5; display:flex; align-items:center; gap:4px; flex-wrap:wrap">
+                <span>Amounts marked with</span>
+                <span style="display:inline-flex; align-items:center; width:14px; height:14px; flex-shrink:0;" title="Fairness Between Friends"></span>
+                <span>are calculated using the Fairness Between Friends rules.</span>
+                <button onclick="toggleFBFExplainer()" style="background:none; border:none; color:var(--accent); font-size:12px; text-decoration:underline; cursor:pointer; padding:0">How it works</button>
+              </p>
+              <script>
+                document.currentScript.previousElementSibling.querySelectorAll('span')[1].innerHTML = fairnessIconSVG('', {width:'14px', height:'14px', display:'block'});
+              </script>
+
+              <div id="fbf-explainer" class="hidden" style="background:rgba(61,220,151,0.08); border:1px solid rgba(61,220,151,0.2); border-radius:10px; padding:16px; margin-top:8px">
+                <h6 style="margin:0 0 8px 0; font-size:13px; font-weight:600; color:var(--text)">Fairness Between Friends</h6>
+                <p style="margin:0 0 8px 0; font-size:12px; line-height:1.6; color:var(--text)">
+                  PayFriends adjusts interest automatically based on how the loan is actually repaid.
+                </p>
+                <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.6; color:var(--text)">
+                  <li style="margin-bottom:4px">Early or higher payments reduce total interest.</li>
+                  <li style="margin-bottom:4px">Late or smaller payments increase total interest.</li>
+                  <li>All changes update instantly for both lender and borrower.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Green summary line -->
+            <div id="payment-summary-text" style="color:var(--accent); font-size:13px; font-weight:500; line-height:1.6"></div>
+
           </div>
-          <script>
-            document.currentScript.previousElementSibling.querySelector('div > span:last-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
-          </script>
+
         </div>
 
-        <!-- SECTION 5: Fairness Between Friends (inline explainer) -->
-        <p style="margin:16px 0 8px 0; color:var(--muted); font-size:12px; line-height:1.5; display:flex; align-items:center; gap:4px; flex-wrap:wrap">
-          <span>Amounts marked with</span>
-          <span style="display:inline-flex; align-items:center; width:16px; height:16px; flex-shrink:0;" title="Fairness Between Friends"></span>
-          <span>are calculated using the Fairness Between Friends rules.</span>
-          <button onclick="toggleFBFExplainer()" style="background:none; border:none; color:var(--accent); font-size:12px; text-decoration:underline; cursor:pointer; padding:0; margin-left:4px">How it works</button>
-        </p>
-        <script>
-          document.currentScript.previousElementSibling.querySelectorAll('span')[1].innerHTML = fairnessIconSVG('', {width:'16px', height:'16px', display:'block'});
-        </script>
+        <!-- RESPONSIVE STYLES -->
+        <style>
+          @media (max-width: 1024px) {
+            #wizard-step-2 > div:nth-child(3) {
+              grid-template-columns: 1fr !important;
+            }
+          }
+        </style>
 
-        <div id="fbf-explainer" class="hidden" style="background:rgba(61,220,151,0.08); border:1px solid rgba(61,220,151,0.2); border-radius:10px; padding:16px; margin:8px 0 16px 0">
-          <h5 style="margin:0 0 12px 0; font-size:14px; font-weight:600; color:var(--text)">Fairness Between Friends</h5>
-          <p style="margin:0 0 12px 0; font-size:13px; line-height:1.6; color:var(--text)">
-            PayFriends adjusts interest automatically based on how the loan is actually repaid.
-          </p>
-          <ul style="margin:0; padding-left:20px; font-size:13px; line-height:1.6; color:var(--text)">
-            <li style="margin-bottom:6px">Early or higher payments reduce total interest.</li>
-            <li style="margin-bottom:6px">Late or smaller payments increase total interest.</li>
-            <li>All changes update instantly for both lender and borrower.</li>
-          </ul>
-        </div>
-
-        <!-- SECTION 6: Payment Breakdown (ALWAYS VISIBLE) -->
-        <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin:24px 0">
-          <h4 style="margin:0 0 16px 0; font-size:16px;">Payment breakdown</h4>
-          <div style="max-height:400px; overflow-y:auto">
-            <table style="width:100%; font-size:13px">
-              <thead>
-                <tr id="payment-breakdown-thead" style="border-bottom:1px solid rgba(255,255,255,0.08)">
-                </tr>
-              </thead>
-              <tbody id="payment-breakdown-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- SECTION 7: Green Summary Line -->
-        <div id="payment-summary-text" style="color:var(--accent); font-size:14px; font-weight:500; margin:24px 0 16px 0; line-height:1.6"></div>
-
-        <!-- SECTION 8: Action Buttons with Reset -->
-        <div style="margin-top:32px; display:flex; gap:12px; align-items:center">
+        <!-- Action Buttons (full width below both columns) -->
+        <div style="display:flex; gap:12px; align-items:center; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08)">
           <button onclick="goToPayments()">Continue to Payments</button>
           <button class="secondary" onclick="goToStep(1)">Back</button>
           <button class="secondary" onclick="resetStep2()" style="margin-left:auto; padding:10px 20px">Reset</button>
@@ -1372,8 +1396,13 @@
           installmentsCard.classList.add('reminder-option-active');
         }
 
+        // Initialize datepicker enhancements
+        initDatepickers();
+
         // Recalculate interest and schedule when returning to step 2
-        calculateInterest();
+        if (wizardData.amount) {
+          updateStep2Calculations();
+        }
       }
 
       // Special handling for step 3: initialize reminder mode highlight (was step 4)
@@ -1881,6 +1910,9 @@ function calculateOneTimeRepayment(principal, apr, dueOption, customDueDate, loa
   wizardData.totalInterest = totalInterest;
   wizardData.totalRepayAmount = totalRepay;
   wizardData.dueDate = customDueDate || null;
+
+  // Update right column preview
+  updateRightColumnPreview(durationText);
 }
 
 function calculateInstallmentRepayment(principal, apr, firstPaymentOption, frequency, count, customFirstDate, loanStartDate) {
@@ -1969,6 +2001,60 @@ function calculateInstallmentRepayment(principal, apr, firstPaymentOption, frequ
   wizardData.totalRepayAmount = totalRepay;
   wizardData.installmentCount = count;
   wizardData.paymentFrequency = frequency;
+
+  // Update right column preview
+  updateRightColumnPreview(durationText);
+}
+
+function updateRightColumnPreview(durationText) {
+  // Update loan start label
+  const loanStartSelect = document.getElementById('loan-start-select');
+  const previewLoanStart = document.getElementById('preview-loan-start');
+  if (loanStartSelect && previewLoanStart) {
+    const selectedOption = loanStartSelect.options[loanStartSelect.selectedIndex];
+    previewLoanStart.textContent = selectedOption.text;
+  }
+
+  // Update duration
+  const previewDuration = document.getElementById('preview-duration');
+  if (previewDuration && durationText) {
+    previewDuration.textContent = durationText;
+  }
+}
+
+// Initialize datepicker enhancements
+function initDatepickers() {
+  const dateInputs = [
+    'loan-start-date-input',
+    'one-time-date-input',
+    'first-payment-date-input'
+  ];
+
+  dateInputs.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+      // Make entire field clickable to open datepicker
+      input.addEventListener('click', function(e) {
+        if (!this.showPicker) return;
+        try {
+          this.showPicker();
+        } catch (err) {
+          // Fallback for browsers that don't support showPicker()
+          this.focus();
+        }
+      });
+
+      // Also open on focus
+      input.addEventListener('focus', function(e) {
+        if (!this.showPicker) return;
+        try {
+          this.showPicker();
+        } catch (err) {
+          // Silent fail
+        }
+      });
+    }
+  });
 }
 
 function updatePaymentBreakdownTable(rows, showOutstanding) {
