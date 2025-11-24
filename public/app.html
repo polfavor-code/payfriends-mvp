@@ -610,16 +610,12 @@
                 <input id="loan-start-date-input" type="date" required onchange="updateStep2Calculations()" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); cursor:pointer" />
               </div>
 
-              <div style="margin:24px 0 0 0">
-                <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">Repayment type</label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:8px; transition:all 0.2s" id="repayment-onetime-card">
-                  <input type="radio" name="repayment-type" value="one_time" onchange="toggleRepaymentType()" checked />
-                  <span>One-time payment</span>
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); transition:all 0.2s" id="repayment-installments-card">
-                  <input type="radio" name="repayment-type" value="installments" onchange="toggleRepaymentType()" />
-                  <span>Installments</span>
-                </label>
+              <div class="row">
+                <label>Repayment type</label>
+                <select id="repayment-type-select" onchange="handleRepaymentTypeChange()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); cursor:pointer">
+                  <option value="one_time" selected>One-time payment</option>
+                  <option value="installments">Installments</option>
+                </select>
               </div>
 
               <!-- One-time payment fields -->
@@ -683,27 +679,29 @@
             <div>
               <h4 style="font-size:15px; font-weight:600; margin:0 0 16px 0; color:var(--text)">Interest settings</h4>
 
-              <div style="margin-bottom:16px">
+              <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap">
+                <!-- Toggle buttons on left -->
                 <div id="interest-mode-toggle" style="display:inline-flex; background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:4px; gap:4px">
                   <button id="mode-rate" onclick="setInterestModeNew('rate')" style="padding:10px 20px; border-radius:8px; border:none; background:var(--accent); color:#000; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
-                    Set interest rate
+                    Set interest
                   </button>
                   <button id="mode-none" onclick="setInterestModeNew('none')" style="padding:10px 20px; border-radius:8px; border:none; background:transparent; color:var(--text); font-weight:500; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
                     No interest
                   </button>
                 </div>
-              </div>
 
-              <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
-                <input id="interest-rate-input" type="number" min="0" max="99" step="0.1" placeholder="5" value="5" oninput="updateStep2Calculations()" style="width:80px; height:44px; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-size:16px; text-align:center" />
-                <span style="color:var(--text); font-size:16px; font-weight:500">% per year</span>
-                <button id="fair-range-pill" onclick="toggleFairRangeExplainer()" aria-expanded="false" style="display:inline-flex; align-items:center; gap:6px; height:44px; padding:0 16px; border-radius:22px; font-size:13px; font-weight:600; white-space:nowrap; border:none; cursor:pointer; transition:all 0.2s ease; background:rgba(61,220,151,0.15); color:var(--accent)">
-                  <span id="fair-range-text">Fair range (4–7%)</span>
-                  <svg style="width:14px; height:14px; opacity:0.8" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-                    <circle cx="8" cy="8" r="6.5" stroke-width="1.5"/>
-                    <path d="M8 7.5v4M8 5v0.5" stroke-width="2" stroke-linecap="round"/>
-                  </svg>
-                </button>
+                <!-- Interest input and pill on right -->
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+                  <input id="interest-rate-input" type="number" min="0" max="99" step="0.1" placeholder="5" value="5" oninput="updateStep2Calculations()" style="width:80px; height:44px; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-size:16px; text-align:center" />
+                  <span style="color:var(--text); font-size:16px; font-weight:500">% per year</span>
+                  <button id="fair-range-pill" onclick="toggleFairRangeExplainer()" aria-expanded="false" style="display:inline-flex; align-items:center; gap:6px; height:44px; padding:0 16px; border-radius:22px; font-size:13px; font-weight:600; white-space:nowrap; border:none; cursor:pointer; transition:all 0.2s ease; background:rgba(61,220,151,0.15); color:var(--accent)">
+                    <span id="fair-range-text">Fair range (4–7%)</span>
+                    <svg style="width:14px; height:14px; opacity:0.8" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+                      <circle cx="8" cy="8" r="6.5" stroke-width="1.5"/>
+                      <path d="M8 7.5v4M8 5v0.5" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <!-- Fair range explainer box -->
@@ -1157,7 +1155,8 @@
       finalDueDate: '',
       // Interest fields
       hasInterest: true,
-      interestRate: 0,
+      interestRate: 5,
+      interestMode: 'rate',
       totalInterest: 0,
       totalRepayAmount: 0,
       // Payment preferences
@@ -1382,20 +1381,8 @@
         toggleBorrowerFields();
       }
 
-      // Special handling for step 2: initialize repayment type card styling and calculations
+      // Special handling for step 2: initialize calculations
       if (step === 2) {
-        const oneTimeCard = document.getElementById('repayment-onetime-card');
-        const installmentsCard = document.getElementById('repayment-installments-card');
-        const repaymentType = document.querySelector('input[name="repayment-type"]:checked').value;
-
-        if (repaymentType === 'one_time') {
-          oneTimeCard.classList.add('reminder-option-active');
-          installmentsCard.classList.remove('reminder-option-active');
-        } else {
-          oneTimeCard.classList.remove('reminder-option-active');
-          installmentsCard.classList.add('reminder-option-active');
-        }
-
         // Initialize datepicker enhancements
         initDatepickers();
 
@@ -1644,11 +1631,25 @@
     function goToTerms() {
       if (!validateStep1()) return;
       goToStep(2);
+
+      // Prefill amount from Step 1
+      const amountInput = document.getElementById('amount');
+      if (amountInput && wizardData.amount && !amountInput.value) {
+        amountInput.value = wizardData.amount;
+      }
+
       // Initialize Step 2 with defaults
       if (wizardData.hasInterest === undefined) {
         wizardData.hasInterest = true;
         wizardData.interestMode = 'rate';
+        wizardData.interestRate = 5;
       }
+
+      // Set interest mode UI to match default
+      setInterestModeNew('rate');
+
+      // Calculate initial values
+      updateStep2Calculations();
     }
 
 
@@ -1665,26 +1666,26 @@
 // TOGGLE FUNCTIONS
 // ============================================================================
 
-function toggleRepaymentType() {
-  const repaymentType = document.querySelector('input[name="repayment-type"]:checked').value;
+function handleRepaymentTypeChange() {
+  const repaymentTypeSelect = document.getElementById('repayment-type-select');
+  const repaymentType = repaymentTypeSelect ? repaymentTypeSelect.value : 'one_time';
   const oneTimeFields = document.getElementById('one-time-fields-step2');
   const installmentFields = document.getElementById('installment-fields-step2');
-  const oneTimeCard = document.getElementById('repayment-onetime-card');
-  const installmentsCard = document.getElementById('repayment-installments-card');
 
   if (repaymentType === 'one_time') {
     oneTimeFields.classList.remove('hidden');
     installmentFields.classList.add('hidden');
-    oneTimeCard.classList.add('reminder-option-active');
-    installmentsCard.classList.remove('reminder-option-active');
   } else {
     oneTimeFields.classList.add('hidden');
     installmentFields.classList.remove('hidden');
-    oneTimeCard.classList.remove('reminder-option-active');
-    installmentsCard.classList.add('reminder-option-active');
   }
 
   updateStep2Calculations();
+}
+
+// Keep old function for backwards compatibility (calls new function)
+function toggleRepaymentType() {
+  handleRepaymentTypeChange();
 }
 
 function updateLoanStartOption() {
@@ -1797,7 +1798,8 @@ function updateStep2Calculations() {
   const amount = parseFloat(amountStr);
   if (isNaN(amount) || amount <= 0) return;
 
-  const repaymentType = document.querySelector('input[name="repayment-type"]:checked')?.value || 'one_time';
+  const repaymentTypeSelect = document.getElementById('repayment-type-select');
+  const repaymentType = repaymentTypeSelect ? repaymentTypeSelect.value : 'one_time';
   const interestRate = wizardData.hasInterest && wizardData.interestMode === 'rate'
     ? parseFloat(document.getElementById('interest-rate-input')?.value || 0)
     : 0;
@@ -2122,9 +2124,9 @@ function resetStep2() {
   document.getElementById('custom-loan-start-date')?.classList.add('hidden');
 
   // Reset repayment type to one-time
-  const oneTimeRadio = document.querySelector('input[name="repayment-type"][value="one_time"]');
-  if (oneTimeRadio) oneTimeRadio.checked = true;
-  toggleRepaymentType();
+  const repaymentTypeSelect = document.getElementById('repayment-type-select');
+  if (repaymentTypeSelect) repaymentTypeSelect.value = 'one_time';
+  handleRepaymentTypeChange();
 
   // Reset one-time fields
   const oneTimeDueSelect = document.getElementById('one-time-due-select');
