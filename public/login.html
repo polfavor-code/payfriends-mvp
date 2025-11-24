@@ -59,19 +59,22 @@
 
     /* Feature list */
     .feature-list{
-      list-style:none; padding:0; margin:20px 0 0 0; max-width:100%;
+      list-style:none; padding:0 0 0 4px; margin:28px 0 0 0; max-width:100%;
     }
     .feature-item{
-      display:flex; align-items:center; gap:7px; margin-bottom:9px;
+      display:flex; align-items:center; gap:7px; margin-bottom:12px;
     }
     .feature-item:last-child{margin-bottom:0}
     .feature-icon{
       flex-shrink:0; width:19px; height:19px;
     }
     .feature-text{
-      color:#8691a1; font-size:13px; line-height:1.6; margin:0;
+      color:#c8d2dd; font-size:14px; line-height:1.55; margin:0;
     }
     .hero-copy{max-width:440px}
+    .hero-copy > p:first-child{
+      font-size:16px; color:var(--text); font-weight:600;
+    }
 
     /* Mobile hero stack */
     @media (max-width:899px){
@@ -188,39 +191,37 @@
             But your money isn't!
           </p>
         </div>
-        <ul class="feature-list">
-          <li class="feature-item">
-            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
-              <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="feature-text">Clear agreements that don't feel like a contract with your friends</span>
-          </li>
-          <li class="feature-item">
-            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
-              <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="feature-text">Automatic reminders so you never have to chase anyone</span>
-          </li>
-          <li class="feature-item">
-            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
-              <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="feature-text">Fair recalculations for 'I'll pay a bit now and the rest later' situations</span>
-          </li>
-          <li class="feature-item">
-            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
-              <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="feature-text">New plan suggestions when your friends face difficulties paying you back, solutions only</span>
-          </li>
-        </ul>
-        <div style="display:none"><!-- close hero-copy -->
-        </div>
       </div>
+      <ul class="feature-list">
+        <li class="feature-item">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
+            <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="feature-text">Clear agreements that don't feel like a contract with your friends</span>
+        </li>
+        <li class="feature-item">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
+            <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="feature-text">Automatic reminders so you never have to chase anyone</span>
+        </li>
+        <li class="feature-item">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
+            <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="feature-text">Fair recalculations for 'I'll pay a bit now and the rest later' situations</span>
+        </li>
+        <li class="feature-item">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
+            <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="feature-text">New plan suggestions when your friends face difficulties paying you back, solutions only</span>
+        </li>
+      </ul>
     </section>
 
     <!-- AUTH CARD -->
