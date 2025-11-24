@@ -370,7 +370,9 @@
         </div>
 
         <div class="form-group" id="firstPaymentGroup">
-          <label for="firstPaymentDue">First payment due</label>
+          <label for="firstPaymentDue">
+            <span id="paymentTimingLabel">First payment due</span>
+          </label>
           <select id="firstPaymentDue">
             <option value="3-days">In 3 days after loan start</option>
             <option value="7-days">In 7 days after loan start</option>
@@ -381,7 +383,7 @@
             <option value="12-months">In 12 months after loan start</option>
             <option value="pick-date">Pick a date…</option>
           </select>
-          <div class="form-hint">When the first repayment is due after the loan starts.</div>
+          <div class="form-hint">Select when the repayment is due after the loan starts.</div>
         </div>
 
         <div class="form-group" id="firstPaymentDateGroup" style="display: none;">
@@ -852,27 +854,52 @@ Click "Calculate schedule" to see calculation details...
       generateRepaymentSchedule
     };
 
-    // Show/hide conditional fields based on repayment type
-    document.getElementById('repaymentType').addEventListener('change', function() {
-      const isOneTime = this.value === 'one_time';
+    /**
+     * Update UI based on repayment type
+     */
+    function updateRepaymentTypeUI() {
+      const repaymentType = document.getElementById('repaymentType').value;
+      const isOneTime = repaymentType === 'one_time';
+
       const numInstallmentsGroup = document.getElementById('numInstallments').closest('.form-group');
       const frequencyGroup = document.getElementById('frequencyGroup');
-      const firstPaymentGroup = document.getElementById('firstPaymentGroup');
       const installmentsHint = document.getElementById('installmentsHint');
+      const paymentTimingLabel = document.getElementById('paymentTimingLabel');
 
       if (isOneTime) {
+        // 1-time payment mode
+
+        // 1) Change label to "Repayment due date"
+        paymentTimingLabel.textContent = 'Repayment due date';
+
+        // 2) Lock installments to 1 and hide
         document.getElementById('numInstallments').value = 1;
         numInstallmentsGroup.style.display = 'none';
+
+        // 3) Hide frequency (not applicable for 1-time)
         frequencyGroup.style.display = 'none';
-        firstPaymentGroup.style.display = 'none';
+
+        // 4) Show hint about 1-time payment
         installmentsHint.style.display = 'block';
       } else {
+        // Installments mode
+
+        // 1) Change label to "First payment due"
+        paymentTimingLabel.textContent = 'First payment due';
+
+        // 2) Show and enable installments
         numInstallmentsGroup.style.display = 'block';
+
+        // 3) Show frequency
         frequencyGroup.style.display = 'block';
-        firstPaymentGroup.style.display = 'block';
+
+        // 4) Hide hint
         installmentsHint.style.display = 'none';
       }
-    });
+    }
+
+    // Show/hide conditional fields based on repayment type
+    document.getElementById('repaymentType').addEventListener('change', updateRepaymentTypeUI);
 
     // Show/hide loan start date picker
     document.getElementById('loanStartMode').addEventListener('change', function() {
@@ -1111,8 +1138,8 @@ Click "Calculate schedule" to see calculation details...
       }
     }
 
-    // Initialize: trigger repayment type change to set initial state
-    document.getElementById('repaymentType').dispatchEvent(new Event('change'));
+    // Initialize: set initial UI state based on repayment type
+    updateRepaymentTypeUI();
   </script>
 </body>
 </html>
