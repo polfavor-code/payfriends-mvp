@@ -4413,37 +4413,71 @@ app.get('/security', (req, res) => {
   }
 });
 
-// Legal & About: serve legal page if authenticated, else redirect to /
-app.get('/legal', (req, res) => {
+// Legal pages: All legal routes now use app.html with client-side routing
+// Main legal index
+app.get('/app/legal', (req, res) => {
   if (req.user) {
-    res.sendFile(path.join(__dirname, 'public', 'legal.html'));
+    res.sendFile(path.join(__dirname, 'public', 'app.html'));
   } else {
     res.redirect('/');
   }
 });
 
 // Legal - Terms of Service
-app.get('/legal/terms', (req, res) => {
+app.get('/app/legal/terms', (req, res) => {
   if (req.user) {
-    res.sendFile(path.join(__dirname, 'public', 'terms.html'));
+    res.sendFile(path.join(__dirname, 'public', 'app.html'));
   } else {
     res.redirect('/');
   }
 });
 
 // Legal - Privacy Policy
-app.get('/legal/privacy', (req, res) => {
+app.get('/app/legal/privacy', (req, res) => {
   if (req.user) {
-    res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+    res.sendFile(path.join(__dirname, 'public', 'app.html'));
   } else {
     res.redirect('/');
   }
 });
 
 // Legal - Cookie Notice
+app.get('/app/legal/cookies', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'app.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Redirect old legal routes to new app/legal routes
+app.get('/legal', (req, res) => {
+  if (req.user) {
+    res.redirect('/app/legal');
+  } else {
+    res.redirect('/');
+  }
+});
+
+app.get('/legal/terms', (req, res) => {
+  if (req.user) {
+    res.redirect('/app/legal/terms');
+  } else {
+    res.redirect('/');
+  }
+});
+
+app.get('/legal/privacy', (req, res) => {
+  if (req.user) {
+    res.redirect('/app/legal/privacy');
+  } else {
+    res.redirect('/');
+  }
+});
+
 app.get('/legal/cookies', (req, res) => {
   if (req.user) {
-    res.sendFile(path.join(__dirname, 'public', 'cookies.html'));
+    res.redirect('/app/legal/cookies');
   } else {
     res.redirect('/');
   }

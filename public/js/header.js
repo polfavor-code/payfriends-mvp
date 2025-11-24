@@ -292,7 +292,7 @@
 
     if (legalItem) {
       legalItem.addEventListener('click', () => {
-        window.location.href = '/legal';
+        window.location.href = '/app/legal';
       });
     }
 

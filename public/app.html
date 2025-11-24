@@ -20,6 +20,10 @@
   <script src="/components/summary-block.js"></script>
   <!-- Fairness icon component -->
   <script src="/components/fairness-icon.js"></script>
+  <!-- Legal pages router -->
+  <script src="/js/legal-router.js"></script>
+  <!-- Legal pages content -->
+  <script src="/js/legal-pages.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -4308,6 +4312,17 @@
     let agreementPhoneInput;
 
     document.addEventListener('DOMContentLoaded', async () => {
+      // Check if we're on a legal page route
+      if (window.LegalRouter && window.LegalRouter.initialize()) {
+        // Legal router is handling this page
+        // Initialize only the header without activity section
+        await PayFriendsHeader.initialize({
+          hasActivitySection: false
+        });
+        return; // Don't initialize the app content
+      }
+
+      // Normal app initialization (not a legal page)
       // Initialize shared header with custom activity button handler
       await PayFriendsHeader.initialize({
         hasActivitySection: true,
