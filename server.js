@@ -4422,6 +4422,33 @@ app.get('/legal', (req, res) => {
   }
 });
 
+// Legal - Terms of Service
+app.get('/legal/terms', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'terms.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Legal - Privacy Policy
+app.get('/legal/privacy', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Legal - Cookie Notice
+app.get('/legal/cookies', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'cookies.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
 // Review: serve review page for agreement invites
 app.get('/review', (req, res) => {
   const { token } = req.query;
