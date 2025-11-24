@@ -745,7 +745,32 @@ Click "Calculate schedule" to see calculation details...
 
         if (effectiveMode === 'preview') {
           // PREVIEW MODE: Use relative labels, no real dates
-          if (i === 0 && firstPaymentIsYearBased) {
+
+          // EXCEPTION: If user explicitly picked a first payment date, we know the real calendar dates
+          // Show them even in preview mode
+          if (firstPaymentExactDate) {
+            if (i === 0) {
+              // First payment: use the exact picked date
+              dueDate = new Date(firstPaymentExactDate);
+              dueDate.setHours(0, 0, 0, 0);
+            } else {
+              // Subsequent payments: calculate from first payment date
+              const baseDate = new Date(firstPaymentExactDate);
+              baseDate.setHours(0, 0, 0, 0);
+
+              if (periodType === 'years') {
+                dueDate = addYears(baseDate, i * periodMultiplier);
+              } else if (periodType === 'months') {
+                dueDate = addMonths(baseDate, i * periodMultiplier);
+              } else if (periodType === 'weeks') {
+                dueDate = addDays(baseDate, i * periodDays);
+              } else {
+                // Day-based
+                dueDate = addDays(baseDate, i * periodDays);
+              }
+            }
+            dueDateLabel = formatDateDisplay(dueDate);
+          } else if (i === 0 && firstPaymentIsYearBased) {
             // First payment is year-based
             if (firstPaymentYears === 1) {
               dueDateLabel = '1 year after loan start';
