@@ -404,7 +404,8 @@
     async function recalculate() {
       try {
         // Gather form data
-        const principal = parseFloat(document.getElementById('principal').value) * 100; // Convert to cents
+        const principalEuros = parseFloat(document.getElementById('principal').value);
+        const principal = principalEuros * 100; // Convert to cents
         const annualInterestRate = parseFloat(document.getElementById('interest').value);
         const repaymentType = document.getElementById('repaymentType').value;
         const numInstallments = parseInt(document.getElementById('numInstallments').value);
@@ -413,6 +414,45 @@
         const loanStartMode = document.getElementById('loanStartMode').value;
         const loanStartDate = document.getElementById('loanStartDate').value;
         const contextMode = document.getElementById('contextMode').value;
+
+        // Validation
+        const validationErrors = [];
+        if (!principalEuros || principalEuros <= 0 || isNaN(principalEuros)) {
+          validationErrors.push('• Enter a loan amount greater than 0');
+        }
+        if (isNaN(annualInterestRate) || annualInterestRate < 0) {
+          validationErrors.push('• Interest rate cannot be negative');
+        }
+        if (repaymentType === 'installments' && (!numInstallments || numInstallments < 1 || isNaN(numInstallments))) {
+          validationErrors.push('• Number of installments must be at least 1');
+        }
+        if (isNaN(firstPaymentOffsetDays) || firstPaymentOffsetDays < 0) {
+          validationErrors.push('• First payment offset cannot be negative');
+        }
+        if (contextMode === 'actual' && loanStartMode === 'fixed_date' && !loanStartDate) {
+          validationErrors.push('• Select a loan start date for actual mode with fixed date');
+        }
+
+        if (validationErrors.length > 0) {
+          document.getElementById('debugConsole').textContent =
+            '⚠ Cannot calculate schedule:\n' + validationErrors.join('\n');
+
+          // Clear schedule table
+          document.getElementById('scheduleBody').innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 40px; color: #9ca3af;">
+                Fix validation errors to see schedule
+              </td>
+            </tr>
+          `;
+
+          // Reset totals
+          document.getElementById('totalInterest').textContent = '€ 0,00';
+          document.getElementById('totalToRepay').textContent = '€ 0,00';
+          document.getElementById('loanStartLabel').textContent = '—';
+
+          return;
+        }
 
         // Build config object
         const config = {
@@ -431,9 +471,8 @@
           }
         };
 
-        // Log config to debug console
-        document.getElementById('debugConsole').textContent =
-          'Config:\n' + JSON.stringify(config, null, 2) + '\n\nCalculating...';
+        // Show calculating message
+        document.getElementById('debugConsole').textContent = 'Calculating...';
 
         // Call API endpoint to generate schedule
         const response = await fetch('/api/calculate-schedule', {
@@ -445,7 +484,8 @@
         });
 
         if (!response.ok) {
-          throw new Error(`API error: ${response.statusText}`);
+          const errorText = await response.text();
+          throw new Error(`API error: ${response.statusText}\n${errorText}`);
         }
 
         const result = await response.json();
@@ -481,10 +521,33 @@
           tbody.appendChild(tr);
         });
 
-        // Update debug console with result
-        document.getElementById('debugConsole').textContent =
-          'Config:\n' + JSON.stringify(config, null, 2) +
-          '\n\nResult:\n' + JSON.stringify(result, null, 2);
+        // Update debug console with success summary
+        const frequencyLabels = {
+          'weekly': 'Every week',
+          'biweekly': 'Every 2 weeks',
+          'every_4_weeks': 'Every 4 weeks',
+          'monthly': 'Every month',
+          'quarterly': 'Every quarter',
+          'yearly': 'Every year'
+        };
+
+        const debugSummary = `✔ Calculated schedule with ${result.rows.length} ${repaymentType === 'one_time' ? 'payment' : 'installments'}
+
+Loan Details:
+  • Loan amount: ${formatCurrency2(principal)}
+  • Annual interest: ${annualInterestRate}%
+  • Frequency: ${frequencyLabels[paymentFrequency] || paymentFrequency}
+  • First payment: ${firstPaymentOffsetDays} days after loan start
+  • Context: ${contextMode === 'preview' ? 'Preview (relative due date labels)' : 'Actual (real calendar dates)'}
+  • Loan start: ${result.loanStartLabel}
+
+Results:
+  • Total interest: ${formatCurrency2(result.totalInterest)}
+  • Total to repay: ${formatCurrency2(result.totalToRepay)}
+
+${result.rows.length} payment${result.rows.length > 1 ? 's' : ''} generated successfully.`;
+
+        document.getElementById('debugConsole').textContent = debugSummary;
 
       } catch (error) {
         console.error('Calculation error:', error);
