@@ -1192,6 +1192,48 @@
       return map[firstPaymentOption] || 1;
     }
 
+    /**
+     * Check if loan start is "upon agreement acceptance"
+     * Handles multiple possible field names and values from backend
+     */
+    function isLoanStartUponAcceptance(agreement) {
+      // Check multiple possible field names and values
+      // Backend might use: money_sent_date, loanStartType, loan_start_type
+      // Values might be: 'on-acceptance', 'UPON_AGREEMENT_ACCEPTANCE', 'upon_agreement_acceptance'
+
+      // Debug logging to help diagnose issues
+      console.log('[isLoanStartUponAcceptance] Checking agreement:', {
+        money_sent_date: agreement.money_sent_date,
+        loanStartType: agreement.loanStartType,
+        loan_start_type: agreement.loan_start_type,
+        status: agreement.status
+      });
+
+      if (agreement.money_sent_date === 'on-acceptance' ||
+          agreement.money_sent_date === 'upon-acceptance' ||
+          agreement.money_sent_date === 'UPON_AGREEMENT_ACCEPTANCE') {
+        console.log('[isLoanStartUponAcceptance] Matched via money_sent_date');
+        return true;
+      }
+
+      if (agreement.loanStartType === 'UPON_AGREEMENT_ACCEPTANCE' ||
+          agreement.loanStartType === 'on-acceptance' ||
+          agreement.loanStartType === 'upon_agreement_acceptance') {
+        console.log('[isLoanStartUponAcceptance] Matched via loanStartType');
+        return true;
+      }
+
+      if (agreement.loan_start_type === 'UPON_AGREEMENT_ACCEPTANCE' ||
+          agreement.loan_start_type === 'on-acceptance' ||
+          agreement.loan_start_type === 'upon_agreement_acceptance') {
+        console.log('[isLoanStartUponAcceptance] Matched via loan_start_type');
+        return true;
+      }
+
+      console.log('[isLoanStartUponAcceptance] No match - returning false');
+      return false;
+    }
+
     function showNextPaymentCard() {
       // Only show for borrowers on active agreements
       const isBorrower = agreement.borrower_user_id === currentUser.id;
@@ -2105,7 +2147,7 @@
 
         // Determine first payment offset description
         let firstPaymentDesc = '';
-        const isOnAcceptance = agreement.money_sent_date === 'on-acceptance';
+        const isOnAcceptance = isLoanStartUponAcceptance(agreement);
         const isPending = agreement.status !== 'active';
 
         if (isOnAcceptance && isPending) {
@@ -2233,7 +2275,7 @@
 
       // 5. Money transfer date (use backend-derived display value)
       let moneyTransferDateText;
-      if (agreement.money_sent_date === 'on-acceptance' && agreement.status !== 'active') {
+      if (isLoanStartUponAcceptance(agreement) && agreement.status !== 'active') {
         // For pending agreements with loan start on acceptance, show clear message
         moneyTransferDateText = 'When the agreement is accepted';
       } else {
@@ -2272,7 +2314,7 @@
         const installmentAmount = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
 
         // Check if we should show relative dates for pending agreements with loan start on acceptance
-        const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+        const isLoanStartUponAcceptance = isLoanStartUponAcceptance(agreement);
         const isPending = agreement.status !== 'active';
 
         let firstDate, finalDate;
@@ -2387,7 +2429,7 @@
 
         // 9. Full repayment due date
         // Check if we should show relative or concrete date
-        const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+        const isLoanStartUponAcceptance = isLoanStartUponAcceptance(agreement);
         const isRelativeDueDate = agreement.one_time_due_option && agreement.one_time_due_option !== 'pick_date';
 
         if (isLoanStartUponAcceptance && isRelativeDueDate) {
@@ -2674,7 +2716,7 @@
         const installmentAmt = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
 
         // Check if we should show relative dates for pending agreements with loan start on acceptance
-        const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+        const isLoanStartUponAcceptance = isLoanStartUponAcceptance(agreement);
         const isPending = agreement.status !== 'active';
 
         let firstDate, finalDate;
@@ -2712,7 +2754,7 @@
 
       // Due dates
       if (agreement.repayment_type === 'installments') {
-        const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+        const isLoanStartUponAcceptance = isLoanStartUponAcceptance(agreement);
         const isPending = agreement.status !== 'active';
 
         if (agreement.first_repayment_date || agreement.first_payment_date) {
@@ -2736,7 +2778,7 @@
       } else {
         if (agreement.due_date) {
           // Check if we should show relative or concrete date
-          const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+          const isLoanStartUponAcceptance = isLoanStartUponAcceptance(agreement);
           const isRelativeDueDate = agreement.one_time_due_option && agreement.one_time_due_option !== 'pick_date';
 
           let dueDateDisplay;
@@ -4609,11 +4651,11 @@
             const row = schedule[i];
             if (row) {
               // Check if we should show relative dates for pending agreements with loan start on acceptance
-              const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+              const isOnAcceptanceLoan = isLoanStartUponAcceptance(agreement);
               const isPending = agreement.status !== 'active';
 
               let dateStr;
-              if (isLoanStartUponAcceptance && isPending) {
+              if (isOnAcceptanceLoan && isPending) {
                 // Show relative label for pending agreements with loan start on acceptance
                 dateStr = getRelativeInstallmentLabel(agreement, i);
               } else {
