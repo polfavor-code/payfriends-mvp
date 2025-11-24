@@ -118,6 +118,10 @@
       font-style: italic;
     }
 
+    .hidden {
+      display: none;
+    }
+
     .btn {
       width: 100%;
       background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
@@ -340,9 +344,9 @@
           <div class="form-hint">Date used for interest and repayment calculations.</div>
         </div>
 
-        <div class="form-group" id="loanStartDateGroup" style="display: none;">
-          <label for="loanStartDate">Loan start date</label>
-          <input type="date" id="loanStartDate" class="form-control" inputmode="none">
+        <div id="loanStartDateGroup" class="form-group hidden">
+          <label for="loanStartDate">Pick a date</label>
+          <input type="date" id="loanStartDate" required>
         </div>
 
         <!-- 4. Repayment type -->
@@ -371,9 +375,9 @@
           <div class="form-hint">When the first repayment is due after the loan starts.</div>
         </div>
 
-        <div class="form-group" id="firstPaymentDateGroup" style="display: none;">
-          <label for="firstPaymentDate">First payment date</label>
-          <input type="date" id="firstPaymentDate" class="form-control" inputmode="none">
+        <div id="firstPaymentDateGroup" class="form-group hidden">
+          <label for="firstPaymentDate">Pick a date</label>
+          <input type="date" id="firstPaymentDate" required>
         </div>
 
         <!-- 6. Payment frequency -->
@@ -1108,8 +1112,8 @@ Click "Calculate schedule" to see calculation details...
       document.getElementById('contextMode').value = 'preview';
 
       // Hide and clear date pickers
-      document.getElementById('loanStartDateGroup').style.display = 'none';
-      document.getElementById('firstPaymentDateGroup').style.display = 'none';
+      document.getElementById('loanStartDateGroup').classList.add('hidden');
+      document.getElementById('firstPaymentDateGroup').classList.add('hidden');
       document.getElementById('loanStartDate').value = '';
       document.getElementById('firstPaymentDate').value = '';
 
@@ -1140,9 +1144,9 @@ Click "Calculate schedule" to see calculation details...
       const loanStartDateGroup = document.getElementById('loanStartDateGroup');
       const loanStartDateInput = document.getElementById('loanStartDate');
       if (this.value === 'pick-date') {
-        loanStartDateGroup.style.display = 'block';
+        loanStartDateGroup.classList.remove('hidden');
       } else {
-        loanStartDateGroup.style.display = 'none';
+        loanStartDateGroup.classList.add('hidden');
         loanStartDateInput.value = ''; // Clear when hiding
       }
     });
@@ -1152,9 +1156,9 @@ Click "Calculate schedule" to see calculation details...
       const firstPaymentDateGroup = document.getElementById('firstPaymentDateGroup');
       const firstPaymentDateInput = document.getElementById('firstPaymentDate');
       if (this.value === 'pick-date') {
-        firstPaymentDateGroup.style.display = 'block';
+        firstPaymentDateGroup.classList.remove('hidden');
       } else {
-        firstPaymentDateGroup.style.display = 'none';
+        firstPaymentDateGroup.classList.add('hidden');
         firstPaymentDateInput.value = ''; // Clear when hiding
       }
     });
