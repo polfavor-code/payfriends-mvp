@@ -1218,16 +1218,48 @@
      * Get relative installment label for "upon acceptance" loans
      * @param {Object} agreement - Agreement object
      * @param {number} installmentIndex - Index of the installment (0-based)
-     * @returns {string} Relative label like "1 month after loan start"
+     * @returns {string} Relative label like "1 month after loan start" or "4 weeks after loan start"
      */
     function getRelativeInstallmentLabel(agreement, installmentIndex) {
       const frequency = agreement.payment_frequency || 'monthly';
       const firstPaymentOption = agreement.first_payment_option || '1month';
 
-      // Get the first payment offset in months
+      // For weekly/biweekly/every_4_weeks frequencies, use weeks
+      if (frequency === 'weekly' || frequency === 'biweekly' || frequency === 'every_4_weeks') {
+        let weeksPerPayment = 1;
+        if (frequency === 'biweekly') {
+          weeksPerPayment = 2;
+        } else if (frequency === 'every_4_weeks') {
+          weeksPerPayment = 4;
+        }
+
+        // Get first payment offset in weeks
+        let firstOffsetWeeks = 4; // Default to 4 weeks if using weekly frequency
+        const firstOffsetMap = {
+          'today': 0,
+          'tomorrow': 0,
+          '3days': 0,
+          '7days': 1,
+          '1month': 4,
+          '2months': 8,
+          '3months': 12,
+          '6months': 24,
+          '12months': 48
+        };
+        firstOffsetWeeks = firstOffsetMap[firstPaymentOption] || 4;
+
+        const totalWeeks = firstOffsetWeeks + (installmentIndex * weeksPerPayment);
+
+        if (totalWeeks === 1) {
+          return '1 week after loan start';
+        } else {
+          return `${totalWeeks} weeks after loan start`;
+        }
+      }
+
+      // For monthly/quarterly/yearly, use months
       const firstOffsetMonths = getFirstPaymentOffsetMonthsFromOption(firstPaymentOption);
 
-      // Determine interval in months based on frequency
       let intervalMonths;
       switch (frequency) {
         case 'monthly':
@@ -1240,7 +1272,6 @@
           intervalMonths = 12;
           break;
         default:
-          // For weekly/biweekly/every_4_weeks, approximate as months for label purposes
           intervalMonths = 1;
       }
 
@@ -1274,39 +1305,51 @@
     /**
      * Check if loan start is "upon agreement acceptance"
      * Handles multiple possible field names and values from backend
+     * Normalizes strings to handle various formats
      */
     function isLoanStartUponAcceptance(agreement) {
-      // Check multiple possible field names and values
-      // Backend might use: money_sent_date, loanStartType, loan_start_type
-      // Values might be: 'on-acceptance', 'UPON_AGREEMENT_ACCEPTANCE', 'upon_agreement_acceptance'
+      // Helper to normalize string for comparison
+      function normalize(str) {
+        if (!str || typeof str !== 'string') return '';
+        return str.toLowerCase().replace(/[_\s-]/g, '');
+      }
+
+      // Check multiple possible field names
+      const fieldsToCheck = [
+        agreement.money_sent_date,
+        agreement.loanStartType,
+        agreement.loan_start_type,
+        agreement.loan_start,
+        agreement.moneySentDate
+      ];
+
+      // Possible values that indicate "upon acceptance"
+      const acceptancePatterns = [
+        'onacceptance',
+        'uponacceptance',
+        'uponagreementacceptance',
+        'acceptance'
+      ];
 
       // Debug logging to help diagnose issues
       console.log('[isLoanStartUponAcceptance] Checking agreement:', {
         money_sent_date: agreement.money_sent_date,
         loanStartType: agreement.loanStartType,
         loan_start_type: agreement.loan_start_type,
+        loan_start: agreement.loan_start,
+        moneySentDate: agreement.moneySentDate,
         status: agreement.status
       });
 
-      if (agreement.money_sent_date === 'on-acceptance' ||
-          agreement.money_sent_date === 'upon-acceptance' ||
-          agreement.money_sent_date === 'UPON_AGREEMENT_ACCEPTANCE') {
-        console.log('[isLoanStartUponAcceptance] Matched via money_sent_date');
-        return true;
-      }
-
-      if (agreement.loanStartType === 'UPON_AGREEMENT_ACCEPTANCE' ||
-          agreement.loanStartType === 'on-acceptance' ||
-          agreement.loanStartType === 'upon_agreement_acceptance') {
-        console.log('[isLoanStartUponAcceptance] Matched via loanStartType');
-        return true;
-      }
-
-      if (agreement.loan_start_type === 'UPON_AGREEMENT_ACCEPTANCE' ||
-          agreement.loan_start_type === 'on-acceptance' ||
-          agreement.loan_start_type === 'upon_agreement_acceptance') {
-        console.log('[isLoanStartUponAcceptance] Matched via loan_start_type');
-        return true;
+      // Check each field
+      for (const field of fieldsToCheck) {
+        const normalized = normalize(field);
+        for (const pattern of acceptancePatterns) {
+          if (normalized.includes(pattern)) {
+            console.log('[isLoanStartUponAcceptance] Matched:', field);
+            return true;
+          }
+        }
       }
 
       console.log('[isLoanStartUponAcceptance] No match - returning false');
@@ -1318,12 +1361,24 @@
      * Returns an array of payment rows with status and labels
      */
     function buildPaymentsSummary() {
-      if (!agreement) return null;
+      console.log('[buildPaymentsSummary] Starting...');
+
+      if (!agreement) {
+        console.log('[buildPaymentsSummary] No agreement - returning null');
+        return null;
+      }
 
       const isInstallmentLoan = agreement.repayment_type === 'installments';
       const isOneTimeLoan = agreement.repayment_type === 'one_time';
 
+      console.log('[buildPaymentsSummary] Loan type:', {
+        repayment_type: agreement.repayment_type,
+        isInstallmentLoan,
+        isOneTimeLoan
+      });
+
       if (!isInstallmentLoan && !isOneTimeLoan) {
+        console.log('[buildPaymentsSummary] Not installment or one-time loan - returning null');
         return null;
       }
 
@@ -1331,6 +1386,13 @@
       const isLoanStartOnAcceptance = isLoanStartUponAcceptance(agreement);
       const isPendingAgreement = agreement.status !== 'active' && agreement.status !== 'settled';
       const useRelativeLabels = isLoanStartOnAcceptance && isPendingAgreement;
+
+      console.log('[buildPaymentsSummary] Label decision:', {
+        isLoanStartOnAcceptance,
+        isPendingAgreement,
+        useRelativeLabels,
+        status: agreement.status
+      });
 
       const totalPaid = agreement.total_paid_cents || 0;
       const paymentRows = [];
@@ -1370,24 +1432,36 @@
 
       // For installment loans, build the schedule
       const installmentCount = agreement.installment_count || 0;
+      console.log('[buildPaymentsSummary] Installment count:', installmentCount);
+
       if (installmentCount === 0) {
+        console.log('[buildPaymentsSummary] No installments - returning null');
         return null;
       }
 
       // Determine start date
       let startDate;
-      if (agreement.money_sent_date && agreement.money_sent_date !== 'on-acceptance') {
+      if (agreement.money_sent_date && !isLoanStartOnAcceptance) {
         startDate = new Date(agreement.money_sent_date);
+        console.log('[buildPaymentsSummary] Using money_sent_date as start date:', startDate);
       } else if (agreement.first_payment_date) {
         startDate = new Date(agreement.first_payment_date);
+        console.log('[buildPaymentsSummary] Using first_payment_date as start date:', startDate);
       } else {
         startDate = new Date();
+        console.log('[buildPaymentsSummary] Using today as start date:', startDate);
       }
 
       // Build payment dates
       let paymentDates = [];
       if (agreement.first_payment_date) {
         const frequency = agreement.payment_frequency || 'monthly';
+
+        console.log('[buildPaymentsSummary] Generating payment dates with:', {
+          frequency,
+          count: installmentCount,
+          first_payment_date: agreement.first_payment_date
+        });
 
         // Check if generatePaymentDates is available
         if (typeof generatePaymentDates === 'function') {
@@ -1398,12 +1472,18 @@
             count: installmentCount
           });
           paymentDates = dateResult.paymentDates;
+          console.log('[buildPaymentsSummary] Generated payment dates:', paymentDates.length);
+        } else {
+          console.log('[buildPaymentsSummary] generatePaymentDates function not available');
         }
+      } else {
+        console.log('[buildPaymentsSummary] No first_payment_date available');
       }
 
       // Build the complete amortization schedule
       let schedule = null;
       if (typeof buildRepaymentSchedule === 'function' && paymentDates.length > 0) {
+        console.log('[buildPaymentsSummary] Building repayment schedule...');
         const scheduleResult = buildRepaymentSchedule({
           principalCents: agreement.amount_cents,
           aprPercent: agreement.interest_rate || 0,
@@ -1412,10 +1492,16 @@
           startDate: startDate
         });
         schedule = scheduleResult.rows;
+        console.log('[buildPaymentsSummary] Built schedule with rows:', schedule.length);
+      } else {
+        console.log('[buildPaymentsSummary] Cannot build schedule:', {
+          hasBuildFunction: typeof buildRepaymentSchedule === 'function',
+          paymentDatesLength: paymentDates.length
+        });
       }
 
       if (!schedule || schedule.length === 0) {
-        // Fallback if schedule building failed
+        console.log('[buildPaymentsSummary] Schedule building failed - returning null');
         return null;
       }
 
@@ -1453,6 +1539,12 @@
         });
       }
 
+      console.log('[buildPaymentsSummary] Returning payment rows:', {
+        count: paymentRows.length,
+        useRelativeLabels,
+        sample: paymentRows.slice(0, 3).map(r => ({ label: r.label, dateLabel: r.dateLabel, status: r.status }))
+      });
+
       return paymentRows;
     }
 
@@ -1460,15 +1552,30 @@
      * Display the Payments card
      */
     function displayPaymentsCard() {
+      console.log('[displayPaymentsCard] Called');
+
       const card = document.getElementById('payments-card');
       const summaryDiv = document.getElementById('payments-summary');
+
+      if (!card) {
+        console.error('[displayPaymentsCard] payments-card element not found');
+        return;
+      }
+
+      if (!summaryDiv) {
+        console.error('[displayPaymentsCard] payments-summary element not found');
+        return;
+      }
 
       const paymentsSummary = buildPaymentsSummary();
 
       if (!paymentsSummary || paymentsSummary.length === 0) {
+        console.log('[displayPaymentsCard] No payments summary - hiding card');
         card.classList.add('hidden');
         return;
       }
+
+      console.log('[displayPaymentsCard] Displaying', paymentsSummary.length, 'payment rows');
 
       // Build HTML for payment rows
       let html = '';
@@ -1507,6 +1614,7 @@
 
       summaryDiv.innerHTML = html;
       card.classList.remove('hidden');
+      console.log('[displayPaymentsCard] Card displayed successfully');
     }
 
     function showNextPaymentCard() {
