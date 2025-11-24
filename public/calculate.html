@@ -349,8 +349,8 @@
         <div class="form-group">
           <label for="repaymentType">Repayment type</label>
           <select id="repaymentType">
-            <option value="installments" selected>Installments</option>
-            <option value="one_time">1-time payment</option>
+            <option value="one_time" selected>1-time payment</option>
+            <option value="installments">Installments</option>
           </select>
         </div>
 
@@ -361,9 +361,9 @@
           </label>
           <select id="firstPaymentDue">
             <option value="1-week">In 1 week</option>
-            <option value="1-month" selected>In 1 month</option>
+            <option value="1-month">In 1 month</option>
             <option value="6-months">In 6 months</option>
-            <option value="1-year">In 1 year</option>
+            <option value="1-year" selected>In 1 year</option>
             <option value="2-years">In 2 years</option>
             <option value="3-years">In 3 years</option>
             <option value="pick-date">Pick a date…</option>
@@ -428,12 +428,6 @@
             <button class="btn" onclick="calculateSchedule()" style="flex: 2;">Calculate schedule</button>
           </div>
         </div>
-
-        <div class="info-box">
-          <strong>Preview mode (no real date):</strong> Shows relative labels like "1 month after loan start". Use when loan start is "When agreement is accepted".<br>
-          <strong>Actual mode (known loan start):</strong> Shows real calendar dates when loan start date is known or simulated (e.g., today).<br>
-          <strong>Note:</strong> When loan start has a specific date, actual mode is used automatically regardless of context setting.
-        </div>
       </div>
 
       <!-- Right side: Results -->
@@ -444,8 +438,9 @@
             <h2>Repayment schedule & interest calculation</h2>
             <span id="modeBadge"></span>
           </div>
-          <div class="schedule-subtitle" id="loanStartLabel" style="font-size: 14px; margin-bottom: 16px; margin-top: 8px;">
-            Click "Calculate schedule" to generate...
+          <div style="font-size: 14px; margin-bottom: 16px; margin-top: 4px; color: #9ca3af;">
+            <div id="loanStartLabel">Click "Calculate schedule" to generate...</div>
+            <div id="loanDurationLabel" style="display: none;"></div>
           </div>
           <div class="schedule-table">
             <table>
@@ -467,7 +462,7 @@
                 </tr>
               </tbody>
               <tfoot id="scheduleTotals" style="display: none;">
-                <tr>
+                <tr style="color: #34d399;">
                   <td colspan="2" style="text-align: left;">Loan totals</td>
                   <td class="align-right" id="footerPrincipal">€ 0,00</td>
                   <td class="align-right" id="footerInterest">€ 0,00</td>
@@ -1054,6 +1049,7 @@ Click "Calculate schedule" to see calculation details...
       const frequencyGroup = document.getElementById('frequencyGroup');
       const installmentsHint = document.getElementById('installmentsHint');
       const paymentTimingLabel = document.getElementById('paymentTimingLabel');
+      const firstPaymentDue = document.getElementById('firstPaymentDue');
 
       if (isOneTime) {
         // 1-time payment mode
@@ -1070,6 +1066,11 @@ Click "Calculate schedule" to see calculation details...
 
         // 4) Show hint about 1-time payment
         installmentsHint.style.display = 'block';
+
+        // 5) If no value or transitioning back, default to "In 1 year"
+        if (!firstPaymentDue.value || firstPaymentDue.value === '') {
+          firstPaymentDue.value = '1-year';
+        }
       } else {
         // Installments mode
 
@@ -1084,6 +1085,11 @@ Click "Calculate schedule" to see calculation details...
 
         // 4) Hide hint
         installmentsHint.style.display = 'none';
+
+        // 5) If no value or transitioning back, default to "In 1 year"
+        if (!firstPaymentDue.value || firstPaymentDue.value === '') {
+          firstPaymentDue.value = '1-year';
+        }
       }
     }
 
@@ -1094,10 +1100,10 @@ Click "Calculate schedule" to see calculation details...
       // Reset form fields to defaults
       document.getElementById('principal').value = formatLoanAmount(6000);
       document.getElementById('interest').value = 5;
-      document.getElementById('repaymentType').value = 'installments';
-      document.getElementById('numInstallments').value = 12;
+      document.getElementById('repaymentType').value = 'one_time';
+      document.getElementById('numInstallments').value = 1;
       document.getElementById('frequency').value = 'every-month';
-      document.getElementById('firstPaymentDue').value = '1-month';
+      document.getElementById('firstPaymentDue').value = '1-year';
       document.getElementById('loanStartMode').value = 'upon_acceptance';
       document.getElementById('contextMode').value = 'preview';
 
@@ -1113,6 +1119,8 @@ Click "Calculate schedule" to see calculation details...
       // Clear output areas
       document.getElementById('modeBadge').innerHTML = '';
       document.getElementById('loanStartLabel').textContent = 'Click "Calculate schedule" to generate...';
+      document.getElementById('loanDurationLabel').style.display = 'none';
+      document.getElementById('loanDurationLabel').innerHTML = '';
 
       const tbody = document.getElementById('scheduleBody');
       tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Configure parameters and click "Calculate schedule"...</td></tr>';
@@ -1337,13 +1345,18 @@ Click "Calculate schedule" to see calculation details...
         );
 
         const loanDuration = calculateLoanDuration(result.rows, calculatedLoanStartDate, result.effectiveMode);
-        let loanStartLabelHTML = `Loan start: ${loanStartText}`;
 
+        // Update loan start label (line 1)
+        document.getElementById('loanStartLabel').innerHTML = `Loan start: ${loanStartText}`;
+
+        // Update loan duration label (line 2 with green color)
+        const loanDurationLabel = document.getElementById('loanDurationLabel');
         if (loanDuration) {
-          loanStartLabelHTML += ` · Loan duration: ${loanDuration}`;
+          loanDurationLabel.innerHTML = `Loan duration: <span style="color: #34d399;">${loanDuration}</span>`;
+          loanDurationLabel.style.display = 'block';
+        } else {
+          loanDurationLabel.style.display = 'none';
         }
-
-        document.getElementById('loanStartLabel').innerHTML = loanStartLabelHTML;
 
         // Update UI - Schedule table body
         const tbody = document.getElementById('scheduleBody');
@@ -1425,8 +1438,13 @@ Click "Calculate schedule" to see calculation details...
       }
     }
 
-    // Initialize: set initial UI state based on repayment type
+    // Initialize: set initial UI state based on repayment type and defaults
+    document.getElementById('repaymentType').value = 'one_time';
+    document.getElementById('firstPaymentDue').value = '1-year';
     updateRepaymentTypeUI();
+
+    // Trigger initial calculation to show results on page load
+    calculateSchedule();
 
     // Loan amount formatting with thousands separator
     const principalInput = document.getElementById('principal');
