@@ -3016,9 +3016,17 @@ function updateWorstCaseVisibility() {
 
     function toggleNewAgreement() {
       const section = document.getElementById('new-agreement-section');
+      const listSection = document.getElementById('list-section');
+
       if (section.classList.contains('hidden')) {
         section.classList.remove('hidden');
         document.getElementById('new-agreement-btn').style.display = 'none';
+
+        // Hide the My Agreements list when wizard is shown
+        if (listSection) {
+          listSection.style.display = 'none';
+        }
+
         // Scroll the wizard into view
         setTimeout(() => {
           section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3074,6 +3082,11 @@ function updateWorstCaseVisibility() {
         welcomeCard.style.display = 'block';
         if (listSection) {
           listSection.style.display = 'none';
+        }
+      } else {
+        // If there are agreements, show the list section
+        if (listSection) {
+          listSection.style.display = 'block';
         }
       }
     }
