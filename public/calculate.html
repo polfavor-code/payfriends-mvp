@@ -424,7 +424,7 @@
         <!-- 9. Buttons -->
         <div class="form-group">
           <div style="display: flex; gap: 12px;">
-            <button class="btn btn-secondary" onclick="resetCalculator()" style="flex: 1; background: rgba(75, 85, 99, 0.8); color: #e5e7eb;">Reset calculator</button>
+            <button class="btn btn-secondary" onclick="resetCalculator()" style="flex: 1; background: rgba(75, 85, 99, 0.8); color: #e5e7eb;">Reset</button>
             <button class="btn" onclick="calculateSchedule()" style="flex: 2;">Calculate schedule</button>
           </div>
         </div>
@@ -1050,6 +1050,7 @@ Click "Calculate schedule" to see calculation details...
       const installmentsHint = document.getElementById('installmentsHint');
       const paymentTimingLabel = document.getElementById('paymentTimingLabel');
       const firstPaymentDue = document.getElementById('firstPaymentDue');
+      const numInstallments = document.getElementById('numInstallments');
 
       if (isOneTime) {
         // 1-time payment mode
@@ -1058,7 +1059,7 @@ Click "Calculate schedule" to see calculation details...
         paymentTimingLabel.textContent = 'Full repayment due (after loan start)';
 
         // 2) Lock installments to 1 and hide
-        document.getElementById('numInstallments').value = 1;
+        numInstallments.value = 1;
         numInstallmentsGroup.style.display = 'none';
 
         // 3) Hide frequency (not applicable for 1-time)
@@ -1077,8 +1078,9 @@ Click "Calculate schedule" to see calculation details...
         // 1) Change label to "First payment due (after loan start)"
         paymentTimingLabel.textContent = 'First payment due (after loan start)';
 
-        // 2) Show and enable installments
+        // 2) Show and enable installments, auto-set to 12 when switching
         numInstallmentsGroup.style.display = 'block';
+        numInstallments.value = 12;
 
         // 3) Show frequency
         frequencyGroup.style.display = 'block';
@@ -1086,10 +1088,8 @@ Click "Calculate schedule" to see calculation details...
         // 4) Hide hint
         installmentsHint.style.display = 'none';
 
-        // 5) If no value or transitioning back, default to "In 1 year"
-        if (!firstPaymentDue.value || firstPaymentDue.value === '') {
-          firstPaymentDue.value = '1-year';
-        }
+        // 5) Auto-set to "In 1 year" when switching to installments
+        firstPaymentDue.value = '1-year';
       }
     }
 
@@ -1349,10 +1349,11 @@ Click "Calculate schedule" to see calculation details...
         // Update loan start label (line 1)
         document.getElementById('loanStartLabel').innerHTML = `Loan start: ${loanStartText}`;
 
-        // Update loan duration label (line 2 with green color)
+        // Update loan duration label (line 2 with entire line in green color)
         const loanDurationLabel = document.getElementById('loanDurationLabel');
         if (loanDuration) {
-          loanDurationLabel.innerHTML = `Loan duration: <span style="color: #34d399;">${loanDuration}</span>`;
+          loanDurationLabel.innerHTML = `Loan duration: ${loanDuration}`;
+          loanDurationLabel.style.color = '#34d399';
           loanDurationLabel.style.display = 'block';
         } else {
           loanDurationLabel.style.display = 'none';
