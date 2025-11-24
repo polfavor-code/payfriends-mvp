@@ -320,7 +320,8 @@
         <!-- 1. Loan amount -->
         <div class="form-group">
           <label for="principal">Loan amount (€)</label>
-          <input type="number" id="principal" value="6000" min="100" step="100">
+          <input type="text" id="principal" placeholder="e.g. 6,000">
+          <div id="principalError" class="form-hint" style="display: none; color: #ef4444; font-style: normal; margin-top: 6px;"></div>
         </div>
 
         <!-- 2. Annual interest rate -->
@@ -1065,13 +1066,16 @@
      */
     function resetCalculator() {
       // Reset form fields to defaults
-      document.getElementById('principal').value = formatLoanAmount(6000);
+      document.getElementById('principal').value = '';
       document.getElementById('interest').value = 5;
       document.getElementById('repaymentType').value = 'one_time';
       document.getElementById('numInstallments').value = 1;
       document.getElementById('frequency').value = 'every-month';
       document.getElementById('firstPaymentDue').value = '1-year';
       document.getElementById('loanStartMode').value = 'upon_acceptance';
+
+      // Clear loan amount error
+      clearPrincipalError();
 
       // Context mode dropdown was removed on calculator.html, but keep this safe
       const contextModeSelect = document.getElementById('contextMode');
@@ -1088,8 +1092,12 @@
       // Update UI based on repayment type
       updateRepaymentTypeUI();
 
-      // Trigger auto-calculation with default values
-      runRepaymentCalculation();
+      // Show waiting message instead of auto-calculating
+      document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Waiting for calculation...</td></tr>';
+      document.getElementById('scheduleTotals').style.display = 'none';
+      document.getElementById('loanSummaryContent').innerHTML = 'Configure parameters to see loan summary...';
+      document.getElementById('loanStartLabel').innerHTML = 'Configure parameters to see loan details...';
+      document.getElementById('loanDurationLabel').style.display = 'none';
     }
 
     /**
@@ -1246,13 +1254,43 @@
     }
 
     /**
-     * Parse formatted loan amount value back to number
+     * Parse money string to number
+     * Accepts both comma and dot as thousand separators
+     * Returns parsed number or 0 if invalid
      */
-    function parseLoanAmount(value) {
-      // Remove all dots (thousands separators)
-      const cleaned = value.replace(/\./g, '');
+    function parseMoney(value) {
+      if (typeof value !== 'string') {
+        value = String(value);
+      }
+      // Remove all dots and commas (thousand separators)
+      const cleaned = value.replace(/[.,\s]/g, '');
       const num = parseFloat(cleaned);
       return isNaN(num) ? 0 : num;
+    }
+
+    /**
+     * Format number as money with thousand separator
+     * Uses comma as default separator
+     */
+    function formatMoneyInput(value) {
+      const num = parseFloat(value);
+      if (isNaN(num)) return '';
+      // Use comma for thousand separator (e.g., 6,000)
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    /**
+     * Legacy alias for backward compatibility
+     */
+    function parseLoanAmount(value) {
+      return parseMoney(value);
+    }
+
+    /**
+     * Legacy alias for backward compatibility
+     */
+    function formatLoanAmount(value) {
+      return formatMoneyInput(value);
     }
 
     /**
@@ -1358,8 +1396,8 @@
     function calculateSchedule() {
       try {
         // Gather form data
-        const principalValue = document.getElementById('principal').value;
-        const loanAmount = parseLoanAmount(principalValue);
+        const principalValue = document.getElementById('principal').value.trim();
+        const loanAmount = parseMoney(principalValue);
         const annualInterestRate = parseFloat(document.getElementById('interest').value);
         const repaymentType = document.getElementById('repaymentType').value;
         const numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
@@ -1372,11 +1410,21 @@
         const explicitLoanStartDate = document.getElementById('loanStartDate').value;
 
         // Validation - graceful handling for auto-updates
-        // Skip calculation silently if required inputs are empty (user might be typing)
-        if (!loanAmount || loanAmount <= 0 || isNaN(loanAmount)) {
-          // Silently skip - user might be typing
+        // Check loan amount first - show error and focus if invalid
+        if (principalValue === '') {
+          showPrincipalError('Please enter a loan amount.');
+          principalInput.focus();
           return;
         }
+        if (!loanAmount || loanAmount <= 0 || isNaN(loanAmount)) {
+          showPrincipalError('Loan amount must be more than €0.');
+          principalInput.focus();
+          return;
+        }
+        // Loan amount is valid - clear any errors
+        clearPrincipalError();
+
+        // Skip calculation silently if other inputs are empty (user might be typing)
         if (isNaN(annualInterestRate)) {
           // Silently skip - user might be clearing the field
           return;
@@ -1595,49 +1643,59 @@
     document.getElementById('firstPaymentDue').value = '1-year';
     updateRepaymentTypeUI();
 
-    // Trigger initial calculation to show results on page load
-    runRepaymentCalculation();
+    // Don't trigger initial calculation - wait for user to enter loan amount
+    // Show waiting message instead
+    document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Waiting for calculation...</td></tr>';
+    document.getElementById('loanSummaryContent').innerHTML = 'Configure parameters to see loan summary...';
 
-    // Loan amount formatting with thousands separator
+    // Loan amount validation and formatting
     const principalInput = document.getElementById('principal');
-    let rawPrincipalValue = principalInput.value;
+    const principalError = document.getElementById('principalError');
 
-    // Format number with EU-style thousands separator
-    function formatLoanAmount(value) {
-      const num = parseFloat(value);
-      if (isNaN(num)) return '';
-      // Use EU style: 6.000 instead of 6,000
-      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // Clear error message helper
+    function clearPrincipalError() {
+      principalError.style.display = 'none';
+      principalError.textContent = '';
     }
 
-    // On focus: remove formatting to let user type freely
+    // Show error message helper
+    function showPrincipalError(message) {
+      principalError.textContent = message;
+      principalError.style.display = 'block';
+    }
+
+    // On focus: remove formatting to let user type freely, clear errors
     principalInput.addEventListener('focus', function() {
-      const num = parseLoanAmount(this.value);
+      clearPrincipalError();
+      const num = parseMoney(this.value);
       if (num > 0) {
         this.value = num.toString();
       }
     });
 
-    // On blur: format the value with thousands separator
+    // On blur: validate and format
     principalInput.addEventListener('blur', function() {
-      const num = parseLoanAmount(this.value);
-      if (num > 0) {
-        this.value = formatLoanAmount(num);
-        rawPrincipalValue = num.toString();
-      } else {
-        this.value = '';
-        rawPrincipalValue = '';
-      }
-    });
+      const trimmed = this.value.trim();
 
-    // Format initial value on page load
-    if (principalInput.value) {
-      const num = parseFloat(principalInput.value);
-      if (num > 0) {
-        principalInput.value = formatLoanAmount(num);
-        rawPrincipalValue = num.toString();
+      // Empty field
+      if (trimmed === '') {
+        showPrincipalError('Please enter a loan amount.');
+        return;
       }
-    }
+
+      // Parse the value
+      const num = parseMoney(trimmed);
+
+      // Invalid or zero/negative
+      if (num <= 0) {
+        showPrincipalError('Loan amount must be more than €0.');
+        return;
+      }
+
+      // Valid - format and clear error
+      clearPrincipalError();
+      this.value = formatMoneyInput(num);
+    });
   </script>
 </body>
 </html>
