@@ -101,14 +101,43 @@
       border-color: rgba(59, 130, 246, 0.5);
     }
 
+    .form-group input:disabled,
+    .form-group select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .form-group input[type="number"] {
       font-variant-numeric: tabular-nums;
     }
 
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+    .form-hint {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
     }
 
     .totals {
@@ -232,7 +261,12 @@
       max-height: 300px;
       overflow-y: auto;
       white-space: pre-wrap;
-      word-break: break-all;
+      word-break: break-word;
+    }
+
+    .error-message {
+      color: #ef4444;
+      font-weight: 600;
     }
   </style>
 </head>
@@ -261,25 +295,28 @@
         <div class="form-group">
           <label for="repaymentType">Repayment type</label>
           <select id="repaymentType">
-            <option value="one_time">One-time repayment</option>
             <option value="installments" selected>Installments</option>
+            <option value="one_time">1-time payment</option>
           </select>
         </div>
 
         <div class="form-group" id="installmentsGroup">
           <label for="numInstallments">Number of installments</label>
           <input type="number" id="numInstallments" value="12" min="1" max="120" step="1">
+          <div class="form-hint" id="installmentsHint" style="display: none;">
+            For 1-time payments the loan is repaid in a single payment.
+          </div>
         </div>
 
         <div class="form-group">
           <label for="frequency">Payment frequency</label>
           <select id="frequency">
-            <option value="weekly">Every week</option>
-            <option value="biweekly">Every 2 weeks</option>
-            <option value="every_4_weeks">Every 4 weeks</option>
             <option value="monthly" selected>Every month</option>
-            <option value="quarterly">Every quarter (3 months)</option>
-            <option value="yearly">Every year</option>
+            <option value="every_4_weeks">Every 4 weeks</option>
+            <option value="biweekly">Every 2 weeks</option>
+            <option value="weekly">Every week</option>
+            <option value="every_3_days">Every 3 days</option>
+            <option value="once_only" style="display: none;">Once only</option>
           </select>
         </div>
 
@@ -291,8 +328,8 @@
         <div class="form-group">
           <label for="loanStartMode">Loan start mode</label>
           <select id="loanStartMode">
-            <option value="fixed_date">Fixed date</option>
             <option value="upon_acceptance" selected>Upon agreement acceptance</option>
+            <option value="fixed_date">On a specific date</option>
           </select>
         </div>
 
@@ -305,8 +342,12 @@
           <label for="contextMode">Context mode</label>
           <select id="contextMode">
             <option value="preview" selected>Preview (no real date)</option>
-            <option value="actual">Actual (with real date)</option>
+            <option value="actual">Actual mode</option>
           </select>
+        </div>
+
+        <div class="form-group">
+          <button class="btn" onclick="calculateSchedule()">Calculate schedule</button>
         </div>
 
         <div class="info-box">
@@ -351,7 +392,7 @@
               <tbody id="scheduleBody">
                 <tr>
                   <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
-                    Configure parameters to generate schedule...
+                    Click "Calculate schedule" to generate repayment schedule...
                   </td>
                 </tr>
               </tbody>
@@ -363,7 +404,7 @@
         <div class="card" style="margin-top: 24px;">
           <h2>Debug Console</h2>
           <div class="debug-console" id="debugConsole">
-            Waiting for calculation...
+Click "Calculate schedule" to see calculation details...
           </div>
         </div>
       </div>
@@ -371,201 +412,353 @@
   </div>
 
   <script src="/js/formatters.js"></script>
-  <script src="/js/schedule.js"></script>
   <script>
-    // Import repayment schedule generator
-    // Since we can't directly import Node.js modules in browser, we'll need to expose it via an API endpoint
-    // For now, we'll recreate the logic inline for the playground
+    // Calculator Playground Logic
+    // Uses the formatCurrency functions from the global window object loaded by formatters.js
 
-    const { formatCurrency0, formatCurrency2 } = window;
+    // Get formatting functions from window
+    const formatMoney = window.formatCurrency2;
+    const formatMoneyRound = window.formatCurrency0;
 
-    // Show/hide conditional fields
-    const repaymentTypeSelect = document.getElementById('repaymentType');
-    const installmentsGroup = document.getElementById('installmentsGroup');
-    const loanStartModeSelect = document.getElementById('loanStartMode');
-    const loanStartDateGroup = document.getElementById('loanStartDateGroup');
+    // Show/hide conditional fields based on repayment type
+    document.getElementById('repaymentType').addEventListener('change', function() {
+      const isOneTime = this.value === 'one_time';
+      const numInstallmentsInput = document.getElementById('numInstallments');
+      const frequencySelect = document.getElementById('frequency');
+      const installmentsHint = document.getElementById('installmentsHint');
 
-    repaymentTypeSelect.addEventListener('change', () => {
-      installmentsGroup.style.display = repaymentTypeSelect.value === 'installments' ? 'block' : 'none';
-      recalculate();
+      if (isOneTime) {
+        // 1-time payment: force 1 installment and "once only" frequency
+        numInstallmentsInput.value = 1;
+        numInstallmentsInput.disabled = true;
+        installmentsHint.style.display = 'block';
+
+        // Show and select "once only" option
+        const onceOnlyOption = frequencySelect.querySelector('option[value="once_only"]');
+        onceOnlyOption.style.display = 'block';
+        frequencySelect.value = 'once_only';
+        frequencySelect.disabled = true;
+      } else {
+        // Installments: enable fields
+        numInstallmentsInput.disabled = false;
+        installmentsHint.style.display = 'none';
+
+        // Hide "once only" and select monthly
+        const onceOnlyOption = frequencySelect.querySelector('option[value="once_only"]');
+        onceOnlyOption.style.display = 'none';
+        if (frequencySelect.value === 'once_only') {
+          frequencySelect.value = 'monthly';
+        }
+        frequencySelect.disabled = false;
+      }
     });
 
-    loanStartModeSelect.addEventListener('change', () => {
-      loanStartDateGroup.style.display = loanStartModeSelect.value === 'fixed_date' ? 'block' : 'flex';
-      recalculate();
+    // Show/hide loan start date field
+    document.getElementById('loanStartMode').addEventListener('change', function() {
+      const loanStartDateGroup = document.getElementById('loanStartDateGroup');
+      loanStartDateGroup.style.display = this.value === 'fixed_date' ? 'block' : 'none';
     });
 
-    // Recalculate on any input change
-    document.querySelectorAll('input, select').forEach(el => {
-      el.addEventListener('change', recalculate);
-      el.addEventListener('input', recalculate);
-    });
+    /**
+     * Main calculator function - generates complete repayment schedule
+     * @param {Object} config - Configuration object
+     * @returns {Object} - Result with schedule rows, totals, and debug messages
+     */
+    function generateRepaymentSchedule(config) {
+      const {
+        loanAmount,
+        annualInterestRate,
+        repaymentType,
+        numberOfInstallments,
+        paymentFrequency,
+        firstPaymentDaysAfterStart,
+        loanStartMode,
+        contextMode,
+        fixedLoanStartDate
+      } = config;
 
-    async function recalculate() {
+      const debugMessages = [];
+
+      // Interest calculation setup
+      const annualRate = annualInterestRate / 100;
+      debugMessages.push(`Using annual interest rate: ${annualInterestRate}%`);
+
+      // Determine period rate based on frequency
+      // For simplicity, we use approximate day-based calculations
+      let periodDays;
+      let periodLabel;
+
+      switch (paymentFrequency) {
+        case 'monthly':
+          periodDays = 30;
+          periodLabel = 'month';
+          break;
+        case 'every_4_weeks':
+          periodDays = 28;
+          periodLabel = '4 weeks';
+          break;
+        case 'biweekly':
+          periodDays = 14;
+          periodLabel = '2 weeks';
+          break;
+        case 'weekly':
+          periodDays = 7;
+          periodLabel = 'week';
+          break;
+        case 'every_3_days':
+          periodDays = 3;
+          periodLabel = '3 days';
+          break;
+        case 'once_only':
+          // For one-time, we'll calculate based on first payment offset
+          periodDays = firstPaymentDaysAfterStart;
+          periodLabel = 'one-time';
+          break;
+        default:
+          periodDays = 30;
+          periodLabel = 'month';
+      }
+
+      // Daily interest rate for accurate calculation
+      const dailyRate = annualRate / 365;
+      debugMessages.push(`Payment frequency: Every ${periodLabel}`);
+      debugMessages.push(`Period days: ${periodDays}`);
+      debugMessages.push(`Daily interest rate: ${(dailyRate * 100).toFixed(6)}%`);
+
+      // Generate schedule rows
+      const scheduleRows = [];
+      const principalPerPayment = loanAmount / numberOfInstallments;
+      let remainingBalance = loanAmount;
+      let totalInterest = 0;
+
+      // First payment is offset by firstPaymentDaysAfterStart
+      let currentDayOffset = firstPaymentDaysAfterStart;
+
+      for (let i = 1; i <= numberOfInstallments; i++) {
+        // Calculate interest for this period based on actual days
+        const daysForThisPeriod = (i === 1) ? firstPaymentDaysAfterStart : periodDays;
+        const interestForPeriod = remainingBalance * dailyRate * daysForThisPeriod;
+        const principalPayment = principalPerPayment;
+        const totalPayment = principalPayment + interestForPeriod;
+
+        totalInterest += interestForPeriod;
+        remainingBalance -= principalPayment;
+        if (remainingBalance < 0.01) remainingBalance = 0;
+
+        // Generate due date label
+        let dueDateLabel;
+        if (contextMode === 'preview' || (loanStartMode === 'upon_acceptance' && !fixedLoanStartDate)) {
+          // Preview mode: use relative labels
+          dueDateLabel = getRelativeDateLabel(i, paymentFrequency, firstPaymentDaysAfterStart, periodDays);
+        } else {
+          // Actual mode with fixed date: calculate real calendar date
+          dueDateLabel = calculateActualDate(fixedLoanStartDate, currentDayOffset);
+        }
+
+        scheduleRows.push({
+          index: i,
+          dueDateLabel,
+          principal: Math.round(principalPayment * 100), // cents
+          interest: Math.round(interestForPeriod * 100), // cents
+          totalPayment: Math.round(totalPayment * 100), // cents
+          balance: Math.round(remainingBalance * 100) // cents
+        });
+
+        // Update offset for next payment
+        if (i > 1) {
+          currentDayOffset += periodDays;
+        }
+      }
+
+      debugMessages.push(`Generated ${scheduleRows.length} payment(s)`);
+      debugMessages.push(`Total interest: ${formatMoney(Math.round(totalInterest * 100))}`);
+      debugMessages.push(`Total to repay: ${formatMoney(Math.round((loanAmount + totalInterest) * 100))}`);
+
+      // Determine loan start display
+      let loanStartDisplayValue;
+      if (loanStartMode === 'upon_acceptance') {
+        loanStartDisplayValue = 'When agreement is accepted';
+        if (contextMode === 'preview') {
+          debugMessages.push('Loan start date not fixed. Showing relative dates.');
+        }
+      } else if (fixedLoanStartDate) {
+        loanStartDisplayValue = formatDate(fixedLoanStartDate);
+      } else {
+        loanStartDisplayValue = 'To be confirmed';
+      }
+
+      return {
+        scheduleRows,
+        totalInterest: Math.round(totalInterest * 100), // cents
+        totalToRepay: Math.round((loanAmount + totalInterest) * 100), // cents
+        loanStartDisplayValue,
+        debugMessages
+      };
+    }
+
+    /**
+     * Generate relative date label for preview mode
+     */
+    function getRelativeDateLabel(paymentIndex, frequency, firstOffset, periodDays) {
+      let totalDays = firstOffset + (paymentIndex - 1) * periodDays;
+
+      if (totalDays === 0) {
+        return 'On loan start';
+      }
+
+      switch (frequency) {
+        case 'monthly':
+          const months = Math.round(totalDays / 30);
+          return months === 1 ? '1 month after loan start' : `${months} months after loan start`;
+        case 'every_4_weeks':
+          const fourWeekPeriods = Math.round(totalDays / 28);
+          const weeks = fourWeekPeriods * 4;
+          return weeks === 4 ? '4 weeks after loan start' : `${weeks} weeks after loan start`;
+        case 'biweekly':
+          const biweekPeriods = Math.round(totalDays / 14);
+          const biWeeks = biweekPeriods * 2;
+          return biWeeks === 2 ? '2 weeks after loan start' : `${biWeeks} weeks after loan start`;
+        case 'weekly':
+          const weekCount = Math.round(totalDays / 7);
+          return weekCount === 1 ? '1 week after loan start' : `${weekCount} weeks after loan start`;
+        case 'every_3_days':
+          return totalDays === 3 ? '3 days after loan start' : `${totalDays} days after loan start`;
+        case 'once_only':
+          if (totalDays === 365) return '1 year after loan start';
+          if (totalDays === 30) return '1 month after loan start';
+          return `${totalDays} days after loan start`;
+        default:
+          return `${totalDays} days after loan start`;
+      }
+    }
+
+    /**
+     * Calculate actual calendar date
+     */
+    function calculateActualDate(startDateStr, offsetDays) {
+      const startDate = new Date(startDateStr);
+      const dueDate = new Date(startDate.getTime() + offsetDays * 24 * 60 * 60 * 1000);
+      return formatDate(dueDate);
+    }
+
+    /**
+     * Format date for display
+     */
+    function formatDate(dateInput) {
+      const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+      const day = date.getDate();
+      const month = date.toLocaleDateString('en-GB', { month: 'short' });
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    }
+
+    /**
+     * Main calculation function triggered by button click
+     */
+    function calculateSchedule() {
       try {
         // Gather form data
-        const principalEuros = parseFloat(document.getElementById('principal').value);
-        const principal = principalEuros * 100; // Convert to cents
+        const loanAmount = parseFloat(document.getElementById('principal').value);
         const annualInterestRate = parseFloat(document.getElementById('interest').value);
         const repaymentType = document.getElementById('repaymentType').value;
-        const numInstallments = parseInt(document.getElementById('numInstallments').value);
+        const numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
         const paymentFrequency = document.getElementById('frequency').value;
-        const firstPaymentOffsetDays = parseInt(document.getElementById('firstPaymentOffset').value);
+        const firstPaymentDaysAfterStart = parseInt(document.getElementById('firstPaymentOffset').value);
         const loanStartMode = document.getElementById('loanStartMode').value;
-        const loanStartDate = document.getElementById('loanStartDate').value;
         const contextMode = document.getElementById('contextMode').value;
+        const fixedLoanStartDate = document.getElementById('loanStartDate').value;
 
         // Validation
-        const validationErrors = [];
-        if (!principalEuros || principalEuros <= 0 || isNaN(principalEuros)) {
-          validationErrors.push('• Enter a loan amount greater than 0');
+        const errors = [];
+        if (!loanAmount || loanAmount <= 0 || isNaN(loanAmount)) {
+          errors.push('Please enter a positive loan amount.');
         }
         if (isNaN(annualInterestRate) || annualInterestRate < 0) {
-          validationErrors.push('• Interest rate cannot be negative');
+          errors.push('Interest rate cannot be negative.');
         }
-        if (repaymentType === 'installments' && (!numInstallments || numInstallments < 1 || isNaN(numInstallments))) {
-          validationErrors.push('• Number of installments must be at least 1');
+        if (!numberOfInstallments || numberOfInstallments < 1 || isNaN(numberOfInstallments)) {
+          errors.push('Number of installments must be at least 1.');
         }
-        if (isNaN(firstPaymentOffsetDays) || firstPaymentOffsetDays < 0) {
-          validationErrors.push('• First payment offset cannot be negative');
+        if (isNaN(firstPaymentDaysAfterStart) || firstPaymentDaysAfterStart < 0) {
+          errors.push('First payment timing cannot be negative.');
         }
-        if (contextMode === 'actual' && loanStartMode === 'fixed_date' && !loanStartDate) {
-          validationErrors.push('• Select a loan start date for actual mode with fixed date');
+        if (contextMode === 'actual' && loanStartMode === 'fixed_date' && !fixedLoanStartDate) {
+          errors.push('Please select a loan start date for actual mode with fixed date.');
         }
 
-        if (validationErrors.length > 0) {
-          document.getElementById('debugConsole').textContent =
-            '⚠ Cannot calculate schedule:\n' + validationErrors.join('\n');
-
-          // Clear schedule table
-          document.getElementById('scheduleBody').innerHTML = `
-            <tr>
-              <td colspan="6" style="text-align: center; padding: 40px; color: #9ca3af;">
-                Fix validation errors to see schedule
-              </td>
-            </tr>
-          `;
-
-          // Reset totals
-          document.getElementById('totalInterest').textContent = '€ 0,00';
-          document.getElementById('totalToRepay').textContent = '€ 0,00';
-          document.getElementById('loanStartLabel').textContent = '—';
-
+        if (errors.length > 0) {
+          // Show validation errors
+          document.getElementById('debugConsole').innerHTML =
+            '<span class="error-message">⚠ Validation errors:</span>\n' +
+            errors.map(e => `  • ${e}`).join('\n');
           return;
         }
 
-        // Build config object
+        // Build configuration
         const config = {
-          principal,
+          loanAmount,
           annualInterestRate,
           repaymentType,
-          numInstallments: repaymentType === 'installments' ? numInstallments : 1,
+          numberOfInstallments,
           paymentFrequency,
+          firstPaymentDaysAfterStart,
           loanStartMode,
-          loanStartDate: (contextMode === 'actual' && loanStartDate) ? loanStartDate : null,
-          firstPaymentOffsetDays,
-          context: {
-            preview: contextMode === 'preview',
-            agreementStatus: contextMode === 'preview' ? 'pending' : 'active',
-            hasRealStartDate: contextMode === 'actual' && (loanStartMode === 'fixed_date' || loanStartDate)
-          }
+          contextMode,
+          fixedLoanStartDate: (contextMode === 'actual' && fixedLoanStartDate) ? fixedLoanStartDate : null
         };
 
-        // Show calculating message
-        document.getElementById('debugConsole').textContent = 'Calculating...';
+        // Generate schedule
+        const result = generateRepaymentSchedule(config);
 
-        // Call API endpoint to generate schedule
-        const response = await fetch('/api/calculate-schedule', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(config)
-        });
+        // Update UI - Totals
+        document.getElementById('totalInterest').textContent = formatMoney(result.totalInterest);
+        document.getElementById('totalToRepay').textContent = formatMoney(result.totalToRepay);
+        document.getElementById('loanStartLabel').textContent = result.loanStartDisplayValue;
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`API error: ${response.statusText}\n${errorText}`);
-        }
-
-        const result = await response.json();
-
-        // Update totals
-        document.getElementById('totalInterest').textContent = formatCurrency2(result.totalInterest);
-        document.getElementById('totalToRepay').textContent = formatCurrency2(result.totalToRepay);
-
-        // Update loan start label
-        const loanStartLabel = result.loanStartLabel || '—';
-        document.getElementById('loanStartLabel').textContent = loanStartLabel;
-
-        // Update context badge
+        // Update UI - Context badge
         const badge = contextMode === 'preview'
           ? '<span class="badge badge-preview">Preview</span>'
           : '<span class="badge badge-actual">Actual</span>';
         document.getElementById('contextBadge').innerHTML = badge;
 
-        // Update schedule table
+        // Update UI - Schedule table
         const tbody = document.getElementById('scheduleBody');
         tbody.innerHTML = '';
 
-        result.rows.forEach(row => {
+        result.scheduleRows.forEach(row => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${row.index}</td>
-            <td>${row.dateLabel}</td>
-            <td class="align-right">${formatCurrency2(row.principal)}</td>
-            <td class="align-right">${formatCurrency2(row.interest)}</td>
-            <td class="align-right" style="font-weight: 600;">${formatCurrency2(row.totalPayment)}</td>
-            <td class="align-right">${formatCurrency2(row.remainingBalance)}</td>
+            <td>${row.dueDateLabel}</td>
+            <td class="align-right">${formatMoney(row.principal)}</td>
+            <td class="align-right">${formatMoney(row.interest)}</td>
+            <td class="align-right" style="font-weight: 600;">${formatMoney(row.totalPayment)}</td>
+            <td class="align-right">${formatMoney(row.balance)}</td>
           `;
           tbody.appendChild(tr);
         });
 
-        // Update debug console with success summary
-        const frequencyLabels = {
-          'weekly': 'Every week',
-          'biweekly': 'Every 2 weeks',
-          'every_4_weeks': 'Every 4 weeks',
-          'monthly': 'Every month',
-          'quarterly': 'Every quarter',
-          'yearly': 'Every year'
-        };
+        // Update UI - Debug console
+        const debugOutput = '✔ Calculation completed successfully\n\n' +
+          result.debugMessages.join('\n') + '\n\n' +
+          `Configuration:\n` +
+          `  • Repayment type: ${repaymentType === 'one_time' ? '1-time payment' : 'Installments'}\n` +
+          `  • Number of payments: ${numberOfInstallments}\n` +
+          `  • Context mode: ${contextMode}`;
 
-        const debugSummary = `✔ Calculated schedule with ${result.rows.length} ${repaymentType === 'one_time' ? 'payment' : 'installments'}
-
-Loan Details:
-  • Loan amount: ${formatCurrency2(principal)}
-  • Annual interest: ${annualInterestRate}%
-  • Frequency: ${frequencyLabels[paymentFrequency] || paymentFrequency}
-  • First payment: ${firstPaymentOffsetDays} days after loan start
-  • Context: ${contextMode === 'preview' ? 'Preview (relative due date labels)' : 'Actual (real calendar dates)'}
-  • Loan start: ${result.loanStartLabel}
-
-Results:
-  • Total interest: ${formatCurrency2(result.totalInterest)}
-  • Total to repay: ${formatCurrency2(result.totalToRepay)}
-
-${result.rows.length} payment${result.rows.length > 1 ? 's' : ''} generated successfully.`;
-
-        document.getElementById('debugConsole').textContent = debugSummary;
+        document.getElementById('debugConsole').textContent = debugOutput;
 
       } catch (error) {
         console.error('Calculation error:', error);
-        document.getElementById('debugConsole').textContent =
-          'ERROR:\n' + error.message + '\n\n' + error.stack;
-
-        document.getElementById('scheduleBody').innerHTML = `
-          <tr>
-            <td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">
-              Error: ${error.message}
-            </td>
-          </tr>
-        `;
+        document.getElementById('debugConsole').innerHTML =
+          '<span class="error-message">ERROR:</span>\n' +
+          error.message + '\n\n' +
+          (error.stack || '');
       }
     }
 
-    // Initial calculation
-    recalculate();
+    // Initialize: trigger repayment type change to set initial state
+    document.getElementById('repaymentType').dispatchEvent(new Event('change'));
   </script>
 </body>
 </html>
