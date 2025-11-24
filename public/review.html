@@ -473,21 +473,18 @@
         });
       }
 
-      // STEP 3: Detect "pending + start on acceptance + no real start date" case
-      const isPendingStartOnAcceptance =
-        // Check if status is pending (not active/settled)
-        (agreement.status === 'pending_review' ||
-         agreement.status === 'pending_acceptance' ||
-         agreement.status === 'pending') &&
-        // Check if loan start is "upon acceptance"
-        (agreement.money_sent_date === 'on-acceptance' ||
-         agreement.loanStartType === 'UPON_AGREEMENT_ACCEPTANCE' ||
-         agreement.loan_start_type === 'UPON_AGREEMENT_ACCEPTANCE') &&
-        // Check no real start date exists yet
-        !agreement.loanStartAt && !agreement.loan_start_at;
+      // STEP 3: Detect "pending + start on acceptance" case
+      const isLoanStartOnAcceptance =
+        agreement.money_sent_date === 'on-acceptance' ||
+        agreement.loanStartType === 'UPON_AGREEMENT_ACCEPTANCE' ||
+        agreement.loan_start_type === 'UPON_AGREEMENT_ACCEPTANCE';
+      const isPendingAgreement = agreement.status !== 'active' && agreement.status !== 'settled';
+      const isPendingStartOnAcceptance = isLoanStartOnAcceptance && isPendingAgreement;
 
       if (installmentIndex === 0) {
         console.log('[review.html Schedule Decision]', {
+          isLoanStartOnAcceptance,
+          isPendingAgreement,
           isPendingStartOnAcceptance,
           willShowRelative: isPendingStartOnAcceptance && agreement.repayment_type === 'installments'
         });

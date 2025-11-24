@@ -4657,21 +4657,15 @@
             repayment_type: agreement.repayment_type
           });
 
-          // STEP 3: Detect "pending + start on acceptance + no real start date" case
-          const isPendingStartOnAcceptance =
-            // Check if status is pending (not active/settled)
-            (agreement.status === 'pending_review' ||
-             agreement.status === 'pending_acceptance' ||
-             agreement.status === 'pending') &&
-            // Check if loan start is "upon acceptance"
-            (agreement.money_sent_date === 'on-acceptance' ||
-             agreement.loanStartType === 'UPON_AGREEMENT_ACCEPTANCE' ||
-             agreement.loan_start_type === 'UPON_AGREEMENT_ACCEPTANCE') &&
-            // Check no real start date exists yet
-            !agreement.loanStartAt && !agreement.loan_start_at;
+          // STEP 3: Detect "pending + start on acceptance" case
+          const isLoanStartOnAcceptance = isLoanStartUponAcceptance(agreement);
+          const isPendingAgreement = agreement.status !== 'active' && agreement.status !== 'settled';
+          const isPendingStartOnAcceptance = isLoanStartOnAcceptance && isPendingAgreement;
 
           // Debug log decision
           console.log('[review-details.html Schedule Decision]', {
+            isLoanStartOnAcceptance,
+            isPendingAgreement,
             isPendingStartOnAcceptance,
             willShowRelative: isPendingStartOnAcceptance
           });
@@ -4685,11 +4679,7 @@
               if (isPendingStartOnAcceptance) {
                 // Agreement is pending and loan starts "upon acceptance"
                 // We don't know real calendar dates yet, so show relative labels
-                // Assume: first payment 1 month after start, then monthly
-                const monthNumber = i + 1;
-                dateStr = monthNumber === 1
-                  ? "1 month after loan start"
-                  : `${monthNumber} months after loan start`;
+                dateStr = getRelativeInstallmentLabel(agreement, i);
               } else {
                 // For active agreements, fixed start dates, or settled agreements:
                 // Show actual calendar dates
