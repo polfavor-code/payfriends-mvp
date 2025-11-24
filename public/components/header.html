@@ -1,4 +1,21 @@
 <style>
+  /* Header container glow-safe positioning */
+  .top-header {
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Header logo glow effect */
+  .logo-coin {
+    position: relative;
+    filter:
+      drop-shadow(0 3px 8px rgba(0,0,0,.3))
+      drop-shadow(0 0 60px rgba(61, 220, 151, 0.45))
+      drop-shadow(0 0 90px rgba(61, 220, 151, 0.30))
+      drop-shadow(0 0 120px rgba(61, 220, 151, 0.20))
+      drop-shadow(0 0 150px rgba(61, 220, 151, 0.12));
+  }
+
   /* Avatar styles for header */
   .user-avatar {
     display: inline-flex;
