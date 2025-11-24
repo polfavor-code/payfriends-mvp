@@ -461,44 +461,51 @@
      * @returns {string} Formatted date or relative label
      */
     function formatScheduleDateForReview(dateISO, installmentIndex, agreement) {
-      // Check if loan start is "upon acceptance"
-      const isOnAcceptance = agreement.money_sent_date === 'on-acceptance';
+      // STEP 2: Debug logging to inspect actual agreement fields
+      if (installmentIndex === 0) {
+        console.log('[review.html Schedule Debug]', {
+          status: agreement.status,
+          money_sent_date: agreement.money_sent_date,
+          loanStartType: agreement.loanStartType,
+          loan_start_type: agreement.loan_start_type,
+          loanStartAt: agreement.loanStartAt,
+          loan_start_at: agreement.loan_start_at
+        });
+      }
 
-      // Only show relative labels for installments with "upon acceptance" loans
-      if (isOnAcceptance && agreement.repayment_type === 'installments' && installmentIndex !== undefined) {
-        const frequency = agreement.payment_frequency || 'monthly';
-        const firstPaymentOption = agreement.first_payment_option || '1month';
+      // STEP 3: Detect "pending + start on acceptance + no real start date" case
+      const isPendingStartOnAcceptance =
+        // Check if status is pending (not active/settled)
+        (agreement.status === 'pending_review' ||
+         agreement.status === 'pending_acceptance' ||
+         agreement.status === 'pending') &&
+        // Check if loan start is "upon acceptance"
+        (agreement.money_sent_date === 'on-acceptance' ||
+         agreement.loanStartType === 'UPON_AGREEMENT_ACCEPTANCE' ||
+         agreement.loan_start_type === 'UPON_AGREEMENT_ACCEPTANCE') &&
+        // Check no real start date exists yet
+        !agreement.loanStartAt && !agreement.loan_start_at;
 
-        // Get the first payment offset in months
-        const firstOffsetMonths = getFirstPaymentOffsetMonths(firstPaymentOption);
+      if (installmentIndex === 0) {
+        console.log('[review.html Schedule Decision]', {
+          isPendingStartOnAcceptance,
+          willShowRelative: isPendingStartOnAcceptance && agreement.repayment_type === 'installments'
+        });
+      }
 
-        // Determine interval in months based on frequency
-        let intervalMonths;
-        switch (frequency) {
-          case 'monthly':
-            intervalMonths = 1;
-            break;
-          case 'quarterly':
-            intervalMonths = 3;
-            break;
-          case 'yearly':
-            intervalMonths = 12;
-            break;
-          default:
-            // For weekly/biweekly/every_4_weeks, approximate as months for label purposes
-            intervalMonths = 1;
-        }
+      // Only show relative labels for pending installment loans with "upon acceptance" start
+      if (isPendingStartOnAcceptance && agreement.repayment_type === 'installments' && installmentIndex !== undefined) {
+        // STEP 4: Simple 1-based month numbering
+        const monthNumber = installmentIndex + 1;
 
-        const offsetMonths = firstOffsetMonths + (installmentIndex * intervalMonths);
-
-        if (offsetMonths === 1) {
+        if (monthNumber === 1) {
           return '1 month after loan start';
         } else {
-          return `${offsetMonths} months after loan start`;
+          return `${monthNumber} months after loan start`;
         }
       }
 
-      // Default: show the actual calendar date
+      // Default: show the actual calendar date (existing behavior)
       return formatScheduleDate(dateISO);
     }
 

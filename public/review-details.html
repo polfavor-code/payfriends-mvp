@@ -4646,22 +4646,34 @@
           html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Balance</div>';
           html += '</div>';
 
-          // Detect pending agreements with loan start on acceptance
-          // Be explicit about the conditions to make the logic crystal clear
-          const isPendingStartOnAcceptance =
-            (agreement.status === 'pending_review' ||
-             agreement.status === 'pending_acceptance' ||
-             agreement.status === 'pending') &&
-            (agreement.money_sent_date === 'on-acceptance' ||
-             agreement.loanStartType === 'UPON_AGREEMENT_ACCEPTANCE' ||
-             agreement.loan_start_type === 'UPON_AGREEMENT_ACCEPTANCE');
-
-          // Debug log once
-          console.log('[Schedule Table] Rendering decision:', {
+          // STEP 2: Debug logging to inspect actual agreement fields
+          console.log('[review-details.html Schedule Debug]', {
             status: agreement.status,
             money_sent_date: agreement.money_sent_date,
             loanStartType: agreement.loanStartType,
-            isPendingStartOnAcceptance
+            loan_start_type: agreement.loan_start_type,
+            loanStartAt: agreement.loanStartAt,
+            loan_start_at: agreement.loan_start_at,
+            repayment_type: agreement.repayment_type
+          });
+
+          // STEP 3: Detect "pending + start on acceptance + no real start date" case
+          const isPendingStartOnAcceptance =
+            // Check if status is pending (not active/settled)
+            (agreement.status === 'pending_review' ||
+             agreement.status === 'pending_acceptance' ||
+             agreement.status === 'pending') &&
+            // Check if loan start is "upon acceptance"
+            (agreement.money_sent_date === 'on-acceptance' ||
+             agreement.loanStartType === 'UPON_AGREEMENT_ACCEPTANCE' ||
+             agreement.loan_start_type === 'UPON_AGREEMENT_ACCEPTANCE') &&
+            // Check no real start date exists yet
+            !agreement.loanStartAt && !agreement.loan_start_at;
+
+          // Debug log decision
+          console.log('[review-details.html Schedule Decision]', {
+            isPendingStartOnAcceptance,
+            willShowRelative: isPendingStartOnAcceptance
           });
 
           // Data rows - use dates from the schedule (from buildRepaymentSchedule)
