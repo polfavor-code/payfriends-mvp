@@ -854,7 +854,32 @@ app.post('/auth/logout', (req, res) => {
 
 // Get current user
 app.get('/api/user', requireAuth, (req, res) => {
-  res.json({ user: req.user });
+  const user = { ...req.user };
+
+  // If user has no phone number set, try to get it from invite (for borrowers)
+  // This provides a fallback phone for My Profile pre-fill
+  if (!user.phone_number) {
+    try {
+      // Get the most recent agreement where this user is the borrower
+      // and the lender provided a phone number during invite
+      const invitePhone = db.prepare(`
+        SELECT borrower_phone
+        FROM agreements
+        WHERE borrower_user_id = ? AND borrower_phone IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+      `).get(user.id);
+
+      if (invitePhone && invitePhone.borrower_phone) {
+        user.invitePhoneFallback = invitePhone.borrower_phone;
+      }
+    } catch (err) {
+      console.error('Error fetching invite phone fallback:', err);
+      // Don't fail the request, just skip the fallback
+    }
+  }
+
+  res.json({ user });
 });
 
 // Update user timezone preference

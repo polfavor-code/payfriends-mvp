@@ -112,8 +112,8 @@
               <div style="font-size:14px; color:var(--muted)">
                 <span style="font-weight:500; color:rgba(255,255,255,0.7)">Email:</span> <span id="friend-email"></span>
               </div>
-              <div style="font-size:14px; color:var(--muted); margin-top:6px">
-                <span style="font-weight:500; color:rgba(255,255,255,0.7)">Phone:</span> <span id="friend-phone"></span>
+              <div id="phone-numbers-section" style="margin-top:6px">
+                <!-- Phone numbers will be dynamically inserted here -->
               </div>
             </div>
           </div>
@@ -299,19 +299,33 @@
         document.getElementById('contact-details').style.display = 'block';
         document.getElementById('friend-email').textContent = data.friendCurrentEmail || 'No email provided yet';
 
-        // Phone fallback logic:
-        // 1. Prefer verified phone from user profile (friendCurrentPhone)
-        // 2. Fall back to phone from agreement (friendAgreementPhone - entered by lender during wizard)
-        // 3. Show "No phone provided yet" if neither exists
-        let phoneDisplay = '';
-        if (data.friendCurrentPhone) {
-          phoneDisplay = formatInternationalPhone(data.friendCurrentPhone); // Verified phone from borrower's account
-        } else if (data.friendAgreementPhone) {
-          phoneDisplay = `${formatInternationalPhone(data.friendAgreementPhone)} <span style="color:rgba(255,255,255,0.4)">(provided by you)</span>`;
+        // Phone numbers - show BOTH if available
+        const phoneSection = document.getElementById('phone-numbers-section');
+        const hasBorrowerPhone = data.friendCurrentPhone && data.friendCurrentPhone.trim() !== '';
+        const hasInvitePhone = data.friendAgreementPhone && data.friendAgreementPhone.trim() !== '';
+
+        if (hasBorrowerPhone || hasInvitePhone) {
+          let phoneHTML = '<div style="font-size:14px; color:var(--muted)">';
+
+          if (hasBorrowerPhone && hasInvitePhone) {
+            // Show both phones with clear labels
+            phoneHTML += '<div style="font-weight:500; color:rgba(255,255,255,0.7); margin-bottom:4px">Phone numbers:</div>';
+            phoneHTML += `<div style="margin-left:0; margin-bottom:2px">• Borrower profile: ${formatInternationalPhone(data.friendCurrentPhone)}</div>`;
+            phoneHTML += `<div style="margin-left:0">• Phone you used for invite: ${formatInternationalPhone(data.friendAgreementPhone)}</div>`;
+          } else if (hasBorrowerPhone) {
+            // Only borrower profile phone
+            phoneHTML += `<span style="font-weight:500; color:rgba(255,255,255,0.7)">Phone:</span> ${formatInternationalPhone(data.friendCurrentPhone)}`;
+          } else {
+            // Only invite phone
+            phoneHTML += `<span style="font-weight:500; color:rgba(255,255,255,0.7)">Phone:</span> ${formatInternationalPhone(data.friendAgreementPhone)} <span style="color:rgba(255,255,255,0.4)">(provided by you)</span>`;
+          }
+
+          phoneHTML += '</div>';
+          phoneSection.innerHTML = phoneHTML;
         } else {
-          phoneDisplay = 'No phone provided yet';
+          // No phone numbers available
+          phoneSection.innerHTML = '<div style="font-size:14px; color:var(--muted)"><span style="font-weight:500; color:rgba(255,255,255,0.7)">Phone:</span> No phone provided yet</div>';
         }
-        document.getElementById('friend-phone').innerHTML = phoneDisplay;
       } else {
         // User is borrower - show communication box
         document.getElementById('communication-box').style.display = 'block';
