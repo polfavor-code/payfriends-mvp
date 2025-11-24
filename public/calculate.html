@@ -562,14 +562,18 @@ Click "Calculate schedule" to see calculation details...
      */
     function formatDueDateWithWeekday(dateInput, includeWeekday) {
       const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-      const formattedDate = formatDateDisplay(date);
 
       if (includeWeekday) {
-        const weekday = date.toLocaleDateString('en-GB', { weekday: 'short' });
-        return `${weekday} ${formattedDate}`;
+        // Format as "Tue, 3 Aug 2027" for weekday-based frequencies
+        return date.toLocaleDateString('en-GB', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        }).replace(/^(\w+)\s/, '$1, ');
       }
 
-      return formattedDate;
+      return formatDateDisplay(date);
     }
 
     /**
