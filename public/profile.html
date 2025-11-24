@@ -280,9 +280,11 @@
         // Get reference to the instance
         phoneInput = window.PhoneInputManager.getInstance('phone-number');
 
-        // Set phone number if exists
-        if (currentUser.phone_number && phoneInput) {
-          phoneInput.setNumber(currentUser.phone_number);
+        // Set phone number - use profile phone if set, otherwise use invite phone fallback
+        // The invite phone fallback is provided by the server when borrower has no profile phone yet
+        const phoneToDisplay = currentUser.phone_number || currentUser.invitePhoneFallback || '';
+        if (phoneToDisplay && phoneInput) {
+          phoneInput.setNumber(phoneToDisplay);
         }
       } catch (err) {
         console.error('Error loading profile:', err);
@@ -465,8 +467,10 @@
         const avatarContainer = document.getElementById('profile-avatar-container');
         avatarContainer.innerHTML = generateAvatarHTML(currentUser, 'large');
 
-        // Update top header
-        document.getElementById('user-info-display').textContent = `${fullName} | ${currentUser.email}`;
+        // Refresh header to show new user info
+        if (window.PayFriendsHeader && window.PayFriendsHeader.refreshUserInfo) {
+          await window.PayFriendsHeader.refreshUserInfo();
+        }
 
         status.textContent = '✓ Profile updated successfully';
         status.className = 'status success';
