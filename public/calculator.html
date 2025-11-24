@@ -242,7 +242,7 @@
       border-top: 2px solid rgba(16, 185, 129, 0.6);
       background: rgba(16, 185, 129, 0.1);
       font-weight: 700;
-      color: #e5fdf4;
+      color: #34d399;
       font-size: 14px;
     }
 
@@ -254,7 +254,6 @@
     tfoot td:first-child {
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #34d399;
     }
 
     .badge {
@@ -1059,6 +1058,9 @@
         // 5) Auto-set to "In 1 year" when switching to installments
         firstPaymentDue.value = '1-year';
       }
+
+      // Trigger recalculation after UI update to ensure schedule matches new mode
+      runRepaymentCalculation();
     }
 
     /**
@@ -1139,8 +1141,8 @@
     // Loan start date picker - immediate update
     document.getElementById('loanStartDate').addEventListener('change', runRepaymentCalculation);
 
-    // Repayment type - immediate update
-    document.getElementById('repaymentType').addEventListener('change', runRepaymentCalculation);
+    // Repayment type - handled by updateRepaymentTypeUI which calls runRepaymentCalculation
+    // (see event listener below in UI-only section)
 
     // First payment due - immediate update
     document.getElementById('firstPaymentDue').addEventListener('change', runRepaymentCalculation);
@@ -1400,7 +1402,15 @@
         const loanAmount = parseMoney(principalValue);
         const annualInterestRate = parseFloat(document.getElementById('interest').value);
         const repaymentType = document.getElementById('repaymentType').value;
-        const numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
+
+        // Force installments to 1 for one-time payment, regardless of field value
+        let numberOfInstallments;
+        if (repaymentType === 'one_time') {
+          numberOfInstallments = 1;
+        } else {
+          numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
+        }
+
         const paymentFrequency = document.getElementById('frequency').value;
         const firstPaymentDueOption = document.getElementById('firstPaymentDue').value;
         const firstPaymentDate = document.getElementById('firstPaymentDate').value;
