@@ -558,6 +558,21 @@ Click "Calculate schedule" to see calculation details...
     }
 
     /**
+     * Format due date with optional weekday prefix for weekday-based frequencies
+     */
+    function formatDueDateWithWeekday(dateInput, includeWeekday) {
+      const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+      const formattedDate = formatDateDisplay(date);
+
+      if (includeWeekday) {
+        const weekday = date.toLocaleDateString('en-GB', { weekday: 'short' });
+        return `${weekday} ${formattedDate}`;
+      }
+
+      return formattedDate;
+    }
+
+    /**
      * SINGLE SOURCE OF TRUTH: Generate complete repayment schedule
      * This function is reusable across wizard, manage, and review pages
      *
@@ -768,7 +783,7 @@ Click "Calculate schedule" to see calculation details...
                 dueDate = addDays(baseDate, i * periodDays);
               }
             }
-            dueDateLabel = formatDateDisplay(dueDate);
+            dueDateLabel = formatDueDateWithWeekday(dueDate, periodType === 'weeks');
           } else if (i === 0 && firstPaymentIsYearBased) {
             // First payment is year-based
             if (firstPaymentYears === 1) {
@@ -916,7 +931,7 @@ Click "Calculate schedule" to see calculation details...
                 }
               }
             }
-            dueDateLabel = formatDateDisplay(dueDate);
+            dueDateLabel = formatDueDateWithWeekday(dueDate, periodType === 'weeks');
           } else {
             dueDateLabel = 'Date not available';
           }
