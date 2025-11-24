@@ -2658,11 +2658,11 @@
 
       // 5. Money transfer date (use backend-derived display value)
       let moneyTransferDateText;
-      if (isLoanStartUponAcceptance(agreement) && agreement.status !== 'active') {
+      if (isLoanStartUponAcceptance(agreement) && agreement.status !== 'active' && agreement.status !== 'settled') {
         // For pending agreements with loan start on acceptance, show clear message
-        moneyTransferDateText = 'When the agreement is accepted';
+        moneyTransferDateText = 'When agreement is accepted';
       } else {
-        moneyTransferDateText = agreement.loan_start_date_display || 'To be confirmed';
+        moneyTransferDateText = agreement.loan_start_date_display || 'When agreement is accepted';
       }
       document.getElementById('money-sent-display').textContent = moneyTransferDateText;
       document.getElementById('money-sent-row').style.display = 'flex';

@@ -573,7 +573,14 @@
       document.getElementById('amount-display').textContent = formatEuro2(principalEuros);
 
       // (4) Money transfer date (use backend-derived display value)
-      document.getElementById('money-sent-display').textContent = agreement.loan_start_date_display || 'To be confirmed';
+      // Check if this is a pending "upon acceptance" loan
+      const isOnAcceptancePending = agreement.money_sent_date === 'on-acceptance' &&
+                                     agreement.status !== 'active' &&
+                                     agreement.status !== 'settled';
+      const moneyTransferText = isOnAcceptancePending
+        ? 'When agreement is accepted'
+        : (agreement.loan_start_date_display || 'When agreement is accepted');
+      document.getElementById('money-sent-display').textContent = moneyTransferText;
 
       // (5) Loan duration - using helper function
       const loanDurationText = getLoanDurationLabel(agreement) || '—';

@@ -133,7 +133,7 @@ function buildSummaryDataMap(wizardData, currentUser) {
   // Format money transfer date
   let moneyTransferDate;
   if (wizardData.moneySentDate === 'on-acceptance') {
-    moneyTransferDate = 'Upon agreement acceptance';
+    moneyTransferDate = 'When agreement is accepted';
   } else if (wizardData.moneySentOption) {
     const option = wizardData.moneySentOption;
     if (option === 'today') moneyTransferDate = 'Today';

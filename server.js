@@ -581,14 +581,14 @@ function getLoanStartDateDisplay(agreement, acceptedAt = null) {
   // PENDING state: Show the wizard choice
   if (status === 'pending') {
     if (moneySentDate === 'on-acceptance') {
-      return 'Upon agreement acceptance';
+      return 'When agreement is accepted';
     } else if (moneySentDate) {
       // Format the concrete date
       const date = new Date(moneySentDate);
       return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     } else {
       // Should not happen in normal flow, but handle gracefully
-      return 'To be confirmed';
+      return 'When agreement is accepted';
     }
   }
 
@@ -1824,7 +1824,9 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
       planned_total_due_cents: interestInfo.planned_total_due_cents,
       planned_interest_max_cents: interestInfo.planned_interest_max_cents,
       // Loan start date display
-      loan_start_date_display: loanStartDateDisplay
+      loan_start_date_display: loanStartDateDisplay,
+      // Include accepted_at timestamp for frontend use
+      accepted_at: acceptedAt
     };
 
     res.json(agreementWithTotals);
@@ -1860,12 +1862,21 @@ app.post('/api/agreements/:id/accept', requireAuth, (req, res) => {
 
     const now = new Date().toISOString();
 
-    // Update agreement status
-    db.prepare(`
-      UPDATE agreements
-      SET status = 'active'
-      WHERE id = ?
-    `).run(id);
+    // Update agreement status and loan start date if needed
+    // If loan start was "on-acceptance", set it to the actual acceptance date
+    if (agreement.money_sent_date === 'on-acceptance') {
+      db.prepare(`
+        UPDATE agreements
+        SET status = 'active', money_sent_date = ?
+        WHERE id = ?
+      `).run(now, id);
+    } else {
+      db.prepare(`
+        UPDATE agreements
+        SET status = 'active'
+        WHERE id = ?
+      `).run(id);
+    }
 
     // Create activity messages for both parties
     const borrowerName = req.user.full_name || agreement.friend_first_name || req.user.email;
@@ -3930,11 +3941,20 @@ app.post('/api/invites/:token/accept', requireAuth, (req, res) => {
     const now = new Date().toISOString();
 
     // Update agreement status and borrower_user_id
-    db.prepare(`
-      UPDATE agreements
-      SET status = 'active', borrower_user_id = ?, fairness_accepted = ?
-      WHERE id = ?
-    `).run(req.user.id, fairnessAccepted ? 1 : 0, invite.agreement_id);
+    // If loan start was "on-acceptance", set it to the actual acceptance date
+    if (invite.money_sent_date === 'on-acceptance') {
+      db.prepare(`
+        UPDATE agreements
+        SET status = 'active', borrower_user_id = ?, fairness_accepted = ?, money_sent_date = ?
+        WHERE id = ?
+      `).run(req.user.id, fairnessAccepted ? 1 : 0, now, invite.agreement_id);
+    } else {
+      db.prepare(`
+        UPDATE agreements
+        SET status = 'active', borrower_user_id = ?, fairness_accepted = ?
+        WHERE id = ?
+      `).run(req.user.id, fairnessAccepted ? 1 : 0, invite.agreement_id);
+    }
 
     // Mark invite as accepted
     db.prepare(`
