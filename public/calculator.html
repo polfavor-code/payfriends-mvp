@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Loan Calculator - PayFriends</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <style>
     * {
       box-sizing: border-box;
@@ -304,6 +305,65 @@
       color: #ef4444;
       font-weight: 600;
     }
+
+    /* Flatpickr dark theme customization */
+    .flatpickr-calendar {
+      background: rgba(31, 41, 55, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .flatpickr-months {
+      background: rgba(12, 16, 21, 0.8);
+    }
+
+    .flatpickr-current-month .flatpickr-monthDropdown-months,
+    .flatpickr-current-month input.cur-year {
+      color: #e5e7eb;
+      background: transparent;
+    }
+
+    .flatpickr-weekdays {
+      background: rgba(12, 16, 21, 0.6);
+    }
+
+    .flatpickr-weekday {
+      color: #9ca3af;
+    }
+
+    .flatpickr-day {
+      color: #e5e7eb;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .flatpickr-day:hover {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .flatpickr-day.selected {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .flatpickr-day.today {
+      border-color: #34d399;
+    }
+
+    .flatpickr-day.disabled {
+      color: #4b5563;
+    }
+
+    span.flatpickr-prev-month,
+    span.flatpickr-next-month {
+      fill: #e5e7eb;
+    }
+
+    span.flatpickr-prev-month:hover svg,
+    span.flatpickr-next-month:hover svg {
+      fill: #3b82f6;
+    }
   </style>
 </head>
 <body>
@@ -472,6 +532,7 @@
   </div>
 
   <script src="/js/formatters.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
     // Calculator Playground Logic - Single Source of Truth
     // This generateRepaymentSchedule function can be reused across wizard, manage, and review pages
@@ -937,15 +998,17 @@
         // Calculate months difference
         const yearsDiff = endDate.getFullYear() - startDate.getFullYear();
         const monthsDiff = endDate.getMonth() - startDate.getMonth();
-        const totalMonths = yearsDiff * 12 + monthsDiff;
+        const totalMonths = Math.max(0, yearsDiff * 12 + monthsDiff);
 
         const startStr = formatDateDisplay(startDate);
         const endStr = formatDateDisplay(endDate);
 
         if (totalMonths === 0) {
           // Less than a month, show days
-          const daysDiff = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
-          if (daysDiff === 1) {
+          const daysDiff = Math.max(0, Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)));
+          if (daysDiff === 0) {
+            return `0 days (${startStr} to ${endStr})`;
+          } else if (daysDiff === 1) {
             return `1 day (${startStr} to ${endStr})`;
           } else {
             return `${daysDiff} days (${startStr} to ${endStr})`;
@@ -1138,8 +1201,7 @@
     // Loan start date mode - immediate update
     document.getElementById('loanStartMode').addEventListener('change', runRepaymentCalculation);
 
-    // Loan start date picker - immediate update
-    document.getElementById('loanStartDate').addEventListener('change', runRepaymentCalculation);
+    // Loan start date picker - handled by Flatpickr onChange callback
 
     // Repayment type - handled by updateRepaymentTypeUI which calls runRepaymentCalculation
     // (see event listener below in UI-only section)
@@ -1147,8 +1209,7 @@
     // First payment due - immediate update
     document.getElementById('firstPaymentDue').addEventListener('change', runRepaymentCalculation);
 
-    // First payment date picker - immediate update
-    document.getElementById('firstPaymentDate').addEventListener('change', runRepaymentCalculation);
+    // First payment date picker - handled by Flatpickr onChange callback
 
     // Payment frequency - immediate update
     document.getElementById('frequency').addEventListener('change', runRepaymentCalculation);
@@ -1202,35 +1263,7 @@
       }
     });
 
-    // Make loan start date input field open the datepicker on click/focus
-    const loanStartDateInput = document.getElementById('loanStartDate');
-    ['click', 'focus'].forEach(eventType => {
-      loanStartDateInput.addEventListener(eventType, function(e) {
-        // Only trigger if the field is visible and not already showing picker
-        if (!this.closest('.hidden') && typeof this.showPicker === 'function') {
-          try {
-            this.showPicker();
-          } catch (err) {
-            // showPicker() may fail in some contexts, silently ignore
-          }
-        }
-      });
-    });
-
-    // Make first payment date input field open the datepicker on click/focus
-    const firstPaymentDateInput = document.getElementById('firstPaymentDate');
-    ['click', 'focus'].forEach(eventType => {
-      firstPaymentDateInput.addEventListener(eventType, function(e) {
-        // Only trigger if the field is visible and not already showing picker
-        if (!this.closest('.hidden') && typeof this.showPicker === 'function') {
-          try {
-            this.showPicker();
-          } catch (err) {
-            // showPicker() may fail in some contexts, silently ignore
-          }
-        }
-      });
-    });
+    // Date picker click/focus handlers are now managed by Flatpickr
 
     /**
      * Helper function to calculate loan start date from dropdown
@@ -1707,6 +1740,86 @@
       clearPrincipalError();
       this.value = formatMoneyInput(num);
     });
+
+    // ============================================================================
+    // FLATPICKR DATE PICKERS
+    // ============================================================================
+
+    /**
+     * Helper to get today at midnight (avoid time-of-day issues)
+     */
+    function getTodayMidnight() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    // Initialize Flatpickr for loan start date (no restrictions - can be in the past)
+    const loanStartDatePicker = flatpickr("#loanStartDate", {
+      dateFormat: "d/m/Y",
+      allowInput: true,
+      onChange: function(selectedDates) {
+        if (selectedDates.length > 0) {
+          updateRepaymentMinDates(selectedDates[0]);
+          runRepaymentCalculation();
+        }
+      }
+    });
+
+    // Initialize Flatpickr for first payment / full repayment date (restricted to today or future)
+    const firstPaymentDatePicker = flatpickr("#firstPaymentDate", {
+      dateFormat: "d/m/Y",
+      allowInput: true,
+      minDate: getTodayMidnight(),
+      onChange: function(selectedDates) {
+        runRepaymentCalculation();
+      }
+    });
+
+    /**
+     * Update minimum dates for repayment pickers based on loan start date
+     */
+    function updateRepaymentMinDates(effectiveLoanStartDate) {
+      const today = getTodayMidnight();
+      let minEffectiveDate = today;
+
+      if (effectiveLoanStartDate instanceof Date) {
+        const loanStartMidnight = new Date(
+          effectiveLoanStartDate.getFullYear(),
+          effectiveLoanStartDate.getMonth(),
+          effectiveLoanStartDate.getDate()
+        );
+
+        if (loanStartMidnight > minEffectiveDate) {
+          minEffectiveDate = loanStartMidnight;
+        }
+      }
+
+      if (firstPaymentDatePicker) {
+        firstPaymentDatePicker.set("minDate", minEffectiveDate);
+        // If currently selected date is now before min, clear it
+        const selected = firstPaymentDatePicker.selectedDates[0];
+        if (selected && selected < minEffectiveDate) {
+          firstPaymentDatePicker.clear();
+        }
+      }
+    }
+
+    /**
+     * Update min dates when loan start mode changes
+     */
+    function updateMinDatesFromLoanStartMode() {
+      const loanStartMode = document.getElementById('loanStartMode').value;
+      const explicitLoanStartDate = document.getElementById('loanStartDate').value;
+
+      const calculatedLoanStartDate = calculateLoanStartDate(loanStartMode, explicitLoanStartDate);
+      updateRepaymentMinDates(calculatedLoanStartDate);
+    }
+
+    // Update min dates when loan start mode changes
+    document.getElementById('loanStartMode').addEventListener('change', updateMinDatesFromLoanStartMode);
+
+    // Initialize min dates on page load
+    updateMinDatesFromLoanStartMode();
   </script>
 </body>
 </html>
