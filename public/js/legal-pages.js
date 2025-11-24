@@ -33,7 +33,7 @@
         <h2 class="legal-section-title">About PayFriends</h2>
         <p class="legal-section-description">
           PayFriends is a simple, private tool that helps you set up and track personal loans between friends and family.
-          It lets you create clear agreements, repayment schedules and friendly reminders so everyone knows where they stand.
+          It helps users create clear agreements, repayment schedules and friendly reminders so everyone knows where they stand.
         </p>
         <p class="legal-section-description">
           PayFriends is not a bank, lender or financial institution. We do not hold money, process payments, extend credit
@@ -207,7 +207,7 @@
 
           <h3>12. Termination</h3>
           <p>
-            You may stop using PayFriends at any time and request deletion of your account by contacting us at legal@payfriends.app.
+            You may stop using PayFriends at any time and request deletion of your account.
           </p>
           <p>
             We may suspend or terminate your access to the Service at any time, with or without notice, if we believe you have violated these Terms or for any other reason at our sole discretion.
@@ -229,14 +229,6 @@
           <h3>15. Entire Agreement</h3>
           <p>
             These Terms, together with our Privacy Policy and Cookie Notice, constitute the entire agreement between you and PayFriends regarding the use of the Service.
-          </p>
-
-          <h3>16. Contact</h3>
-          <p>
-            If you have any questions about these Terms, please contact us at:
-          </p>
-          <p>
-            <strong>Email:</strong> <a href="mailto:legal@payfriends.app" class="legal-link-style">legal@payfriends.app</a>
           </p>
         </div>
       </div>
@@ -417,7 +409,7 @@
 
           <p><strong>Deletion</strong></p>
           <ul>
-            <li>You can delete your account and associated data at any time by contacting us at legal@payfriends.app</li>
+            <li>You can delete your account and associated data at any time</li>
             <li>Some information may be retained as required by law or for legitimate business purposes</li>
           </ul>
 
@@ -440,9 +432,6 @@
             <li><strong>Right to Object:</strong> Object to our processing of your personal data</li>
             <li><strong>Right to Withdraw Consent:</strong> Withdraw consent at any time where processing is based on consent</li>
           </ul>
-          <p>
-            To exercise any of these rights, please contact us at legal@payfriends.app.
-          </p>
 
           <h3>10. Children's Privacy</h3>
           <p>
@@ -473,17 +462,6 @@
           </p>
           <p>
             We encourage you to review this Privacy Policy periodically. Your continued use of PayFriends after changes are posted constitutes your acceptance of the updated Privacy Policy.
-          </p>
-
-          <h3>15. Contact Us</h3>
-          <p>
-            If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us at:
-          </p>
-          <p>
-            <strong>Email:</strong> <a href="mailto:legal@payfriends.app" class="legal-link-style">legal@payfriends.app</a>
-          </p>
-          <p>
-            We will respond to your inquiry as promptly as possible, typically within 30 days.
           </p>
         </div>
       </div>
