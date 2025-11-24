@@ -96,46 +96,41 @@
     <div id="error" class="error" style="display:none"></div>
 
     <div id="profile-container" style="display:none">
-      <div class="card">
-        <div class="profile-header">
-          <div class="profile-avatar" id="friend-avatar"></div>
-          <div class="profile-info">
-            <div class="profile-name" id="friend-name"></div>
-            <div class="profile-timezone" id="friend-timezone"></div>
-          </div>
-        </div>
+      <!-- Main profile card with big avatar -->
+      <div style="margin-top:24px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); background:rgba(21,26,33,0.6); padding:24px; display:flex; align-items:center; gap:20px">
+        <div id="friend-avatar" style="flex-shrink:0"></div>
+        <div style="flex:1">
+          <div id="friend-name" style="font-size:24px; font-weight:600; margin-bottom:8px"></div>
+          <div id="friend-role" style="display:inline-block; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; margin-bottom:12px"></div>
+          <div id="friend-timezone" style="font-size:14px; color:var(--muted); margin-bottom:8px"></div>
 
-        <!-- Contact details (lender only) -->
-        <div id="contact-details" style="display:none">
-          <div class="info-box">
-            <div class="info-box-title">Contact details</div>
-            <div class="info-row">
-              <span class="info-label">Email</span>
-              <span class="info-value" id="friend-email"></span>
+          <!-- Contact details (lender only) -->
+          <div id="contact-details" style="display:none">
+            <div style="font-size:14px; color:var(--muted); margin-bottom:4px">
+              <span style="font-weight:500; color:rgba(255,255,255,0.7)">Email:</span> <span id="friend-email"></span>
             </div>
-            <div class="info-row">
-              <span class="info-label">Phone</span>
-              <span class="info-value" id="friend-phone"></span>
+            <div style="font-size:14px; color:var(--muted)">
+              <span style="font-weight:500; color:rgba(255,255,255,0.7)">Phone:</span> <span id="friend-phone"></span>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Communication box (borrower only) -->
-        <div id="communication-box" style="display:none">
-          <div class="communication-box">
-            <div class="communication-box-title">Contact about this loan</div>
-            <div class="communication-box-text">
-              Please keep loan communications inside PayFriends.<br>
-              You both agreed to use this space so things stay organised, fair, and comfortable for the lender.
-            </div>
+      <!-- Communication box (borrower only) -->
+      <div id="communication-box" style="display:none; margin-top:16px">
+        <div class="communication-box">
+          <div class="communication-box-title">Contact about this loan</div>
+          <div class="communication-box-text">
+            Please keep loan communications inside PayFriends.<br>
+            You both agreed to use this space so things stay organised, fair, and comfortable for the lender.
           </div>
         </div>
+      </div>
 
-        <!-- Agreements section -->
-        <div class="agreements-section">
-          <h2>Agreements with this friend</h2>
-          <div id="agreements-list"></div>
-        </div>
+      <!-- Agreements section -->
+      <div class="agreements-section">
+        <h2>Agreements with this friend</h2>
+        <div id="agreements-list"></div>
       </div>
     </div>
   </div>
@@ -224,14 +219,35 @@
 
     // Render friend profile
     function renderProfile(data) {
-      // Avatar - use initials always (no user ID needed for image)
+      // Avatar - use initials with bigger size (110px like in agreement page)
       const avatarEl = document.getElementById('friend-avatar');
       const initials = getAvatarInitials(data.name);
       const colorClass = getAvatarColor(data.name);
-      avatarEl.innerHTML = `<div class="profile-avatar-initials ${colorClass}">${initials}</div>`;
+      avatarEl.innerHTML = `<div style="width:110px; height:110px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:36px; text-transform:uppercase" class="${colorClass}">${initials}</div>`;
 
       // Name
       document.getElementById('friend-name').textContent = data.name;
+
+      // Role badge
+      const roleEl = document.getElementById('friend-role');
+      // Determine role from agreements (are they borrower or lender from my perspective?)
+      let role = 'Friend';
+      if (data.agreementsWithThisFriend && data.agreementsWithThisFriend.length > 0) {
+        // Check the first agreement to determine primary role
+        const firstAgreement = data.agreementsWithThisFriend[0];
+        if (firstAgreement.roleForCurrentUser === 'lender') {
+          role = 'Borrower'; // I'm the lender, so they're the borrower
+          roleEl.style.background = 'rgba(230,126,34,0.15)';
+          roleEl.style.color = '#f39c63';
+          roleEl.style.border = '1px solid rgba(230,126,34,0.3)';
+        } else {
+          role = 'Lender'; // I'm the borrower, so they're the lender
+          roleEl.style.background = 'rgba(61,123,220,0.15)';
+          roleEl.style.color = '#6b9cff';
+          roleEl.style.border = '1px solid rgba(61,123,220,0.3)';
+        }
+      }
+      roleEl.textContent = role;
 
       // Timezone and local time
       const timezoneEl = document.getElementById('friend-timezone');
@@ -250,11 +266,24 @@
       }
 
       // Contact details or communication box
-      if (data.friendCurrentEmail || data.friendCurrentPhone) {
+      if (data.friendCurrentEmail || data.friendCurrentPhone || data.friendAgreementPhone) {
         // User is lender - show contact details
         document.getElementById('contact-details').style.display = 'block';
         document.getElementById('friend-email').textContent = data.friendCurrentEmail || 'No email provided yet';
-        document.getElementById('friend-phone').textContent = data.friendCurrentPhone || 'No phone provided yet';
+
+        // Phone fallback logic:
+        // 1. Prefer verified phone from user profile (friendCurrentPhone)
+        // 2. Fall back to phone from agreement (friendAgreementPhone - entered by lender during wizard)
+        // 3. Show "No phone provided yet" if neither exists
+        let phoneDisplay = '';
+        if (data.friendCurrentPhone) {
+          phoneDisplay = data.friendCurrentPhone; // Verified phone from borrower's account
+        } else if (data.friendAgreementPhone) {
+          phoneDisplay = `${data.friendAgreementPhone} <span style="color:rgba(255,255,255,0.4)">(provided by you)</span>`;
+        } else {
+          phoneDisplay = 'No phone provided yet';
+        }
+        document.getElementById('friend-phone').innerHTML = phoneDisplay;
       } else {
         // User is borrower - show communication box
         document.getElementById('communication-box').style.display = 'block';
@@ -291,6 +320,12 @@
         const amountText = formatCurrency2(agreement.amountCents);
         const totalRepayText = formatCurrency2(agreement.totalRepayAmountCents);
 
+        // Route to /review if pending (borrower hasn't accepted yet), otherwise /manage
+        // Status 'pending' means awaiting borrower acceptance
+        const agreementUrl = agreement.status === 'pending'
+          ? `/agreements/${agreement.agreementId}/review`
+          : `/agreements/${agreement.agreementId}/manage`;
+
         card.innerHTML = `
           <div class="agreement-header">
             <span class="agreement-role ${roleClass}">${roleText}</span>
@@ -302,7 +337,7 @@
             ${agreement.totalRepayAmountCents !== agreement.amountCents ? ` • Total to repay: <span class="agreement-amount-value">${totalRepayText}</span>` : ''}
           </div>
           <div class="agreement-actions">
-            <button class="btn-open-agreement" onclick="window.location.href='/agreements/${agreement.agreementId}/manage'">Open agreement</button>
+            <button class="btn-open-agreement" onclick="window.location.href='${agreementUrl}'">Open agreement</button>
           </div>
         `;
 

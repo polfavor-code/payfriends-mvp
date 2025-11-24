@@ -323,6 +323,11 @@ try {
   // Column already exists, ignore
 }
 try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN borrower_phone TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+try {
   db.exec(`ALTER TABLE agreements ADD COLUMN one_time_due_option TEXT;`);
 } catch (e) {
   // Column already exists, ignore
@@ -1166,27 +1171,24 @@ app.post('/api/agreements', requireAuth, (req, res) => {
   const finalLenderName = req.user.full_name || lenderName || req.user.email;
 
   try {
-    // Update user's phone number if provided
-    if (phoneNumber) {
-      // Basic phone validation: must contain at least some digits
-      if (!/\d/.test(phoneNumber)) {
-        return res.status(400).json({ error: 'Phone number must contain at least one digit' });
-      }
-      db.prepare('UPDATE users SET phone_number = ? WHERE id = ?')
-        .run(phoneNumber, req.user.id);
+    // Note: phoneNumber parameter is the BORROWER's phone (entered by lender in wizard)
+    // We store it in the agreements table, not the users table
+    // Validate borrower phone if provided
+    if (phoneNumber && !/\d/.test(phoneNumber)) {
+      return res.status(400).json({ error: 'Phone number must contain at least one digit' });
     }
 
     // Create agreement
     const agreementStmt = db.prepare(`
       INSERT INTO agreements (
-        lender_user_id, lender_name, borrower_email, friend_first_name,
+        lender_user_id, lender_name, borrower_email, borrower_phone, friend_first_name,
         direction, repayment_type, amount_cents, money_sent_date, due_date, created_at, status, description,
         plan_length, plan_unit, installment_count, installment_amount, first_payment_date, final_due_date,
         interest_rate, total_interest, total_repay_amount,
         payment_preference_method, payment_methods_json, payment_other_description, reminder_mode, reminder_offsets,
         proof_required, debt_collection_clause, payment_frequency, one_time_due_option
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     // Normalize financial dates to YYYY-MM-DD format (pure dates, no time component)
@@ -1199,6 +1201,7 @@ app.post('/api/agreements', requireAuth, (req, res) => {
       req.user.id,
       finalLenderName,
       borrowerEmail,
+      phoneNumber || null, // Borrower's phone entered by lender
       friendFirstName || null,
       direction || 'lend',
       repaymentType || 'one_time',
@@ -1867,9 +1870,22 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
 
     const canSeeContact = isLenderInAny.count > 0;
 
-    // Note: The borrower_phone column doesn't exist in the agreements table,
-    // so we only use the phone_number from the users table (friend.phone_number).
-    // This is sufficient for contact details display.
+    // Get borrower phone from agreement if lender is viewing
+    // This is the phone the lender entered during agreement creation
+    let agreementBorrowerPhone = null;
+    if (canSeeContact) {
+      const agreementWithPhone = db.prepare(`
+        SELECT borrower_phone
+        FROM agreements
+        WHERE lender_user_id = ? AND borrower_user_id = ? AND borrower_phone IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+      `).get(userId, friendId);
+
+      if (agreementWithPhone && agreementWithPhone.borrower_phone) {
+        agreementBorrowerPhone = agreementWithPhone.borrower_phone;
+      }
+    }
 
     // Get all agreements with this friend
     const agreements = db.prepare(`
@@ -1916,7 +1932,8 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
     // Only include contact details if current user is lender
     if (canSeeContact) {
       response.friendCurrentEmail = friend.email;
-      response.friendCurrentPhone = friend.phone_number || null;
+      response.friendCurrentPhone = friend.phone_number || null; // Verified phone from user profile
+      response.friendAgreementPhone = agreementBorrowerPhone; // Phone entered by lender during wizard
     }
 
     console.log('[Friend Profile] Returning profile with', agreementsWithThisFriend.length, 'agreements');

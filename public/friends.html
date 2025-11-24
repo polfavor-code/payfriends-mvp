@@ -27,10 +27,10 @@
     .friends-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px; margin-top:24px}
     .friend-card{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; transition:all 0.2s ease; cursor:pointer}
     .friend-card:hover{background:rgba(255,255,255,0.04); border-color:rgba(61,220,151,0.3); transform:translateY(-2px)}
-    .friend-header{display:flex; align-items:center; gap:12px; margin-bottom:12px}
-    .friend-avatar{width:48px; height:48px; border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center}
+    .friend-header{display:flex; align-items:center; gap:16px; margin-bottom:12px}
+    .friend-avatar{width:80px; height:80px; border-radius:50%; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center}
     .friend-avatar img{width:100%; height:100%; object-fit:cover}
-    .friend-avatar-initials{width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:18px; text-transform:uppercase}
+    .friend-avatar-initials{width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:28px; text-transform:uppercase}
     .friend-avatar-initials.color-1{background:#6366f1}
     .friend-avatar-initials.color-2{background:#8b5cf6}
     .friend-avatar-initials.color-3{background:#ec4899}
@@ -121,12 +121,13 @@
 
     // Utility: Get role badge text and class
     function getRoleBadge(roleSummary) {
+      // From your perspective: who is this friend?
       if (roleSummary === 'both') {
-        return { text: 'You both lent each other', className: 'both' };
+        return { text: 'Both', className: 'both' };
       } else if (roleSummary === 'you lent') {
-        return { text: 'You lent them money', className: 'lent' };
+        return { text: 'Borrower', className: 'lent' }; // You lent to them, so they're the borrower
       } else {
-        return { text: 'They lent you money', className: 'borrowed' };
+        return { text: 'Lender', className: 'borrowed' }; // They lent to you, so they're the lender
       }
     }
 
