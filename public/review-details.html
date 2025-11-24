@@ -1135,6 +1135,63 @@
       }
     }
 
+    /**
+     * Get relative installment label for "upon acceptance" loans
+     * @param {Object} agreement - Agreement object
+     * @param {number} installmentIndex - Index of the installment (0-based)
+     * @returns {string} Relative label like "1 month after loan start"
+     */
+    function getRelativeInstallmentLabel(agreement, installmentIndex) {
+      const frequency = agreement.payment_frequency || 'monthly';
+      const firstPaymentOption = agreement.first_payment_option || '1month';
+
+      // Get the first payment offset in months
+      const firstOffsetMonths = getFirstPaymentOffsetMonthsFromOption(firstPaymentOption);
+
+      // Determine interval in months based on frequency
+      let intervalMonths;
+      switch (frequency) {
+        case 'monthly':
+          intervalMonths = 1;
+          break;
+        case 'quarterly':
+          intervalMonths = 3;
+          break;
+        case 'yearly':
+          intervalMonths = 12;
+          break;
+        default:
+          // For weekly/biweekly/every_4_weeks, approximate as months for label purposes
+          intervalMonths = 1;
+      }
+
+      const offsetMonths = firstOffsetMonths + (installmentIndex * intervalMonths);
+
+      if (offsetMonths === 1) {
+        return '1 month after loan start';
+      } else {
+        return `${offsetMonths} months after loan start`;
+      }
+    }
+
+    /**
+     * Helper to get offset in months for first payment option
+     */
+    function getFirstPaymentOffsetMonthsFromOption(firstPaymentOption) {
+      const map = {
+        'today': 0,
+        'tomorrow': 0,
+        '3days': 0,
+        '7days': 0,
+        '1month': 1,
+        '2months': 2,
+        '3months': 3,
+        '6months': 6,
+        '12months': 12
+      };
+      return map[firstPaymentOption] || 1;
+    }
+
     function showNextPaymentCard() {
       // Only show for borrowers on active agreements
       const isBorrower = agreement.borrower_user_id === currentUser.id;
@@ -2049,13 +2106,16 @@
         // Determine first payment offset description
         let firstPaymentDesc = '';
         const isOnAcceptance = agreement.money_sent_date === 'on-acceptance';
+        const isPending = agreement.status !== 'active';
 
-        if (isOnAcceptance) {
-          // For "upon acceptance" loans, describe the offset
-          // This would need to be stored in the agreement, for now default to "1 month after the loan starts"
-          firstPaymentDesc = '1 month after the loan starts';
+        if (isOnAcceptance && isPending) {
+          // For pending "upon acceptance" loans, show relative offset
+          // Use the actual first payment option from agreement, or default to 1 month
+          const firstPaymentOption = agreement.first_payment_option || '1month';
+          const offsetMonths = getFirstPaymentOffsetMonthsFromOption(firstPaymentOption);
+          firstPaymentDesc = offsetMonths === 1 ? '1 month after the loan starts' : `${offsetMonths} months after the loan starts`;
         } else {
-          // For specific start dates, show the actual date
+          // For active agreements or fixed start dates, show the actual date
           const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
           firstPaymentDesc = `on ${firstDate}`;
         }
@@ -2172,7 +2232,14 @@
       document.getElementById('amount-display').textContent = amount;
 
       // 5. Money transfer date (use backend-derived display value)
-      document.getElementById('money-sent-display').textContent = agreement.loan_start_date_display || 'To be confirmed';
+      let moneyTransferDateText;
+      if (agreement.money_sent_date === 'on-acceptance' && agreement.status !== 'active') {
+        // For pending agreements with loan start on acceptance, show clear message
+        moneyTransferDateText = 'When the agreement is accepted';
+      } else {
+        moneyTransferDateText = agreement.loan_start_date_display || 'To be confirmed';
+      }
+      document.getElementById('money-sent-display').textContent = moneyTransferDateText;
       document.getElementById('money-sent-row').style.display = 'flex';
 
       // 6. Loan duration (hide for one-time loans, show for installments)
@@ -2203,8 +2270,22 @@
         const frequency = agreement.payment_frequency || 'monthly';
         const frequencyText = formatRepaymentFrequency(frequency);
         const installmentAmount = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
-        const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        // Check if we should show relative dates for pending agreements with loan start on acceptance
+        const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+        const isPending = agreement.status !== 'active';
+
+        let firstDate, finalDate;
+        if (isLoanStartUponAcceptance && isPending) {
+          // Show relative labels for pending agreements with loan start on acceptance
+          firstDate = getRelativeInstallmentLabel(agreement, 0);
+          finalDate = getRelativeInstallmentLabel(agreement, agreement.installment_count - 1);
+        } else {
+          // Show concrete dates for active agreements or fixed loan start
+          firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
         const installmentPlan = `${agreement.installment_count} ${frequencyText.toLowerCase()} payments of ${installmentAmount} from ${firstDate} to ${finalDate}`;
         document.getElementById('installment-plan-display').textContent = installmentPlan;
         document.getElementById('installment-plan-row').style.display = 'flex';
@@ -4484,8 +4565,18 @@
           for (let i = 0; i < installmentCount; i++) {
             const row = schedule[i];
             if (row) {
-              // Use formatFinancialDate to avoid timezone issues with due dates
-              const dateStr = formatFinancialDate(row.dateISO);
+              // Check if we should show relative dates for pending agreements with loan start on acceptance
+              const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+              const isPending = agreement.status !== 'active';
+
+              let dateStr;
+              if (isLoanStartUponAcceptance && isPending) {
+                // Show relative label for pending agreements with loan start on acceptance
+                dateStr = getRelativeInstallmentLabel(agreement, i);
+              } else {
+                // Use formatFinancialDate to avoid timezone issues with due dates
+                dateStr = formatFinancialDate(row.dateISO);
+              }
 
               // Highlight current period
               const isCurrentPeriod = i === currentPeriodIndex;
