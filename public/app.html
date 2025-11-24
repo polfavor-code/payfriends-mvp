@@ -140,11 +140,12 @@
     .activity-item--issue,.message-item.activity-item--issue{background:var(--warning-bg) !important; border-color:var(--warning-border) !important}
     .activity-item--issue .message-date,.message-item.activity-item--issue .message-date{color:var(--warning-ink)}
     .activity-item--issue .unread-indicator,.message-item.activity-item--issue .unread-indicator{color:var(--warning) !important; text-shadow:0 0 8px rgba(249,115,22,.3)}
-    .wizard-steps{display:flex; gap:16px; margin-bottom:24px; align-items:center}
-    .wizard-step{flex:1; padding:8px 16px; background:#10151d; border-radius:8px; text-align:center; font-size:14px; border:2px solid transparent; cursor:pointer; transition:all 0.2s ease}
-    .wizard-step:hover{background:#1a2028; border-color:rgba(61,220,151,0.3)}
-    .wizard-step.active{border-color:var(--accent); color:var(--accent); font-weight:600}
-    .wizard-step.completed{color:var(--accent)}
+    .wizard-steps{display:flex; gap:16px; align-items:center; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none}
+    .wizard-steps::-webkit-scrollbar{display:none}
+    .wizard-step{padding:8px 16px; background:transparent; border-radius:8px; text-align:center; font-size:14px; border:none; cursor:pointer; transition:all 0.2s ease; white-space:nowrap; color:var(--muted); opacity:0.8; font-weight:500}
+    .wizard-step:hover{background:rgba(255,255,255,0.03)}
+    .wizard-step.active{background:var(--accent); color:#0d130f; font-weight:600}
+    .wizard-step.completed{color:var(--muted); opacity:0.8}
     .wizard-content{min-height:200px}
     .hidden{display:none}
     .role-badge{display:inline-block; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; background:#2a2a2a; color:#fff}
@@ -491,17 +492,19 @@
       <!-- Page title outside card, matching Settings layout -->
       <h1 style="font-size: 28px; font-weight: 600; margin: 0 0 24px 0;">New Agreement</h1>
 
-      <!-- Wizard steps and close button outside card -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 16px;">
-        <div class="wizard-steps" role="navigation" aria-label="Agreement wizard steps" style="margin-bottom: 0;">
-          <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
-          <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">2. Terms</div>
-          <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Interest">3. Interest</div>
-          <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Payments">4. Payments</div>
-          <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Summary">5. Summary</div>
-          <div class="wizard-step" id="step-indicator-6" onclick="clickStep(6)" aria-label="Step 6, Share">6. Share</div>
+      <!-- Wizard steps centered, with back link on right -->
+      <div style="position: relative; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: center; align-items: center;">
+          <div class="wizard-steps" role="navigation" aria-label="Agreement wizard steps">
+            <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
+            <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">2. Terms</div>
+            <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Interest">3. Interest</div>
+            <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Payments">4. Payments</div>
+            <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Summary">5. Summary</div>
+            <div class="wizard-step" id="step-indicator-6" onclick="clickStep(6)" aria-label="Step 6, Share">6. Share</div>
+          </div>
         </div>
-        <button class="secondary" onclick="closeNewAgreement()" style="padding:6px 12px; font-size:13px; white-space: nowrap;">Close</button>
+        <a onclick="closeNewAgreement()" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--muted); cursor: pointer; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='var(--text)'; this.style.textDecoration='underline'" onmouseout="this.style.color='var(--muted)'; this.style.textDecoration='none'">&lt; Back to My agreements</a>
       </div>
 
       <!-- Main card starts here, matching Settings card structure -->
