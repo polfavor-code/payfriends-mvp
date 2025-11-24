@@ -219,11 +219,17 @@
 
     // Render friend profile
     function renderProfile(data) {
-      // Avatar - use initials with bigger size (110px like in agreement page)
+      // Avatar - use profile picture if available, otherwise show initials (same logic as friends overview)
       const avatarEl = document.getElementById('friend-avatar');
-      const initials = getAvatarInitials(data.name);
-      const colorClass = getAvatarColor(data.name);
-      avatarEl.innerHTML = `<div style="width:110px; height:110px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:36px; text-transform:uppercase" class="${colorClass}">${initials}</div>`;
+      if (data.avatarUrl && data.friendId) {
+        // Friend has uploaded a profile picture - show it
+        avatarEl.innerHTML = `<img src="/api/profile/picture/${data.friendId}" alt="${escapeHTML(data.name)}" style="width:110px; height:110px; border-radius:50%; object-fit:cover" />`;
+      } else {
+        // No profile picture - show initials with color
+        const initials = getAvatarInitials(data.name);
+        const colorClass = getAvatarColor(data.name);
+        avatarEl.innerHTML = `<div style="width:110px; height:110px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:36px; text-transform:uppercase" class="${colorClass}">${initials}</div>`;
+      }
 
       // Name
       document.getElementById('friend-name').textContent = data.name;
@@ -312,7 +318,7 @@
         card.className = 'agreement-card';
 
         const roleClass = agreement.roleForCurrentUser === 'lender' ? 'lender' : 'borrower';
-        const roleText = agreement.roleForCurrentUser === 'lender' ? 'You lent them' : 'You borrowed from them';
+        const roleText = agreement.roleForCurrentUser === 'lender' ? 'You lent them' : 'You borrowed';
 
         const statusClass = agreement.status || 'pending';
         const statusText = agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1);

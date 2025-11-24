@@ -1922,6 +1922,7 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
 
     // Build response
     const response = {
+      friendId: friend.id, // Internal ID for profile picture endpoint
       friendPublicId: friend.public_id,
       name: friend.full_name || friend.email,
       avatarUrl: friend.profile_picture,
