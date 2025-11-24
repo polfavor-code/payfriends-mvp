@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loan Calculator - PayFriends</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #0c1015 0%, #1a1f2e 100%);
+      color: #e5e7eb;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: rgba(31, 41, 55, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .subtitle {
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: rgba(31, 41, 55, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #d1d5db;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      background: rgba(12, 16, 21, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #e5e7eb;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+
+    .form-group input:disabled,
+    .form-group select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .form-group input[type="number"] {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .totals {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .total-card {
+      background: rgba(12, 16, 21, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .total-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: 8px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .total-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .schedule-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .schedule-subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 16px;
+    }
+
+    .schedule-table {
+      overflow-x: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      background: rgba(12, 16, 21, 0.8);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      background: rgba(31, 41, 55, 0.98);
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #9ca3af;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    thead th.align-right {
+      text-align: right;
+    }
+
+    tbody td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #d1d5db;
+    }
+
+    tbody td.align-right {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(10, 13, 17, 0.6);
+    }
+
+    tbody tr:hover {
+      background: rgba(55, 65, 81, 0.3);
+    }
+
+    tfoot td {
+      padding: 16px 12px;
+      border-top: 2px solid rgba(59, 130, 246, 0.5);
+      background: rgba(59, 130, 246, 0.1);
+      font-weight: 700;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    tfoot td.align-right {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    tfoot td:first-child {
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #60a5fa;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-preview {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+    }
+
+    .badge-actual {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    .info-box {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #93c5fd;
+      line-height: 1.5;
+    }
+
+    .debug-console {
+      background: rgba(12, 16, 21, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      color: #a5f3fc;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .error-message {
+      color: #ef4444;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="main-grid">
+      <!-- Left sidebar: Form inputs -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin-bottom: 0;">Configuration</h2>
+          <button type="button" id="calculator-reset-link" style="background: none; border: none; color: #34d399; cursor: pointer; font-size: 14px; padding: 0;">Reset</button>
+        </div>
+
+        <!-- 1. Loan amount -->
+        <div class="form-group">
+          <label for="principal">Loan amount (€)</label>
+          <input type="number" id="principal" value="6000" min="100" step="100">
+        </div>
+
+        <!-- 2. Annual interest rate -->
+        <div class="form-group">
+          <label for="interest">Annual interest rate (%)</label>
+          <input type="number" id="interest" value="5" min="0" max="100" step="0.1">
+        </div>
+
+        <!-- 3. Loan start date -->
+        <div class="form-group">
+          <label for="loanStartMode">Loan start date (when borrower receives the money)</label>
+          <select id="loanStartMode">
+            <option value="upon_acceptance" selected>When agreement is accepted</option>
+            <option value="today">Today</option>
+            <option value="tomorrow">Tomorrow</option>
+            <option value="in-1-week">In 1 week</option>
+            <option value="pick-date">Pick a date…</option>
+          </select>
+          <div class="form-hint">Date used for interest and repayment calculations.</div>
+        </div>
+
+        <div id="loanStartDateGroup" class="form-group hidden">
+          <label for="loanStartDate">Pick a date</label>
+          <input type="date" id="loanStartDate" required>
+        </div>
+
+        <!-- 4. Repayment type -->
+        <div class="form-group">
+          <label for="repaymentType">Repayment type</label>
+          <select id="repaymentType">
+            <option value="one_time" selected>1-time payment</option>
+            <option value="installments">Installments</option>
+          </select>
+        </div>
+
+        <!-- 5. First payment due -->
+        <div class="form-group" id="firstPaymentGroup">
+          <label for="firstPaymentDue">
+            <span id="paymentTimingLabel">First payment due (after loan start)</span>
+          </label>
+          <select id="firstPaymentDue">
+            <option value="1-week">In 1 week</option>
+            <option value="1-month">In 1 month</option>
+            <option value="6-months">In 6 months</option>
+            <option value="1-year" selected>In 1 year</option>
+            <option value="2-years">In 2 years</option>
+            <option value="3-years">In 3 years</option>
+            <option value="pick-date">Pick a date…</option>
+          </select>
+          <div class="form-hint">When the first repayment is due after the loan starts.</div>
+        </div>
+
+        <div id="firstPaymentDateGroup" class="form-group hidden">
+          <label for="firstPaymentDate">Pick a date</label>
+          <input type="date" id="firstPaymentDate" required>
+        </div>
+
+        <!-- 6. Payment frequency -->
+        <div class="form-group" id="frequencyGroup">
+          <label for="frequency">Payment frequency</label>
+          <select id="frequency">
+            <optgroup label="Day-based">
+              <option value="every-7-days">Every 7 days</option>
+              <option value="every-14-days">Every 14 days</option>
+              <option value="every-30-days">Every 30 days</option>
+            </optgroup>
+            <optgroup label="Month-based (same day of month)">
+              <option value="every-month" selected>Every month</option>
+              <option value="every-3-months">Every 3 months</option>
+              <option value="every-6-months">Every 6 months</option>
+            </optgroup>
+            <optgroup label="Weekday-based (same weekday)">
+              <option value="every-week">Every week</option>
+              <option value="every-2-weeks">Every 2 weeks</option>
+              <option value="every-4-weeks">Every 4 weeks</option>
+            </optgroup>
+            <optgroup label="Year-based (same date)">
+              <option value="every-year">Every year</option>
+              <option value="every-2-years">Every 2 years</option>
+              <option value="every-3-years">Every 3 years</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- 7. Number of installments -->
+        <div class="form-group" id="installmentsGroup">
+          <label for="numInstallments">Number of installments</label>
+          <input type="number" id="numInstallments" value="12" min="1" max="120" step="1">
+          <div class="form-hint" id="installmentsHint" style="display: none;">
+            For 1-time payments the loan is repaid in a single payment.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right side: Results -->
+      <div>
+        <!-- Schedule table -->
+        <div class="card">
+          <div class="schedule-header">
+            <h2>Repayment schedule & interest calculation</h2>
+            <span id="modeBadge"></span>
+          </div>
+          <div style="font-size: 14px; margin-bottom: 16px; margin-top: 4px; color: #9ca3af;">
+            <div id="loanStartLabel">Click "Calculate schedule" to generate...</div>
+            <div id="loanDurationLabel" style="display: none;"></div>
+          </div>
+          <div class="schedule-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Due date</th>
+                  <th class="align-right">Principal</th>
+                  <th class="align-right">Interest</th>
+                  <th class="align-right">Total payment</th>
+                  <th class="align-right">Balance</th>
+                </tr>
+              </thead>
+              <tbody id="scheduleBody">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
+                    Click "Calculate schedule" to generate repayment schedule...
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot id="scheduleTotals" style="display: none;">
+                <tr style="color: #34d399;">
+                  <td colspan="2" style="text-align: left;">Loan totals</td>
+                  <td class="align-right" id="footerPrincipal">€ 0,00</td>
+                  <td class="align-right" id="footerInterest">€ 0,00</td>
+                  <td class="align-right" id="footerTotal">€ 0,00</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Loan summary -->
+        <div class="card" style="margin-top: 24px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+          <h2 style="color: #34d399; margin-bottom: 16px;">Loan summary</h2>
+          <div id="loanSummaryContent" style="font-size: 14px; line-height: 1.8; color: #d1d5db;">
+            Configure parameters to see loan summary...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/formatters.js"></script>
+  <script>
+    // Calculator Playground Logic - Single Source of Truth
+    // This generateRepaymentSchedule function can be reused across wizard, manage, and review pages
+
+    // Get formatting functions from window
+    const formatMoney = window.formatCurrency2;
+
+    /**
+     * Add days to a date
+     */
+    function addDays(date, days) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    }
+
+    /**
+     * Add months to a date, handling month-end edge cases
+     */
+    function addMonths(date, months) {
+      const result = new Date(date);
+      const targetMonth = result.getMonth() + months;
+      const targetYear = result.getFullYear() + Math.floor(targetMonth / 12);
+      const normalizedMonth = ((targetMonth % 12) + 12) % 12;
+
+      const originalDay = result.getDate();
+      result.setFullYear(targetYear, normalizedMonth, 1);
+      const daysInTargetMonth = new Date(targetYear, normalizedMonth + 1, 0).getDate();
+      const clampedDay = Math.min(originalDay, daysInTargetMonth);
+      result.setDate(clampedDay);
+
+      return result;
+    }
+
+    /**
+     * Add years to a date, handling Feb 29 edge case
+     */
+    function addYears(date, years) {
+      const result = new Date(date);
+      const targetYear = result.getFullYear() + years;
+      const originalMonth = result.getMonth();
+      const originalDay = result.getDate();
+
+      // Handle Feb 29 in leap year -> non-leap year
+      if (originalMonth === 1 && originalDay === 29) {
+        const isLeapYear = (targetYear % 4 === 0 && targetYear % 100 !== 0) || (targetYear % 400 === 0);
+        if (!isLeapYear) {
+          result.setFullYear(targetYear, 1, 28);
+          return result;
+        }
+      }
+
+      result.setFullYear(targetYear, originalMonth, originalDay);
+      return result;
+    }
+
+    /**
+     * Format date for display
+     */
+    function formatDateDisplay(dateInput) {
+      const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+      const day = date.getDate();
+      const month = date.toLocaleDateString('en-GB', { month: 'short' });
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    }
+
+    /**
+     * Format due date with optional weekday prefix for weekday-based frequencies
+     */
+    function formatDueDateWithWeekday(dateInput, includeWeekday) {
+      const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
+      if (includeWeekday) {
+        // Format as "Tue, 3 Aug 2027" for weekday-based frequencies
+        return date.toLocaleDateString('en-GB', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        }).replace(/^(\w+)\s/, '$1, ');
+      }
+
+      return formatDateDisplay(date);
+    }
+
+    /**
+     * SINGLE SOURCE OF TRUTH: Generate complete repayment schedule
+     * This function is reusable across wizard, manage, and review pages
+     *
+     * @param {Object} config - Configuration object
+     * @returns {Object} - Complete schedule data with rows, totals, and labels
+     */
+    function generateRepaymentSchedule({
+      loanAmount,
+      annualInterestRate,
+      repaymentType,
+      numberOfInstallments,
+      paymentFrequency,
+      firstPaymentDays,
+      firstPaymentMonths = 1,
+      firstPaymentYears = 0,
+      firstPaymentIsMonthBased = false,
+      firstPaymentIsYearBased = false,
+      firstPaymentExactDate = null,
+      loanStartMode,
+      contextMode,
+      explicitLoanStartDate
+    }) {
+      const debugMessages = [];
+
+      // STEP 1: Determine effective mode
+      // Rule: If loan start has a real date (not upon_acceptance), ALWAYS use actual mode
+      let effectiveMode = contextMode;
+      if (loanStartMode !== 'upon_acceptance') {
+        effectiveMode = 'actual';
+        debugMessages.push('Loan start has real date, forcing actual mode');
+      }
+
+      // STEP 2: Determine loan start date
+      let loanStartDate = explicitLoanStartDate;
+      if (!loanStartDate && loanStartMode === 'upon_acceptance' && effectiveMode === 'actual') {
+        // Upon acceptance + actual mode: use today
+        loanStartDate = new Date();
+        loanStartDate.setHours(0, 0, 0, 0);
+      }
+
+      // STEP 3: Determine loan start label
+      let loanStartLabel;
+      if (loanStartDate) {
+        loanStartLabel = `Loan start: ${formatDateDisplay(loanStartDate)}`;
+      } else {
+        // Preview mode with unknown date
+        loanStartLabel = 'Loan start: When agreement is accepted';
+      }
+
+      // STEP 4: Setup interest calculation
+      const annualRate = annualInterestRate / 100;
+      const dailyRate = annualRate / 365;
+
+      // Determine period configuration
+      let periodDays;
+      let periodType; // 'days', 'months', 'weeks', or 'years'
+      let periodMultiplier; // for "every 2 months", "every 3 months", etc.
+      let periodLabel;
+
+      switch (paymentFrequency) {
+        // Day-based frequencies
+        case 'every-7-days':
+          periodDays = 7;
+          periodType = 'days';
+          periodMultiplier = 1;
+          periodLabel = 'Every 7 days (weekly)';
+          break;
+        case 'every-14-days':
+          periodDays = 14;
+          periodType = 'days';
+          periodMultiplier = 1;
+          periodLabel = 'Every 14 days';
+          break;
+        case 'every-30-days':
+          periodDays = 30;
+          periodType = 'days';
+          periodMultiplier = 1;
+          periodLabel = 'Every 30 days';
+          break;
+        // Month-based frequencies
+        case 'every-month':
+          periodDays = 30; // approximate for interest
+          periodType = 'months';
+          periodMultiplier = 1;
+          periodLabel = 'Every month';
+          break;
+        case 'every-3-months':
+          periodDays = 91;
+          periodType = 'months';
+          periodMultiplier = 3;
+          periodLabel = 'Every 3 months';
+          break;
+        case 'every-6-months':
+          periodDays = 182;
+          periodType = 'months';
+          periodMultiplier = 6;
+          periodLabel = 'Every 6 months';
+          break;
+
+        // Weekday-based frequencies
+        case 'every-week':
+          periodDays = 7;
+          periodType = 'weeks';
+          periodMultiplier = 1;
+          periodLabel = 'Every week (same weekday)';
+          break;
+        case 'every-2-weeks':
+          periodDays = 14;
+          periodType = 'weeks';
+          periodMultiplier = 2;
+          periodLabel = 'Every 2 weeks';
+          break;
+        case 'every-4-weeks':
+          periodDays = 28;
+          periodType = 'weeks';
+          periodMultiplier = 4;
+          periodLabel = 'Every 4 weeks';
+          break;
+
+        // Year-based frequencies
+        case 'every-year':
+          periodDays = 365; // approximate for interest
+          periodType = 'years';
+          periodMultiplier = 1;
+          periodLabel = 'Every year';
+          break;
+        case 'every-2-years':
+          periodDays = 730; // approximate for interest (2 years)
+          periodType = 'years';
+          periodMultiplier = 2;
+          periodLabel = 'Every 2 years';
+          break;
+        case 'every-3-years':
+          periodDays = 1095; // approximate for interest (3 years)
+          periodType = 'years';
+          periodMultiplier = 3;
+          periodLabel = 'Every 3 years';
+          break;
+
+        default:
+          periodDays = 30;
+          periodType = 'months';
+          periodMultiplier = 1;
+          periodLabel = 'Every month';
+      }
+
+      debugMessages.push(`Annual interest rate: ${annualInterestRate}%`);
+      debugMessages.push(`Repayment type: ${repaymentType === 'one_time' ? '1-time payment' : 'Installments'}`);
+      debugMessages.push(`Number of installments: ${numberOfInstallments}`);
+      debugMessages.push(`Payment frequency: ${periodLabel}`);
+      debugMessages.push(`First payment timing: ${firstPaymentDays} days after loan start`);
+      debugMessages.push(`Loan start mode: ${loanStartMode === 'fixed_date' ? 'Fixed date' : 'Upon agreement acceptance'}`);
+      debugMessages.push(`Effective mode: ${effectiveMode === 'actual' ? 'Actual (real dates)' : 'Preview (relative labels)'}`);
+
+      // STEP 5: Generate schedule rows
+      const rows = [];
+      const principalPerPayment = loanAmount / numberOfInstallments;
+      let remainingBalance = loanAmount;
+      let totalInterest = 0;
+
+      for (let i = 0; i < numberOfInstallments; i++) {
+        const paymentIndex = i + 1;
+
+        // Calculate interest for this period
+        let daysForThisPeriod;
+        if (i === 0) {
+          // First payment: use firstPaymentDays
+          daysForThisPeriod = firstPaymentDays;
+        } else {
+          // Subsequent payments: use period length
+          daysForThisPeriod = periodDays;
+        }
+
+        const interestForPeriod = remainingBalance * dailyRate * daysForThisPeriod;
+        const principalPayment = principalPerPayment;
+        const totalPayment = principalPayment + interestForPeriod;
+
+        totalInterest += interestForPeriod;
+        remainingBalance -= principalPayment;
+        if (remainingBalance < 0.01) remainingBalance = 0;
+
+        // Generate due date label
+        let dueDateLabel;
+        let dueDate = null;
+
+        if (effectiveMode === 'preview') {
+          // PREVIEW MODE: Use relative labels, no real dates
+
+          // EXCEPTION: If user explicitly picked a first payment date, we know the real calendar dates
+          // Show them even in preview mode
+          if (firstPaymentExactDate) {
+            if (i === 0) {
+              // First payment: use the exact picked date
+              dueDate = new Date(firstPaymentExactDate);
+              dueDate.setHours(0, 0, 0, 0);
+            } else {
+              // Subsequent payments: calculate from first payment date
+              const baseDate = new Date(firstPaymentExactDate);
+              baseDate.setHours(0, 0, 0, 0);
+
+              if (periodType === 'years') {
+                dueDate = addYears(baseDate, i * periodMultiplier);
+              } else if (periodType === 'months') {
+                dueDate = addMonths(baseDate, i * periodMultiplier);
+              } else if (periodType === 'weeks') {
+                dueDate = addDays(baseDate, i * periodDays);
+              } else {
+                // Day-based
+                dueDate = addDays(baseDate, i * periodDays);
+              }
+            }
+            dueDateLabel = formatDueDateWithWeekday(dueDate, periodType === 'weeks');
+          } else if (i === 0) {
+            // FIRST PAYMENT in preview mode: use first payment timing properties
+            if (firstPaymentIsYearBased) {
+              // Year-based (e.g., "In 1 year", "In 2 years")
+              if (firstPaymentYears === 1) {
+                dueDateLabel = '1 year after loan start';
+              } else {
+                dueDateLabel = `${firstPaymentYears} years after loan start`;
+              }
+            } else if (firstPaymentIsMonthBased) {
+              // Month-based (e.g., "In 1 month", "In 6 months")
+              if (firstPaymentMonths === 0) {
+                dueDateLabel = 'On loan start';
+              } else if (firstPaymentMonths === 1) {
+                dueDateLabel = '1 month after loan start';
+              } else {
+                dueDateLabel = `${firstPaymentMonths} months after loan start`;
+              }
+            } else {
+              // Day-based (e.g., "In 1 week" = 7 days)
+              if (firstPaymentDays === 0) {
+                dueDateLabel = 'On loan start';
+              } else if (firstPaymentDays === 7) {
+                dueDateLabel = '1 week after loan start';
+              } else {
+                dueDateLabel = `${firstPaymentDays} days after loan start`;
+              }
+            }
+          } else if (periodType === 'years') {
+            // SUBSEQUENT PAYMENTS with yearly frequency
+            // Calculate offset from first payment
+            const totalYears = firstPaymentYears + (i * periodMultiplier);
+            if (totalYears === 1) {
+              dueDateLabel = '1 year after loan start';
+            } else {
+              dueDateLabel = `${totalYears} years after loan start`;
+            }
+          } else if (periodType === 'months') {
+            // SUBSEQUENT PAYMENTS with monthly frequency
+            // Calculate offset from first payment
+            const totalMonths = firstPaymentMonths + (i * periodMultiplier);
+            if (totalMonths === 0) {
+              dueDateLabel = 'On loan start';
+            } else if (totalMonths === 1) {
+              dueDateLabel = '1 month after loan start';
+            } else {
+              dueDateLabel = `${totalMonths} months after loan start`;
+            }
+          } else if (periodType === 'weeks') {
+            // SUBSEQUENT PAYMENTS with week-based frequency
+            // Calculate offset from first payment in days
+            const totalDays = firstPaymentDays + (i * periodDays);
+            if (totalDays === 0) {
+              dueDateLabel = 'On loan start';
+            } else if (totalDays === 7) {
+              dueDateLabel = '1 week after loan start';
+            } else {
+              dueDateLabel = `${totalDays} days after loan start`;
+            }
+          } else {
+            // SUBSEQUENT PAYMENTS with day-based frequency
+            // Calculate offset from first payment in days
+            const totalDays = firstPaymentDays + (i * periodDays);
+            if (totalDays === 0) {
+              dueDateLabel = 'On loan start';
+            } else if (totalDays === 7) {
+              dueDateLabel = '1 week after loan start';
+            } else {
+              dueDateLabel = `${totalDays} days after loan start`;
+            }
+          }
+        } else {
+          // ACTUAL MODE: Calculate real calendar dates
+          if (loanStartDate) {
+            // Calculate first payment date (will be used as base for all subsequent payments)
+            let firstDueDate;
+            if (firstPaymentExactDate) {
+              // User explicitly picked a date - use it directly
+              firstDueDate = new Date(firstPaymentExactDate);
+              firstDueDate.setHours(0, 0, 0, 0);
+            } else if (firstPaymentIsYearBased) {
+              // First payment is year-based (e.g., "In 1 year", "In 2 years")
+              firstDueDate = addYears(loanStartDate, firstPaymentYears);
+            } else if (firstPaymentIsMonthBased) {
+              // First payment is month-based (e.g., "In 1 month", "In 6 months")
+              firstDueDate = addMonths(loanStartDate, firstPaymentMonths);
+            } else {
+              // First payment is day-based (e.g., "In 1 week" = 7 days)
+              firstDueDate = addDays(loanStartDate, firstPaymentDays);
+            }
+
+            // Now calculate the due date for this payment
+            if (i === 0) {
+              // First payment: use the calculated first due date
+              dueDate = firstDueDate;
+            } else if (periodType === 'years') {
+              // Yearly: calculate from first payment date
+              dueDate = addYears(firstDueDate, i * periodMultiplier);
+            } else if (periodType === 'months') {
+              // Monthly: calculate from first payment date
+              dueDate = addMonths(firstDueDate, i * periodMultiplier);
+            } else if (periodType === 'weeks') {
+              // Week-based: calculate from first payment date (preserves weekday)
+              dueDate = addDays(firstDueDate, i * periodDays);
+            } else {
+              // Day-based: calculate from first payment date
+              dueDate = addDays(firstDueDate, i * periodDays);
+            }
+            dueDateLabel = formatDueDateWithWeekday(dueDate, periodType === 'weeks');
+          } else {
+            dueDateLabel = 'Date not available';
+          }
+        }
+
+        rows.push({
+          index: paymentIndex,
+          label: dueDateLabel,
+          dueDate: dueDate,
+          principal: Math.round(principalPayment * 100), // cents
+          interest: Math.round(interestForPeriod * 100), // cents
+          totalPayment: Math.round(totalPayment * 100), // cents
+          balance: Math.round(remainingBalance * 100) // cents
+        });
+      }
+
+      // STEP 6: Calculate totals
+      const totals = {
+        principal: Math.round(loanAmount * 100), // should equal sum of all principal
+        interest: Math.round(totalInterest * 100),
+        totalRepayment: Math.round((loanAmount + totalInterest) * 100)
+      };
+
+      debugMessages.push(`Generated ${rows.length} payment(s)`);
+
+      return {
+        rows,
+        totals,
+        loanStartLabel,
+        effectiveMode,
+        debugMessages
+      };
+    }
+
+    // Export for potential reuse in other pages
+    window.PayFriendsRepayment = {
+      generateRepaymentSchedule
+    };
+
+    /**
+     * Calculate loan duration from schedule (loan start to last payment)
+     */
+    function calculateLoanDuration(rows, loanStartDate, effectiveMode) {
+      if (!rows || rows.length === 0) {
+        return null;
+      }
+
+      const lastPayment = rows[rows.length - 1];
+
+      if (effectiveMode === 'actual' && loanStartDate && lastPayment.dueDate) {
+        // Actual mode: calculate from loan start to last payment date
+        const startDate = new Date(loanStartDate);
+        const endDate = new Date(lastPayment.dueDate);
+
+        // Calculate months difference
+        const yearsDiff = endDate.getFullYear() - startDate.getFullYear();
+        const monthsDiff = endDate.getMonth() - startDate.getMonth();
+        const totalMonths = yearsDiff * 12 + monthsDiff;
+
+        const startStr = formatDateDisplay(startDate);
+        const endStr = formatDateDisplay(endDate);
+
+        if (totalMonths === 0) {
+          // Less than a month, show days
+          const daysDiff = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
+          if (daysDiff === 1) {
+            return `1 day (${startStr} to ${endStr})`;
+          } else {
+            return `${daysDiff} days (${startStr} to ${endStr})`;
+          }
+        } else if (totalMonths === 1) {
+          return `1 month (${startStr} to ${endStr})`;
+        } else {
+          return `${totalMonths} months (${startStr} to ${endStr})`;
+        }
+      } else {
+        // Preview mode: describe duration relative to agreement acceptance
+        // Calculate the offset from loan start to last payment
+        const lastPaymentLabel = lastPayment.label;
+
+        // Extract months/days from the label (e.g., "12 months after loan start")
+        const monthsMatch = lastPaymentLabel.match(/(\d+)\s+months?\s+after/);
+        const daysMatch = lastPaymentLabel.match(/(\d+)\s+days?\s+after/);
+        const yearsMatch = lastPaymentLabel.match(/(\d+)\s+years?\s+after/);
+
+        if (yearsMatch) {
+          const years = parseInt(yearsMatch[1]);
+          return years === 1
+            ? `1 year after agreement is accepted`
+            : `${years} years after agreement is accepted`;
+        } else if (monthsMatch) {
+          const months = parseInt(monthsMatch[1]);
+          return months === 1
+            ? `1 month after agreement is accepted`
+            : `${months} months after agreement is accepted`;
+        } else if (daysMatch) {
+          const days = parseInt(daysMatch[1]);
+          return days === 1
+            ? `1 day after agreement is accepted`
+            : `${days} days after agreement is accepted`;
+        }
+
+        // Fallback
+        return `${rows.length} payments after agreement is accepted`;
+      }
+    }
+
+    /**
+     * Get loan start label with context
+     */
+    function getLoanStartLabelWithContext(loanStartDate, effectiveMode, loanStartMode) {
+      if (!loanStartDate && loanStartMode === 'upon_acceptance') {
+        return effectiveMode === 'preview'
+          ? 'When agreement is accepted (preview)'
+          : 'When agreement is accepted';
+      }
+
+      if (loanStartDate) {
+        const dateStr = formatDateDisplay(loanStartDate);
+        return effectiveMode === 'preview' ? `${dateStr} (preview)` : dateStr;
+      }
+
+      return 'Unknown';
+    }
+
+    /**
+     * Update UI based on repayment type
+     */
+    function updateRepaymentTypeUI() {
+      const repaymentType = document.getElementById('repaymentType').value;
+      const isOneTime = repaymentType === 'one_time';
+
+      const numInstallmentsGroup = document.getElementById('numInstallments').closest('.form-group');
+      const frequencyGroup = document.getElementById('frequencyGroup');
+      const installmentsHint = document.getElementById('installmentsHint');
+      const paymentTimingLabel = document.getElementById('paymentTimingLabel');
+      const firstPaymentDue = document.getElementById('firstPaymentDue');
+      const numInstallments = document.getElementById('numInstallments');
+
+      if (isOneTime) {
+        // 1-time payment mode
+
+        // 1) Change label to "Full repayment due (after loan start)"
+        paymentTimingLabel.textContent = 'Full repayment due (after loan start)';
+
+        // 2) Lock installments to 1 and hide
+        numInstallments.value = 1;
+        numInstallmentsGroup.style.display = 'none';
+
+        // 3) Hide frequency (not applicable for 1-time)
+        frequencyGroup.style.display = 'none';
+
+        // 4) Show hint about 1-time payment
+        installmentsHint.style.display = 'block';
+
+        // 5) If no value or transitioning back, default to "In 1 year"
+        if (!firstPaymentDue.value || firstPaymentDue.value === '') {
+          firstPaymentDue.value = '1-year';
+        }
+      } else {
+        // Installments mode
+
+        // 1) Change label to "First payment due (after loan start)"
+        paymentTimingLabel.textContent = 'First payment due (after loan start)';
+
+        // 2) Show and enable installments, auto-set to 12 when switching
+        numInstallmentsGroup.style.display = 'block';
+        numInstallments.value = 12;
+
+        // 3) Show frequency
+        frequencyGroup.style.display = 'block';
+
+        // 4) Hide hint
+        installmentsHint.style.display = 'none';
+
+        // 5) Auto-set to "In 1 year" when switching to installments
+        firstPaymentDue.value = '1-year';
+      }
+    }
+
+    /**
+     * Reset calculator to defaults
+     */
+    function resetCalculator() {
+      // Reset form fields to defaults
+      document.getElementById('principal').value = formatLoanAmount(6000);
+      document.getElementById('interest').value = 5;
+      document.getElementById('repaymentType').value = 'one_time';
+      document.getElementById('numInstallments').value = 1;
+      document.getElementById('frequency').value = 'every-month';
+      document.getElementById('firstPaymentDue').value = '1-year';
+      document.getElementById('loanStartMode').value = 'upon_acceptance';
+      document.getElementById('contextMode').value = 'preview';
+
+      // Hide and clear date pickers
+      document.getElementById('loanStartDateGroup').classList.add('hidden');
+      document.getElementById('firstPaymentDateGroup').classList.add('hidden');
+      document.getElementById('loanStartDate').value = '';
+      document.getElementById('firstPaymentDate').value = '';
+
+      // Update UI based on repayment type
+      updateRepaymentTypeUI();
+
+      // Trigger auto-calculation with default values
+      runRepaymentCalculation();
+    }
+
+    /**
+     * Debounce utility for input events
+     * Delays execution until user stops typing for specified milliseconds
+     */
+    function debounce(func, delay) {
+      let timeoutId;
+      return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+      };
+    }
+
+    /**
+     * Main calculation function wrapper for auto-updates
+     * This is the single entry point for all recalculations
+     */
+    function runRepaymentCalculation() {
+      calculateSchedule();
+    }
+
+    // Create debounced version for input events (text/number fields)
+    const debouncedCalculation = debounce(runRepaymentCalculation, 300);
+
+    // ============================================================================
+    // AUTO-UPDATE: Event listeners for all configuration inputs
+    // ============================================================================
+
+    // Loan amount - use debounced for smooth typing
+    document.getElementById('principal').addEventListener('input', debouncedCalculation);
+
+    // Annual interest rate - use debounced for smooth typing
+    document.getElementById('interest').addEventListener('input', debouncedCalculation);
+
+    // Loan start date mode - immediate update
+    document.getElementById('loanStartMode').addEventListener('change', runRepaymentCalculation);
+
+    // Loan start date picker - immediate update
+    document.getElementById('loanStartDate').addEventListener('change', runRepaymentCalculation);
+
+    // Repayment type - immediate update
+    document.getElementById('repaymentType').addEventListener('change', runRepaymentCalculation);
+
+    // First payment due - immediate update
+    document.getElementById('firstPaymentDue').addEventListener('change', runRepaymentCalculation);
+
+    // First payment date picker - immediate update
+    document.getElementById('firstPaymentDate').addEventListener('change', runRepaymentCalculation);
+
+    // Payment frequency - immediate update
+    document.getElementById('frequency').addEventListener('change', runRepaymentCalculation);
+
+    // Number of installments - use debounced for smooth typing
+    document.getElementById('numInstallments').addEventListener('input', debouncedCalculation);
+
+    // Context mode - immediate update (only exists on calculate.html)
+    const contextModeSelect = document.getElementById('contextMode');
+    if (contextModeSelect) {
+      contextModeSelect.addEventListener('change', runRepaymentCalculation);
+    }
+
+    // Calculator reset link - only exists on calculator.html
+    const calculatorResetLink = document.getElementById('calculator-reset-link');
+    if (calculatorResetLink) {
+      calculatorResetLink.addEventListener('click', function(event) {
+        event.preventDefault();
+        resetCalculator();
+      });
+    }
+
+    // ============================================================================
+    // UI-only event listeners (these also trigger recalculation via events above)
+    // ============================================================================
+
+    // Show/hide conditional fields based on repayment type
+    document.getElementById('repaymentType').addEventListener('change', updateRepaymentTypeUI);
+
+    // Show/hide loan start date picker
+    document.getElementById('loanStartMode').addEventListener('change', function() {
+      const loanStartDateGroup = document.getElementById('loanStartDateGroup');
+      const loanStartDateInput = document.getElementById('loanStartDate');
+      if (this.value === 'pick-date') {
+        loanStartDateGroup.classList.remove('hidden');
+      } else {
+        loanStartDateGroup.classList.add('hidden');
+        loanStartDateInput.value = ''; // Clear when hiding
+      }
+    });
+
+    // Show/hide first payment date picker
+    document.getElementById('firstPaymentDue').addEventListener('change', function() {
+      const firstPaymentDateGroup = document.getElementById('firstPaymentDateGroup');
+      const firstPaymentDateInput = document.getElementById('firstPaymentDate');
+      if (this.value === 'pick-date') {
+        firstPaymentDateGroup.classList.remove('hidden');
+      } else {
+        firstPaymentDateGroup.classList.add('hidden');
+        firstPaymentDateInput.value = ''; // Clear when hiding
+      }
+    });
+
+    // Make loan start date input field open the datepicker on click/focus
+    const loanStartDateInput = document.getElementById('loanStartDate');
+    ['click', 'focus'].forEach(eventType => {
+      loanStartDateInput.addEventListener(eventType, function(e) {
+        // Only trigger if the field is visible and not already showing picker
+        if (!this.closest('.hidden') && typeof this.showPicker === 'function') {
+          try {
+            this.showPicker();
+          } catch (err) {
+            // showPicker() may fail in some contexts, silently ignore
+          }
+        }
+      });
+    });
+
+    // Make first payment date input field open the datepicker on click/focus
+    const firstPaymentDateInput = document.getElementById('firstPaymentDate');
+    ['click', 'focus'].forEach(eventType => {
+      firstPaymentDateInput.addEventListener(eventType, function(e) {
+        // Only trigger if the field is visible and not already showing picker
+        if (!this.closest('.hidden') && typeof this.showPicker === 'function') {
+          try {
+            this.showPicker();
+          } catch (err) {
+            // showPicker() may fail in some contexts, silently ignore
+          }
+        }
+      });
+    });
+
+    /**
+     * Helper function to calculate loan start date from dropdown
+     */
+    function calculateLoanStartDate(loanStartMode, explicitLoanStartDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      switch (loanStartMode) {
+        case 'upon_acceptance':
+          return null; // Unknown date (will be determined by context mode)
+        case 'today':
+          return today;
+        case 'tomorrow':
+          return addDays(today, 1);
+        case 'in-1-week':
+          return addDays(today, 7);
+        case 'pick-date':
+          return explicitLoanStartDate ? new Date(explicitLoanStartDate) : null;
+        default:
+          return null;
+      }
+    }
+
+    /**
+     * Parse formatted loan amount value back to number
+     */
+    function parseLoanAmount(value) {
+      // Remove all dots (thousands separators)
+      const cleaned = value.replace(/\./g, '');
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    /**
+     * Helper function to calculate first payment timing
+     * Returns {days, months, years, isMonthBased, isYearBased, exactDate}
+     */
+    function calculateFirstPaymentTiming(firstPaymentDue, firstPaymentDate, loanStartDate) {
+      switch (firstPaymentDue) {
+        case '1-week':
+          return { days: 7, months: 0, years: 0, isMonthBased: false, isYearBased: false, exactDate: null };
+        case '1-month':
+          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false, exactDate: null };
+        case '6-months':
+          return { days: 182, months: 6, years: 0, isMonthBased: true, isYearBased: false, exactDate: null };
+        case '1-year':
+          return { days: 365, months: 12, years: 1, isMonthBased: false, isYearBased: true, exactDate: null };
+        case '2-years':
+          return { days: 730, months: 24, years: 2, isMonthBased: false, isYearBased: true, exactDate: null };
+        case '3-years':
+          return { days: 1095, months: 36, years: 3, isMonthBased: false, isYearBased: true, exactDate: null };
+        case 'pick-date':
+          if (firstPaymentDate) {
+            // Parse the date string (format: YYYY-MM-DD from date input)
+            const pickedDate = new Date(firstPaymentDate + 'T00:00:00');
+
+            // Calculate days for interest calculation (if loan start is known)
+            let daysDiff = 30; // default
+            if (loanStartDate) {
+              const start = new Date(loanStartDate);
+              start.setHours(0, 0, 0, 0);
+              const diffMs = pickedDate - start;
+              daysDiff = Math.round(diffMs / (1000 * 60 * 60 * 24));
+            }
+
+            // Return with exact date - this will be used directly in schedule
+            return {
+              days: daysDiff,
+              months: 0,
+              years: 0,
+              isMonthBased: false,
+              isYearBased: false,
+              exactDate: pickedDate
+            };
+          }
+          // If no date picked, use default
+          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false, exactDate: null };
+        default:
+          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false, exactDate: null };
+      }
+    }
+
+    /**
+     * Render loan summary for calculator.html
+     */
+    function renderLoanSummary(summary) {
+      const container = document.getElementById('loanSummaryContent');
+      if (!container) return;
+
+      const lines = [];
+
+      // Loan amount
+      lines.push(`<p><strong>Loan amount:</strong> ${formatMoney(summary.loanAmount)}</p>`);
+
+      // Repayment type and duration
+      const repaymentTypeLabel = summary.repaymentType === 'one_time' ? '1-time payment' : `${summary.numberOfInstallments} installments`;
+      if (summary.loanDuration) {
+        lines.push(`<p><strong>Repayment type:</strong> ${repaymentTypeLabel}, ${summary.loanDuration}</p>`);
+      } else {
+        lines.push(`<p><strong>Repayment type:</strong> ${repaymentTypeLabel}</p>`);
+      }
+
+      // Interest rate
+      if (summary.annualInterestRate === 0) {
+        lines.push(`<p><strong>Annual interest rate:</strong> No interest (0%)</p>`);
+      } else {
+        lines.push(`<p><strong>Annual interest rate:</strong> ${summary.annualInterestRate.toFixed(2)}% per year</p>`);
+      }
+
+      // Total interest
+      lines.push(`<p><strong>Total interest:</strong> ${formatMoney(summary.totalInterest)}</p>`);
+
+      // Total to repay
+      lines.push(`<p><strong>Total to repay:</strong> ${formatMoney(summary.totalRepayment)}</p>`);
+
+      // Additional details based on repayment type
+      if (summary.repaymentType === 'installments' && summary.numberOfInstallments > 1) {
+        const principalPerInstallment = Math.round(summary.loanAmount / summary.numberOfInstallments);
+        lines.push(`<p><strong>Principal per installment:</strong> ~${formatMoney(principalPerInstallment)} (excluding interest)</p>`);
+      }
+
+      // First payment due
+      if (summary.firstDueDate) {
+        const label = summary.repaymentType === 'one_time' ? 'Full repayment due' : 'First payment due';
+        lines.push(`<p><strong>${label}:</strong> ${summary.firstDueDate}</p>`);
+      }
+
+      container.innerHTML = lines.join('');
+    }
+
+    /**
+     * Main calculation function triggered by button click
+     */
+    function calculateSchedule() {
+      try {
+        // Gather form data
+        const principalValue = document.getElementById('principal').value;
+        const loanAmount = parseLoanAmount(principalValue);
+        const annualInterestRate = parseFloat(document.getElementById('interest').value);
+        const repaymentType = document.getElementById('repaymentType').value;
+        const numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
+        const paymentFrequency = document.getElementById('frequency').value;
+        const firstPaymentDueOption = document.getElementById('firstPaymentDue').value;
+        const firstPaymentDate = document.getElementById('firstPaymentDate').value;
+        const loanStartMode = document.getElementById('loanStartMode').value;
+        const contextModeElement = document.getElementById('contextMode');
+        const contextMode = contextModeElement ? contextModeElement.value : 'actual';
+        const explicitLoanStartDate = document.getElementById('loanStartDate').value;
+
+        // Validation - graceful handling for auto-updates
+        // Skip calculation silently if required inputs are empty (user might be typing)
+        if (!loanAmount || loanAmount <= 0 || isNaN(loanAmount)) {
+          // Silently skip - user might be typing
+          return;
+        }
+        if (isNaN(annualInterestRate)) {
+          // Silently skip - user might be clearing the field
+          return;
+        }
+        if (repaymentType === 'installments' && (!numberOfInstallments || numberOfInstallments < 1 || isNaN(numberOfInstallments))) {
+          // Silently skip - user might be typing
+          return;
+        }
+
+        // Show errors only for invalid values (not empty)
+        const errors = [];
+        if (annualInterestRate < 0) {
+          errors.push('Interest rate cannot be negative.');
+        }
+        if (loanStartMode === 'pick-date' && !explicitLoanStartDate) {
+          errors.push('Loan start date is required when "Pick a date…" is selected.');
+        }
+        if (firstPaymentDueOption === 'pick-date' && !firstPaymentDate) {
+          const fieldName = repaymentType === 'one_time' ? 'Full repayment date' : 'First payment date';
+          errors.push(`${fieldName} is required when "Pick a date…" is selected.`);
+        }
+
+        if (errors.length > 0) {
+          document.getElementById('debugConsole').innerHTML =
+            '<span class="error-message">⚠ Validation errors:</span>\n' +
+            errors.map(e => `  • ${e}`).join('\n');
+          return;
+        }
+
+        // Calculate actual loan start date (or null if unknown)
+        let calculatedLoanStartDate = calculateLoanStartDate(loanStartMode, explicitLoanStartDate);
+
+        // Calculate first payment timing
+        const firstPaymentTiming = calculateFirstPaymentTiming(
+          firstPaymentDueOption,
+          firstPaymentDate,
+          calculatedLoanStartDate
+        );
+        const firstPaymentDays = firstPaymentTiming.days;
+        const firstPaymentMonths = firstPaymentTiming.months;
+        const firstPaymentYears = firstPaymentTiming.years || 0;
+        const firstPaymentIsMonthBased = firstPaymentTiming.isMonthBased || false;
+        const firstPaymentIsYearBased = firstPaymentTiming.isYearBased || false;
+        const firstPaymentExactDate = firstPaymentTiming.exactDate || null;
+
+        // Determine effective mode and loan start date
+        // Rule: If loan start is known (not upon_acceptance), always use actual mode
+        let effectiveLoanStartMode = loanStartMode;
+        let effectiveContextMode = contextMode;
+
+        if (loanStartMode !== 'upon_acceptance') {
+          // We have a real date, force actual mode
+          effectiveContextMode = 'actual';
+        } else if (contextMode === 'actual') {
+          // upon_acceptance + actual mode = treat as today
+          calculatedLoanStartDate = new Date();
+          calculatedLoanStartDate.setHours(0, 0, 0, 0);
+        }
+
+        // Generate schedule using single source of truth
+        const result = generateRepaymentSchedule({
+          loanAmount,
+          annualInterestRate,
+          repaymentType,
+          numberOfInstallments,
+          paymentFrequency,
+          firstPaymentDays,
+          firstPaymentMonths,
+          firstPaymentYears,
+          firstPaymentIsMonthBased,
+          firstPaymentIsYearBased,
+          firstPaymentExactDate,
+          loanStartMode: effectiveLoanStartMode,
+          contextMode: effectiveContextMode,
+          explicitLoanStartDate: calculatedLoanStartDate
+        });
+
+        // Update UI - Schedule header
+        const badge = result.effectiveMode === 'preview'
+          ? '<span class="badge badge-preview">Preview</span>'
+          : '<span class="badge badge-actual">Actual</span>';
+        document.getElementById('modeBadge').innerHTML = badge;
+
+        // Build loan start label with duration
+        const loanStartText = getLoanStartLabelWithContext(
+          calculatedLoanStartDate,
+          result.effectiveMode,
+          loanStartMode
+        );
+
+        const loanDuration = calculateLoanDuration(result.rows, calculatedLoanStartDate, result.effectiveMode);
+
+        // Update loan start label (line 1)
+        document.getElementById('loanStartLabel').innerHTML = `Loan start: ${loanStartText}`;
+
+        // Update loan duration label (line 2 with entire line in green color)
+        const loanDurationLabel = document.getElementById('loanDurationLabel');
+        if (loanDuration) {
+          loanDurationLabel.innerHTML = `Loan duration: ${loanDuration}`;
+          loanDurationLabel.style.color = '#34d399';
+          loanDurationLabel.style.display = 'block';
+        } else {
+          loanDurationLabel.style.display = 'none';
+        }
+
+        // Update UI - Schedule table body
+        const tbody = document.getElementById('scheduleBody');
+        tbody.innerHTML = '';
+
+        result.rows.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.index}</td>
+            <td>${row.label}</td>
+            <td class="align-right">${formatMoney(row.principal)}</td>
+            <td class="align-right">${formatMoney(row.interest)}</td>
+            <td class="align-right" style="font-weight: 600;">${formatMoney(row.totalPayment)}</td>
+            <td class="align-right">${formatMoney(row.balance)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // Update UI - Schedule table footer (totals row)
+        document.getElementById('scheduleTotals').style.display = 'table-footer-group';
+        document.getElementById('footerPrincipal').textContent = formatMoney(result.totals.principal);
+        document.getElementById('footerInterest').textContent = formatMoney(result.totals.interest);
+        document.getElementById('footerTotal').textContent = formatMoney(result.totals.totalRepayment);
+
+        // Update UI - Debug console
+        const frequencyLabel = document.getElementById('frequency').selectedOptions[0].text;
+        const loanStartModeLabel = document.getElementById('loanStartMode').selectedOptions[0].text;
+        const firstPaymentDueLabel = document.getElementById('firstPaymentDue').selectedOptions[0].text;
+
+        const debugLines = [
+          '✔ Calculation completed',
+          '',
+          '=== PARAMETERS ===',
+          `Loan amount: ${formatMoney(loanAmount * 100)}`,
+          `Annual interest rate: ${annualInterestRate.toFixed(2)}%`,
+          `Repayment type: ${repaymentType === 'one_time' ? '1-time payment' : 'Installments'}`,
+          `Number of installments: ${numberOfInstallments}`,
+          `Payment frequency: ${frequencyLabel}`,
+          `First payment due: ${firstPaymentDueLabel}`,
+          `  → Days: ${firstPaymentDays}, Months: ${firstPaymentMonths}, Years: ${firstPaymentYears}`,
+          `Loan start: ${loanStartModeLabel}`,
+          `  → Real date: ${calculatedLoanStartDate ? formatDateDisplay(calculatedLoanStartDate) : 'Unknown (preview mode)'}`,
+          `Context mode: ${contextMode === 'actual' ? 'Actual (known loan start)' : 'Preview (no real date)'}`,
+          `Effective mode: ${result.effectiveMode === 'actual' ? 'Actual (real calendar dates)' : 'Preview (relative labels)'}`,
+          '',
+          '=== LOAN DURATION ===',
+          loanDuration || 'N/A',
+          '',
+          '=== TOTALS ===',
+          `Total principal: ${formatMoney(result.totals.principal)}`,
+          `Total interest: ${formatMoney(result.totals.interest)}`,
+          `Total repayment: ${formatMoney(result.totals.totalRepayment)}`,
+          '',
+          '=== SCHEDULE ===',
+          `Generated ${result.rows.length} payment(s)`
+        ];
+
+        // Add table of payments for internal validation
+        if (result.rows.length <= 12) {
+          debugLines.push('');
+          result.rows.forEach(row => {
+            debugLines.push(
+              `Payment ${row.index}: ${row.label} | ` +
+              `Principal: ${formatMoney(row.principal)} | ` +
+              `Interest: ${formatMoney(row.interest)} | ` +
+              `Total: ${formatMoney(row.totalPayment)}`
+            );
+          });
+        }
+
+        // Update Debug Console (only for calculate.html)
+        const debugConsole = document.getElementById('debugConsole');
+        if (debugConsole) {
+          debugConsole.textContent = debugLines.join('\n');
+        }
+
+        // Update Loan Summary (only for calculator.html)
+        const loanSummaryContent = document.getElementById('loanSummaryContent');
+        if (loanSummaryContent) {
+          renderLoanSummary({
+            loanAmount: loanAmount * 100,
+            annualInterestRate,
+            repaymentType,
+            numberOfInstallments,
+            firstPaymentDueLabel,
+            loanDuration,
+            totalInterest: result.totals.interest,
+            totalRepayment: result.totals.totalRepayment,
+            firstDueDate: result.rows.length > 0 ? result.rows[0].label : 'N/A',
+            lastDueDate: result.rows.length > 0 ? result.rows[result.rows.length - 1].label : 'N/A'
+          });
+        }
+
+      } catch (error) {
+        console.error('Calculation error:', error);
+        const debugConsole = document.getElementById('debugConsole');
+        if (debugConsole) {
+          debugConsole.innerHTML =
+            '<span class="error-message">ERROR:</span>\n' +
+            error.message + '\n\n' +
+            (error.stack || '');
+        }
+        const loanSummaryContent = document.getElementById('loanSummaryContent');
+        if (loanSummaryContent) {
+          loanSummaryContent.innerHTML = '<p style="color: #ef4444;">Error calculating loan schedule. Please check your inputs.</p>';
+        }
+      }
+    }
+
+    // Initialize: set initial UI state based on repayment type and defaults
+    document.getElementById('repaymentType').value = 'one_time';
+    document.getElementById('firstPaymentDue').value = '1-year';
+    updateRepaymentTypeUI();
+
+    // Trigger initial calculation to show results on page load
+    runRepaymentCalculation();
+
+    // Loan amount formatting with thousands separator
+    const principalInput = document.getElementById('principal');
+    let rawPrincipalValue = principalInput.value;
+
+    // Format number with EU-style thousands separator
+    function formatLoanAmount(value) {
+      const num = parseFloat(value);
+      if (isNaN(num)) return '';
+      // Use EU style: 6.000 instead of 6,000
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    // On focus: remove formatting to let user type freely
+    principalInput.addEventListener('focus', function() {
+      const num = parseLoanAmount(this.value);
+      if (num > 0) {
+        this.value = num.toString();
+      }
+    });
+
+    // On blur: format the value with thousands separator
+    principalInput.addEventListener('blur', function() {
+      const num = parseLoanAmount(this.value);
+      if (num > 0) {
+        this.value = formatLoanAmount(num);
+        rawPrincipalValue = num.toString();
+      } else {
+        this.value = '';
+        rawPrincipalValue = '';
+      }
+    });
+
+    // Format initial value on page load
+    if (principalInput.value) {
+      const num = parseFloat(principalInput.value);
+      if (num > 0) {
+        principalInput.value = formatLoanAmount(num);
+        rawPrincipalValue = num.toString();
+      }
+    }
+  </script>
+</body>
+</html>
