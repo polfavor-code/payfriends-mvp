@@ -487,23 +487,26 @@
     </section>
 
     <!-- Wizard for creating agreements -->
-    <section class="card hidden" id="new-agreement-section">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
-        <h2 style="margin:0">New Agreement</h2>
-        <button class="secondary" onclick="closeNewAgreement()" style="padding:6px 12px; font-size:13px">Close</button>
+    <div id="new-agreement-section" class="hidden">
+      <!-- Page title outside card, matching Settings layout -->
+      <h1 style="font-size: 28px; font-weight: 600; margin: 0 0 24px 0;">New Agreement</h1>
+
+      <!-- Wizard steps and close button outside card -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 16px;">
+        <div class="wizard-steps" role="navigation" aria-label="Agreement wizard steps" style="margin-bottom: 0;">
+          <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
+          <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">2. Terms</div>
+          <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Interest">3. Interest</div>
+          <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Payments">4. Payments</div>
+          <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Summary">5. Summary</div>
+          <div class="wizard-step" id="step-indicator-6" onclick="clickStep(6)" aria-label="Step 6, Share">6. Share</div>
+        </div>
+        <button class="secondary" onclick="closeNewAgreement()" style="padding:6px 12px; font-size:13px; white-space: nowrap;">Close</button>
       </div>
 
-      <!-- Wizard Steps -->
-      <div class="wizard-steps" role="navigation" aria-label="Agreement wizard steps">
-        <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
-        <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">2. Terms</div>
-        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Interest">3. Interest</div>
-        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Payments">4. Payments</div>
-        <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Summary">5. Summary</div>
-        <div class="wizard-step" id="step-indicator-6" onclick="clickStep(6)" aria-label="Step 6, Share">6. Share</div>
-      </div>
-
-      <!-- Step 1: Setup -->
+      <!-- Main card starts here, matching Settings card structure -->
+      <section class="card">
+        <!-- Step 1: Setup -->
       <div id="wizard-step-1" class="wizard-content">
         <div id="readonly-banner-1" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
           ⚠️ This agreement has already been sent to <span id="readonly-name-1"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
@@ -1126,7 +1129,8 @@
 
         <p id="step6-status" class="status"></p>
       </div>
-    </section>
+      </section>
+    </div>
 
     <!-- Payment Confirmation Modal -->
     <div id="confirm-payment-modal" class="modal-overlay" style="display:none" onclick="closeModalOnOverlay(event, 'confirm-payment-modal')">
