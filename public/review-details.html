@@ -2314,11 +2314,11 @@
         const installmentAmount = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
 
         // Check if we should show relative dates for pending agreements with loan start on acceptance
-        const isLoanStartUponAcceptance = isLoanStartUponAcceptance(agreement);
+        const isOnAcceptance = isLoanStartUponAcceptance(agreement);
         const isPending = agreement.status !== 'active';
 
         let firstDate, finalDate;
-        if (isLoanStartUponAcceptance && isPending) {
+        if (isOnAcceptance && isPending) {
           // Show relative labels for pending agreements with loan start on acceptance
           firstDate = getRelativeInstallmentLabel(agreement, 0);
           finalDate = getRelativeInstallmentLabel(agreement, agreement.installment_count - 1);
@@ -2365,7 +2365,7 @@
 
         // 13. First repayment date
         let firstPaymentDate;
-        if (isLoanStartUponAcceptance && isPending) {
+        if (isOnAcceptance && isPending) {
           // Show relative label for pending agreements with loan start on acceptance
           firstPaymentDate = getRelativeInstallmentLabel(agreement, 0);
         } else {
@@ -2377,7 +2377,7 @@
 
         // 14. Final due date
         let finalDueDate, finalDueCountdown;
-        if (isLoanStartUponAcceptance && isPending) {
+        if (isOnAcceptance && isPending) {
           // Show relative label for pending agreements with loan start on acceptance
           finalDueDate = getRelativeInstallmentLabel(agreement, agreement.installment_count - 1);
           finalDueCountdown = ''; // No countdown for relative dates
@@ -2429,10 +2429,10 @@
 
         // 9. Full repayment due date
         // Check if we should show relative or concrete date
-        const isLoanStartUponAcceptance = isLoanStartUponAcceptance(agreement);
+        const isOnAcceptance = isLoanStartUponAcceptance(agreement);
         const isRelativeDueDate = agreement.one_time_due_option && agreement.one_time_due_option !== 'pick_date';
 
-        if (isLoanStartUponAcceptance && isRelativeDueDate) {
+        if (isOnAcceptance && isRelativeDueDate) {
           // Show relative description
           document.getElementById('full-due-display').textContent = getRelativeDueDateText(agreement.one_time_due_option);
           document.getElementById('full-due-countdown').textContent = '';
@@ -2716,11 +2716,11 @@
         const installmentAmt = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
 
         // Check if we should show relative dates for pending agreements with loan start on acceptance
-        const isLoanStartUponAcceptance = isLoanStartUponAcceptance(agreement);
+        const isOnAcceptance = isLoanStartUponAcceptance(agreement);
         const isPending = agreement.status !== 'active';
 
         let firstDate, finalDate;
-        if (isLoanStartUponAcceptance && isPending) {
+        if (isOnAcceptance && isPending) {
           // Show relative labels for pending agreements with loan start on acceptance
           firstDate = getRelativeInstallmentLabel(agreement, 0);
           finalDate = getRelativeInstallmentLabel(agreement, agreement.installment_count - 1);
@@ -2754,12 +2754,12 @@
 
       // Due dates
       if (agreement.repayment_type === 'installments') {
-        const isLoanStartUponAcceptance = isLoanStartUponAcceptance(agreement);
+        const isOnAcceptance = isLoanStartUponAcceptance(agreement);
         const isPending = agreement.status !== 'active';
 
         if (agreement.first_repayment_date || agreement.first_payment_date) {
           let firstDate;
-          if (isLoanStartUponAcceptance && isPending) {
+          if (isOnAcceptance && isPending) {
             firstDate = getRelativeInstallmentLabel(agreement, 0);
           } else {
             firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -2768,7 +2768,7 @@
         }
         if (agreement.final_due_date) {
           let finalDate;
-          if (isLoanStartUponAcceptance && isPending) {
+          if (isOnAcceptance && isPending) {
             finalDate = getRelativeInstallmentLabel(agreement, agreement.installment_count - 1);
           } else {
             finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -2778,11 +2778,11 @@
       } else {
         if (agreement.due_date) {
           // Check if we should show relative or concrete date
-          const isLoanStartUponAcceptance = isLoanStartUponAcceptance(agreement);
+          const isOnAcceptance = isLoanStartUponAcceptance(agreement);
           const isRelativeDueDate = agreement.one_time_due_option && agreement.one_time_due_option !== 'pick_date';
 
           let dueDateDisplay;
-          if (isLoanStartUponAcceptance && isRelativeDueDate) {
+          if (isOnAcceptance && isRelativeDueDate) {
             // Show relative description
             dueDateDisplay = getRelativeDueDateText(agreement.one_time_due_option);
           } else {
