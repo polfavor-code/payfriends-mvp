@@ -2322,14 +2322,30 @@
         document.getElementById('payment-frequency-row').style.display = 'flex';
 
         // 13. First repayment date
-        const firstPaymentDate = new Date(agreement.first_payment_date || agreement.first_repayment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        let firstPaymentDate;
+        if (isLoanStartUponAcceptance && isPending) {
+          // Show relative label for pending agreements with loan start on acceptance
+          firstPaymentDate = getRelativeInstallmentLabel(agreement, 0);
+        } else {
+          // Show concrete date for active agreements or fixed loan start
+          firstPaymentDate = new Date(agreement.first_payment_date || agreement.first_repayment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
         document.getElementById('first-payment-display').textContent = firstPaymentDate;
         document.getElementById('first-payment-row').style.display = 'flex';
 
         // 14. Final due date
-        const finalDueDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        let finalDueDate, finalDueCountdown;
+        if (isLoanStartUponAcceptance && isPending) {
+          // Show relative label for pending agreements with loan start on acceptance
+          finalDueDate = getRelativeInstallmentLabel(agreement, agreement.installment_count - 1);
+          finalDueCountdown = ''; // No countdown for relative dates
+        } else {
+          // Show concrete date for active agreements or fixed loan start
+          finalDueDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          finalDueCountdown = getDueDateCountdown(agreement.final_due_date);
+        }
         document.getElementById('final-due-display').textContent = finalDueDate;
-        document.getElementById('final-due-countdown').textContent = getDueDateCountdown(agreement.final_due_date);
+        document.getElementById('final-due-countdown').textContent = finalDueCountdown;
         document.getElementById('final-due-row').style.display = 'flex';
 
         // Hide one-time specific fields
@@ -2656,8 +2672,22 @@
       if (agreement.repayment_type === 'installments' && agreement.installment_count) {
         const freqLabel = agreement.payment_frequency_label || 'monthly';
         const installmentAmt = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
-        const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        // Check if we should show relative dates for pending agreements with loan start on acceptance
+        const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+        const isPending = agreement.status !== 'active';
+
+        let firstDate, finalDate;
+        if (isLoanStartUponAcceptance && isPending) {
+          // Show relative labels for pending agreements with loan start on acceptance
+          firstDate = getRelativeInstallmentLabel(agreement, 0);
+          finalDate = getRelativeInstallmentLabel(agreement, agreement.installment_count - 1);
+        } else {
+          // Show concrete dates for active agreements or fixed loan start
+          firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+          finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
         const planText = `${agreement.installment_count} ${freqLabel} payments of ${installmentAmt} from ${firstDate} to ${finalDate}`;
         addTerm('Installment plan', planText);
       }
@@ -2682,12 +2712,25 @@
 
       // Due dates
       if (agreement.repayment_type === 'installments') {
+        const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
+        const isPending = agreement.status !== 'active';
+
         if (agreement.first_repayment_date || agreement.first_payment_date) {
-          const firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+          let firstDate;
+          if (isLoanStartUponAcceptance && isPending) {
+            firstDate = getRelativeInstallmentLabel(agreement, 0);
+          } else {
+            firstDate = new Date(agreement.first_repayment_date || agreement.first_payment_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+          }
           addTerm('First repayment date', firstDate);
         }
         if (agreement.final_due_date) {
-          const finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+          let finalDate;
+          if (isLoanStartUponAcceptance && isPending) {
+            finalDate = getRelativeInstallmentLabel(agreement, agreement.installment_count - 1);
+          } else {
+            finalDate = new Date(agreement.final_due_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+          }
           addTerm('Final due date', finalDate);
         }
       } else {
