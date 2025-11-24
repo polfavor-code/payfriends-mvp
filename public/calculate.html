@@ -336,12 +336,11 @@
         <div class="form-group">
           <label for="frequency">Payment frequency</label>
           <select id="frequency">
-            <option value="monthly" selected>Every month</option>
-            <option value="every_4_weeks">Every 4 weeks</option>
-            <option value="biweekly">Every 2 weeks</option>
-            <option value="weekly">Every week</option>
-            <option value="every_3_days">Every 3 days</option>
-            <option value="once" style="display: none;">Once</option>
+            <option value="every-3-days">Every 3 days</option>
+            <option value="every-week">Every week</option>
+            <option value="every-month" selected>Every month</option>
+            <option value="every-year">Every year</option>
+            <option value="once" style="display: none;">Once only</option>
           </select>
         </div>
 
@@ -457,6 +456,15 @@ Click "Calculate schedule" to see calculation details...
     const formatMoney = window.formatCurrency2;
 
     /**
+     * Add days to a date
+     */
+    function addDays(date, days) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    }
+
+    /**
      * Add months to a date, handling month-end edge cases
      */
     function addMonths(date, months) {
@@ -471,6 +479,28 @@ Click "Calculate schedule" to see calculation details...
       const clampedDay = Math.min(originalDay, daysInTargetMonth);
       result.setDate(clampedDay);
 
+      return result;
+    }
+
+    /**
+     * Add years to a date, handling Feb 29 edge case
+     */
+    function addYears(date, years) {
+      const result = new Date(date);
+      const targetYear = result.getFullYear() + years;
+      const originalMonth = result.getMonth();
+      const originalDay = result.getDate();
+
+      // Handle Feb 29 in leap year -> non-leap year
+      if (originalMonth === 1 && originalDay === 29) {
+        const isLeapYear = (targetYear % 4 === 0 && targetYear % 100 !== 0) || (targetYear % 400 === 0);
+        if (!isLeapYear) {
+          result.setFullYear(targetYear, 1, 28);
+          return result;
+        }
+      }
+
+      result.setFullYear(targetYear, originalMonth, originalDay);
       return result;
     }
 
@@ -540,53 +570,48 @@ Click "Calculate schedule" to see calculation details...
 
       // Determine period configuration
       let periodDays;
-      let periodType; // 'days' or 'months'
+      let periodType; // 'days', 'months', or 'years'
       let periodLabel;
 
       switch (paymentFrequency) {
-        case 'monthly':
-          periodDays = 30; // approximate for interest
-          periodType = 'months';
-          periodLabel = 'month';
-          break;
-        case 'every_4_weeks':
-          periodDays = 28;
-          periodType = 'days';
-          periodLabel = '4 weeks';
-          break;
-        case 'biweekly':
-          periodDays = 14;
-          periodType = 'days';
-          periodLabel = '2 weeks';
-          break;
-        case 'weekly':
-          periodDays = 7;
-          periodType = 'days';
-          periodLabel = 'week';
-          break;
-        case 'every_3_days':
+        case 'every-3-days':
           periodDays = 3;
           periodType = 'days';
-          periodLabel = '3 days';
+          periodLabel = 'Every 3 days';
+          break;
+        case 'every-week':
+          periodDays = 7;
+          periodType = 'days';
+          periodLabel = 'Every week';
+          break;
+        case 'every-month':
+          periodDays = 30; // approximate for interest
+          periodType = 'months';
+          periodLabel = 'Every month';
+          break;
+        case 'every-year':
+          periodDays = 365; // approximate for interest
+          periodType = 'years';
+          periodLabel = 'Every year';
           break;
         case 'once':
           periodDays = firstPaymentDays;
           periodType = 'days';
-          periodLabel = 'one-time';
+          periodLabel = 'Once only';
           break;
         default:
           periodDays = 30;
           periodType = 'months';
-          periodLabel = 'month';
+          periodLabel = 'Every month';
       }
 
       debugMessages.push(`Annual interest rate: ${annualInterestRate}%`);
       debugMessages.push(`Repayment type: ${repaymentType === 'one_time' ? '1-time payment' : 'Installments'}`);
       debugMessages.push(`Number of installments: ${numberOfInstallments}`);
-      debugMessages.push(`Payment frequency: Every ${periodLabel}`);
-      debugMessages.push(`First payment: ${firstPaymentDays} days after loan start`);
+      debugMessages.push(`Payment frequency: ${periodLabel}`);
+      debugMessages.push(`First payment timing: ${firstPaymentDays} days after loan start`);
       debugMessages.push(`Loan start mode: ${loanStartMode === 'fixed_date' ? 'Fixed date' : 'Upon agreement acceptance'}`);
-      debugMessages.push(`Effective context mode: ${effectiveMode === 'actual' ? 'Actual (real dates)' : 'Preview (relative labels)'}`);
+      debugMessages.push(`Effective mode: ${effectiveMode === 'actual' ? 'Actual (real dates)' : 'Preview (relative labels)'}`);
 
       // STEP 5: Generate schedule rows
       const rows = [];
@@ -598,7 +623,15 @@ Click "Calculate schedule" to see calculation details...
         const paymentIndex = i + 1;
 
         // Calculate interest for this period
-        const daysForThisPeriod = (i === 0) ? firstPaymentDays : periodDays;
+        let daysForThisPeriod;
+        if (i === 0) {
+          // First payment: use firstPaymentDays
+          daysForThisPeriod = firstPaymentDays;
+        } else {
+          // Subsequent payments: use period length
+          daysForThisPeriod = periodDays;
+        }
+
         const interestForPeriod = remainingBalance * dailyRate * daysForThisPeriod;
         const principalPayment = principalPerPayment;
         const totalPayment = principalPayment + interestForPeriod;
@@ -613,32 +646,27 @@ Click "Calculate schedule" to see calculation details...
 
         if (effectiveMode === 'preview') {
           // PREVIEW MODE: Use relative labels, no real dates
-          if (periodType === 'months') {
+          if (periodType === 'years') {
+            // Yearly frequency
+            const yearsAfterStart = i + 1;
+            if (yearsAfterStart === 1) {
+              dueDateLabel = '1 year after loan start';
+            } else {
+              dueDateLabel = `${yearsAfterStart} years after loan start`;
+            }
+          } else if (periodType === 'months') {
             // Monthly frequency
-            const monthsAfterStart = i + Math.round(firstPaymentDays / 30);
-            if (monthsAfterStart === 0) {
-              dueDateLabel = 'On loan start';
-            } else if (monthsAfterStart === 1) {
+            const monthsAfterStart = i + 1;
+            if (monthsAfterStart === 1) {
               dueDateLabel = '1 month after loan start';
             } else {
               dueDateLabel = `${monthsAfterStart} months after loan start`;
             }
           } else {
-            // Day-based frequency
+            // Day-based frequency (every-3-days, every-week, once)
             const totalDays = (i === 0) ? firstPaymentDays : (firstPaymentDays + i * periodDays);
             if (totalDays === 0) {
               dueDateLabel = 'On loan start';
-            } else if (periodLabel === '3 days') {
-              dueDateLabel = `${totalDays} days after loan start`;
-            } else if (periodLabel === 'week') {
-              const weeks = Math.round(totalDays / 7);
-              dueDateLabel = weeks === 1 ? '1 week after loan start' : `${weeks} weeks after loan start`;
-            } else if (periodLabel === '2 weeks') {
-              const weeks = Math.round(totalDays / 7);
-              dueDateLabel = weeks === 2 ? '2 weeks after loan start' : `${weeks} weeks after loan start`;
-            } else if (periodLabel === '4 weeks') {
-              const weeks = Math.round(totalDays / 7);
-              dueDateLabel = weeks === 4 ? '4 weeks after loan start' : `${weeks} weeks after loan start`;
             } else {
               dueDateLabel = `${totalDays} days after loan start`;
             }
@@ -646,14 +674,16 @@ Click "Calculate schedule" to see calculation details...
         } else {
           // ACTUAL MODE: Calculate real calendar dates
           if (loanStartDate) {
-            if (periodType === 'months') {
+            if (periodType === 'years') {
+              // Yearly: add years properly
+              dueDate = addYears(loanStartDate, i + 1);
+            } else if (periodType === 'months') {
               // Monthly: add months properly
-              const monthsToAdd = i + Math.round(firstPaymentDays / 30);
-              dueDate = addMonths(loanStartDate, monthsToAdd);
+              dueDate = addMonths(loanStartDate, i + 1);
             } else {
               // Day-based: add days
               const daysToAdd = (i === 0) ? firstPaymentDays : (firstPaymentDays + i * periodDays);
-              dueDate = new Date(loanStartDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+              dueDate = addDays(loanStartDate, daysToAdd);
             }
             dueDateLabel = formatDateDisplay(dueDate);
           } else {
@@ -718,7 +748,7 @@ Click "Calculate schedule" to see calculation details...
         const onceOption = frequencySelect.querySelector('option[value="once"]');
         onceOption.style.display = 'none';
         if (frequencySelect.value === 'once') {
-          frequencySelect.value = 'monthly';
+          frequencySelect.value = 'every-month';
         }
         frequencySelect.disabled = false;
       }
@@ -819,8 +849,19 @@ Click "Calculate schedule" to see calculation details...
         document.getElementById('footerTotal').textContent = formatMoney(result.totals.totalRepayment);
 
         // Update UI - Debug console
-        const debugOutput = '✔ Calculation completed successfully\n\n' +
-          result.debugMessages.join('\n');
+        const frequencyLabel = document.getElementById('frequency').selectedOptions[0].text;
+        const debugOutput = [
+          '✔ Calculation completed',
+          '',
+          `Loan amount: ${formatMoney(loanAmount * 100)}`,
+          `Annual interest: ${annualInterestRate.toFixed(2)}%`,
+          `Repayment type: ${repaymentType === 'one_time' ? '1-time payment' : 'Installments'}`,
+          `Number of installments: ${numberOfInstallments}`,
+          `Frequency: ${frequencyLabel}`,
+          `First payment: ${firstPaymentDays} days after loan start`,
+          `Loan start mode: ${loanStartMode === 'fixed_date' ? 'On a specific date' : 'Upon agreement acceptance'}`,
+          `Mode: ${result.effectiveMode === 'actual' ? 'Actual (real dates)' : 'Preview (relative due dates)'}`
+        ].join('\n');
 
         document.getElementById('debugConsole').textContent = debugOutput;
 
