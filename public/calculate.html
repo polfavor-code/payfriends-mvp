@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repayment Calculator Playground - PayFriends</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #0c1015 0%, #1a1f2e 100%);
+      color: #e5e7eb;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: rgba(31, 41, 55, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .subtitle {
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: rgba(31, 41, 55, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #d1d5db;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      background: rgba(12, 16, 21, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #e5e7eb;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+
+    .form-group input[type="number"] {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .totals {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .total-card {
+      background: rgba(12, 16, 21, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .total-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: 8px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .total-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .schedule-table {
+      overflow-x: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      background: rgba(12, 16, 21, 0.8);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      background: rgba(31, 41, 55, 0.98);
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #9ca3af;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    thead th.align-right {
+      text-align: right;
+    }
+
+    tbody td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #d1d5db;
+    }
+
+    tbody td.align-right {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(10, 13, 17, 0.6);
+    }
+
+    tbody tr:hover {
+      background: rgba(55, 65, 81, 0.3);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-preview {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+    }
+
+    .badge-actual {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    .info-box {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #93c5fd;
+      line-height: 1.5;
+    }
+
+    .debug-console {
+      background: rgba(12, 16, 21, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      color: #a5f3fc;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🧮 Repayment Calculator Playground</h1>
+      <p class="subtitle">Internal testing tool for the new repayment schedule generator • Single source of truth validation</p>
+    </div>
+
+    <div class="main-grid">
+      <!-- Left sidebar: Form inputs -->
+      <div class="card">
+        <h2>Configuration</h2>
+
+        <div class="form-group">
+          <label for="principal">Loan amount (€)</label>
+          <input type="number" id="principal" value="6000" min="100" step="100">
+        </div>
+
+        <div class="form-group">
+          <label for="interest">Annual interest rate (%)</label>
+          <input type="number" id="interest" value="5" min="0" max="100" step="0.1">
+        </div>
+
+        <div class="form-group">
+          <label for="repaymentType">Repayment type</label>
+          <select id="repaymentType">
+            <option value="one_time">One-time repayment</option>
+            <option value="installments" selected>Installments</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="installmentsGroup">
+          <label for="numInstallments">Number of installments</label>
+          <input type="number" id="numInstallments" value="12" min="1" max="120" step="1">
+        </div>
+
+        <div class="form-group">
+          <label for="frequency">Payment frequency</label>
+          <select id="frequency">
+            <option value="weekly">Every week</option>
+            <option value="biweekly">Every 2 weeks</option>
+            <option value="every_4_weeks">Every 4 weeks</option>
+            <option value="monthly" selected>Every month</option>
+            <option value="quarterly">Every quarter (3 months)</option>
+            <option value="yearly">Every year</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="firstPaymentOffset">First payment timing (days after loan start)</label>
+          <input type="number" id="firstPaymentOffset" value="30" min="0" max="365" step="1">
+        </div>
+
+        <div class="form-group">
+          <label for="loanStartMode">Loan start mode</label>
+          <select id="loanStartMode">
+            <option value="fixed_date">Fixed date</option>
+            <option value="upon_acceptance" selected>Upon agreement acceptance</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="loanStartDateGroup" style="display: none;">
+          <label for="loanStartDate">Loan start date</label>
+          <input type="date" id="loanStartDate" value="2025-01-01">
+        </div>
+
+        <div class="form-group">
+          <label for="contextMode">Context mode</label>
+          <select id="contextMode">
+            <option value="preview" selected>Preview (no real date)</option>
+            <option value="actual">Actual (with real date)</option>
+          </select>
+        </div>
+
+        <div class="info-box">
+          <strong>Preview mode:</strong> Shows relative labels like "1 month after loan start"<br>
+          <strong>Actual mode:</strong> Shows real calendar dates when loan start date is known
+        </div>
+      </div>
+
+      <!-- Right side: Results -->
+      <div>
+        <!-- Totals -->
+        <div class="totals">
+          <div class="total-card">
+            <div class="total-label">Total Interest</div>
+            <div class="total-value" id="totalInterest">€ 0,00</div>
+          </div>
+          <div class="total-card">
+            <div class="total-label">Total to Repay</div>
+            <div class="total-value" id="totalToRepay">€ 0,00</div>
+          </div>
+          <div class="total-card">
+            <div class="total-label">Loan Start</div>
+            <div class="total-value" id="loanStartLabel" style="font-size: 16px;">—</div>
+          </div>
+        </div>
+
+        <!-- Schedule table -->
+        <div class="card">
+          <h2>Repayment Schedule <span id="contextBadge"></span></h2>
+          <div class="schedule-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Due date</th>
+                  <th class="align-right">Principal</th>
+                  <th class="align-right">Interest</th>
+                  <th class="align-right">Total payment</th>
+                  <th class="align-right">Balance</th>
+                </tr>
+              </thead>
+              <tbody id="scheduleBody">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
+                    Configure parameters to generate schedule...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Debug console -->
+        <div class="card" style="margin-top: 24px;">
+          <h2>Debug Console</h2>
+          <div class="debug-console" id="debugConsole">
+            Waiting for calculation...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/formatters.js"></script>
+  <script src="/js/schedule.js"></script>
+  <script>
+    // Import repayment schedule generator
+    // Since we can't directly import Node.js modules in browser, we'll need to expose it via an API endpoint
+    // For now, we'll recreate the logic inline for the playground
+
+    const { formatCurrency0, formatCurrency2 } = window;
+
+    // Show/hide conditional fields
+    const repaymentTypeSelect = document.getElementById('repaymentType');
+    const installmentsGroup = document.getElementById('installmentsGroup');
+    const loanStartModeSelect = document.getElementById('loanStartMode');
+    const loanStartDateGroup = document.getElementById('loanStartDateGroup');
+
+    repaymentTypeSelect.addEventListener('change', () => {
+      installmentsGroup.style.display = repaymentTypeSelect.value === 'installments' ? 'block' : 'none';
+      recalculate();
+    });
+
+    loanStartModeSelect.addEventListener('change', () => {
+      loanStartDateGroup.style.display = loanStartModeSelect.value === 'fixed_date' ? 'block' : 'flex';
+      recalculate();
+    });
+
+    // Recalculate on any input change
+    document.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('change', recalculate);
+      el.addEventListener('input', recalculate);
+    });
+
+    async function recalculate() {
+      try {
+        // Gather form data
+        const principal = parseFloat(document.getElementById('principal').value) * 100; // Convert to cents
+        const annualInterestRate = parseFloat(document.getElementById('interest').value);
+        const repaymentType = document.getElementById('repaymentType').value;
+        const numInstallments = parseInt(document.getElementById('numInstallments').value);
+        const paymentFrequency = document.getElementById('frequency').value;
+        const firstPaymentOffsetDays = parseInt(document.getElementById('firstPaymentOffset').value);
+        const loanStartMode = document.getElementById('loanStartMode').value;
+        const loanStartDate = document.getElementById('loanStartDate').value;
+        const contextMode = document.getElementById('contextMode').value;
+
+        // Build config object
+        const config = {
+          principal,
+          annualInterestRate,
+          repaymentType,
+          numInstallments: repaymentType === 'installments' ? numInstallments : 1,
+          paymentFrequency,
+          loanStartMode,
+          loanStartDate: (contextMode === 'actual' && loanStartDate) ? loanStartDate : null,
+          firstPaymentOffsetDays,
+          context: {
+            preview: contextMode === 'preview',
+            agreementStatus: contextMode === 'preview' ? 'pending' : 'active',
+            hasRealStartDate: contextMode === 'actual' && (loanStartMode === 'fixed_date' || loanStartDate)
+          }
+        };
+
+        // Log config to debug console
+        document.getElementById('debugConsole').textContent =
+          'Config:\n' + JSON.stringify(config, null, 2) + '\n\nCalculating...';
+
+        // Call API endpoint to generate schedule
+        const response = await fetch('/api/calculate-schedule', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(config)
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+
+        // Update totals
+        document.getElementById('totalInterest').textContent = formatCurrency2(result.totalInterest);
+        document.getElementById('totalToRepay').textContent = formatCurrency2(result.totalToRepay);
+
+        // Update loan start label
+        const loanStartLabel = result.loanStartLabel || '—';
+        document.getElementById('loanStartLabel').textContent = loanStartLabel;
+
+        // Update context badge
+        const badge = contextMode === 'preview'
+          ? '<span class="badge badge-preview">Preview</span>'
+          : '<span class="badge badge-actual">Actual</span>';
+        document.getElementById('contextBadge').innerHTML = badge;
+
+        // Update schedule table
+        const tbody = document.getElementById('scheduleBody');
+        tbody.innerHTML = '';
+
+        result.rows.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.index}</td>
+            <td>${row.dateLabel}</td>
+            <td class="align-right">${formatCurrency2(row.principal)}</td>
+            <td class="align-right">${formatCurrency2(row.interest)}</td>
+            <td class="align-right" style="font-weight: 600;">${formatCurrency2(row.totalPayment)}</td>
+            <td class="align-right">${formatCurrency2(row.remainingBalance)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // Update debug console with result
+        document.getElementById('debugConsole').textContent =
+          'Config:\n' + JSON.stringify(config, null, 2) +
+          '\n\nResult:\n' + JSON.stringify(result, null, 2);
+
+      } catch (error) {
+        console.error('Calculation error:', error);
+        document.getElementById('debugConsole').textContent =
+          'ERROR:\n' + error.message + '\n\n' + error.stack;
+
+        document.getElementById('scheduleBody').innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">
+              Error: ${error.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Initial calculation
+    recalculate();
+  </script>
+</body>
+</html>
