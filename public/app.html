@@ -140,12 +140,21 @@
     .activity-item--issue,.message-item.activity-item--issue{background:var(--warning-bg) !important; border-color:var(--warning-border) !important}
     .activity-item--issue .message-date,.message-item.activity-item--issue .message-date{color:var(--warning-ink)}
     .activity-item--issue .unread-indicator,.message-item.activity-item--issue .unread-indicator{color:var(--warning) !important; text-shadow:0 0 8px rgba(249,115,22,.3)}
-    .wizard-steps{display:flex; gap:16px; align-items:center; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none}
-    .wizard-steps::-webkit-scrollbar{display:none}
-    .wizard-step{padding:8px 16px; background:transparent; border-radius:8px; text-align:center; font-size:14px; border:none; cursor:pointer; transition:all 0.2s ease; white-space:nowrap; color:var(--muted); opacity:0.8; font-weight:500}
-    .wizard-step:hover{background:rgba(255,255,255,0.03)}
-    .wizard-step.active{background:var(--accent); color:#0d130f; font-weight:600}
-    .wizard-step.completed{color:var(--muted); opacity:0.8}
+    /* New Agreement wizard header */
+    .new-agreement-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px}
+    .new-agreement-title{font-size:28px; font-weight:700; margin:0}
+    .back-to-agreements-link{font-size:14px; color:#9da7b8; text-decoration:none; cursor:pointer; transition:color 0.15s ease}
+    .back-to-agreements-link:hover{color:#ffffff; text-decoration:underline}
+    @media (max-width:768px){
+      .new-agreement-header{flex-direction:column; align-items:flex-start; gap:4px}
+      .back-to-agreements-link{align-self:flex-start}
+    }
+    /* Wizard steps navigation */
+    .wizard-steps{display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap}
+    .wizard-step{border-radius:999px; border:1px solid #2c333d; padding:8px 16px; background-color:#151a21; color:#9da7b8; font-size:14px; font-weight:500; cursor:pointer; transition:background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; white-space:nowrap}
+    .wizard-step:hover:not(.active){background-color:#1b222c; border-color:#3a4453; color:#e6eef6}
+    .wizard-step.active{background-color:var(--accent); border-color:var(--accent); color:#0e1116; font-weight:600}
+    .wizard-step.completed{color:#9da7b8}
     .wizard-content{min-height:200px}
     .hidden{display:none}
     .role-badge{display:inline-block; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; background:#2a2a2a; color:#fff}
@@ -489,23 +498,21 @@
 
     <!-- Wizard for creating agreements -->
     <div id="new-agreement-section" class="hidden">
-      <!-- Page title outside card, matching Settings layout -->
-      <h1 style="font-size: 28px; font-weight: 600; margin: 0 0 24px 0;">New Agreement</h1>
-
-      <!-- Wizard steps centered, with back link on right -->
-      <div style="position: relative; margin-bottom: 16px;">
-        <div style="display: flex; justify-content: center; align-items: center;">
-          <div class="wizard-steps" role="navigation" aria-label="Agreement wizard steps">
-            <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
-            <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">2. Terms</div>
-            <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Interest">3. Interest</div>
-            <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Payments">4. Payments</div>
-            <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Summary">5. Summary</div>
-            <div class="wizard-step" id="step-indicator-6" onclick="clickStep(6)" aria-label="Step 6, Share">6. Share</div>
-          </div>
-        </div>
-        <a onclick="closeNewAgreement()" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--muted); cursor: pointer; text-decoration: none; transition: color 0.2s ease;" onmouseover="this.style.color='var(--text)'; this.style.textDecoration='underline'" onmouseout="this.style.color='var(--muted)'; this.style.textDecoration='none'">&lt; Back to My agreements</a>
+      <!-- Header: title + back link on same row -->
+      <div class="new-agreement-header">
+        <h1 class="new-agreement-title">New Agreement</h1>
+        <a onclick="closeNewAgreement()" class="back-to-agreements-link">&lt; Back to My agreements</a>
       </div>
+
+      <!-- Wizard step navigation -->
+      <nav class="wizard-steps" role="navigation" aria-label="Agreement wizard steps">
+        <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
+        <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">2. Terms</div>
+        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Interest">3. Interest</div>
+        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Payments">4. Payments</div>
+        <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Summary">5. Summary</div>
+        <div class="wizard-step" id="step-indicator-6" onclick="clickStep(6)" aria-label="Step 6, Share">6. Share</div>
+      </nav>
 
       <!-- Main card starts here, matching Settings card structure -->
       <section class="card">
