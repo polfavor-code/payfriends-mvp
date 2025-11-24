@@ -24,6 +24,10 @@
   <script src="/js/legal-router.js"></script>
   <!-- Legal pages content -->
   <script src="/js/legal-pages.js"></script>
+  <!-- Profile pages router -->
+  <script src="/js/profile-router.js"></script>
+  <!-- Profile pages content -->
+  <script src="/js/profile-pages.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -4322,7 +4326,17 @@
         return; // Don't initialize the app content
       }
 
-      // Normal app initialization (not a legal page)
+      // Check if we're on a profile page route
+      if (window.ProfileRouter && window.ProfileRouter.initialize()) {
+        // Profile router is handling this page
+        // Initialize only the header without activity section
+        await PayFriendsHeader.initialize({
+          hasActivitySection: false
+        });
+        return; // Don't initialize the app content
+      }
+
+      // Normal app initialization (not a legal or profile page)
       // Initialize shared header with custom activity button handler
       await PayFriendsHeader.initialize({
         hasActivitySection: true,

@@ -4386,31 +4386,45 @@ app.get('/app', (req, res) => {
   }
 });
 
-// Profile: serve profile page if authenticated, else redirect to /
+// Profile pages: All profile routes now use app.html with client-side routing
+// Profile
+app.get('/app/profile', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'app.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Settings
+app.get('/app/settings', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'app.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Security
+app.get('/app/security', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'app.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Redirect old profile routes to new routes
 app.get('/profile', (req, res) => {
-  if (req.user) {
-    res.sendFile(path.join(__dirname, 'public', 'profile.html'));
-  } else {
-    res.redirect('/');
-  }
+  res.redirect('/app/profile');
 });
 
-// Settings: serve settings page if authenticated, else redirect to /
 app.get('/settings', (req, res) => {
-  if (req.user) {
-    res.sendFile(path.join(__dirname, 'public', 'settings.html'));
-  } else {
-    res.redirect('/');
-  }
+  res.redirect('/app/settings');
 });
 
-// Security: serve security page if authenticated, else redirect to /
 app.get('/security', (req, res) => {
-  if (req.user) {
-    res.sendFile(path.join(__dirname, 'public', 'security.html'));
-  } else {
-    res.redirect('/');
-  }
+  res.redirect('/app/security');
 });
 
 // Legal pages: All legal routes now use app.html with client-side routing
