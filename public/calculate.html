@@ -239,10 +239,10 @@
 
     tfoot td {
       padding: 16px 12px;
-      border-top: 2px solid rgba(59, 130, 246, 0.5);
-      background: rgba(59, 130, 246, 0.1);
+      border-top: 2px solid rgba(16, 185, 129, 0.5);
+      background: rgba(16, 185, 129, 0.1);
       font-weight: 700;
-      color: #fff;
+      color: #34d399;
       font-size: 14px;
     }
 
@@ -254,7 +254,7 @@
     tfoot td:first-child {
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #60a5fa;
+      color: #34d399;
     }
 
     .badge {
@@ -346,7 +346,7 @@
 
         <div id="loanStartDateGroup" class="form-group hidden">
           <label for="loanStartDate">Pick a date</label>
-          <input type="date" id="loanStartDate" required>
+          <input type="date" id="loanStartDate" required readonly style="cursor: pointer;">
         </div>
 
         <!-- 4. Repayment type -->
@@ -377,7 +377,7 @@
 
         <div id="firstPaymentDateGroup" class="form-group hidden">
           <label for="firstPaymentDate">Pick a date</label>
-          <input type="date" id="firstPaymentDate" required>
+          <input type="date" id="firstPaymentDate" required readonly style="cursor: pointer;">
         </div>
 
         <!-- 6. Payment frequency -->
@@ -416,15 +416,6 @@
           </div>
         </div>
 
-        <!-- 8. Context mode -->
-        <div class="form-group">
-          <label for="contextMode">Context mode</label>
-          <select id="contextMode">
-            <option value="preview" selected>Preview mode (no real date)</option>
-            <option value="actual">Actual mode (known loan start)</option>
-          </select>
-        </div>
-
         <!-- 9. Buttons -->
         <div class="form-group">
           <div style="display: flex; gap: 12px;">
@@ -442,9 +433,9 @@
             <h2>Repayment schedule & interest calculation</h2>
             <span id="modeBadge"></span>
           </div>
-          <div style="font-size: 14px; margin-bottom: 16px; margin-top: 4px; color: #9ca3af;">
+          <div style="font-size: 14px; margin-bottom: 16px; margin-top: 0px; color: #9ca3af;">
             <div id="loanStartLabel">Click "Calculate schedule" to generate...</div>
-            <div id="loanDurationLabel" style="display: none;"></div>
+            <div id="loanDurationLabel" style="display: none; color: #34d399; margin-top: 4px;"></div>
           </div>
           <div class="schedule-table">
             <table>
@@ -1159,9 +1150,6 @@ Click "Calculate schedule" to see calculation details...
     // Number of installments - use debounced for smooth typing
     document.getElementById('numInstallments').addEventListener('input', debouncedCalculation);
 
-    // Context mode - immediate update
-    document.getElementById('contextMode').addEventListener('change', runRepaymentCalculation);
-
     // ============================================================================
     // UI-only event listeners (these also trigger recalculation via events above)
     // ============================================================================
@@ -1320,7 +1308,10 @@ Click "Calculate schedule" to see calculation details...
         const firstPaymentDueOption = document.getElementById('firstPaymentDue').value;
         const firstPaymentDate = document.getElementById('firstPaymentDate').value;
         const loanStartMode = document.getElementById('loanStartMode').value;
-        const contextMode = document.getElementById('contextMode').value;
+        // Auto-determine context mode based on loan start date
+        // Preview mode: when agreement is accepted (no real date)
+        // Actual mode: when a real date is selected (today, tomorrow, picked date)
+        const contextMode = loanStartMode === 'upon_acceptance' ? 'preview' : 'actual';
         const explicitLoanStartDate = document.getElementById('loanStartDate').value;
 
         // Validation - graceful handling for auto-updates
@@ -1408,8 +1399,8 @@ Click "Calculate schedule" to see calculation details...
 
         // Update UI - Schedule header
         const badge = result.effectiveMode === 'preview'
-          ? '<span class="badge badge-preview">Preview</span>'
-          : '<span class="badge badge-actual">Actual</span>';
+          ? '<span class="badge badge-preview">PREVIEW</span>'
+          : '<span class="badge badge-actual">ACTUAL</span>';
         document.getElementById('modeBadge').innerHTML = badge;
 
         // Build loan start label with duration
