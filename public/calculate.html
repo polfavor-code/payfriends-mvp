@@ -337,7 +337,7 @@
             <option value="in-1-week">In 1 week</option>
             <option value="pick-date">Pick a date…</option>
           </select>
-          <div class="form-hint">This marks the date the loan officially begins for interest and repayment calculations.</div>
+          <div class="form-hint">Date used for interest and repayment calculations.</div>
         </div>
 
         <div class="form-group" id="loanStartDateGroup" style="display: none;">
@@ -575,6 +575,7 @@ Click "Calculate schedule" to see calculation details...
       firstPaymentMonths = 1,
       firstPaymentYears = 0,
       firstPaymentIsYearBased = false,
+      firstPaymentExactDate = null,
       loanStartMode,
       contextMode,
       explicitLoanStartDate
@@ -815,7 +816,12 @@ Click "Calculate schedule" to see calculation details...
         } else {
           // ACTUAL MODE: Calculate real calendar dates
           if (loanStartDate) {
-            if (i === 0 && firstPaymentIsYearBased) {
+            // Check if first payment has an exact picked date
+            if (i === 0 && firstPaymentExactDate) {
+              // User explicitly picked a date - use it directly
+              dueDate = new Date(firstPaymentExactDate);
+              dueDate.setHours(0, 0, 0, 0);
+            } else if (i === 0 && firstPaymentIsYearBased) {
               // First payment is year-based
               dueDate = addYears(loanStartDate, firstPaymentYears);
             } else if (periodType === 'years') {
@@ -823,27 +829,68 @@ Click "Calculate schedule" to see calculation details...
               if (i === 0) {
                 dueDate = addYears(loanStartDate, firstPaymentYears || periodMultiplier);
               } else {
-                const baseYears = firstPaymentYears || 0;
-                const yearsToAdd = baseYears + (i * periodMultiplier);
-                dueDate = addYears(loanStartDate, yearsToAdd);
+                // Subsequent payments: calculate from first payment date if we have exact date
+                if (firstPaymentExactDate) {
+                  const baseDate = new Date(firstPaymentExactDate);
+                  baseDate.setHours(0, 0, 0, 0);
+                  dueDate = addYears(baseDate, i * periodMultiplier);
+                } else {
+                  const baseYears = firstPaymentYears || 0;
+                  const yearsToAdd = baseYears + (i * periodMultiplier);
+                  dueDate = addYears(loanStartDate, yearsToAdd);
+                }
               }
             } else if (periodType === 'months') {
               // Monthly: add months properly (with multiplier)
-              let monthsToAdd;
               if (i === 0) {
-                monthsToAdd = firstPaymentMonths;
+                // First payment already handled by exactDate check above if applicable
+                const monthsToAdd = firstPaymentMonths;
+                dueDate = addMonths(loanStartDate, monthsToAdd);
               } else {
-                monthsToAdd = firstPaymentMonths + (i * periodMultiplier);
+                // Subsequent payments: calculate from first payment date if we have exact date
+                if (firstPaymentExactDate) {
+                  const baseDate = new Date(firstPaymentExactDate);
+                  baseDate.setHours(0, 0, 0, 0);
+                  dueDate = addMonths(baseDate, i * periodMultiplier);
+                } else {
+                  const monthsToAdd = firstPaymentMonths + (i * periodMultiplier);
+                  dueDate = addMonths(loanStartDate, monthsToAdd);
+                }
               }
-              dueDate = addMonths(loanStartDate, monthsToAdd);
             } else if (periodType === 'weeks') {
               // Week-based: add days (preserves weekday)
-              const daysToAdd = (i === 0) ? firstPaymentDays : (firstPaymentDays + i * periodDays);
-              dueDate = addDays(loanStartDate, daysToAdd);
+              if (i === 0) {
+                // First payment - already handled by exactDate check above if applicable
+                const daysToAdd = firstPaymentDays;
+                dueDate = addDays(loanStartDate, daysToAdd);
+              } else {
+                // Subsequent payments: calculate from first payment date if we have exact date
+                if (firstPaymentExactDate) {
+                  const baseDate = new Date(firstPaymentExactDate);
+                  baseDate.setHours(0, 0, 0, 0);
+                  dueDate = addDays(baseDate, i * periodDays);
+                } else {
+                  const daysToAdd = firstPaymentDays + (i * periodDays);
+                  dueDate = addDays(loanStartDate, daysToAdd);
+                }
+              }
             } else {
               // Day-based: add days
-              const daysToAdd = (i === 0) ? firstPaymentDays : (firstPaymentDays + i * periodDays);
-              dueDate = addDays(loanStartDate, daysToAdd);
+              if (i === 0) {
+                // First payment - already handled by exactDate check above if applicable
+                const daysToAdd = firstPaymentDays;
+                dueDate = addDays(loanStartDate, daysToAdd);
+              } else {
+                // Subsequent payments: calculate from first payment date if we have exact date
+                if (firstPaymentExactDate) {
+                  const baseDate = new Date(firstPaymentExactDate);
+                  baseDate.setHours(0, 0, 0, 0);
+                  dueDate = addDays(baseDate, i * periodDays);
+                } else {
+                  const daysToAdd = firstPaymentDays + (i * periodDays);
+                  dueDate = addDays(loanStartDate, daysToAdd);
+                }
+              }
             }
             dueDateLabel = formatDateDisplay(dueDate);
           } else {
@@ -1029,11 +1076,9 @@ Click "Calculate schedule" to see calculation details...
       document.getElementById('loanStartMode').value = 'upon_acceptance';
       document.getElementById('contextMode').value = 'preview';
 
-      // Hide date pickers
+      // Hide and clear date pickers
       document.getElementById('loanStartDateGroup').style.display = 'none';
       document.getElementById('firstPaymentDateGroup').style.display = 'none';
-
-      // Clear date inputs
       document.getElementById('loanStartDate').value = '';
       document.getElementById('firstPaymentDate').value = '';
 
@@ -1060,13 +1105,25 @@ Click "Calculate schedule" to see calculation details...
     // Show/hide loan start date picker
     document.getElementById('loanStartMode').addEventListener('change', function() {
       const loanStartDateGroup = document.getElementById('loanStartDateGroup');
-      loanStartDateGroup.style.display = this.value === 'pick-date' ? 'block' : 'none';
+      const loanStartDateInput = document.getElementById('loanStartDate');
+      if (this.value === 'pick-date') {
+        loanStartDateGroup.style.display = 'block';
+      } else {
+        loanStartDateGroup.style.display = 'none';
+        loanStartDateInput.value = ''; // Clear when hiding
+      }
     });
 
     // Show/hide first payment date picker
     document.getElementById('firstPaymentDue').addEventListener('change', function() {
       const firstPaymentDateGroup = document.getElementById('firstPaymentDateGroup');
-      firstPaymentDateGroup.style.display = this.value === 'pick-date' ? 'block' : 'none';
+      const firstPaymentDateInput = document.getElementById('firstPaymentDate');
+      if (this.value === 'pick-date') {
+        firstPaymentDateGroup.style.display = 'block';
+      } else {
+        firstPaymentDateGroup.style.display = 'none';
+        firstPaymentDateInput.value = ''; // Clear when hiding
+      }
     });
 
     /**
@@ -1104,33 +1161,50 @@ Click "Calculate schedule" to see calculation details...
 
     /**
      * Helper function to calculate first payment timing
-     * Returns {days, months, years, isMonthBased, isYearBased}
+     * Returns {days, months, years, isMonthBased, isYearBased, exactDate}
      */
     function calculateFirstPaymentTiming(firstPaymentDue, firstPaymentDate, loanStartDate) {
       switch (firstPaymentDue) {
         case '1-week':
-          return { days: 7, months: 0, years: 0, isMonthBased: false, isYearBased: false };
+          return { days: 7, months: 0, years: 0, isMonthBased: false, isYearBased: false, exactDate: null };
         case '1-month':
-          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false };
+          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false, exactDate: null };
         case '6-months':
-          return { days: 182, months: 6, years: 0, isMonthBased: true, isYearBased: false };
+          return { days: 182, months: 6, years: 0, isMonthBased: true, isYearBased: false, exactDate: null };
         case '1-year':
-          return { days: 365, months: 12, years: 1, isMonthBased: false, isYearBased: true };
+          return { days: 365, months: 12, years: 1, isMonthBased: false, isYearBased: true, exactDate: null };
         case '2-years':
-          return { days: 730, months: 24, years: 2, isMonthBased: false, isYearBased: true };
+          return { days: 730, months: 24, years: 2, isMonthBased: false, isYearBased: true, exactDate: null };
         case '3-years':
-          return { days: 1095, months: 36, years: 3, isMonthBased: false, isYearBased: true };
+          return { days: 1095, months: 36, years: 3, isMonthBased: false, isYearBased: true, exactDate: null };
         case 'pick-date':
-          if (firstPaymentDate && loanStartDate) {
-            const start = new Date(loanStartDate);
-            const payment = new Date(firstPaymentDate);
-            const daysDiff = Math.round((payment - start) / (1000 * 60 * 60 * 24));
-            return { days: daysDiff, months: 0, years: 0, isMonthBased: false, isYearBased: false };
+          if (firstPaymentDate) {
+            // Parse the date string (format: YYYY-MM-DD from date input)
+            const pickedDate = new Date(firstPaymentDate + 'T00:00:00');
+
+            // Calculate days for interest calculation (if loan start is known)
+            let daysDiff = 30; // default
+            if (loanStartDate) {
+              const start = new Date(loanStartDate);
+              start.setHours(0, 0, 0, 0);
+              const diffMs = pickedDate - start;
+              daysDiff = Math.round(diffMs / (1000 * 60 * 60 * 24));
+            }
+
+            // Return with exact date - this will be used directly in schedule
+            return {
+              days: daysDiff,
+              months: 0,
+              years: 0,
+              isMonthBased: false,
+              isYearBased: false,
+              exactDate: pickedDate
+            };
           }
-          // If loan start is unknown, just use 30 days as default
-          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false };
+          // If no date picked, use default
+          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false, exactDate: null };
         default:
-          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false };
+          return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false, exactDate: null };
       }
     }
 
@@ -1164,10 +1238,11 @@ Click "Calculate schedule" to see calculation details...
           errors.push('Number of installments must be at least 1.');
         }
         if (loanStartMode === 'pick-date' && !explicitLoanStartDate) {
-          errors.push('Please select a loan start date when using "Pick a date…"');
+          errors.push('Loan start date is required when "Pick a date…" is selected.');
         }
         if (firstPaymentDueOption === 'pick-date' && !firstPaymentDate) {
-          errors.push('Please select a first payment date when using "Pick a date…"');
+          const fieldName = repaymentType === 'one_time' ? 'Full repayment date' : 'First payment date';
+          errors.push(`${fieldName} is required when "Pick a date…" is selected.`);
         }
 
         if (errors.length > 0) {
@@ -1190,6 +1265,7 @@ Click "Calculate schedule" to see calculation details...
         const firstPaymentMonths = firstPaymentTiming.months;
         const firstPaymentYears = firstPaymentTiming.years || 0;
         const firstPaymentIsYearBased = firstPaymentTiming.isYearBased || false;
+        const firstPaymentExactDate = firstPaymentTiming.exactDate || null;
 
         // Determine effective mode and loan start date
         // Rule: If loan start is known (not upon_acceptance), always use actual mode
@@ -1216,6 +1292,7 @@ Click "Calculate schedule" to see calculation details...
           firstPaymentMonths,
           firstPaymentYears,
           firstPaymentIsYearBased,
+          firstPaymentExactDate,
           loanStartMode: effectiveLoanStartMode,
           contextMode: effectiveContextMode,
           explicitLoanStartDate: calculatedLoanStartDate
