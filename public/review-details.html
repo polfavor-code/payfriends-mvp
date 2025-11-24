@@ -2039,12 +2039,53 @@
       document.getElementById('agreement-summary-line1').textContent = summaryLine1;
 
       // Generate human-readable summary line 2 (payment schedule)
-      // Use 'en-GB' locale for capitalized month names (e.g., "22 Feb 2026")
       let summaryLine2 = '';
       if (isInstallments && agreement.installment_count) {
-        const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(agreement.final_due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        summaryLine2 = `${agreement.installment_count} monthly payments, from ${firstDate} to ${finalDate}.`;
+        // Format: "Installment plan: X payments of €Y (excl. interest). First payment [offset], then [frequency]."
+        const installmentAmount = formatCurrency2(Math.round((agreement.installment_amount || 0) * 100));
+        const frequency = agreement.payment_frequency || 'monthly';
+        const count = agreement.installment_count;
+
+        // Determine first payment offset description
+        let firstPaymentDesc = '';
+        const isOnAcceptance = agreement.money_sent_date === 'on-acceptance';
+
+        if (isOnAcceptance) {
+          // For "upon acceptance" loans, describe the offset
+          // This would need to be stored in the agreement, for now default to "1 month after the loan starts"
+          firstPaymentDesc = '1 month after the loan starts';
+        } else {
+          // For specific start dates, show the actual date
+          const firstDate = new Date(agreement.first_payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          firstPaymentDesc = `on ${firstDate}`;
+        }
+
+        // Determine frequency description
+        let frequencyDesc;
+        switch (frequency) {
+          case 'monthly':
+            frequencyDesc = 'every month';
+            break;
+          case 'every_4_weeks':
+            frequencyDesc = 'every 4 weeks';
+            break;
+          case 'weekly':
+            frequencyDesc = 'every week';
+            break;
+          case 'biweekly':
+            frequencyDesc = 'every 2 weeks';
+            break;
+          case 'quarterly':
+            frequencyDesc = 'every 3 months';
+            break;
+          case 'yearly':
+            frequencyDesc = 'every year';
+            break;
+          default:
+            frequencyDesc = formatRepaymentFrequency(frequency).toLowerCase();
+        }
+
+        summaryLine2 = `Installment plan: ${count} payment${count > 1 ? 's' : ''} of ${installmentAmount} (excl. interest). First payment ${firstPaymentDesc}, then ${frequencyDesc}.`;
       } else {
         const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         summaryLine2 = `Full repayment date is ${dueDate}.`;

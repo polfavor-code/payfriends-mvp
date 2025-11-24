@@ -2722,29 +2722,36 @@
 
       // Show relative label for installments with "on acceptance" start
       if (isInstallments && isOnAcceptance && installmentIndex !== undefined) {
-        // Convert duration to months
-        let durationMonths;
-        if (wizardData.planUnit === 'months') {
-          durationMonths = wizardData.planLength;
-        } else if (wizardData.planUnit === 'years') {
-          durationMonths = wizardData.planLength * 12;
-        } else if (wizardData.planUnit === 'weeks') {
-          durationMonths = wizardData.planLength / 4.33; // Approximate
-        } else if (wizardData.planUnit === 'days') {
-          durationMonths = wizardData.planLength / 30; // Approximate
+        const frequency = wizardData.paymentFrequency || 'monthly';
+
+        // Get the first payment offset in months
+        const firstOffsetMonths = getFirstPaymentOffsetMonths(wizardData.firstPaymentOption || '1month') || 1;
+
+        // For monthly frequency, each installment is 1 month apart
+        // For other frequencies, we still show month-based labels for simplicity
+        let intervalMonths;
+        switch (frequency) {
+          case 'monthly':
+            intervalMonths = 1;
+            break;
+          case 'quarterly':
+            intervalMonths = 3;
+            break;
+          case 'yearly':
+            intervalMonths = 12;
+            break;
+          default:
+            // For weekly/biweekly/every_4_weeks, approximate as months for label purposes
+            // This is just for display in the "upon acceptance" view
+            intervalMonths = 1;
         }
 
-        const intervalMonths = durationMonths / wizardData.installmentCount;
-        const firstOffsetMonths = getFirstPaymentOffsetMonths(wizardData.firstPaymentOption || '1month') || intervalMonths;
         const offsetMonths = firstOffsetMonths + (installmentIndex * intervalMonths);
 
-        // Round to nearest integer for cleaner display
-        const roundedOffset = Math.round(offsetMonths);
-
-        if (roundedOffset === 1) {
+        if (offsetMonths === 1) {
           return '1 month after loan start';
         } else {
-          return `${roundedOffset} months after loan start`;
+          return `${offsetMonths} months after loan start`;
         }
       }
 

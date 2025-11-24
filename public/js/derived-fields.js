@@ -132,17 +132,17 @@ function formatRepaymentFrequency(frequency) {
 
   switch (frequency) {
     case 'weekly':
-      return 'Weekly';
+      return 'Every week';
     case 'biweekly':
       return 'Every 2 weeks';
     case 'every_4_weeks':
       return 'Every 4 weeks';
     case 'monthly':
-      return 'Monthly';
+      return 'Every month';
     case 'quarterly':
       return 'Every 3 months';
     case 'yearly':
-      return 'Yearly';
+      return 'Every year';
     default:
       // Handle generic "every_X_weeks" or "every_X_days" patterns
       if (frequency.startsWith('every_') && frequency.endsWith('_weeks')) {
