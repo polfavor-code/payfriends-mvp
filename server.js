@@ -594,9 +594,10 @@ function getAgreementInterestInfo(agreement, asOfDate = new Date()) {
 
 /**
  * Derive the loan start date display string based on agreement status and money_sent_date
+ * Now uses the centralized loan start label helper for consistency
  *
  * Rules:
- * - PENDING: Show wizard choice ("Upon agreement acceptance" or concrete date)
+ * - PENDING: Show wizard choice ("When agreement is accepted" or concrete date)
  * - ACTIVE/SETTLED: Show actual start date (derived from accepted_at if needed) or soft fallback
  *
  * @param {Object} agreement - Agreement object from database
@@ -604,43 +605,31 @@ function getAgreementInterestInfo(agreement, asOfDate = new Date()) {
  * @returns {string} Display-ready loan start date string
  */
 function getLoanStartDateDisplay(agreement, acceptedAt = null) {
+  const { getLoanStartLabel } = require('./lib/repayments/loanStartLabels.js');
+
   const status = agreement.status;
   const moneySentDate = agreement.money_sent_date;
 
-  // PENDING state: Show the wizard choice
-  if (status === 'pending') {
-    if (moneySentDate === 'on-acceptance') {
-      return 'Upon agreement acceptance';
-    } else if (moneySentDate) {
-      // Format the concrete date
-      const date = new Date(moneySentDate);
-      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    } else {
-      // Should not happen in normal flow, but handle gracefully
-      return 'To be confirmed';
+  // Determine loan start mode and date
+  let loanStartMode;
+  let loanStartDate = null;
+
+  if (moneySentDate === 'on-acceptance') {
+    loanStartMode = 'upon_acceptance';
+    // If agreement is active/settled and we have acceptedAt, that's the actual date
+    if ((status === 'active' || status === 'settled') && acceptedAt) {
+      loanStartDate = acceptedAt;
     }
+  } else if (moneySentDate) {
+    loanStartMode = 'fixed_date';
+    loanStartDate = moneySentDate;
+  } else {
+    // Edge case: no money_sent_date set (shouldn't happen in normal flow)
+    return 'To be confirmed';
   }
 
-  // ACTIVE or SETTLED state: Show actual start date
-  if (status === 'active' || status === 'settled') {
-    // If we have a concrete stored date (not "on-acceptance"), use it
-    if (moneySentDate && moneySentDate !== 'on-acceptance') {
-      const date = new Date(moneySentDate);
-      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-
-    // If wizard choice was "on-acceptance", derive from accepted_at
-    if (moneySentDate === 'on-acceptance' && acceptedAt) {
-      const date = new Date(acceptedAt);
-      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-
-    // Edge case fallback (should be rare)
-    return 'To be confirmed with lender';
-  }
-
-  // For other statuses (cancelled, declined, etc.), show soft message
-  return 'To be confirmed';
+  // Use centralized helper
+  return getLoanStartLabel(loanStartMode, loanStartDate);
 }
 
 // create a new session for a user
@@ -4133,6 +4122,33 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true });
 });
 
+// Calculate repayment schedule (for playground)
+app.post('/api/calculate-schedule', (req, res) => {
+  try {
+    const { generateRepaymentSchedule } = require('./lib/repayments/repaymentSchedule.js');
+    const { getLoanStartLabel } = require('./lib/repayments/loanStartLabels.js');
+
+    const config = req.body;
+
+    // Generate schedule
+    const result = generateRepaymentSchedule(config);
+
+    // Add loan start label
+    const loanStartLabel = getLoanStartLabel(
+      config.loanStartMode,
+      config.loanStartDate
+    );
+
+    res.json({
+      ...result,
+      loanStartLabel
+    });
+  } catch (err) {
+    console.error('Error calculating schedule:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get invite details by token (public)
 app.get('/api/invites/:token', (req, res) => {
   const { token } = req.params;
@@ -4495,6 +4511,11 @@ app.get('/legal/cookies', (req, res) => {
   } else {
     res.redirect('/');
   }
+});
+
+// Calculator playground: internal testing page (no auth required)
+app.get('/calculate', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'calculate.html'));
 });
 
 // Review: serve review page for agreement invites

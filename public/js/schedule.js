@@ -303,3 +303,15 @@ if (typeof module !== 'undefined' && module.exports) {
     generateScheduleAccordionHTML
   };
 }
+
+// Export for browser use (attach to window)
+if (typeof window !== 'undefined') {
+  window.formatScheduleDate = formatScheduleDate;
+  window.addMonthsKeepingDay = addMonthsKeepingDay;
+  window.addOnePeriod = addOnePeriod;
+  window.normalizeFirstDueDate = normalizeFirstDueDate;
+  window.generatePaymentDates = generatePaymentDates;
+  window.buildRepaymentSchedule = buildRepaymentSchedule;
+  window.generateScheduleTableHTML = generateScheduleTableHTML;
+  window.generateScheduleAccordionHTML = generateScheduleAccordionHTML;
+}

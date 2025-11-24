@@ -212,3 +212,17 @@ function formatFinancialDate(dateString) {
     day: 'numeric'
   }).format(date);
 }
+
+// Export for browser use (attach to window)
+if (typeof window !== 'undefined') {
+  window.formatCurrency0 = formatCurrency0;
+  window.formatCurrency2 = formatCurrency2;
+  window.formatEuro0 = formatEuro0;
+  window.formatEuro2 = formatEuro2;
+  window.formatDate = formatDate;
+  window.getDueDateCountdown = getDueDateCountdown;
+  window.formatDateWithCountdown = formatDateWithCountdown;
+  window.getRelativeDueDateText = getRelativeDueDateText;
+  window.formatTimestamp = formatTimestamp;
+  window.formatFinancialDate = formatFinancialDate;
+}
