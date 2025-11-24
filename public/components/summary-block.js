@@ -218,6 +218,25 @@ function buildSummaryDataMap(wizardData, currentUser) {
   // Format phone number
   const phoneNumber = wizardData.phoneNumber || '';
 
+  // Check if loan start is "upon acceptance" for installments
+  const isLoanStartUponAcceptance = wizardData.moneySentDate === 'on-acceptance' || wizardData.moneySentOption === 'on-acceptance';
+
+  // Format first and final repayment dates
+  let firstRepaymentDate = '';
+  let finalDueDate = '';
+
+  if (wizardData.repaymentType === 'installments') {
+    if (isLoanStartUponAcceptance && typeof formatOneTimeDueDateDisplay === 'function') {
+      // Show relative labels for "upon acceptance" loans
+      firstRepaymentDate = wizardData.firstPaymentDate ? formatOneTimeDueDateDisplay(wizardData.firstPaymentDate, 0) : '';
+      finalDueDate = wizardData.finalDueDate ? formatOneTimeDueDateDisplay(wizardData.finalDueDate, (wizardData.installmentCount || 1) - 1) : '';
+    } else {
+      // Show concrete dates for fixed loan start
+      firstRepaymentDate = wizardData.firstPaymentDate ? new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+      finalDueDate = wizardData.finalDueDate ? new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    }
+  }
+
   return {
     description: wizardData.description,
     lenderName: lenderName,
@@ -233,8 +252,8 @@ function buildSummaryDataMap(wizardData, currentUser) {
     totalToRepay: formatCurrency2(Math.round(wizardData.totalRepayAmount * 100)),
     numberOfInstallments: wizardData.installmentCount || wizardData.numRepayments || '',
     paymentFrequency: paymentFrequency,
-    firstRepaymentDate: wizardData.firstPaymentDate ? new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
-    finalDueDate: wizardData.finalDueDate ? new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+    firstRepaymentDate: firstRepaymentDate,
+    finalDueDate: finalDueDate,
     fullRepaymentDueDate: getFullRepaymentDueDateDisplay(wizardData),
     repaymentMethods: methodsText,
     requireProof: wizardData.proofRequired ? 'Yes — Borrower must upload proof (photo, screenshot, or PDF) with each payment' : null,

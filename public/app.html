@@ -2069,9 +2069,9 @@
         return 'weekly';
       } else if (Math.abs(intervalDays - 14) <= 2) {
         return 'biweekly';
-      } else if (Math.abs(intervalDays - 28) <= 2) {
-        return 'every_4_weeks';
-      } else if (Math.abs(intervalDays - 30) <= 3 || Math.abs(intervalDays - 31) <= 3) {
+      } else if (Math.abs(intervalDays - 28) <= 3 || Math.abs(intervalDays - 30) <= 3 || Math.abs(intervalDays - 31) <= 3) {
+        // Treat 4 weeks (28 days) as monthly for better UX
+        // Monthly is more standard and user-friendly than "every 4 weeks"
         return 'monthly';
       } else if (Math.abs(intervalDays - 91) <= 5) {
         return 'quarterly';
@@ -3335,10 +3335,22 @@
           summaryLine2 = `To be repaid in one payment by ${dueDate}.`;
         }
       } else {
-        const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const intervalText = getIntervalText(wizardData.loanDurationValue, wizardData.loanDurationUnit, wizardData.installmentCount);
-        summaryLine2 = `To be repaid in ${wizardData.installmentCount} ${intervalText} payments, from ${firstDate} to ${finalDate}.`;
+        // For installment loans
+        const isLoanStartUponAcceptance = wizardData.moneySentDate === 'on-acceptance' || wizardData.moneySentOption === 'on-acceptance';
+
+        if (isLoanStartUponAcceptance) {
+          // Show relative dates for "upon acceptance" loans
+          const firstPaymentLabel = formatOneTimeDueDateDisplay(wizardData.firstPaymentDate, 0);
+          const finalPaymentLabel = formatOneTimeDueDateDisplay(wizardData.finalDueDate, wizardData.installmentCount - 1);
+          const intervalText = getIntervalText(wizardData.loanDurationValue, wizardData.loanDurationUnit, wizardData.installmentCount);
+          summaryLine2 = `To be repaid in ${wizardData.installmentCount} ${intervalText} payments, from ${firstPaymentLabel} to ${finalPaymentLabel}.`;
+        } else {
+          // Show concrete dates for fixed loan start
+          const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          const intervalText = getIntervalText(wizardData.loanDurationValue, wizardData.loanDurationUnit, wizardData.installmentCount);
+          summaryLine2 = `To be repaid in ${wizardData.installmentCount} ${intervalText} payments, from ${firstDate} to ${finalDate}.`;
+        }
       }
 
       let summaryLine3 = '';
@@ -3433,7 +3445,8 @@
           schedule.rows.forEach((row, index) => {
             const rowStyle = index % 2 === 0 ? 'background:#0c1015' : 'background:#0a0d11';
             html += `<tr style="${rowStyle}">`;
-            html += `<td style="padding:8px">${formatScheduleDate(row.dateISO)}</td>`;
+            // Use formatOneTimeDueDateDisplay to show relative labels for "upon acceptance" loans
+            html += `<td style="padding:8px">${formatOneTimeDueDateDisplay(row.dateISO, index)}</td>`;
             html += `<td style="text-align:right; padding:8px">${formatCurrency2(row.principalCents)}</td>`;
             html += `<td style="text-align:right; padding:8px">${formatCurrency2(row.interestCents)}</td>`;
             html += `<td style="text-align:right; padding:8px; font-weight:600">${formatCurrency2(row.paymentCents)}</td>`;

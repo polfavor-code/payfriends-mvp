@@ -434,6 +434,74 @@
       return `(in ${diffDays} days)`;
     }
 
+    /**
+     * Helper to get offset in months for first payment option
+     */
+    function getFirstPaymentOffsetMonths(firstPaymentOption) {
+      const map = {
+        'today': 0,
+        'tomorrow': 0,
+        '3days': 0,
+        '7days': 0,
+        '1month': 1,
+        '2months': 2,
+        '3months': 3,
+        '6months': 6,
+        '12months': 12
+      };
+      return map[firstPaymentOption] || 1;
+    }
+
+    /**
+     * Format a date for repayment schedule display, showing relative labels
+     * for "upon acceptance" loans, or concrete dates for fixed loan start.
+     * @param {string} dateISO - ISO date string
+     * @param {number} installmentIndex - Index of the installment (0-based)
+     * @param {Object} agreement - Agreement object
+     * @returns {string} Formatted date or relative label
+     */
+    function formatScheduleDateForReview(dateISO, installmentIndex, agreement) {
+      // Check if loan start is "upon acceptance"
+      const isOnAcceptance = agreement.money_sent_date === 'on-acceptance';
+
+      // Only show relative labels for installments with "upon acceptance" loans
+      if (isOnAcceptance && agreement.repayment_type === 'installments' && installmentIndex !== undefined) {
+        const frequency = agreement.payment_frequency || 'monthly';
+        const firstPaymentOption = agreement.first_payment_option || '1month';
+
+        // Get the first payment offset in months
+        const firstOffsetMonths = getFirstPaymentOffsetMonths(firstPaymentOption);
+
+        // Determine interval in months based on frequency
+        let intervalMonths;
+        switch (frequency) {
+          case 'monthly':
+            intervalMonths = 1;
+            break;
+          case 'quarterly':
+            intervalMonths = 3;
+            break;
+          case 'yearly':
+            intervalMonths = 12;
+            break;
+          default:
+            // For weekly/biweekly/every_4_weeks, approximate as months for label purposes
+            intervalMonths = 1;
+        }
+
+        const offsetMonths = firstOffsetMonths + (installmentIndex * intervalMonths);
+
+        if (offsetMonths === 1) {
+          return '1 month after loan start';
+        } else {
+          return `${offsetMonths} months after loan start`;
+        }
+      }
+
+      // Default: show the actual calendar date
+      return formatScheduleDate(dateISO);
+    }
+
     function toggleReviewSection(sectionId) {
       const section = document.getElementById(sectionId);
       const toggle = document.getElementById(sectionId + '-toggle');
@@ -511,29 +579,59 @@
       let installmentPlanText = '—';
       if (agreement.repayment_type === 'installments' && agreement.installment_count) {
         const count = agreement.installment_count;
-        const firstDate = formatISOToHuman(agreement.first_payment_date);
-        const finalDate = formatISOToHuman(agreement.final_due_date);
+        const isOnAcceptance = agreement.money_sent_date === 'on-acceptance';
 
-        // Calculate interval for readable format
-        const totalDays = daysBetween(agreement.first_payment_date, agreement.final_due_date);
-        const intervalDays = totalDays / count;
+        if (isOnAcceptance) {
+          // Show relative labels for "upon acceptance" loans
+          const firstPaymentLabel = formatScheduleDateForReview(agreement.first_payment_date, 0, agreement);
+          const finalPaymentLabel = formatScheduleDateForReview(agreement.final_due_date, count - 1, agreement);
 
-        let intervalText;
-        if (intervalDays < 14) {
-          const days = Math.round(intervalDays);
-          intervalText = `${days} day${days === 1 ? '' : 's'}`;
-        } else if (intervalDays < 60) {
-          const weeks = Math.round(intervalDays / 7);
-          intervalText = `${weeks} week${weeks === 1 ? '' : 's'}`;
-        } else if (intervalDays < 730) {
-          const months = Math.round(intervalDays / 30);
-          intervalText = `${months} month${months === 1 ? '' : 's'}`;
+          // Calculate interval for readable format
+          const totalDays = daysBetween(agreement.first_payment_date, agreement.final_due_date);
+          const intervalDays = totalDays / count;
+
+          let intervalText;
+          if (intervalDays < 14) {
+            const days = Math.round(intervalDays);
+            intervalText = `${days} day${days === 1 ? '' : 's'}`;
+          } else if (intervalDays < 60) {
+            const weeks = Math.round(intervalDays / 7);
+            intervalText = `${weeks} week${weeks === 1 ? '' : 's'}`;
+          } else if (intervalDays < 730) {
+            const months = Math.round(intervalDays / 30);
+            intervalText = `${months} month${months === 1 ? '' : 's'}`;
+          } else {
+            const years = Math.round(intervalDays / 365);
+            intervalText = `${years} year${years === 1 ? '' : 's'}`;
+          }
+
+          installmentPlanText = `${count} payment${count > 1 ? 's' : ''}, every ${intervalText}, from ${firstPaymentLabel} to ${finalPaymentLabel}`;
         } else {
-          const years = Math.round(intervalDays / 365);
-          intervalText = `${years} year${years === 1 ? '' : 's'}`;
-        }
+          // Show concrete dates for fixed loan start
+          const firstDate = formatISOToHuman(agreement.first_payment_date);
+          const finalDate = formatISOToHuman(agreement.final_due_date);
 
-        installmentPlanText = `${count} payment${count > 1 ? 's' : ''}, every ${intervalText}, from ${firstDate} to ${finalDate}`;
+          // Calculate interval for readable format
+          const totalDays = daysBetween(agreement.first_payment_date, agreement.final_due_date);
+          const intervalDays = totalDays / count;
+
+          let intervalText;
+          if (intervalDays < 14) {
+            const days = Math.round(intervalDays);
+            intervalText = `${days} day${days === 1 ? '' : 's'}`;
+          } else if (intervalDays < 60) {
+            const weeks = Math.round(intervalDays / 7);
+            intervalText = `${weeks} week${weeks === 1 ? '' : 's'}`;
+          } else if (intervalDays < 730) {
+            const months = Math.round(intervalDays / 30);
+            intervalText = `${months} month${months === 1 ? '' : 's'}`;
+          } else {
+            const years = Math.round(intervalDays / 365);
+            intervalText = `${years} year${years === 1 ? '' : 's'}`;
+          }
+
+          installmentPlanText = `${count} payment${count > 1 ? 's' : ''}, every ${intervalText}, from ${firstDate} to ${finalDate}`;
+        }
       } else if (agreement.repayment_type === 'one_time') {
         const dueDate = formatISOToHuman(agreement.due_date);
         installmentPlanText = `One-time payment on ${dueDate}`;
@@ -644,7 +742,8 @@
       schedule.rows.forEach((row, index) => {
         const rowClass = index % 2 === 0 ? '' : 'style="background:rgba(255,255,255,0.02)"';
         html += `<tr ${rowClass}>`;
-        html += `<td>${formatScheduleDate(row.dateISO)}</td>`;
+        // Use helper to show relative labels for "upon acceptance" loans
+        html += `<td>${formatScheduleDateForReview(row.dateISO, index, agreement)}</td>`;
         html += `<td class="text-right">${formatCurrency2(row.principalCents)}</td>`;
         html += `<td class="text-right">${formatCurrency2(row.interestCents)}</td>`;
         html += `<td class="text-right" style="font-weight:600">${formatCurrency2(row.paymentCents)}</td>`;
@@ -937,8 +1036,21 @@
         const numInstallments = agreement.number_of_installments || agreement.installment_count;
         const freqLabel = formatRepaymentFrequency(agreement.payment_frequency || agreement.payment_frequency_label || 'monthly');
         const installmentAmt = formatEuro2(agreement.installment_amount || (principalEuros / numInstallments));
-        const firstDate = formatISOToHuman(agreement.first_payment_date);
-        const finalDate = formatISOToHuman(agreement.final_due_date);
+
+        // Check if loan start is "upon acceptance"
+        const isOnAcceptance = agreement.money_sent_date === 'on-acceptance';
+        let firstDate, finalDate;
+
+        if (isOnAcceptance) {
+          // Show relative labels for "upon acceptance" loans
+          firstDate = formatScheduleDateForReview(agreement.first_payment_date, 0, agreement);
+          finalDate = formatScheduleDateForReview(agreement.final_due_date, numInstallments - 1, agreement);
+        } else {
+          // Show concrete dates for fixed loan start
+          firstDate = formatISOToHuman(agreement.first_payment_date);
+          finalDate = formatISOToHuman(agreement.final_due_date);
+        }
+
         const planText = `${numInstallments} ${freqLabel} payments of ${installmentAmt} from ${firstDate} to ${finalDate}`;
         addTerm('Installment plan', planText);
       }
@@ -961,12 +1073,25 @@
 
       // Due dates
       if (agreement.repayment_type === 'installments') {
+        const isOnAcceptance = agreement.money_sent_date === 'on-acceptance';
+        const numInstallments = agreement.number_of_installments || agreement.installment_count;
+
         if (agreement.first_payment_date) {
-          const firstDate = formatISOToHuman(agreement.first_payment_date);
+          let firstDate;
+          if (isOnAcceptance) {
+            firstDate = formatScheduleDateForReview(agreement.first_payment_date, 0, agreement);
+          } else {
+            firstDate = formatISOToHuman(agreement.first_payment_date);
+          }
           addTerm('First repayment date', firstDate);
         }
         if (agreement.final_due_date) {
-          const finalDate = formatISOToHuman(agreement.final_due_date);
+          let finalDate;
+          if (isOnAcceptance) {
+            finalDate = formatScheduleDateForReview(agreement.final_due_date, numInstallments - 1, agreement);
+          } else {
+            finalDate = formatISOToHuman(agreement.final_due_date);
+          }
           addTerm('Final due date', finalDate);
         }
       } else {
