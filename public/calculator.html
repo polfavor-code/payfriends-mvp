@@ -513,7 +513,7 @@
 
         <div id="loanStartDateGroup" class="form-group hidden">
           <label for="loanStartDate">Pick a date</label>
-          <input type="date" id="loanStartDate" required>
+          <input type="text" id="loanStartDate" placeholder="dd/mm/yyyy">
         </div>
 
         <!-- 4. Repayment type -->
@@ -544,7 +544,7 @@
 
         <div id="firstPaymentDateGroup" class="form-group hidden">
           <label for="firstPaymentDate">Pick a date</label>
-          <input type="date" id="firstPaymentDate" required>
+          <input type="text" id="firstPaymentDate" placeholder="dd/mm/yyyy">
         </div>
 
         <!-- 6. Payment frequency -->
@@ -1376,6 +1376,7 @@
 
     /**
      * Helper function to calculate loan start date from dropdown
+     * Uses parseEuDate to safely parse user-entered dates in dd/mm/yyyy format
      */
     function calculateLoanStartDate(loanStartMode, explicitLoanStartDate) {
       const today = new Date();
@@ -1391,7 +1392,8 @@
         case 'in-1-week':
           return addDays(today, 7);
         case 'pick-date':
-          return explicitLoanStartDate ? new Date(explicitLoanStartDate) : null;
+          // Parse the date from dd/mm/yyyy format
+          return explicitLoanStartDate ? parseEuDate(explicitLoanStartDate) : null;
         default:
           return null;
       }
@@ -1440,6 +1442,7 @@
     /**
      * Helper function to calculate first payment timing
      * Returns {days, months, years, isMonthBased, isYearBased, exactDate}
+     * Uses parseEuDate to safely parse dates in dd/mm/yyyy format
      */
     function calculateFirstPaymentTiming(firstPaymentDue, firstPaymentDate, loanStartDate) {
       switch (firstPaymentDue) {
@@ -1457,12 +1460,17 @@
           return { days: 1095, months: 36, years: 3, isMonthBased: false, isYearBased: true, exactDate: null };
         case 'pick-date':
           if (firstPaymentDate) {
-            // Parse the date string (format: YYYY-MM-DD from date input)
-            const pickedDate = new Date(firstPaymentDate + 'T00:00:00');
+            // Parse the date string from dd/mm/yyyy format
+            const pickedDate = parseEuDate(firstPaymentDate);
+
+            if (!pickedDate) {
+              // Invalid date - return default
+              return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false, exactDate: null };
+            }
 
             // Calculate days for interest calculation (if loan start is known)
             let daysDiff = 30; // default
-            if (loanStartDate) {
+            if (loanStartDate instanceof Date) {
               const start = new Date(loanStartDate);
               start.setHours(0, 0, 0, 0);
               const diffMs = pickedDate - start;
@@ -1592,18 +1600,48 @@
         if (annualInterestRate < 0) {
           errors.push('Interest rate cannot be negative.');
         }
-        if (loanStartMode === 'pick-date' && !explicitLoanStartDate) {
-          errors.push('Loan start date is required when "Pick a date…" is selected.');
+
+        // Validate loan start date if pick-date is selected
+        if (loanStartMode === 'pick-date') {
+          if (!explicitLoanStartDate) {
+            errors.push('Loan start date is required when "Pick a date…" is selected.');
+          } else {
+            const parsedLoanStart = parseEuDate(explicitLoanStartDate);
+            if (!parsedLoanStart) {
+              errors.push('Invalid loan start date. Please enter a valid date in dd/mm/yyyy format.');
+            }
+          }
         }
-        if (firstPaymentDueOption === 'pick-date' && !firstPaymentDate) {
+
+        // Validate first payment / full repayment date if pick-date is selected
+        if (firstPaymentDueOption === 'pick-date') {
           const fieldName = repaymentType === 'one_time' ? 'Full repayment date' : 'First payment date';
-          errors.push(`${fieldName} is required when "Pick a date…" is selected.`);
+          if (!firstPaymentDate) {
+            errors.push(`${fieldName} is required when "Pick a date…" is selected.`);
+          } else {
+            const parsedRepaymentDate = parseEuDate(firstPaymentDate);
+            if (!parsedRepaymentDate) {
+              errors.push(`Invalid ${fieldName.toLowerCase()}. Please enter a valid date in dd/mm/yyyy format.`);
+            } else {
+              // Check if repayment date is not in the past
+              const today = getTodayMidnight();
+              if (parsedRepaymentDate < today) {
+                errors.push(`${fieldName} cannot be in the past. Please select today or a future date.`);
+              }
+            }
+          }
         }
 
         if (errors.length > 0) {
-          document.getElementById('debugConsole').innerHTML =
-            '<span class="error-message">⚠ Validation errors:</span>\n' +
-            errors.map(e => `  • ${e}`).join('\n');
+          const debugConsole = document.getElementById('debugConsole');
+          if (debugConsole) {
+            debugConsole.innerHTML =
+              '<span class="error-message">⚠ Validation errors:</span>\n' +
+              errors.map(e => `  • ${e}`).join('\n');
+          }
+          // Also clear the schedule to avoid showing stale data
+          document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Please fix validation errors above</td></tr>';
+          document.getElementById('scheduleTotals').style.display = 'none';
           return;
         }
 
@@ -1849,6 +1887,77 @@
       clearPrincipalError();
       this.value = formatMoneyInput(num);
     });
+
+    // ============================================================================
+    // DATE PARSING AND FORMATTING HELPERS
+    // ============================================================================
+
+    /**
+     * Parse European date format (dd/mm/yyyy or dd/MM/yyyy) to Date object
+     * @param {string} dateStr - Date string in dd/mm/yyyy format
+     * @returns {Date|null} - Date object or null if invalid
+     */
+    function parseEuDate(dateStr) {
+      if (!dateStr || typeof dateStr !== 'string') {
+        return null;
+      }
+
+      const trimmed = dateStr.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      // Match dd/mm/yyyy or dd/MM/yyyy
+      const parts = trimmed.split('/');
+      if (parts.length !== 3) {
+        return null;
+      }
+
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10);
+      const year = parseInt(parts[2], 10);
+
+      // Validate ranges
+      if (isNaN(day) || isNaN(month) || isNaN(year)) {
+        return null;
+      }
+      if (day < 1 || day > 31) {
+        return null;
+      }
+      if (month < 1 || month > 12) {
+        return null;
+      }
+      if (year < 1900 || year > 2100) {
+        return null;
+      }
+
+      // Create date object (month is 0-indexed in JS)
+      const date = new Date(year, month - 1, day);
+
+      // Verify the date is valid (catches invalid dates like 31/02/2025)
+      if (date.getDate() !== day || date.getMonth() !== month - 1 || date.getFullYear() !== year) {
+        return null;
+      }
+
+      return date;
+    }
+
+    /**
+     * Format Date object to European format (dd/mm/yyyy)
+     * @param {Date} date - Date object
+     * @returns {string} - Formatted date string
+     */
+    function formatDateToEu(date) {
+      if (!(date instanceof Date) || isNaN(date.getTime())) {
+        return '';
+      }
+
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
 
     // ============================================================================
     // FLATPICKR DATE PICKERS
