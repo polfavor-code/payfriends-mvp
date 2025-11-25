@@ -3919,6 +3919,12 @@
       // Full summary text (3 lines)
       let summaryLine1 = `${lenderName} lends ${amountFormatted} to ${borrowerName} for '${description}'.`;
 
+      // Determine loan start suffix based on when money is sent
+      let loanStartSuffix = '';
+      if (wizardData.moneySentOption === 'on-acceptance' || wizardData.moneySentOption === 'upon_acceptance') {
+        loanStartSuffix = ' after agreement is accepted';
+      }
+
       let summaryLine2 = '';
       if (wizardData.repaymentType === 'one_time') {
         // For one-time loans, use the firstDueDate from summary
@@ -3928,34 +3934,30 @@
           summaryLine2 = `To be repaid in one payment.`;
         }
       } else {
-        // For installments, use the date strings from summary
+        // For installments, use the SHORT FORMAT with dynamic loan start suffix
         const numInstallments = summary.numberOfInstallments || wizardData.installmentCount || 1;
         const loanDuration = summary.loanDuration || '';
         const frequencyLabel = summary.paymentFrequencyLabel || '';
         const frequencyAdj = getFrequencyAdjective(frequencyLabel);
 
-        if (firstDueDateStr && lastDueDateStr) {
-          // Build the sentence with frequency and duration if available
-          let sentence = `To be repaid in ${numInstallments}`;
-          if (frequencyAdj) {
-            sentence += ` ${frequencyAdj}`;
-          }
-          sentence += ` installment payment${numInstallments === 1 ? '' : 's'}`;
-          if (loanDuration) {
-            sentence += ` over ${loanDuration}`;
-          }
-          sentence += `, from ${firstDueDateStr} to ${lastDueDateStr}.`;
-          summaryLine2 = sentence;
-        } else {
-          summaryLine2 = `To be repaid in ${numInstallments} installment payment${numInstallments === 1 ? '' : 's'}.`;
+        // Build: "To be repaid in {numberOfInstallments} {paymentFrequencyLabel} installments over {loanDurationLabel}{loanStartSuffix}."
+        let sentence = `To be repaid in ${numInstallments}`;
+        if (frequencyAdj) {
+          sentence += ` ${frequencyAdj}`;
         }
+        sentence += ` installment${numInstallments === 1 ? '' : 's'}`;
+        if (loanDuration) {
+          sentence += ` over ${loanDuration}`;
+        }
+        sentence += loanStartSuffix + '.';
+        summaryLine2 = sentence;
       }
 
       let summaryLine3 = '';
       if (interestRate > 0) {
         summaryLine3 = `Total to repay: ${totalRepayFormatted} (including ${interestRate}% interest per year).`;
       } else {
-        summaryLine3 = `Total to repay: ${amountFormatted} (interest-free loan).`;
+        summaryLine3 = `Total to repay: ${totalRepayFormatted} (interest-free loan).`;
       }
 
       // Store calculated values in wizardData for use by other functions
