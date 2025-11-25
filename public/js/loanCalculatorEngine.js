@@ -608,7 +608,8 @@
       totals,
       loanStartLabel,
       effectiveMode,
-      debugMessages
+      debugMessages,
+      paymentFrequencyLabel: periodLabel
     };
   }
 
@@ -817,7 +818,8 @@
       totalRepayment: schedule.totals.totalRepayment,
       firstDueDate: schedule.rows.length > 0 ? schedule.rows[0].label : 'N/A',
       lastDueDate: schedule.rows.length > 0 ? schedule.rows[schedule.rows.length - 1].label : 'N/A',
-      loanStartLabel: schedule.loanStartLabel
+      loanStartLabel: schedule.loanStartLabel,
+      paymentFrequencyLabel: schedule.paymentFrequencyLabel || ''
     };
   }
 
