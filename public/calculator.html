@@ -95,6 +95,18 @@
       transition: border-color 0.2s;
     }
 
+    /* Select-specific styling for proper arrow positioning */
+    .form-group select {
+      padding-right: 36px; /* Extra space for dropdown arrow */
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23e5e7eb' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      cursor: pointer;
+    }
+
     .form-group input:focus,
     .form-group select:focus {
       outline: none;
