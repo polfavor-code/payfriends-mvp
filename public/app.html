@@ -158,6 +158,10 @@
     .wizard-step.active{background-color:var(--accent); border-color:var(--accent); color:#0e1116; font-weight:600}
     .wizard-step.completed{color:#9da7b8}
     .wizard-content{min-height:200px}
+    .wizard-footer{display:flex; justify-content:space-between; align-items:center; margin-top:32px; padding-top:24px; gap:12px}
+    .wizard-footer button{flex:0 0 auto}
+    .wizard-footer .wizard-back{order:1}
+    .wizard-footer .wizard-next{order:2; margin-left:auto}
     .hidden{display:none}
     .role-badge{display:inline-block; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; background:#2a2a2a; color:#fff}
     .role-badge.lend{background:#3d7bdc; color:#fff}
@@ -705,8 +709,8 @@
         <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Share">5. Share</div>
       </nav>
 
-      <!-- Main card starts here, matching Settings card structure -->
-      <section class="card">
+      <!-- Wizard steps container -->
+      <div class="wizard-steps-container">
         <!-- Step 1: Setup -->
       <div id="wizard-step-1" class="wizard-content">
         <div id="readonly-banner-1" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
@@ -768,10 +772,11 @@
             <input id="description" type="text" placeholder="e.g. Money for rent, Car repair, Holiday loan" required maxlength="30" oninput="autoCapitalizeDescription()" />
           </div>
           <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to identify this agreement.</p>
+        </div>
 
-          <div style="margin-top:24px">
-            <button onclick="goToTerms()">Continue to Terms</button>
-          </div>
+        <!-- Wizard navigation footer -->
+        <div class="wizard-footer">
+          <button class="wizard-next" onclick="goToTerms()">Continue to Terms</button>
         </div>
         <p id="step1-status" class="status"></p>
       </div>
@@ -786,9 +791,10 @@
         <!-- Calculator will be loaded here -->
         <div id="wizard-calculator-container"></div>
 
-        <div style="margin-top:24px">
-          <button onclick="saveCalculatorAndContinue()">Continue to Payments</button>
-          <button class="secondary" onclick="goToStep(1)">Back</button>
+        <!-- Wizard navigation footer -->
+        <div class="wizard-footer">
+          <button class="secondary wizard-back" onclick="goToStep(1)">Back</button>
+          <button class="wizard-next" onclick="saveCalculatorAndContinue()">Continue to Payments</button>
         </div>
         <p id="step2-status" class="status"></p>
       </div>
@@ -934,9 +940,10 @@
           <p style="color:var(--muted); font-size:13px; margin:0; line-height:1.5">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</p>
         </div>
 
-        <div style="margin-top:32px">
-          <button onclick="goToSummary()">Continue to Summary</button>
-          <button class="secondary" onclick="goToStep(2)">Back</button>
+        <!-- Wizard navigation footer -->
+        <div class="wizard-footer">
+          <button class="secondary wizard-back" onclick="goToStep(2)">Back</button>
+          <button class="wizard-next" onclick="goToSummary()">Continue to Summary</button>
         </div>
         <p id="step3-status" class="status"></p>
       </div>
@@ -1012,19 +1019,25 @@
           </div>
         </div>
 
-        <div id="invite-not-sent" style="margin-top:32px">
-          <button onclick="sendInvite()">Send to <span id="send-friend-name"></span> for review</button>
-          <button class="secondary" onclick="goToStep(3)">Back to edit</button>
+        <!-- Wizard navigation footer - before sending -->
+        <div id="invite-not-sent" class="wizard-footer">
+          <button class="secondary wizard-back" onclick="goToStep(3)">Back to edit</button>
+          <button class="wizard-next" onclick="sendInvite()">Send to <span id="send-friend-name"></span> for review</button>
         </div>
 
+        <!-- After sending state -->
         <div id="invite-sent" class="hidden">
           <div style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.2); border-radius:12px; padding:16px; margin:24px 0">
             <p style="margin:0; color:var(--accent); font-weight:600; font-size:16px">✓ Invite sent!</p>
           </div>
           <p style="color:var(--muted); font-size:14px">Share this invite link with your friend:</p>
           <div class="invite-url-box" id="invite-url"></div>
-          <button onclick="copyInviteUrl()">Copy invite link</button>
-          <button class="secondary" onclick="resetWizard()">Create another agreement</button>
+
+          <!-- Wizard navigation footer - after sending -->
+          <div class="wizard-footer">
+            <button class="wizard-next" onclick="copyInviteUrl()">Copy invite link</button>
+            <button class="secondary" onclick="resetWizard()">Create another agreement</button>
+          </div>
         </div>
 
         <p id="step3-status" class="status"></p>
@@ -1056,15 +1069,15 @@
           <div id="qr-code-container"></div>
         </div>
 
-        <!-- Buttons -->
-        <div style="margin-top:32px; display:flex; gap:12px">
-          <button onclick="goToDashboard()">Done, return to dashboard</button>
+        <!-- Wizard navigation footer -->
+        <div class="wizard-footer">
           <button class="secondary" onclick="createAnotherAgreement()">Create another agreement</button>
+          <button class="wizard-next" onclick="goToDashboard()">Done, return to dashboard</button>
         </div>
 
         <p id="step5-status" class="status"></p>
       </div>
-      </section>
+      </div>
     </div>
 
     <!-- Payment Confirmation Modal -->
