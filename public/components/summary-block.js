@@ -130,25 +130,40 @@ function getFullRepaymentDueDateDisplay(wizardData) {
 function buildSummaryDataMap(wizardData, currentUser) {
   const lenderName = currentUser?.full_name || currentUser?.email || 'You';
 
+  // USE CALCULATED VALUES FROM STEP 2
+  const summary = wizardData.calculatedSummary || {};
+  const schedule = wizardData.calculatedSchedule || {};
+
   // Format money transfer date
   let moneyTransferDate;
-  if (wizardData.moneySentDate === 'on-acceptance') {
-    moneyTransferDate = 'Upon agreement acceptance';
-  } else if (wizardData.moneySentOption) {
-    const option = wizardData.moneySentOption;
-    if (option === 'today') moneyTransferDate = 'Today';
-    else if (option === 'tomorrow') moneyTransferDate = 'Tomorrow';
-    else if (option === '3days') moneyTransferDate = 'In 3 days';
-    else if (option === '7days') moneyTransferDate = 'In 7 days';
-    else moneyTransferDate = new Date(wizardData.moneySentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  if (wizardData.moneySentOption === 'on-acceptance' || wizardData.moneySentOption === 'upon_acceptance') {
+    moneyTransferDate = 'When agreement is accepted';
+  } else if (wizardData.moneySentOption === 'today') {
+    moneyTransferDate = 'Today';
+  } else if (wizardData.moneySentOption === 'tomorrow') {
+    moneyTransferDate = 'Tomorrow';
+  } else if (wizardData.moneySentOption === 'in-1-week') {
+    moneyTransferDate = 'In 1 week';
+  } else if (wizardData.moneySentOption === 'in-1-month') {
+    moneyTransferDate = 'In 1 month';
+  } else if (wizardData.moneySentDate && wizardData.moneySentDate !== 'on-acceptance') {
+    const date = new Date(wizardData.moneySentDate);
+    if (!isNaN(date.getTime())) {
+      moneyTransferDate = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    } else {
+      moneyTransferDate = 'When agreement is accepted';
+    }
   } else {
-    moneyTransferDate = new Date(wizardData.moneySentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    moneyTransferDate = 'When agreement is accepted';
   }
 
-  // Format loan duration
+  // Format loan duration - use calculated value from Step 2
   let durationText;
-  if (wizardData.repaymentType === 'one_time') {
-    // For one-time loans, show "One-time repayment" instead of duration
+  if (summary.loanDurationLabel) {
+    durationText = summary.loanDurationLabel;
+  } else if (wizardData.loanDurationLabel) {
+    durationText = wizardData.loanDurationLabel;
+  } else if (wizardData.repaymentType === 'one_time') {
     durationText = 'One-time repayment';
   } else if (wizardData.planUnit === 'days') {
     durationText = `${wizardData.planLength} ${wizardData.planLength === 1 ? 'day' : 'days'}`;
@@ -159,8 +174,7 @@ function buildSummaryDataMap(wizardData, currentUser) {
   } else if (wizardData.planUnit === 'years') {
     durationText = `${wizardData.planLength} ${wizardData.planLength === 1 ? 'year' : 'years'}`;
   } else {
-    // Fallback for unexpected cases
-    durationText = wizardData.planLength ? `${wizardData.planLength} months` : 'One-time repayment';
+    durationText = 'One-time repayment';
   }
 
   // Format payment frequency - Note: uses inline logic for wizard data
@@ -218,6 +232,14 @@ function buildSummaryDataMap(wizardData, currentUser) {
   // Format phone number
   const phoneNumber = wizardData.phoneNumber || '';
 
+  // USE CALCULATED VALUES FROM STEP 2
+  const interestRate = summary.interestRate || 0;
+  const totalInterest = summary.totalInterest || 0;
+  const totalToRepay = summary.totalToRepay || wizardData.amount;
+  const firstPaymentDate = summary.firstPaymentDate || wizardData.firstPaymentDate;
+  const finalDueDate = summary.finalDueDate || wizardData.finalDueDate;
+  const dueDate = summary.dueDate || wizardData.dueDate;
+
   return {
     description: wizardData.description,
     lenderName: lenderName,
@@ -228,13 +250,13 @@ function buildSummaryDataMap(wizardData, currentUser) {
     amount: formatCurrency2(Math.round(wizardData.amount * 100)),
     repaymentType: wizardData.repaymentType === 'one_time' ? 'One-time payment' : 'Installments',
     loanDuration: durationText,
-    interestRate: wizardData.interestRate > 0 ? `${wizardData.interestRate}% per year` : '0% (interest-free)',
-    totalInterest: formatCurrency2(Math.round((wizardData.totalInterest || 0) * 100)),
-    totalToRepay: formatCurrency2(Math.round(wizardData.totalRepayAmount * 100)),
+    interestRate: interestRate > 0 ? `${interestRate}% per year` : '0% (interest-free)',
+    totalInterest: formatCurrency2(Math.round(totalInterest * 100)),
+    totalToRepay: formatCurrency2(Math.round(totalToRepay * 100)),
     numberOfInstallments: wizardData.installmentCount || wizardData.numRepayments || '',
     paymentFrequency: paymentFrequency,
-    firstRepaymentDate: wizardData.firstPaymentDate ? new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
-    finalDueDate: wizardData.finalDueDate ? new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+    firstRepaymentDate: firstPaymentDate ? new Date(firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—',
+    finalDueDate: finalDueDate ? new Date(finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—',
     fullRepaymentDueDate: getFullRepaymentDueDateDisplay(wizardData),
     repaymentMethods: methodsText,
     requireProof: wizardData.proofRequired ? 'Yes — Borrower must upload proof (photo, screenshot, or PDF) with each payment' : null,
