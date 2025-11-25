@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Repayment Calculator Playground - PayFriends</title>
+  <title>Loan Calculator - PayFriends</title>
   <style>
     * {
       box-sizing: border-box;
@@ -95,6 +95,18 @@
       transition: border-color 0.2s;
     }
 
+    /* Select-specific styling for proper arrow positioning */
+    .form-group select {
+      padding-right: 36px; /* Extra space for dropdown arrow */
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23e5e7eb' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      cursor: pointer;
+    }
+
     .form-group input:focus,
     .form-group select:focus {
       outline: none;
@@ -109,6 +121,20 @@
 
     .form-group input[type="number"] {
       font-variant-numeric: tabular-nums;
+    }
+
+    /* Highlight for empty loan amount input */
+    .loan-amount-empty {
+      border-color: #34d399 !important;
+      box-shadow: 0 0 0 1px #34d399;
+    }
+
+    /* Loan amount helper / validation note */
+    .loan-amount-note {
+      font-size: 12px;
+      margin-top: 6px;
+      font-style: normal;
+      color: #34d399;
     }
 
     .form-hint {
@@ -181,6 +207,23 @@
       margin-bottom: 12px;
     }
 
+    .loan-meta {
+      margin-bottom: 16px;
+    }
+
+    .loan-meta-primary {
+      font-size: 15px;
+      font-weight: 500;
+      color: #e5e7eb;
+    }
+
+    .loan-meta-secondary {
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #34d399;
+    }
+
     .schedule-subtitle {
       font-size: 13px;
       color: #9ca3af;
@@ -239,7 +282,7 @@
 
     tfoot td {
       padding: 16px 12px;
-      border-top: 2px solid rgba(16, 185, 129, 0.5);
+      border-top: 2px solid rgba(16, 185, 129, 0.6);
       background: rgba(16, 185, 129, 0.1);
       font-weight: 700;
       color: #34d399;
@@ -254,7 +297,6 @@
     tfoot td:first-child {
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #34d399;
     }
 
     .badge {
@@ -309,29 +351,22 @@
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>🧮 Repayment Calculator Playground</h1>
-      <p class="subtitle">Internal testing tool for the new repayment schedule generator • Single source of truth validation</p>
-    </div>
-
     <div class="main-grid">
       <!-- Left sidebar: Form inputs -->
       <div class="card">
-        <h2>Configuration</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin-bottom: 0;">Configuration</h2>
+          <button type="button" id="calculator-reset-link" style="background: none; border: none; color: #34d399; cursor: pointer; font-size: 14px; padding: 0;">Reset</button>
+        </div>
 
         <!-- 1. Loan amount -->
         <div class="form-group">
           <label for="principal">Loan amount (€)</label>
-          <input type="number" id="principal" value="6000" min="100" step="100">
+          <input type="text" id="principal" placeholder="e.g. 6,000">
+          <div id="principalError" class="loan-amount-note" style="display: none;"></div>
         </div>
 
-        <!-- 2. Annual interest rate -->
-        <div class="form-group">
-          <label for="interest">Annual interest rate (%)</label>
-          <input type="number" id="interest" value="5" min="0" max="100" step="0.1">
-        </div>
-
-        <!-- 3. Loan start date -->
+        <!-- 2. Loan start date -->
         <div class="form-group">
           <label for="loanStartMode">Loan start date (when borrower receives the money)</label>
           <select id="loanStartMode">
@@ -339,6 +374,7 @@
             <option value="today">Today</option>
             <option value="tomorrow">Tomorrow</option>
             <option value="in-1-week">In 1 week</option>
+            <option value="in-1-month">In 1 month</option>
             <option value="pick-date">Pick a date…</option>
           </select>
           <div class="form-hint">Date used for interest and repayment calculations.</div>
@@ -346,14 +382,14 @@
 
         <div id="loanStartDateGroup" class="form-group hidden">
           <label for="loanStartDate">Pick a date</label>
-          <input type="date" id="loanStartDate" required readonly style="cursor: pointer;">
+          <input type="date" id="loanStartDate">
         </div>
 
         <!-- 4. Repayment type -->
         <div class="form-group">
           <label for="repaymentType">Repayment type</label>
           <select id="repaymentType">
-            <option value="one_time" selected>1-time payment</option>
+            <option value="one_time" selected>One-time payment</option>
             <option value="installments">Installments</option>
           </select>
         </div>
@@ -372,12 +408,12 @@
             <option value="3-years">In 3 years</option>
             <option value="pick-date">Pick a date…</option>
           </select>
-          <div class="form-hint">When the first repayment is due after the loan starts.</div>
+          <div class="form-hint" id="paymentTimingHint">When full repayment is due.</div>
         </div>
 
         <div id="firstPaymentDateGroup" class="form-group hidden">
           <label for="firstPaymentDate">Pick a date</label>
-          <input type="date" id="firstPaymentDate" required readonly style="cursor: pointer;">
+          <input type="date" id="firstPaymentDate">
         </div>
 
         <!-- 6. Payment frequency -->
@@ -412,17 +448,53 @@
           <label for="numInstallments">Number of installments</label>
           <input type="number" id="numInstallments" value="12" min="1" max="120" step="1">
           <div class="form-hint" id="installmentsHint" style="display: none;">
-            For 1-time payments the loan is repaid in a single payment.
+            For one-time payments the loan is repaid in a single payment.
           </div>
         </div>
 
-        <!-- 9. Buttons -->
-        <div class="form-group">
-          <div style="display: flex; gap: 12px;">
-            <button class="btn btn-secondary" onclick="resetCalculator()" style="flex: 1; background: rgba(75, 85, 99, 0.8); color: #e5e7eb;">Reset</button>
-            <button class="btn" onclick="runRepaymentCalculation()" style="flex: 2;">Calculate schedule</button>
+        <!-- 8. Interest Section -->
+        <div class="form-group" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+          <label style="display: block; margin-bottom: 12px;">Interest</label>
+
+          <!-- Interest / No interest toggle -->
+          <div id="interest-mode-toggle" style="display: inline-flex; background: #10151d; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 16px;">
+            <button id="mode-interest" type="button" style="padding: 10px 20px; border-radius: 8px; border: none; background: #6ee7b7; color: #000; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease; flex: 1; white-space: nowrap;">
+              Interest
+            </button>
+            <button id="mode-no-interest" type="button" style="padding: 10px 20px; border-radius: 8px; border: none; background: transparent; color: #e5e7eb; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; flex: 1; white-space: nowrap;">
+              No interest
+            </button>
+          </div>
+
+          <!-- Interest input row with Fair range pill -->
+          <div id="interest-input-row" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="number" id="interest" value="5" min="0" max="100" step="0.1" style="width: 80px; height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08); background: #10151d; color: var(--text); font-size: 16px; text-align: center;">
+              <span style="color: var(--text); font-size: 16px; font-weight: 500;">% per year</span>
+            </div>
+            <button id="fair-range-pill" type="button" aria-expanded="false" aria-controls="fair-range-explanation" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 22px; font-size: 13px; font-weight: 600; white-space: nowrap; border: none; cursor: pointer; transition: all 0.2s ease; background: rgba(52, 211, 153, 0.15); color: #34d399;">
+              <span id="fair-range-text">Fair range (4–7%)</span>
+              <svg style="width: 14px; height: 14px; opacity: 0.8;" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+                <circle cx="8" cy="8" r="6.5" stroke-width="1.5"/>
+                <path d="M8 7.5v4M8 5v0.5" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Expandable "Why this rate?" explanation -->
+          <div id="fair-range-explanation" class="hidden" style="margin-top: 12px; background: rgba(61, 220, 151, 0.08); border: 1px solid rgba(61, 220, 151, 0.2); border-radius: 10px; padding: 16px; transition: all 0.2s ease;">
+            <p style="margin: 0 0 12px 0; font-size: 13px; font-weight: 600; color: var(--text);">Why this rate?</p>
+            <ul style="margin: 0 0 12px 0; padding-left: 20px; font-size: 13px; line-height: 1.6; color: var(--text);">
+              <li style="margin-bottom: 6px;">Larger loan amounts increase risk ↑</li>
+              <li style="margin-bottom: 6px;">Longer durations increase uncertainty ↑</li>
+              <li style="margin-bottom: 6px;">More installments reduce repayment risk ↓</li>
+            </ul>
+            <p style="margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6;">
+              Together, these factors suggest a fair interest range for this loan. Your chosen rate should normally stay inside this range for balanced, respectful lending between friends.
+            </p>
           </div>
         </div>
+
       </div>
 
       <!-- Right side: Results -->
@@ -431,11 +503,11 @@
         <div class="card">
           <div class="schedule-header">
             <h2>Repayment schedule & interest calculation</h2>
-            <span id="modeBadge"></span>
+            <span id="modeBadge"><span class="badge badge-preview">Preview</span></span>
           </div>
-          <div style="font-size: 14px; margin-bottom: 16px; margin-top: 0px; color: #9ca3af;">
-            <div id="loanStartLabel">Click "Calculate schedule" to generate...</div>
-            <div id="loanDurationLabel" style="display: none; color: #34d399; margin-top: 4px;"></div>
+          <div class="loan-meta">
+            <div class="loan-meta-primary" id="loanStartLabel">Enter loan amount and details to see the repayment schedule...</div>
+            <div class="loan-meta-secondary" id="loanDurationLabel" style="display: none;"></div>
           </div>
           <div class="schedule-table">
             <table>
@@ -452,7 +524,7 @@
               <tbody id="scheduleBody">
                 <tr>
                   <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
-                    Click "Calculate schedule" to generate repayment schedule...
+                    Enter loan amount and details to see the repayment schedule...
                   </td>
                 </tr>
               </tbody>
@@ -469,11 +541,11 @@
           </div>
         </div>
 
-        <!-- Debug console -->
-        <div class="card" style="margin-top: 24px;">
-          <h2>Debug Console</h2>
-          <div class="debug-console" id="debugConsole">
-Click "Calculate schedule" to see calculation details...
+        <!-- Loan summary -->
+        <div class="card" style="margin-top: 24px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+          <h2 style="color: #34d399; margin-bottom: 16px;">Loan summary</h2>
+          <div id="loanSummaryContent" style="font-size: 15px; line-height: 1.8; color: #d1d5db;">
+            Configure parameters to see loan summary...
           </div>
         </div>
       </div>
@@ -481,12 +553,31 @@ Click "Calculate schedule" to see calculation details...
   </div>
 
   <script src="/js/formatters.js"></script>
+  <script src="/components/fairness-icon.js"></script>
   <script>
     // Calculator Playground Logic - Single Source of Truth
     // This generateRepaymentSchedule function can be reused across wizard, manage, and review pages
 
     // Get formatting functions from window
     const formatMoney = window.formatCurrency2;
+
+    // Safe DOM references for principal input and error elements
+    let principalInput = null;
+    let principalError = null;
+
+    function getPrincipalInputElement() {
+      if (!principalInput) {
+        principalInput = document.getElementById('principal');
+      }
+      return principalInput;
+    }
+
+    function getPrincipalErrorElement() {
+      if (!principalError) {
+        principalError = document.getElementById('principalError');
+      }
+      return principalError;
+    }
 
     /**
      * Add days to a date
@@ -715,7 +806,7 @@ Click "Calculate schedule" to see calculation details...
       }
 
       debugMessages.push(`Annual interest rate: ${annualInterestRate}%`);
-      debugMessages.push(`Repayment type: ${repaymentType === 'one_time' ? '1-time payment' : 'Installments'}`);
+      debugMessages.push(`Repayment type: ${repaymentType === 'one_time' ? 'One-time payment' : 'Installments'}`);
       debugMessages.push(`Number of installments: ${numberOfInstallments}`);
       debugMessages.push(`Payment frequency: ${periodLabel}`);
       debugMessages.push(`First payment timing: ${firstPaymentDays} days after loan start`);
@@ -931,6 +1022,18 @@ Click "Calculate schedule" to see calculation details...
     /**
      * Calculate loan duration from schedule (loan start to last payment)
      */
+    /**
+     * Format duration in months to "X years Y months" format
+     */
+    function formatDurationMonths(totalMonths) {
+      const years = Math.floor(totalMonths / 12);
+      const months = totalMonths % 12;
+      const parts = [];
+      if (years > 0) parts.push(`${years} year${years === 1 ? "" : "s"}`);
+      if (months > 0) parts.push(`${months} month${months === 1 ? "" : "s"}`);
+      return parts.join(" ");
+    }
+
     function calculateLoanDuration(rows, loanStartDate, effectiveMode) {
       if (!rows || rows.length === 0) {
         return null;
@@ -946,23 +1049,23 @@ Click "Calculate schedule" to see calculation details...
         // Calculate months difference
         const yearsDiff = endDate.getFullYear() - startDate.getFullYear();
         const monthsDiff = endDate.getMonth() - startDate.getMonth();
-        const totalMonths = yearsDiff * 12 + monthsDiff;
+        const totalMonths = Math.max(0, yearsDiff * 12 + monthsDiff);
 
         const startStr = formatDateDisplay(startDate);
         const endStr = formatDateDisplay(endDate);
 
         if (totalMonths === 0) {
           // Less than a month, show days
-          const daysDiff = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
-          if (daysDiff === 1) {
+          const daysDiff = Math.max(0, Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)));
+          if (daysDiff === 0) {
+            return `0 days (${startStr} to ${endStr})`;
+          } else if (daysDiff === 1) {
             return `1 day (${startStr} to ${endStr})`;
           } else {
             return `${daysDiff} days (${startStr} to ${endStr})`;
           }
-        } else if (totalMonths === 1) {
-          return `1 month (${startStr} to ${endStr})`;
         } else {
-          return `${totalMonths} months (${startStr} to ${endStr})`;
+          return `${formatDurationMonths(totalMonths)} (${startStr} to ${endStr})`;
         }
       } else {
         // Preview mode: describe duration relative to agreement acceptance
@@ -976,14 +1079,11 @@ Click "Calculate schedule" to see calculation details...
 
         if (yearsMatch) {
           const years = parseInt(yearsMatch[1]);
-          return years === 1
-            ? `1 year after agreement is accepted`
-            : `${years} years after agreement is accepted`;
+          const totalMonths = years * 12;
+          return `${formatDurationMonths(totalMonths)} after agreement is accepted`;
         } else if (monthsMatch) {
           const months = parseInt(monthsMatch[1]);
-          return months === 1
-            ? `1 month after agreement is accepted`
-            : `${months} months after agreement is accepted`;
+          return `${formatDurationMonths(months)} after agreement is accepted`;
         } else if (daysMatch) {
           const days = parseInt(daysMatch[1]);
           return days === 1
@@ -1001,14 +1101,12 @@ Click "Calculate schedule" to see calculation details...
      */
     function getLoanStartLabelWithContext(loanStartDate, effectiveMode, loanStartMode) {
       if (!loanStartDate && loanStartMode === 'upon_acceptance') {
-        return effectiveMode === 'preview'
-          ? 'When agreement is accepted (preview)'
-          : 'When agreement is accepted';
+        return 'When agreement is accepted';
       }
 
       if (loanStartDate) {
         const dateStr = formatDateDisplay(loanStartDate);
-        return effectiveMode === 'preview' ? `${dateStr} (preview)` : dateStr;
+        return dateStr;
       }
 
       return 'Unknown';
@@ -1025,6 +1123,7 @@ Click "Calculate schedule" to see calculation details...
       const frequencyGroup = document.getElementById('frequencyGroup');
       const installmentsHint = document.getElementById('installmentsHint');
       const paymentTimingLabel = document.getElementById('paymentTimingLabel');
+      const paymentTimingHint = document.getElementById('paymentTimingHint');
       const firstPaymentDue = document.getElementById('firstPaymentDue');
       const numInstallments = document.getElementById('numInstallments');
 
@@ -1033,6 +1132,7 @@ Click "Calculate schedule" to see calculation details...
 
         // 1) Change label to "Full repayment due (after loan start)"
         paymentTimingLabel.textContent = 'Full repayment due (after loan start)';
+        paymentTimingHint.textContent = 'When full repayment is due.';
 
         // 2) Lock installments to 1 and hide
         numInstallments.value = 1;
@@ -1053,6 +1153,7 @@ Click "Calculate schedule" to see calculation details...
 
         // 1) Change label to "First payment due (after loan start)"
         paymentTimingLabel.textContent = 'First payment due (after loan start)';
+        paymentTimingHint.textContent = 'When the first repayment is due.';
 
         // 2) Show and enable installments, auto-set to 12 when switching
         numInstallmentsGroup.style.display = 'block';
@@ -1067,6 +1168,143 @@ Click "Calculate schedule" to see calculation details...
         // 5) Auto-set to "In 1 year" when switching to installments
         firstPaymentDue.value = '1-year';
       }
+
+      // Trigger recalculation after UI update to ensure schedule matches new mode
+      runRepaymentCalculation();
+
+      // Update fair range pill since repayment type affects the calculation
+      updateFairRangePill();
+    }
+
+    // ============================================================================
+    // INTEREST MODE TOGGLE
+    // ============================================================================
+
+    let interestMode = 'interest'; // 'interest' or 'no-interest'
+
+    /**
+     * Set interest mode (Interest or No interest)
+     */
+    function setInterestMode(mode) {
+      interestMode = mode;
+      const modeInterestBtn = document.getElementById('mode-interest');
+      const modeNoInterestBtn = document.getElementById('mode-no-interest');
+      const interestInputRow = document.getElementById('interest-input-row');
+      const fairRangeExplanation = document.getElementById('fair-range-explanation');
+
+      if (mode === 'interest') {
+        // Interest mode: show input and fair range
+        modeInterestBtn.style.background = '#6ee7b7';
+        modeInterestBtn.style.color = '#000';
+        modeNoInterestBtn.style.background = 'transparent';
+        modeNoInterestBtn.style.color = '#e5e7eb';
+        interestInputRow.style.display = 'flex';
+      } else {
+        // No interest mode: hide input and fair range
+        modeInterestBtn.style.background = 'transparent';
+        modeInterestBtn.style.color = '#e5e7eb';
+        modeNoInterestBtn.style.background = '#6ee7b7';
+        modeNoInterestBtn.style.color = '#000';
+        interestInputRow.style.display = 'none';
+        // Also hide explanation if it was open
+        fairRangeExplanation.classList.add('hidden');
+        document.getElementById('fair-range-pill').setAttribute('aria-expanded', 'false');
+      }
+
+      // Trigger recalculation
+      runRepaymentCalculation();
+    }
+
+    /**
+     * Toggle fair range explanation visibility
+     */
+    function toggleFairRangeExplanation() {
+      const explanation = document.getElementById('fair-range-explanation');
+      const pill = document.getElementById('fair-range-pill');
+      const isExpanded = pill.getAttribute('aria-expanded') === 'true';
+
+      if (isExpanded) {
+        explanation.classList.add('hidden');
+        pill.setAttribute('aria-expanded', 'false');
+      } else {
+        explanation.classList.remove('hidden');
+        pill.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    /**
+     * Calculate fair interest range based on loan parameters
+     * Returns {min, max} percentage values
+     */
+    function calculateFairRange() {
+      // Get loan parameters
+      const principalValue = document.getElementById('principal').value.trim();
+      const loanAmount = parseMoney(principalValue);
+      const repaymentType = document.getElementById('repaymentType').value;
+      const numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
+      const firstPaymentDueOption = document.getElementById('firstPaymentDue').value;
+
+      // Base range
+      let minRate = 4;
+      let maxRate = 7;
+
+      // Adjust based on loan amount (higher amounts = higher risk)
+      if (loanAmount > 0) {
+        if (loanAmount > 10000 * 100) { // > €10,000
+          minRate += 1;
+          maxRate += 1;
+        } else if (loanAmount < 2000 * 100) { // < €2,000
+          minRate = Math.max(3, minRate - 1);
+          maxRate = Math.max(5, maxRate - 1);
+        }
+      }
+
+      // Adjust based on duration (longer = more uncertainty)
+      const durationMonths = estimateLoanDurationMonths(firstPaymentDueOption, numberOfInstallments);
+      if (durationMonths > 24) { // > 2 years
+        minRate += 1;
+        maxRate += 1;
+      } else if (durationMonths < 6) { // < 6 months
+        minRate = Math.max(3, minRate - 1);
+        maxRate = Math.max(5, maxRate - 1);
+      }
+
+      // Adjust based on installments (more installments = lower risk)
+      if (repaymentType === 'installments' && numberOfInstallments >= 12) {
+        maxRate = Math.max(5, maxRate - 1);
+      }
+
+      return { min: minRate, max: maxRate };
+    }
+
+    /**
+     * Estimate loan duration in months for fair range calculation
+     */
+    function estimateLoanDurationMonths(firstPaymentOption, installments) {
+      let months = 12; // default 1 year
+
+      // Estimate from first payment option
+      if (firstPaymentOption === '1-week') months = 0.25;
+      else if (firstPaymentOption === '1-month') months = 1;
+      else if (firstPaymentOption === '6-months') months = 6;
+      else if (firstPaymentOption === '1-year') months = 12;
+      else if (firstPaymentOption === '2-years') months = 24;
+      else if (firstPaymentOption === '3-years') months = 36;
+
+      // For installments, approximate total duration
+      if (installments > 1) {
+        months = months * installments;
+      }
+
+      return months;
+    }
+
+    /**
+     * Update fair range pill text
+     */
+    function updateFairRangePill() {
+      const range = calculateFairRange();
+      document.getElementById('fair-range-text').textContent = `Fair range (${range.min}–${range.max}%)`;
     }
 
     /**
@@ -1074,14 +1312,26 @@ Click "Calculate schedule" to see calculation details...
      */
     function resetCalculator() {
       // Reset form fields to defaults
-      document.getElementById('principal').value = formatLoanAmount(6000);
+      document.getElementById('principal').value = '';
       document.getElementById('interest').value = 5;
       document.getElementById('repaymentType').value = 'one_time';
       document.getElementById('numInstallments').value = 1;
       document.getElementById('frequency').value = 'every-month';
       document.getElementById('firstPaymentDue').value = '1-year';
       document.getElementById('loanStartMode').value = 'upon_acceptance';
-      document.getElementById('contextMode').value = 'preview';
+
+      // Reset interest mode to "Interest" with 5%
+      setInterestMode('interest');
+
+      // Clear loan amount error and update highlight
+      clearPrincipalError();
+      updateLoanAmountHighlight();
+
+      // Context mode dropdown was removed on calculator.html, but keep this safe
+      const contextModeSelect = document.getElementById('contextMode');
+      if (contextModeSelect) {
+        contextModeSelect.value = 'preview';
+      }
 
       // Hide and clear date pickers
       document.getElementById('loanStartDateGroup').classList.add('hidden');
@@ -1092,8 +1342,12 @@ Click "Calculate schedule" to see calculation details...
       // Update UI based on repayment type
       updateRepaymentTypeUI();
 
-      // Trigger auto-calculation with default values
-      runRepaymentCalculation();
+      // Show waiting message instead of auto-calculating
+      document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Waiting for calculation...</td></tr>';
+      document.getElementById('scheduleTotals').style.display = 'none';
+      document.getElementById('loanSummaryContent').innerHTML = 'Configure parameters to see loan summary...';
+      document.getElementById('loanStartLabel').innerHTML = 'Configure parameters to see loan details...';
+      document.getElementById('loanDurationLabel').style.display = 'none';
     }
 
     /**
@@ -1123,32 +1377,65 @@ Click "Calculate schedule" to see calculation details...
     // AUTO-UPDATE: Event listeners for all configuration inputs
     // ============================================================================
 
-    // Loan amount - use debounced for smooth typing
-    document.getElementById('principal').addEventListener('input', debouncedCalculation);
+    // Loan amount - use debounced for smooth typing and update fair range
+    document.getElementById('principal').addEventListener('input', () => {
+      updateLoanAmountHighlight();
+      debouncedCalculation();
+      updateFairRangePill();
+    });
 
-    // Annual interest rate - use debounced for smooth typing
-    document.getElementById('interest').addEventListener('input', debouncedCalculation);
+    // Annual interest rate - use debounced for smooth typing and update fair range
+    document.getElementById('interest').addEventListener('input', () => {
+      debouncedCalculation();
+      updateFairRangePill();
+    });
+
+    // Interest mode toggle buttons
+    document.getElementById('mode-interest').addEventListener('click', () => setInterestMode('interest'));
+    document.getElementById('mode-no-interest').addEventListener('click', () => setInterestMode('no-interest'));
+
+    // Fair range pill toggle
+    document.getElementById('fair-range-pill').addEventListener('click', toggleFairRangeExplanation);
 
     // Loan start date mode - immediate update
     document.getElementById('loanStartMode').addEventListener('change', runRepaymentCalculation);
 
-    // Loan start date picker - immediate update
-    document.getElementById('loanStartDate').addEventListener('change', runRepaymentCalculation);
+    // Loan start date picker - handled by native date input change event (see below)
 
-    // Repayment type - immediate update
-    document.getElementById('repaymentType').addEventListener('change', runRepaymentCalculation);
+    // Repayment type - handled by updateRepaymentTypeUI which calls runRepaymentCalculation
+    // (see event listener below in UI-only section)
 
-    // First payment due - immediate update
-    document.getElementById('firstPaymentDue').addEventListener('change', runRepaymentCalculation);
+    // First payment due - immediate update and update fair range
+    document.getElementById('firstPaymentDue').addEventListener('change', () => {
+      runRepaymentCalculation();
+      updateFairRangePill();
+    });
 
-    // First payment date picker - immediate update
-    document.getElementById('firstPaymentDate').addEventListener('change', runRepaymentCalculation);
+    // First payment date picker - handled by native date input change event (see below)
 
     // Payment frequency - immediate update
     document.getElementById('frequency').addEventListener('change', runRepaymentCalculation);
 
-    // Number of installments - use debounced for smooth typing
-    document.getElementById('numInstallments').addEventListener('input', debouncedCalculation);
+    // Number of installments - use debounced for smooth typing and update fair range
+    document.getElementById('numInstallments').addEventListener('input', () => {
+      debouncedCalculation();
+      updateFairRangePill();
+    });
+
+    // Context mode - immediate update (only exists on calculate.html)
+    const contextModeSelect = document.getElementById('contextMode');
+    if (contextModeSelect) {
+      contextModeSelect.addEventListener('change', runRepaymentCalculation);
+    }
+
+    // Calculator reset link - only exists on calculator.html
+    const calculatorResetLink = document.getElementById('calculator-reset-link');
+    if (calculatorResetLink) {
+      calculatorResetLink.addEventListener('click', function(event) {
+        event.preventDefault();
+        resetCalculator();
+      });
+    }
 
     // ============================================================================
     // UI-only event listeners (these also trigger recalculation via events above)
@@ -1181,38 +1468,9 @@ Click "Calculate schedule" to see calculation details...
       }
     });
 
-    // Make loan start date input field open the datepicker on click/focus
-    const loanStartDateInput = document.getElementById('loanStartDate');
-    ['click', 'focus'].forEach(eventType => {
-      loanStartDateInput.addEventListener(eventType, function(e) {
-        // Only trigger if the field is visible and not already showing picker
-        if (!this.closest('.hidden') && typeof this.showPicker === 'function') {
-          try {
-            this.showPicker();
-          } catch (err) {
-            // showPicker() may fail in some contexts, silently ignore
-          }
-        }
-      });
-    });
-
-    // Make first payment date input field open the datepicker on click/focus
-    const firstPaymentDateInput = document.getElementById('firstPaymentDate');
-    ['click', 'focus'].forEach(eventType => {
-      firstPaymentDateInput.addEventListener(eventType, function(e) {
-        // Only trigger if the field is visible and not already showing picker
-        if (!this.closest('.hidden') && typeof this.showPicker === 'function') {
-          try {
-            this.showPicker();
-          } catch (err) {
-            // showPicker() may fail in some contexts, silently ignore
-          }
-        }
-      });
-    });
-
     /**
      * Helper function to calculate loan start date from dropdown
+     * Uses parseIsoDate to safely parse dates from native date input (YYYY-MM-DD)
      */
     function calculateLoanStartDate(loanStartMode, explicitLoanStartDate) {
       const today = new Date();
@@ -1227,26 +1485,60 @@ Click "Calculate schedule" to see calculation details...
           return addDays(today, 1);
         case 'in-1-week':
           return addDays(today, 7);
+        case 'in-1-month':
+          return addMonths(today, 1);
         case 'pick-date':
-          return explicitLoanStartDate ? new Date(explicitLoanStartDate) : null;
+          // Parse the date from YYYY-MM-DD format (native date input)
+          return explicitLoanStartDate ? parseIsoDate(explicitLoanStartDate) : null;
         default:
           return null;
       }
     }
 
     /**
-     * Parse formatted loan amount value back to number
+     * Parse money string to number
+     * Accepts both comma and dot as thousand separators
+     * Returns parsed number or 0 if invalid
      */
-    function parseLoanAmount(value) {
-      // Remove all dots (thousands separators)
-      const cleaned = value.replace(/\./g, '');
+    function parseMoney(value) {
+      if (typeof value !== 'string') {
+        value = String(value);
+      }
+      // Remove all dots and commas (thousand separators)
+      const cleaned = value.replace(/[.,\s]/g, '');
       const num = parseFloat(cleaned);
       return isNaN(num) ? 0 : num;
     }
 
     /**
+     * Format number as money with thousand separator
+     * Uses comma as default separator
+     */
+    function formatMoneyInput(value) {
+      const num = parseFloat(value);
+      if (isNaN(num)) return '';
+      // Use comma for thousand separator (e.g., 6,000)
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    /**
+     * Legacy alias for backward compatibility
+     */
+    function parseLoanAmount(value) {
+      return parseMoney(value);
+    }
+
+    /**
+     * Legacy alias for backward compatibility
+     */
+    function formatLoanAmount(value) {
+      return formatMoneyInput(value);
+    }
+
+    /**
      * Helper function to calculate first payment timing
      * Returns {days, months, years, isMonthBased, isYearBased, exactDate}
+     * Uses parseIsoDate to safely parse dates from native date input (YYYY-MM-DD)
      */
     function calculateFirstPaymentTiming(firstPaymentDue, firstPaymentDate, loanStartDate) {
       switch (firstPaymentDue) {
@@ -1264,12 +1556,17 @@ Click "Calculate schedule" to see calculation details...
           return { days: 1095, months: 36, years: 3, isMonthBased: false, isYearBased: true, exactDate: null };
         case 'pick-date':
           if (firstPaymentDate) {
-            // Parse the date string (format: YYYY-MM-DD from date input)
-            const pickedDate = new Date(firstPaymentDate + 'T00:00:00');
+            // Parse the date string from YYYY-MM-DD format (native date input)
+            const pickedDate = parseIsoDate(firstPaymentDate);
+
+            if (!pickedDate) {
+              // Invalid date - return default
+              return { days: 30, months: 1, years: 0, isMonthBased: true, isYearBased: false, exactDate: null };
+            }
 
             // Calculate days for interest calculation (if loan start is known)
             let daysDiff = 30; // default
-            if (loanStartDate) {
+            if (loanStartDate instanceof Date) {
               const start = new Date(loanStartDate);
               start.setHours(0, 0, 0, 0);
               const diffMs = pickedDate - start;
@@ -1294,32 +1591,129 @@ Click "Calculate schedule" to see calculation details...
     }
 
     /**
+     * Render loan summary for calculator.html
+     */
+    function renderLoanSummary(summary) {
+      const container = document.getElementById('loanSummaryContent');
+      if (!container) return;
+
+      const lines = [];
+
+      // Loan amount
+      lines.push(`<p><strong>Loan amount:</strong> ${formatMoney(summary.loanAmount)}</p>`);
+
+      // Repayment type
+      const repaymentTypeLabel = summary.repaymentType === 'one_time' ? 'One-time payment' : 'Installments';
+      lines.push(`<p><strong>Repayment type:</strong> ${repaymentTypeLabel}</p>`);
+
+      // Loan duration
+      if (summary.loanDuration) {
+        lines.push(`<p><strong>Loan duration:</strong> ${summary.loanDuration}</p>`);
+      }
+
+      // Interest rate
+      if (summary.annualInterestRate === 0) {
+        lines.push(`<p><strong>Annual interest rate:</strong> No interest (0%)</p>`);
+      } else {
+        lines.push(`<p><strong>Annual interest rate:</strong> ${summary.annualInterestRate.toFixed(2)}% per year</p>`);
+      }
+
+      // Total interest (with Fairness icon)
+      const fairnessIcon = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginLeft: '4px'});
+      lines.push(`<p><strong>Total interest:</strong> ${formatMoney(summary.totalInterest)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
+
+      // Total to repay (with Fairness icon)
+      lines.push(`<p><strong>Total to repay:</strong> ${formatMoney(summary.totalRepayment)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
+
+      // Additional details based on repayment type
+      if (summary.repaymentType === 'installments' && summary.numberOfInstallments > 1) {
+        const principalPerInstallment = Math.round(summary.loanAmount / summary.numberOfInstallments);
+        lines.push(`<p><strong>Principal per installment:</strong> ~${formatMoney(principalPerInstallment)} (excluding interest)</p>`);
+      }
+
+      // First payment due
+      if (summary.firstDueDate) {
+        const label = summary.repaymentType === 'one_time' ? 'Full repayment due' : 'First payment due';
+        lines.push(`<p><strong>${label}:</strong> ${summary.firstDueDate}</p>`);
+      }
+
+      // Fairness Between Friends summary note
+      lines.push(`
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 13px; color: #9ca3af;">
+          <p style="margin-bottom: 8px;">
+            Amounts marked with <span class="pf-fairness-icon-inline" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle; margin: 0 2px;">${fairnessIcon}</span> are calculated using the Fairness Between Friends rules.
+            <a href="#" id="fairnessToggle" style="color: #34d399; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s;" onmouseover="this.style.borderBottomColor='#34d399'" onmouseout="this.style.borderBottomColor='transparent'">How it works</a>
+          </p>
+          <div id="fairnessExplanation" style="display: none; margin-top: 12px; padding: 12px; background: rgba(0, 0, 0, 0.2); border-radius: 6px; font-size: 12px; line-height: 1.6; color: #d1d5db;">
+            Fairness Between Friends adjusts interest dynamically based on the outstanding balance and the time that has passed. This means paying earlier or more reduces total interest, while paying later or less increases it. Both sides always see the current, fair value of the loan in real time.
+          </div>
+        </div>
+      `);
+
+      container.innerHTML = lines.join('');
+
+      // Toggle Fairness "How it works" explanation
+      const fairnessToggle = document.getElementById('fairnessToggle');
+      const fairnessExplanation = document.getElementById('fairnessExplanation');
+
+      if (fairnessToggle && fairnessExplanation) {
+        fairnessToggle.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (fairnessExplanation.style.display === 'none') {
+            fairnessExplanation.style.display = 'block';
+          } else {
+            fairnessExplanation.style.display = 'none';
+          }
+        });
+      }
+    }
+
+    /**
      * Main calculation function triggered by button click
      */
     function calculateSchedule() {
       try {
         // Gather form data
-        const principalValue = document.getElementById('principal').value;
-        const loanAmount = parseLoanAmount(principalValue);
-        const annualInterestRate = parseFloat(document.getElementById('interest').value);
+        const principalValue = document.getElementById('principal').value.trim();
+        const loanAmount = parseMoney(principalValue);
+        // Use 0% interest if "No interest" mode is active, otherwise use input value
+        const annualInterestRate = interestMode === 'no-interest' ? 0 : parseFloat(document.getElementById('interest').value);
         const repaymentType = document.getElementById('repaymentType').value;
-        const numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
+
+        // Force installments to 1 for one-time payment, regardless of field value
+        let numberOfInstallments;
+        if (repaymentType === 'one_time') {
+          numberOfInstallments = 1;
+        } else {
+          numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
+        }
+
         const paymentFrequency = document.getElementById('frequency').value;
         const firstPaymentDueOption = document.getElementById('firstPaymentDue').value;
         const firstPaymentDate = document.getElementById('firstPaymentDate').value;
         const loanStartMode = document.getElementById('loanStartMode').value;
-        // Auto-determine context mode based on loan start date
-        // Preview mode: when agreement is accepted (no real date)
-        // Actual mode: when a real date is selected (today, tomorrow, picked date)
-        const contextMode = loanStartMode === 'upon_acceptance' ? 'preview' : 'actual';
+        const contextModeElement = document.getElementById('contextMode');
+        const contextMode = contextModeElement ? contextModeElement.value : 'preview';
         const explicitLoanStartDate = document.getElementById('loanStartDate').value;
 
         // Validation - graceful handling for auto-updates
-        // Skip calculation silently if required inputs are empty (user might be typing)
-        if (!loanAmount || loanAmount <= 0 || isNaN(loanAmount)) {
-          // Silently skip - user might be typing
+        // Check loan amount first - show error and focus if invalid
+        if (principalValue === '') {
+          showPrincipalError('Please enter a loan amount.');
+          const input = getPrincipalInputElement();
+          if (input) input.focus();
           return;
         }
+        if (!loanAmount || loanAmount <= 0 || isNaN(loanAmount)) {
+          showPrincipalError('Loan amount must be more than €0.');
+          const input = getPrincipalInputElement();
+          if (input) input.focus();
+          return;
+        }
+        // Loan amount is valid - clear any errors
+        clearPrincipalError();
+
+        // Skip calculation silently if other inputs are empty (user might be typing)
         if (isNaN(annualInterestRate)) {
           // Silently skip - user might be clearing the field
           return;
@@ -1334,18 +1728,48 @@ Click "Calculate schedule" to see calculation details...
         if (annualInterestRate < 0) {
           errors.push('Interest rate cannot be negative.');
         }
-        if (loanStartMode === 'pick-date' && !explicitLoanStartDate) {
-          errors.push('Loan start date is required when "Pick a date…" is selected.');
+
+        // Validate loan start date if pick-date is selected
+        if (loanStartMode === 'pick-date') {
+          if (!explicitLoanStartDate) {
+            errors.push('Loan start date is required when "Pick a date…" is selected.');
+          } else {
+            const parsedLoanStart = parseIsoDate(explicitLoanStartDate);
+            if (!parsedLoanStart) {
+              errors.push('Invalid loan start date. Please select a valid date.');
+            }
+          }
         }
-        if (firstPaymentDueOption === 'pick-date' && !firstPaymentDate) {
+
+        // Validate first payment / full repayment date if pick-date is selected
+        if (firstPaymentDueOption === 'pick-date') {
           const fieldName = repaymentType === 'one_time' ? 'Full repayment date' : 'First payment date';
-          errors.push(`${fieldName} is required when "Pick a date…" is selected.`);
+          if (!firstPaymentDate) {
+            errors.push(`${fieldName} is required when "Pick a date…" is selected.`);
+          } else {
+            const parsedRepaymentDate = parseIsoDate(firstPaymentDate);
+            if (!parsedRepaymentDate) {
+              errors.push(`Invalid ${fieldName.toLowerCase()}. Please select a valid date.`);
+            } else {
+              // Check if repayment date is not in the past
+              const today = getTodayMidnight();
+              if (parsedRepaymentDate < today) {
+                errors.push(`${fieldName} cannot be in the past. Please select today or a future date.`);
+              }
+            }
+          }
         }
 
         if (errors.length > 0) {
-          document.getElementById('debugConsole').innerHTML =
-            '<span class="error-message">⚠ Validation errors:</span>\n' +
-            errors.map(e => `  • ${e}`).join('\n');
+          const debugConsole = document.getElementById('debugConsole');
+          if (debugConsole) {
+            debugConsole.innerHTML =
+              '<span class="error-message">⚠ Validation errors:</span>\n' +
+              errors.map(e => `  • ${e}`).join('\n');
+          }
+          // Also clear the schedule to avoid showing stale data
+          document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Please fix validation errors above</td></tr>';
+          document.getElementById('scheduleTotals').style.display = 'none';
           return;
         }
 
@@ -1399,8 +1823,8 @@ Click "Calculate schedule" to see calculation details...
 
         // Update UI - Schedule header
         const badge = result.effectiveMode === 'preview'
-          ? '<span class="badge badge-preview">PREVIEW</span>'
-          : '<span class="badge badge-actual">ACTUAL</span>';
+          ? '<span class="badge badge-preview">Preview</span>'
+          : '<span class="badge badge-actual">Actual</span>';
         document.getElementById('modeBadge').innerHTML = badge;
 
         // Build loan start label with duration
@@ -1415,11 +1839,10 @@ Click "Calculate schedule" to see calculation details...
         // Update loan start label (line 1)
         document.getElementById('loanStartLabel').innerHTML = `Loan start: ${loanStartText}`;
 
-        // Update loan duration label (line 2 with entire line in green color)
+        // Update loan duration label (line 2)
         const loanDurationLabel = document.getElementById('loanDurationLabel');
         if (loanDuration) {
           loanDurationLabel.innerHTML = `Loan duration: ${loanDuration}`;
-          loanDurationLabel.style.color = '#34d399';
           loanDurationLabel.style.display = 'block';
         } else {
           loanDurationLabel.style.display = 'none';
@@ -1459,7 +1882,7 @@ Click "Calculate schedule" to see calculation details...
           '=== PARAMETERS ===',
           `Loan amount: ${formatMoney(loanAmount * 100)}`,
           `Annual interest rate: ${annualInterestRate.toFixed(2)}%`,
-          `Repayment type: ${repaymentType === 'one_time' ? '1-time payment' : 'Installments'}`,
+          `Repayment type: ${repaymentType === 'one_time' ? 'One-time payment' : 'Installments'}`,
           `Number of installments: ${numberOfInstallments}`,
           `Payment frequency: ${frequencyLabel}`,
           `First payment due: ${firstPaymentDueLabel}`,
@@ -1494,14 +1917,42 @@ Click "Calculate schedule" to see calculation details...
           });
         }
 
-        document.getElementById('debugConsole').textContent = debugLines.join('\n');
+        // Update Debug Console (only for calculate.html)
+        const debugConsole = document.getElementById('debugConsole');
+        if (debugConsole) {
+          debugConsole.textContent = debugLines.join('\n');
+        }
+
+        // Update Loan Summary (only for calculator.html)
+        const loanSummaryContent = document.getElementById('loanSummaryContent');
+        if (loanSummaryContent) {
+          renderLoanSummary({
+            loanAmount: loanAmount * 100,
+            annualInterestRate,
+            repaymentType,
+            numberOfInstallments,
+            firstPaymentDueLabel,
+            loanDuration,
+            totalInterest: result.totals.interest,
+            totalRepayment: result.totals.totalRepayment,
+            firstDueDate: result.rows.length > 0 ? result.rows[0].label : 'N/A',
+            lastDueDate: result.rows.length > 0 ? result.rows[result.rows.length - 1].label : 'N/A'
+          });
+        }
 
       } catch (error) {
         console.error('Calculation error:', error);
-        document.getElementById('debugConsole').innerHTML =
-          '<span class="error-message">ERROR:</span>\n' +
-          error.message + '\n\n' +
-          (error.stack || '');
+        const debugConsole = document.getElementById('debugConsole');
+        if (debugConsole) {
+          debugConsole.innerHTML =
+            '<span class="error-message">ERROR:</span>\n' +
+            error.message + '\n\n' +
+            (error.stack || '');
+        }
+        const loanSummaryContent = document.getElementById('loanSummaryContent');
+        if (loanSummaryContent) {
+          loanSummaryContent.innerHTML = '<p style="color: #ef4444;">Error calculating loan schedule. Please check your inputs.</p>';
+        }
       }
     }
 
@@ -1510,48 +1961,244 @@ Click "Calculate schedule" to see calculation details...
     document.getElementById('firstPaymentDue').value = '1-year';
     updateRepaymentTypeUI();
 
-    // Trigger initial calculation to show results on page load
-    runRepaymentCalculation();
+    // Initialize fair range pill
+    updateFairRangePill();
 
-    // Loan amount formatting with thousands separator
-    const principalInput = document.getElementById('principal');
-    let rawPrincipalValue = principalInput.value;
+    // Don't trigger initial calculation - wait for user to enter loan amount
+    // Show waiting message instead
+    document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Waiting for calculation...</td></tr>';
+    document.getElementById('loanSummaryContent').innerHTML = 'Configure parameters to see loan summary...';
 
-    // Format number with EU-style thousands separator
-    function formatLoanAmount(value) {
-      const num = parseFloat(value);
-      if (isNaN(num)) return '';
-      // Use EU style: 6.000 instead of 6,000
-      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // Loan amount validation and formatting
+
+    // Clear error message helper
+    function clearPrincipalError() {
+      const el = getPrincipalErrorElement();
+      if (!el) return;
+      el.style.display = 'none';
+      el.textContent = '';
     }
 
-    // On focus: remove formatting to let user type freely
-    principalInput.addEventListener('focus', function() {
-      const num = parseLoanAmount(this.value);
-      if (num > 0) {
-        this.value = num.toString();
+    // Show error message helper
+    function showPrincipalError(message) {
+      const el = getPrincipalErrorElement();
+      if (!el) {
+        // Fail-safe: do nothing if the element is missing
+        return;
       }
-    });
 
-    // On blur: format the value with thousands separator
-    principalInput.addEventListener('blur', function() {
-      const num = parseLoanAmount(this.value);
-      if (num > 0) {
-        this.value = formatLoanAmount(num);
-        rawPrincipalValue = num.toString();
+      if (message) {
+        el.textContent = message;
+        el.style.display = 'block';
       } else {
-        this.value = '';
-        rawPrincipalValue = '';
+        el.textContent = '';
+        el.style.display = 'none';
       }
+    }
+
+    // Update loan amount highlight based on whether field is empty
+    function updateLoanAmountHighlight() {
+      const input = getPrincipalInputElement();
+      if (!input) return;
+
+      const value = input.value.trim();
+      if (value === '') {
+        input.classList.add('loan-amount-empty');
+      } else {
+        input.classList.remove('loan-amount-empty');
+      }
+    }
+
+    // On focus: remove formatting to let user type freely, clear errors
+    const principalInputEl = getPrincipalInputElement();
+    if (principalInputEl) {
+      principalInputEl.addEventListener('focus', function() {
+        clearPrincipalError();
+        const num = parseMoney(this.value);
+        if (num > 0) {
+          this.value = num.toString();
+        }
+      });
+
+      // On blur: validate and format
+      principalInputEl.addEventListener('blur', function() {
+        const trimmed = this.value.trim();
+
+        // Empty field
+        if (trimmed === '') {
+          showPrincipalError('Please enter a loan amount.');
+          return;
+        }
+
+        // Parse the value
+        const num = parseMoney(trimmed);
+
+        // Invalid or zero/negative
+        if (num <= 0) {
+          showPrincipalError('Loan amount must be more than €0.');
+          return;
+        }
+
+        // Valid - format and clear error
+        clearPrincipalError();
+        this.value = formatMoneyInput(num);
+      });
+    }
+
+    // ============================================================================
+    // DATE PARSING AND FORMATTING HELPERS
+    // ============================================================================
+
+    /**
+     * Parse ISO date format (YYYY-MM-DD) from native date input to Date object
+     * @param {string} dateStr - Date string in YYYY-MM-DD format
+     * @returns {Date|null} - Date object or null if invalid
+     */
+    function parseIsoDate(dateStr) {
+      if (!dateStr || typeof dateStr !== 'string') {
+        return null;
+      }
+
+      const trimmed = dateStr.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      // Native date input returns YYYY-MM-DD format
+      // Add T00:00:00 to ensure we get midnight in local time
+      const date = new Date(trimmed + 'T00:00:00');
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return null;
+      }
+
+      return date;
+    }
+
+    // ============================================================================
+    // DATE PICKERS
+    // ============================================================================
+
+    /**
+     * Helper to get today at midnight (avoid time-of-day issues)
+     */
+    function getTodayMidnight() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    // Add event listeners for date inputs
+    document.getElementById('loanStartDate').addEventListener('change', function() {
+      updateRepaymentMinDate();
+      runRepaymentCalculation();
     });
 
-    // Format initial value on page load
-    if (principalInput.value) {
-      const num = parseFloat(principalInput.value);
-      if (num > 0) {
-        principalInput.value = formatLoanAmount(num);
-        rawPrincipalValue = num.toString();
+    document.getElementById('firstPaymentDate').addEventListener('change', function() {
+      runRepaymentCalculation();
+    });
+
+    /**
+     * Update minimum date for repayment picker based on loan start date
+     * Uses native HTML5 date input min attribute
+     */
+    function updateRepaymentMinDate() {
+      const loanStartMode = document.getElementById('loanStartMode').value;
+      const loanStartDateInput = document.getElementById('loanStartDate');
+      const firstPaymentDateInput = document.getElementById('firstPaymentDate');
+
+      const today = getTodayMidnight();
+      let minDate = today;
+
+      // If user picked a specific loan start date, use it as minimum
+      if (loanStartMode === 'pick-date' && loanStartDateInput.value) {
+        const loanStartDate = new Date(loanStartDateInput.value + 'T00:00:00');
+        if (loanStartDate > minDate) {
+          minDate = loanStartDate;
+        }
       }
+
+      // Set min attribute in YYYY-MM-DD format
+      const minDateStr = minDate.toISOString().split('T')[0];
+      firstPaymentDateInput.setAttribute('min', minDateStr);
+
+      // Clear the date if it's now invalid
+      if (firstPaymentDateInput.value) {
+        const selectedDate = new Date(firstPaymentDateInput.value + 'T00:00:00');
+        if (selectedDate < minDate) {
+          firstPaymentDateInput.value = '';
+        }
+      }
+    }
+
+    // Initialize minimum date for repayment picker on page load
+    const today = getTodayMidnight();
+    const todayStr = today.toISOString().split('T')[0];
+    document.getElementById('firstPaymentDate').setAttribute('min', todayStr);
+
+    // Update min date when loan start mode changes
+    document.getElementById('loanStartMode').addEventListener('change', updateRepaymentMinDate);
+
+    // ============================================================================
+    // CLICK-TO-OPEN DATE PICKERS
+    // ============================================================================
+
+    /**
+     * Enable click-to-open behavior for native date inputs
+     * Ensures clicking anywhere in the input opens the date picker,
+     * not just the small calendar icon
+     */
+    function enableClickToOpenDatepickers() {
+      const dateInputIds = ['loanStartDate', 'firstPaymentDate'];
+
+      dateInputIds.forEach((id) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+
+        // Open picker when input is clicked
+        input.addEventListener('click', () => {
+          try {
+            // Modern browsers support showPicker()
+            if (input.showPicker) {
+              input.showPicker();
+            } else {
+              // Fallback: focus usually opens the picker
+              input.focus();
+            }
+          } catch (e) {
+            // Some browsers may throw SecurityError, ignore it
+            console.debug('Date picker open attempt:', e);
+          }
+        });
+
+        // Also open when input receives focus (keyboard navigation)
+        input.addEventListener('focus', () => {
+          try {
+            if (input.showPicker) {
+              input.showPicker();
+            }
+          } catch (e) {
+            // Ignore errors
+            console.debug('Date picker open attempt:', e);
+          }
+        });
+      });
+    }
+
+    // Initialize click-to-open behavior after DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', enableClickToOpenDatepickers);
+    } else {
+      // DOM already loaded, run immediately
+      enableClickToOpenDatepickers();
+    }
+
+    // Initialize loan amount highlight on page load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateLoanAmountHighlight);
+    } else {
+      // DOM already loaded, run immediately
+      updateLoanAmountHighlight();
     }
   </script>
 </body>
