@@ -414,10 +414,10 @@
 
           <!-- Interest / No interest toggle -->
           <div id="interest-mode-toggle" style="display: inline-flex; background: #10151d; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 16px;">
-            <button id="mode-interest" type="button" style="padding: 10px 20px; border-radius: 8px; border: none; background: var(--accent); color: #000; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease; flex: 1; white-space: nowrap;">
+            <button id="mode-interest" type="button" style="padding: 10px 20px; border-radius: 8px; border: none; background: #6ee7b7; color: #000; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease; flex: 1; white-space: nowrap;">
               Interest
             </button>
-            <button id="mode-no-interest" type="button" style="padding: 10px 20px; border-radius: 8px; border: none; background: transparent; color: var(--text); font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; flex: 1; white-space: nowrap;">
+            <button id="mode-no-interest" type="button" style="padding: 10px 20px; border-radius: 8px; border: none; background: transparent; color: #e5e7eb; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; flex: 1; white-space: nowrap;">
               No interest
             </button>
           </div>
@@ -500,7 +500,7 @@
         <!-- Loan summary -->
         <div class="card" style="margin-top: 24px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
           <h2 style="color: #34d399; margin-bottom: 16px;">Loan summary</h2>
-          <div id="loanSummaryContent" style="font-size: 14px; line-height: 1.8; color: #d1d5db;">
+          <div id="loanSummaryContent" style="font-size: 15px; line-height: 1.8; color: #d1d5db;">
             Configure parameters to see loan summary...
           </div>
         </div>
@@ -1124,16 +1124,16 @@
 
       if (mode === 'interest') {
         // Interest mode: show input and fair range
-        modeInterestBtn.style.background = 'var(--accent)';
+        modeInterestBtn.style.background = '#6ee7b7';
         modeInterestBtn.style.color = '#000';
         modeNoInterestBtn.style.background = 'transparent';
-        modeNoInterestBtn.style.color = 'var(--text)';
+        modeNoInterestBtn.style.color = '#e5e7eb';
         interestInputRow.style.display = 'flex';
       } else {
         // No interest mode: hide input and fair range
         modeInterestBtn.style.background = 'transparent';
-        modeInterestBtn.style.color = 'var(--text)';
-        modeNoInterestBtn.style.background = 'var(--accent)';
+        modeInterestBtn.style.color = '#e5e7eb';
+        modeNoInterestBtn.style.background = '#6ee7b7';
         modeNoInterestBtn.style.color = '#000';
         interestInputRow.style.display = 'none';
         // Also hide explanation if it was open
