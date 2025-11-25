@@ -4319,6 +4319,11 @@
           const str = String(value).trim();
           if (!str) return null;
 
+          // If already in YYYY-MM-DD format, return as-is
+          if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+            return str;
+          }
+
           // Try to parse it
           const date = new Date(str);
           if (isNaN(date.getTime())) return null;
@@ -4326,13 +4331,69 @@
           return date.toISOString().split('T')[0];
         }
 
-        // Use calculated summary values from Step 2 if available
-        const summary = wizardData.calculatedSummary || {};
+        // ===== CAPTURE REQUIRED FIELDS FROM DOM IF MISSING IN wizardData =====
 
-        // Parse amount from cents or from raw value
-        const amountValue = summary.loanAmount
+        // 1. borrowerEmail - REQUIRED
+        const borrowerEmail = wizardData.friendEmail || document.getElementById('friend-email')?.value;
+
+        // 2. description - REQUIRED
+        const description = wizardData.description || document.getElementById('description')?.value;
+
+        // 3. amount - REQUIRED (as a number)
+        const summary = wizardData.calculatedSummary || {};
+        let amountValue = summary.loanAmount
           ? summary.loanAmount / 100  // Convert from cents to euros
           : parseAmount(wizardData.amount);
+
+        // If still 0, try reading from DOM
+        if (!amountValue) {
+          const amountInput = document.getElementById('amount');
+          if (amountInput) {
+            amountValue = parseAmount(amountInput.value);
+          }
+        }
+
+        // 4. dueDate - REQUIRED (as YYYY-MM-DD string)
+        // For one-time payments, dueDate might be in the #due-date input
+        // For installments, use finalDueDate
+        let dueDate = formatDateISO(wizardData.dueDate);
+
+        if (!dueDate) {
+          const dueDateInput = document.getElementById('due-date');
+          if (dueDateInput && dueDateInput.value) {
+            dueDate = formatDateISO(dueDateInput.value);
+          }
+        }
+
+        // For installments, use finalDueDate if dueDate is not set
+        if (!dueDate && wizardData.repaymentType === 'installments') {
+          dueDate = formatDateISO(wizardData.finalDueDate);
+        }
+
+        // 5. moneySentDate - can be null for "on acceptance"
+        let moneySentDate = formatDateISO(wizardData.moneySentDate);
+        if (!moneySentDate && wizardData.moneySentOption !== 'on-acceptance') {
+          const moneySentInput = document.getElementById('money-sent-date');
+          if (moneySentInput && moneySentInput.value) {
+            moneySentDate = formatDateISO(moneySentInput.value);
+          }
+        }
+
+        // ===== VALIDATE REQUIRED FIELDS =====
+        const missingFields = [];
+        if (!borrowerEmail) missingFields.push('borrower email');
+        if (!description) missingFields.push('description');
+        if (!amountValue || amountValue <= 0) missingFields.push('amount');
+        if (!dueDate) missingFields.push('due date');
+
+        if (missingFields.length > 0) {
+          status.textContent = `❌ Missing required fields: ${missingFields.join(', ')}`;
+          console.error('Missing required fields:', { borrowerEmail, description, amountValue, dueDate });
+          console.error('wizardData:', wizardData);
+          return;
+        }
+
+        // ===== BUILD PAYLOAD =====
 
         // Parse interest rate
         const interestRateValue = summary.annualInterestRate !== undefined
@@ -4354,24 +4415,24 @@
           : 'bank';
 
         const payload = {
-          friendFirstName: wizardData.friendFirstName,
-          borrowerEmail: wizardData.friendEmail,
+          friendFirstName: wizardData.friendFirstName || document.getElementById('friend-first-name')?.value,
+          borrowerEmail: borrowerEmail,
           phoneNumber: wizardData.phoneNumber,
-          description: wizardData.description,
+          description: description,
           amount: amountValue,
-          moneySentDate: formatDateISO(wizardData.moneySentDate),
-          dueDate: formatDateISO(wizardData.dueDate),
-          direction: wizardData.role,
-          repaymentType: wizardData.repaymentType,
+          moneySentDate: moneySentDate,
+          dueDate: dueDate,
+          direction: wizardData.role || 'lend',
+          repaymentType: wizardData.repaymentType || 'one_time',
           interestRate: interestRateValue,
           totalInterest: totalInterestValue,
           totalRepayAmount: totalRepayValue,
           paymentPreferenceMethod: paymentMethodsStr,
           paymentMethodsJson: wizardData.paymentMethodsJson,
           paymentOtherDescription: wizardData.paymentOtherDescription,
-          reminderMode: wizardData.reminderMode,
+          reminderMode: wizardData.reminderMode || 'auto',
           reminderOffsets: wizardData.reminderOffsets,
-          proofRequired: wizardData.proofRequired,
+          proofRequired: wizardData.proofRequired !== undefined ? wizardData.proofRequired : true,
           // Only include debt collection clause if amount >= 6000 EUR
           debtCollectionClause: (amountValue >= WORST_CASE_MIN_AMOUNT_EUR) ? wizardData.debtCollectionClause : false
         };
@@ -4384,16 +4445,22 @@
           payload.installmentAmount = wizardData.installmentAmount;
           payload.firstPaymentDate = formatDateISO(wizardData.firstPaymentDate);
           payload.finalDueDate = formatDateISO(wizardData.finalDueDate);
-          payload.paymentFrequency = wizardData.paymentFrequency;
+          payload.paymentFrequency = wizardData.paymentFrequency || 'monthly';
         }
 
         // Add one-time specific fields if applicable
         if (wizardData.repaymentType === 'one_time') {
-          payload.oneTimeDueOption = wizardData.oneTimeDueOption;
+          payload.oneTimeDueOption = wizardData.oneTimeDueOption || 'in_1_year';
         }
 
-        // Log the payload for debugging
-        console.log('Sending agreement payload:', payload);
+        // Log the payload for debugging (show all fields clearly)
+        console.log('=== Sending Agreement Payload ===');
+        console.log('Required fields:');
+        console.log('  - borrowerEmail:', payload.borrowerEmail);
+        console.log('  - description:', payload.description);
+        console.log('  - amount:', payload.amount, '(EUR)');
+        console.log('  - dueDate:', payload.dueDate);
+        console.log('Full payload:', JSON.stringify(payload, null, 2));
 
         const res = await fetch('/api/agreements', {
           method: 'POST',
@@ -4405,8 +4472,10 @@
 
         // If backend returns error, show it and stay on Step 4
         if (!res.ok) {
-          status.textContent = '❌ ' + (data.error || 'Failed to create agreement');
-          console.error('Backend error:', data);
+          const errorMessage = data.error || data.message || 'Failed to create agreement';
+          status.textContent = '❌ ' + errorMessage;
+          console.error('Backend error response:', data);
+          console.error('Status code:', res.status);
           return; // Don't navigate to Step 5
         }
 
