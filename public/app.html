@@ -158,7 +158,7 @@
     .wizard-step.active{background-color:var(--accent); border-color:var(--accent); color:#0e1116; font-weight:600}
     .wizard-step.completed{color:#9da7b8}
     .wizard-content{min-height:200px}
-    .wizard-footer{display:flex; justify-content:space-between; align-items:center; margin-top:32px; padding-top:24px; gap:12px}
+    .wizard-footer{display:flex; justify-content:space-between; align-items:center; margin-top:24px; padding-top:0; gap:12px}
     .wizard-footer button{flex:0 0 auto}
     .wizard-footer .wizard-back{order:1}
     .wizard-footer .wizard-next{order:2; margin-left:auto}
@@ -413,6 +413,37 @@
     @media (max-width: 1024px) {
       .loan-calculator .main-grid {
         grid-template-columns: 1fr;
+      }
+    }
+
+    /* Align wizard footer with calculator grid on Step 2 */
+    #wizard-step-2 .wizard-footer {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    #wizard-step-2 .wizard-footer .wizard-back {
+      order: 0;
+      justify-self: start;
+    }
+
+    #wizard-step-2 .wizard-footer .wizard-next {
+      order: 0;
+      justify-self: end;
+      margin-left: 0;
+    }
+
+    @media (max-width: 1024px) {
+      #wizard-step-2 .wizard-footer {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      #wizard-step-2 .wizard-footer .wizard-back,
+      #wizard-step-2 .wizard-footer .wizard-next {
+        justify-self: stretch;
       }
     }
 
@@ -2491,6 +2522,12 @@
         document.getElementById('loanStartLabel').innerHTML = 'Enter loan amount and details to see the repayment schedule...';
         document.getElementById('loanDurationLabel').style.display = 'none';
 
+        // Hide config loan timing
+        const configLoanTiming = document.getElementById('config-loan-timing');
+        if (configLoanTiming) {
+          configLoanTiming.style.display = 'none';
+        }
+
         // Clear wizard results
         wizardCalculatorSchedule = null;
         wizardCalculatorSummary = null;
@@ -2666,38 +2703,40 @@
         if (!container) return;
 
         const lines = [];
-        lines.push(`<p><strong>Loan amount:</strong> ${formatMoney(summary.loanAmount)}</p>`);
+        const pStyle = 'margin: 0 0 8px 0;'; // Tighter spacing between lines
+
+        lines.push(`<p style="${pStyle}"><strong>Loan amount:</strong> ${formatMoney(summary.loanAmount)}</p>`);
 
         const repaymentTypeLabel = summary.repaymentType === 'one_time' ? 'One-time payment' : 'Installments';
-        lines.push(`<p><strong>Repayment type:</strong> ${repaymentTypeLabel}</p>`);
+        lines.push(`<p style="${pStyle}"><strong>Repayment type:</strong> ${repaymentTypeLabel}</p>`);
 
         if (summary.loanDuration) {
-          lines.push(`<p><strong>Loan duration:</strong> ${summary.loanDuration}</p>`);
+          lines.push(`<p style="${pStyle}"><strong>Loan duration:</strong> ${summary.loanDuration}</p>`);
         }
 
         if (summary.annualInterestRate === 0) {
-          lines.push(`<p><strong>Annual interest rate:</strong> No interest (0%)</p>`);
+          lines.push(`<p style="${pStyle}"><strong>Annual interest rate:</strong> No interest (0%)</p>`);
         } else {
-          lines.push(`<p><strong>Annual interest rate:</strong> ${summary.annualInterestRate.toFixed(2)}% per year</p>`);
+          lines.push(`<p style="${pStyle}"><strong>Annual interest rate:</strong> ${summary.annualInterestRate.toFixed(2)}% per year</p>`);
         }
 
         const fairnessIcon = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginLeft: '4px'});
-        lines.push(`<p><strong>Total interest:</strong> ${formatMoney(summary.totalInterest)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
-        lines.push(`<p><strong>Total to repay:</strong> ${formatMoney(summary.totalRepayment)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
+        lines.push(`<p style="${pStyle}"><strong>Total interest:</strong> ${formatMoney(summary.totalInterest)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
+        lines.push(`<p style="${pStyle}"><strong>Total to repay:</strong> ${formatMoney(summary.totalRepayment)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
 
         if (summary.repaymentType === 'installments' && summary.numberOfInstallments > 1) {
           const principalPerInstallment = Math.round(summary.loanAmount / summary.numberOfInstallments);
-          lines.push(`<p><strong>Principal per installment:</strong> ~${formatMoney(principalPerInstallment)} (excluding interest)</p>`);
+          lines.push(`<p style="${pStyle}"><strong>Principal per installment:</strong> ~${formatMoney(principalPerInstallment)} (excluding interest)</p>`);
         }
 
         if (summary.firstDueDate) {
           const label = summary.repaymentType === 'one_time' ? 'Full repayment due' : 'First payment due';
-          lines.push(`<p><strong>${label}:</strong> ${summary.firstDueDate}</p>`);
+          lines.push(`<p style="margin: 0;"><strong>${label}:</strong> ${summary.firstDueDate}</p>`);
         }
 
         // Fairness Between Friends footer
         lines.push(`
-          <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 13px; color: #9ca3af;">
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 13px; color: #9ca3af;">
             <p style="margin-bottom: 8px;">
               Amounts marked with <span class="pf-fairness-icon-inline" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle; margin: 0 2px;">${fairnessIcon}</span> are calculated using the Fairness Between Friends rules.
               <a href="#" id="wizardFairnessToggle" style="color: #34d399; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s;" onmouseover="this.style.borderBottomColor='#34d399'" onmouseout="this.style.borderBottomColor='transparent'">How it works</a>
@@ -2773,6 +2812,22 @@
             loanDurationLabel.style.display = 'block';
           } else {
             loanDurationLabel.style.display = 'none';
+          }
+
+          // Also update the configuration card with loan timing info
+          const configLoanTiming = document.getElementById('config-loan-timing');
+          const configLoanStart = document.getElementById('config-loan-start');
+          const configLoanDuration = document.getElementById('config-loan-duration');
+
+          if (configLoanTiming && configLoanStart && configLoanDuration) {
+            configLoanStart.innerHTML = `Loan start: ${loanStartText}`;
+            if (loanDuration) {
+              configLoanDuration.innerHTML = `Loan duration: ${loanDuration}`;
+              configLoanDuration.style.display = 'block';
+            } else {
+              configLoanDuration.style.display = 'none';
+            }
+            configLoanTiming.style.display = 'block';
           }
 
           const tbody = document.getElementById('scheduleBody');

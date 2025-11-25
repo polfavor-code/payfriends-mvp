@@ -6,8 +6,8 @@
     <!-- Left sidebar: Form inputs -->
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin-bottom: 0;">Configuration</h2>
-        <button type="button" id="calculator-reset-link" style="background: none; border: none; color: #34d399; cursor: pointer; font-size: 14px; padding: 0;">Reset</button>
+        <h2 style="margin: 0;">Configuration</h2>
+        <button type="button" id="calculator-reset-link" style="background: none; border: none; color: #34d399; cursor: pointer; font-size: 14px; padding: 0; margin: 0; line-height: 1;">Reset</button>
       </div>
 
       <!-- 1. Loan amount -->
@@ -101,6 +101,12 @@
         <div class="form-hint" id="installmentsHint" style="display: none;">
           For one-time payments the loan is repaid in a single payment.
         </div>
+      </div>
+
+      <!-- Loan timing info (populated dynamically) -->
+      <div id="config-loan-timing" style="margin-top: 20px; margin-bottom: 20px; font-size: 14px; line-height: 1.6; color: var(--text); display: none;">
+        <div id="config-loan-start"></div>
+        <div id="config-loan-duration"></div>
       </div>
 
       <!-- 8. Interest Section -->
