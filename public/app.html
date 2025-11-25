@@ -700,10 +700,9 @@
       <nav class="wizard-steps" role="navigation" aria-label="Agreement wizard steps">
         <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
         <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">2. Terms</div>
-        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Interest">3. Interest</div>
-        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Payments">4. Payments</div>
-        <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Summary">5. Summary</div>
-        <div class="wizard-step" id="step-indicator-6" onclick="clickStep(6)" aria-label="Step 6, Share">6. Share</div>
+        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Payments">3. Payments</div>
+        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Summary">4. Summary</div>
+        <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Share">5. Share</div>
       </nav>
 
       <!-- Main card starts here, matching Settings card structure -->
@@ -788,160 +787,16 @@
         <div id="wizard-calculator-container"></div>
 
         <div style="margin-top:24px">
-          <button onclick="saveCalculatorAndContinue()">Continue to Interest</button>
+          <button onclick="saveCalculatorAndContinue()">Continue to Payments</button>
           <button class="secondary" onclick="goToStep(1)">Back</button>
         </div>
         <p id="step2-status" class="status"></p>
       </div>
 
-      <!-- Step 3: Interest & Calculation -->
+      <!-- Step 3: Payments & Reminders -->
       <div id="wizard-step-3" class="wizard-content hidden">
         <div id="readonly-banner-3" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
           ⚠️ This agreement has already been sent to <span id="readonly-name-3"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
-        </div>
-        <h3 style="margin-top:0">Interest & payment calculation</h3>
-
-        <!-- Interest Mode Toggle -->
-        <div style="margin-top:20px; margin-bottom:24px">
-          <div id="interest-mode-toggle" style="display:inline-flex; background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:4px; gap:4px">
-            <button id="mode-rate" onclick="setInterestMode('rate')" style="padding:10px 20px; border-radius:8px; border:none; background:var(--accent); color:#000; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
-              Set interest rate
-            </button>
-            <button id="mode-none" onclick="setInterestMode('none')" style="padding:10px 20px; border-radius:8px; border:none; background:transparent; color:var(--text); font-weight:500; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
-              No interest
-            </button>
-          </div>
-        </div>
-
-        <!-- Interest Input Row -->
-        <div style="margin-top:20px; display:flex; align-items:center; gap:12px">
-          <input id="interest-rate" type="number" min="0" max="99" step="0.1" placeholder="6" oninput="handleInterestInput()" style="width:80px; height:44px; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-size:16px; text-align:center" />
-          <span style="color:var(--text); font-size:16px; font-weight:500">% per year</span>
-          <button id="interest-rate-badge" onclick="toggleFairnessExplanation()" aria-expanded="false" aria-controls="fairness-explanation" style="display:inline-flex; align-items:center; gap:6px; height:44px; padding:0 16px; border-radius:22px; font-size:13px; font-weight:600; white-space:nowrap; border:none; cursor:pointer; transition:all 0.2s ease">
-            <span id="interest-rate-badge-text"></span>
-            <svg style="width:14px; height:14px; opacity:0.8" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-              <circle cx="8" cy="8" r="6.5" stroke-width="1.5"/>
-              <path d="M8 7.5v4M8 5v0.5" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Expandable Fairness Explanation -->
-        <div id="fairness-explanation" class="hidden" style="margin-top:12px; background:rgba(61,220,151,0.08); border:1px solid rgba(61,220,151,0.2); border-radius:10px; padding:16px; transition:all 0.2s ease">
-          <p style="margin:0 0 12px 0; font-size:13px; font-weight:600; color:var(--text)">Why this rate?</p>
-          <ul style="margin:0 0 12px 0; padding-left:20px; font-size:13px; line-height:1.6; color:var(--text)">
-            <li style="margin-bottom:6px">Larger loan amounts increase risk ↑</li>
-            <li style="margin-bottom:6px">Longer durations increase uncertainty ↑</li>
-            <li style="margin-bottom:6px">More installments reduce repayment risk ↓</li>
-          </ul>
-          <p id="fairness-explanation-summary" style="margin:0; font-size:13px; color:var(--muted); line-height:1.6"></p>
-        </div>
-
-        <div id="interest-summary-card" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin:24px 0">
-          <h4 style="margin:0 0 16px 0; font-size:16px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px">Loan summary</h4>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted)">Loan amount</span>
-            <span style="font-weight:600" id="summary-loan-amount">€ 0,00</span>
-          </div>
-          <div id="summary-repayment-type-row" style="display:none; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted)">Repayment type</span>
-            <span style="font-weight:600" id="summary-repayment-type">—</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted)">Duration</span>
-            <span style="font-weight:600" id="summary-duration">—</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted)">Interest rate</span>
-            <span style="font-weight:600"><span id="summary-interest-rate">0</span>% per year</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid rgba(255,255,255,0.08); margin-top:8px; padding-top:12px">
-            <span style="color:var(--muted)">Total interest</span>
-            <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px">
-              <span style="font-weight:600" id="total-interest-display">€ 0,00</span>
-              <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
-            </div>
-          </div>
-          <script>
-            document.currentScript.previousElementSibling.querySelector('div > span:last-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
-          </script>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted); font-weight:600">Total to repay</span>
-            <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px; color:var(--accent)">
-              <span style="font-weight:700; font-size:18px;" id="total-repay-display">€ 0,00</span>
-              <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
-            </div>
-          </div>
-          <script>
-            document.currentScript.previousElementSibling.querySelector('div > span:last-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
-          </script>
-          <p style="margin:12px 0 0 0; color:var(--muted); font-size:12px; line-height:1.5; display:flex; align-items:center; gap:4px">
-            <span>Amounts marked with</span>
-            <span style="display:inline-flex; align-items:center; width:16px; height:16px; flex-shrink:0;" title="Fairness Between Friends"></span>
-            <span>are calculated using the Fairness Between Friends rules.</span>
-          </p>
-          <script>
-            document.currentScript.previousElementSibling.querySelectorAll('span')[1].innerHTML = fairnessIconSVG('', {width:'16px', height:'16px', display:'block'});
-          </script>
-        </div>
-
-        <!-- Fairness Between Friends (collapsible) -->
-        <div style="margin:20px 0">
-          <button onclick="toggleSection('fairness-step3-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-            <div style="display:flex; align-items:center; gap:8px; color:var(--accent)">
-              <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
-              <span>Fairness Between Friends (How it Works)</span>
-            </div>
-            <span id="fairness-step3-toggle">▼</span>
-          </button>
-          <script>
-            document.currentScript.previousElementSibling.querySelector('div > span:first-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
-          </script>
-          <div id="fairness-step3-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
-            <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
-              PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
-            </p>
-            <ul style="margin:0 0 12px 0; padding-left:20px; font-size:14px; line-height:1.6">
-              <li style="margin-bottom:8px">Interest is calculated dynamically on the outstanding balance and the time elapsed.</li>
-              <li style="margin-bottom:8px"><strong>Early or higher payments</strong> reduce the total interest and, where applicable, lower future installment amounts.</li>
-              <li style="margin-bottom:8px"><strong>Late or smaller payments</strong> increase the total interest for the period the amount remains outstanding.</li>
-              <li style="margin-bottom:8px">These recalculations happen automatically and are reflected instantly in the agreement for both lender and borrower.</li>
-            </ul>
-            <p style="margin:0; font-size:14px; line-height:1.6">
-              Each repayment entry in the payment history clearly notes when a payment caused a change in the total interest, outstanding balance, or future installments.
-              This ensures both parties always see the current, fair value of the loan.
-            </p>
-          </div>
-        </div>
-
-        <div style="margin:20px 0">
-          <button onclick="toggleBreakdown()" class="secondary" style="padding:8px 16px; font-size:14px">
-            <span id="breakdown-toggle-text">Show payment breakdown</span>
-          </button>
-        </div>
-
-        <div id="interest-breakdown" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin:20px 0; max-height:400px; overflow-y:auto">
-          <h5 style="margin:0 0 12px 0; font-size:14px">Payment breakdown</h5>
-          <table style="width:100%; font-size:13px">
-            <thead>
-              <tr id="breakdown-thead" style="border-bottom:1px solid rgba(255,255,255,0.08)">
-              </tr>
-            </thead>
-            <tbody id="breakdown-tbody"></tbody>
-          </table>
-        </div>
-
-        <div style="margin-top:32px">
-          <button onclick="goToPayments()">Continue to Payments</button>
-          <button class="secondary" onclick="goToStep(2)">Back</button>
-        </div>
-        <p id="step3-status" class="status"></p>
-      </div>
-
-      <!-- Step 4: Payments & Reminders -->
-      <div id="wizard-step-4" class="wizard-content hidden">
-        <div id="readonly-banner-4" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
-          ⚠️ This agreement has already been sent to <span id="readonly-name-4"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
         </div>
         <h3 style="margin-top:0">Decide how repayments will be made and managed.</h3>
 
@@ -1081,15 +936,15 @@
 
         <div style="margin-top:32px">
           <button onclick="goToSummary()">Continue to Summary</button>
-          <button class="secondary" onclick="goToStep(3)">Back</button>
+          <button class="secondary" onclick="goToStep(2)">Back</button>
         </div>
-        <p id="step4-status" class="status"></p>
+        <p id="step3-status" class="status"></p>
       </div>
 
-      <!-- Step 5: Summary -->
-      <div id="wizard-step-5" class="wizard-content hidden">
-        <div id="readonly-banner-5" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
-          ⚠️ This agreement has already been sent to <span id="readonly-name-5"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
+      <!-- Step 4: Summary -->
+      <div id="wizard-step-4" class="wizard-content hidden">
+        <div id="readonly-banner-4" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
+          ⚠️ This agreement has already been sent to <span id="readonly-name-4"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
         </div>
         <h3 style="margin-top:0">Review and send your agreement.</h3>
 
@@ -1159,7 +1014,7 @@
 
         <div id="invite-not-sent" style="margin-top:32px">
           <button onclick="sendInvite()">Send to <span id="send-friend-name"></span> for review</button>
-          <button class="secondary" onclick="goToStep(4)">Back to edit</button>
+          <button class="secondary" onclick="goToStep(3)">Back to edit</button>
         </div>
 
         <div id="invite-sent" class="hidden">
@@ -1172,11 +1027,11 @@
           <button class="secondary" onclick="resetWizard()">Create another agreement</button>
         </div>
 
-        <p id="step5-status" class="status"></p>
+        <p id="step3-status" class="status"></p>
       </div>
 
-      <!-- Step 6: Share -->
-      <div id="wizard-step-6" class="wizard-content hidden">
+      <!-- Step 5: Share -->
+      <div id="wizard-step-5" class="wizard-content hidden">
         <h3 style="margin-top:0">Sharing options</h3>
 
         <!-- Success header -->
@@ -1207,7 +1062,7 @@
           <button class="secondary" onclick="createAnotherAgreement()">Create another agreement</button>
         </div>
 
-        <p id="step6-status" class="status"></p>
+        <p id="step5-status" class="status"></p>
       </div>
       </section>
     </div>
@@ -1465,7 +1320,7 @@
     // Wizard functions
     function goToStep(step) {
       // Hide all steps
-      for (let i = 1; i <= 6; i++) {
+      for (let i = 1; i <= 5; i++) {
         document.getElementById(`wizard-step-${i}`).classList.add('hidden');
         const indicator = document.getElementById(`step-indicator-${i}`);
         indicator.classList.remove('active');
@@ -1493,13 +1348,13 @@
         initializeWizardCalculator();
       }
 
-      // Special handling for step 4: initialize reminder mode highlight
-      if (step === 4) {
+      // Special handling for step 3: initialize reminder mode highlight
+      if (step === 3) {
         toggleReminderMode();
       }
 
       // Apply read-only mode if agreement has been sent
-      if (wizardData.agreementSent && step <= 5) {
+      if (wizardData.agreementSent && step <= 4) {
         applyReadOnlyMode(step);
       }
     }
@@ -1543,15 +1398,15 @@
           inviteSent.classList.add('hidden');
         }
 
-        // Add a button to navigate to Step 6 if it doesn't exist
-        const step5Div = document.getElementById('wizard-step-5');
+        // Add a button to navigate to Step 5 (Share) if it doesn't exist
+        const step4Div = document.getElementById('wizard-step-4');
         let viewShareBtn = document.getElementById('view-share-btn');
-        if (!viewShareBtn && step5Div) {
+        if (!viewShareBtn && step4Div) {
           viewShareBtn = document.createElement('div');
           viewShareBtn.id = 'view-share-btn';
           viewShareBtn.style.marginTop = '32px';
-          viewShareBtn.innerHTML = '<button onclick="goToStep(6)">View Share options</button>';
-          step5Div.appendChild(viewShareBtn);
+          viewShareBtn.innerHTML = '<button onclick="goToStep(5)">View Share options</button>';
+          step4Div.appendChild(viewShareBtn);
         }
       }
     }
@@ -1560,14 +1415,14 @@
     function clickStep(targetStep) {
       // Determine current step
       let currentStep = 1;
-      for (let i = 1; i <= 6; i++) {
+      for (let i = 1; i <= 5; i++) {
         if (!document.getElementById(`wizard-step-${i}`).classList.contains('hidden')) {
           currentStep = i;
           break;
         }
       }
 
-      // If agreement has been sent, allow navigation to all steps including Step 6
+      // If agreement has been sent, allow navigation to all steps including Step 5
       if (wizardData.agreementSent) {
         goToStep(targetStep);
         return;
@@ -1590,36 +1445,27 @@
           }
         }
 
-        // Step 2 → 3+: Validate step 2 fields
+        // Step 2 → 3+: Validate calculator and navigate to Payments
         if (currentStep === 2 && targetStep >= 3) {
-          if (!validateStep2()) return;
-          if (targetStep === 3) {
-            goToInterest();
-            return;
-          }
-        }
-
-        // Step 3 → 4+: Navigate to payments
-        if (currentStep === 3 && targetStep >= 4) {
-          if (targetStep === 4) {
-            goToPayments();
-            return;
-          }
-        }
-
-        // Step 4 → 5: Navigate to summary
-        if (currentStep === 4 && targetStep === 5) {
-          goToSummary();
+          saveCalculatorAndContinue();
           return;
         }
 
-        // Step 5 → 6: Can only happen after sending (handled by sendInvite)
-        if (currentStep === 5 && targetStep === 6) {
-          return; // Prevent manual navigation to step 6
+        // Step 3 → 4+: Navigate to summary
+        if (currentStep === 3 && targetStep >= 4) {
+          if (targetStep === 4) {
+            goToSummary();
+            return;
+          }
         }
 
-        // Step 6 allows clicking back
-        if (currentStep === 6 && targetStep < 6) {
+        // Step 4 → 5: Can only happen after sending (handled by sendInvite)
+        if (currentStep === 4 && targetStep === 5) {
+          return; // Prevent manual navigation to step 5
+        }
+
+        // Step 5 allows clicking back
+        if (currentStep === 5 && targetStep < 5) {
           goToStep(targetStep);
           return;
         }
@@ -3024,20 +2870,8 @@
       // Clear status and proceed
       document.getElementById('step2-status').textContent = '';
 
-      // Set recommended interest rate based on fair range
-      const range = calculateFairRangeForWizard();
-      const recommendedRate = Math.round((range.min + range.max) / 2);
-      document.getElementById('interest-rate').value = recommendedRate;
-      wizardData.hasInterest = true;
-      wizardData.interestMode = 'rate';
-      wizardData.fairRangeMin = range.min;
-      wizardData.fairRangeMax = range.max;
-
+      // Interest is now fully handled in the calculator, so proceed directly to Payments
       goToStep(3);
-
-      // Initialize interest mode toggle to "rate" mode
-      setInterestMode('rate');
-      calculateInterest();
     }
 
     /**
@@ -3640,7 +3474,7 @@
         wizardData.totalRepayAmount = wizardData.amount;
       }
 
-      goToStep(4);
+      goToStep(3);
 
       // Update worst case scenario visibility based on loan amount
       updateWorstCaseVisibility();
@@ -3653,7 +3487,7 @@
 
       // Validate at least one payment method is selected
       if (selectedMethods.length === 0) {
-        document.getElementById('step4-status').textContent = 'Please select at least one payment method';
+        document.getElementById('step3-status').textContent = 'Please select at least one payment method';
         return;
       }
 
@@ -3664,7 +3498,7 @@
       if (selectedMethods.includes('bank')) {
         const bankInstructions = document.getElementById('bank-instructions').value.trim();
         if (!bankInstructions) {
-          document.getElementById('step4-status').textContent = 'Please enter bank transfer instructions';
+          document.getElementById('step3-status').textContent = 'Please enter bank transfer instructions';
           return;
         }
         paymentMethodsData.push({
@@ -3678,7 +3512,7 @@
       if (selectedMethods.includes('paypal')) {
         const paypalEmail = document.getElementById('paypal-email').value.trim();
         if (!paypalEmail) {
-          document.getElementById('step4-status').textContent = 'Please enter PayPal email';
+          document.getElementById('step3-status').textContent = 'Please enter PayPal email';
           return;
         }
         paymentMethodsData.push({
@@ -3692,7 +3526,7 @@
       if (selectedMethods.includes('crypto')) {
         const cryptoInstructions = document.getElementById('crypto-instructions').value.trim();
         if (!cryptoInstructions) {
-          document.getElementById('step4-status').textContent = 'Please enter crypto payment instructions';
+          document.getElementById('step3-status').textContent = 'Please enter crypto payment instructions';
           return;
         }
         paymentMethodsData.push({
@@ -3715,7 +3549,7 @@
       if (selectedMethods.includes('other')) {
         const otherDescription = document.getElementById('other-payment-description').value.trim();
         if (!otherDescription) {
-          document.getElementById('step4-status').textContent = 'Please describe the other payment method';
+          document.getElementById('step3-status').textContent = 'Please describe the other payment method';
           return;
         }
         paymentMethodsData.push({
@@ -3740,7 +3574,7 @@
         const checkboxes = document.querySelectorAll('.custom-reminder-checkbox:checked');
         if (checkboxes.length === 0) {
           document.getElementById('custom-reminder-error').style.display = 'block';
-          document.getElementById('step4-status').textContent = 'Please select at least one reminder';
+          document.getElementById('step3-status').textContent = 'Please select at least one reminder';
           return;
         }
         wizardData.reminderOffsets = Array.from(checkboxes).map(cb => parseInt(cb.value));
@@ -3756,7 +3590,7 @@
         wizardData.debtCollectionClause = false;
       }
 
-      goToStep(5);
+      goToStep(4);
       updateSummary();
     }
 
@@ -3862,7 +3696,7 @@
       togglePaymentMethodDetails();
 
       // Clear any error messages
-      document.getElementById('step4-status').textContent = '';
+      document.getElementById('step3-status').textContent = '';
     }
 
     // Update card visual state (selected/unselected)
@@ -4249,9 +4083,9 @@
         wizardData.inviteUrl = data.inviteUrl;
         wizardData.agreementSent = true;
 
-        // Navigate to Step 6 (Share)
+        // Navigate to Step 5 (Share)
         status.textContent = '';
-        goToStep(6);
+        goToStep(5);
         populateShareStep();
         refresh();
         loadMessages();
@@ -4278,7 +4112,7 @@
       const inviteUrl = wizardData.inviteUrl;
 
       // Update step indicator
-      document.getElementById('step-indicator-6').textContent = '6. Share';
+      document.getElementById('step-indicator-5').textContent = '5. Share';
 
       // Populate all name placeholders
       document.getElementById('share-invite-name').textContent = firstName;
@@ -4316,7 +4150,7 @@
           button.style.background = '';
         }, 2000);
       }).catch(() => {
-        document.getElementById('step6-status').textContent = '❌ Failed to copy';
+        document.getElementById('step5-status').textContent = '❌ Failed to copy';
       });
     }
 
@@ -4406,7 +4240,7 @@
       document.getElementById('step1-status').textContent = '';
       document.getElementById('step2-status').textContent = '';
       document.getElementById('step3-status').textContent = '';
-      document.getElementById('step4-status').textContent = '';
+      document.getElementById('step3-status').textContent = '';
       document.getElementById('step5-status').textContent = '';
 
       // Reset invite section
