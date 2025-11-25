@@ -3877,6 +3877,23 @@
       }
     }
 
+    // Helper function to convert payment frequency label to adjective form for summary text
+    function getFrequencyAdjective(frequencyLabel) {
+      if (!frequencyLabel) return '';
+
+      // Convert frequency labels like "Every month" to "monthly"
+      const label = frequencyLabel.toLowerCase();
+
+      if (label === 'every month') return 'monthly';
+      if (label === 'every week (same weekday)') return 'weekly';
+      if (label === 'every year') return 'yearly';
+      if (label === 'every 7 days (weekly)') return 'weekly';
+
+      // For other frequencies like "Every 2 weeks", "Every 3 months", etc., keep as-is
+      // Just remove "Every " prefix and lowercase
+      return label.replace(/^every\s+/i, '');
+    }
+
     // Update summary in step 4
     function updateSummary() {
       const lenderName = currentUser?.full_name || currentUser?.email || 'You';
@@ -3913,10 +3930,24 @@
       } else {
         // For installments, use the date strings from summary
         const numInstallments = summary.numberOfInstallments || wizardData.installmentCount || 1;
+        const loanDuration = summary.loanDuration || '';
+        const frequencyLabel = summary.paymentFrequencyLabel || '';
+        const frequencyAdj = getFrequencyAdjective(frequencyLabel);
+
         if (firstDueDateStr && lastDueDateStr) {
-          summaryLine2 = `To be repaid in ${numInstallments} installment payments, from ${firstDueDateStr} to ${lastDueDateStr}.`;
+          // Build the sentence with frequency and duration if available
+          let sentence = `To be repaid in ${numInstallments}`;
+          if (frequencyAdj) {
+            sentence += ` ${frequencyAdj}`;
+          }
+          sentence += ` installment payment${numInstallments === 1 ? '' : 's'}`;
+          if (loanDuration) {
+            sentence += ` over ${loanDuration}`;
+          }
+          sentence += `, from ${firstDueDateStr} to ${lastDueDateStr}.`;
+          summaryLine2 = sentence;
         } else {
-          summaryLine2 = `To be repaid in ${numInstallments} installment payments.`;
+          summaryLine2 = `To be repaid in ${numInstallments} installment payment${numInstallments === 1 ? '' : 's'}.`;
         }
       }
 
