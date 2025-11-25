@@ -604,7 +604,6 @@
         document.getElementById('loanStartMode').value = 'upon_acceptance';
 
         setInterestMode('interest');
-        clearPrincipalError();
         updateLoanAmountHighlight();
 
         document.getElementById('loanStartDateGroup').classList.add('hidden');
@@ -617,8 +616,12 @@
         document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Waiting for calculation...</td></tr>';
         document.getElementById('scheduleTotals').style.display = 'none';
         document.getElementById('loanSummaryContent').innerHTML = 'Configure parameters to see loan summary...';
-        document.getElementById('loanStartLabel').innerHTML = 'Configure parameters to see loan details...';
-        document.getElementById('loanDurationLabel').style.display = 'none';
+
+        // Hide config loan timing
+        const configLoanTiming = document.getElementById('config-loan-timing');
+        if (configLoanTiming) {
+          configLoanTiming.style.display = 'none';
+        }
       }
 
       /**
@@ -734,23 +737,23 @@
             loanInputs.annualInterestRate = 0;
           }
 
-          // Validation
+          // Validation (match wizard Step 2 logic)
           const principalValue = document.getElementById('principal').value.trim();
           const loanAmount = window.PayFriendsCalculator.parseMoney(principalValue);
 
-          if (principalValue === '') {
-            showPrincipalError('Please enter a loan amount.');
-            document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Waiting for calculation...</td></tr>';
+          if (principalValue === '' || !loanAmount || loanAmount <= 0 || isNaN(loanAmount)) {
+            // Don't show error - just show waiting state
+            document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Enter loan amount and details to calculate...</td></tr>';
             document.getElementById('scheduleTotals').style.display = 'none';
+            document.getElementById('loanSummaryContent').innerHTML = 'Configure parameters to see loan summary...';
+
+            // Hide config loan timing
+            const configLoanTiming = document.getElementById('config-loan-timing');
+            if (configLoanTiming) {
+              configLoanTiming.style.display = 'none';
+            }
             return;
           }
-
-          if (!loanAmount || loanAmount <= 0 || isNaN(loanAmount)) {
-            showPrincipalError('Loan amount must be more than €0.');
-            return;
-          }
-
-          clearPrincipalError();
 
           // Generate schedule using shared engine
           const result = window.PayFriendsCalculator.calculateLoanSchedule(loanInputs);
@@ -774,16 +777,20 @@
             result.effectiveMode
           );
 
-          // Update loan start label
-          document.getElementById('loanStartLabel').innerHTML = `Loan start: ${loanStartText}`;
+          // Update the configuration card with loan timing info (same as wizard Step 2)
+          const configLoanTiming = document.getElementById('config-loan-timing');
+          const configLoanStart = document.getElementById('config-loan-start');
+          const configLoanDuration = document.getElementById('config-loan-duration');
 
-          // Update loan duration label
-          const loanDurationLabel = document.getElementById('loanDurationLabel');
-          if (loanDuration) {
-            loanDurationLabel.innerHTML = `Loan duration: ${loanDuration}`;
-            loanDurationLabel.style.display = 'block';
-          } else {
-            loanDurationLabel.style.display = 'none';
+          if (configLoanTiming && configLoanStart && configLoanDuration) {
+            configLoanStart.innerHTML = `Loan start: ${loanStartText}`;
+            if (loanDuration) {
+              configLoanDuration.innerHTML = `Loan duration: ${loanDuration}`;
+              configLoanDuration.style.display = 'block';
+            } else {
+              configLoanDuration.style.display = 'none';
+            }
+            configLoanTiming.style.display = 'block';
           }
 
           // Update UI - Schedule table body
@@ -866,11 +873,10 @@
         updateFairRangePill();
       });
 
-      // Principal input formatting
+      // Principal input formatting (match wizard Step 2 approach)
       const principalInputEl = getPrincipalInputElement();
       if (principalInputEl) {
         principalInputEl.addEventListener('focus', function() {
-          clearPrincipalError();
           const num = window.PayFriendsCalculator.parseMoney(this.value);
           if (num > 0) {
             this.value = num.toString();
@@ -879,19 +885,13 @@
 
         principalInputEl.addEventListener('blur', function() {
           const trimmed = this.value.trim();
-          if (trimmed === '') {
-            showPrincipalError('Please enter a loan amount.');
-            return;
+          if (trimmed !== '') {
+            const num = window.PayFriendsCalculator.parseMoney(trimmed);
+            if (num > 0) {
+              // Format the input for better UX
+              this.value = window.PayFriendsCalculator.formatMoneyInput(num);
+            }
           }
-
-          const num = window.PayFriendsCalculator.parseMoney(trimmed);
-          if (num <= 0) {
-            showPrincipalError('Loan amount must be more than €0.');
-            return;
-          }
-
-          clearPrincipalError();
-          this.value = window.PayFriendsCalculator.formatMoneyInput(num);
         });
       }
 
@@ -977,9 +977,9 @@
       updateFairRangePill();
       updateLoanAmountHighlight();
 
-      // Show waiting message
+      // Show waiting message (match wizard Step 2)
       document.getElementById('scheduleBody').innerHTML =
-        '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Waiting for calculation...</td></tr>';
+        '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Enter loan amount and details to calculate...</td></tr>';
       document.getElementById('loanSummaryContent').innerHTML =
         'Configure parameters to see loan summary...';
     }
