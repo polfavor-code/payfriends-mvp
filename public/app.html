@@ -3881,40 +3881,43 @@
     function updateSummary() {
       const lenderName = currentUser?.full_name || currentUser?.email || 'You';
       const borrowerName = wizardData.friendFirstName;
-      const amountCents = Math.round(wizardData.amount * 100);
-      const amountFormatted = formatCurrency2(amountCents);
       const description = wizardData.description;
 
       // USE CALCULATED VALUES FROM STEP 2
       const summary = wizardData.calculatedSummary || {};
-      const interestRate = summary.interestRate || 0;
-      const totalInterest = summary.totalInterest || 0;
-      const totalRepayAmount = summary.totalToRepay || wizardData.amount;
-      const totalRepayFormatted = formatCurrency2(Math.round(totalRepayAmount * 100));
+      const schedule = wizardData.calculatedSchedule || {};
+
+      // All amounts in summary are already in cents
+      const amountCents = summary.loanAmount || Math.round(wizardData.amount * 100);
+      const amountFormatted = formatCurrency2(amountCents);
+      const interestRate = summary.annualInterestRate || 0;
+      const totalInterestCents = summary.totalInterest || 0;
+      const totalRepaymentCents = summary.totalRepayment || amountCents;
+      const totalRepayFormatted = formatCurrency2(totalRepaymentCents);
+
+      // Get formatted date strings from summary (these are already formatted)
+      const firstDueDateStr = summary.firstDueDate || '';
+      const lastDueDateStr = summary.lastDueDate || '';
 
       // Full summary text (3 lines)
       let summaryLine1 = `${lenderName} lends ${amountFormatted} to ${borrowerName} for '${description}'.`;
 
       let summaryLine2 = '';
       if (wizardData.repaymentType === 'one_time') {
-        // Check if we should show relative or concrete date
-        const isLoanStartUponAcceptance = wizardData.moneySentDate === 'on-acceptance' || wizardData.moneySentOption === 'on-acceptance';
-        const isRelativeDueDate = wizardData.oneTimeDueOption && wizardData.oneTimeDueOption !== 'pick_date';
-
-        if (isLoanStartUponAcceptance && isRelativeDueDate) {
-          // Show relative description
-          const relativeText = getRelativeDueDateText(wizardData.oneTimeDueOption);
-          summaryLine2 = `To be repaid in one payment ${relativeText}.`;
+        // For one-time loans, use the firstDueDate from summary
+        if (firstDueDateStr) {
+          summaryLine2 = `To be repaid in one payment on ${firstDueDateStr}.`;
         } else {
-          // Show concrete date
-          const dueDate = new Date(wizardData.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-          summaryLine2 = `To be repaid in one payment by ${dueDate}.`;
+          summaryLine2 = `To be repaid in one payment.`;
         }
       } else {
-        const firstDate = new Date(wizardData.firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const finalDate = new Date(wizardData.finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const intervalText = getIntervalText(wizardData.loanDurationValue, wizardData.loanDurationUnit, wizardData.installmentCount);
-        summaryLine2 = `To be repaid in ${wizardData.installmentCount} ${intervalText} payments, from ${firstDate} to ${finalDate}.`;
+        // For installments, use the date strings from summary
+        const numInstallments = summary.numberOfInstallments || wizardData.installmentCount || 1;
+        if (firstDueDateStr && lastDueDateStr) {
+          summaryLine2 = `To be repaid in ${numInstallments} installment payments, from ${firstDueDateStr} to ${lastDueDateStr}.`;
+        } else {
+          summaryLine2 = `To be repaid in ${numInstallments} installment payments.`;
+        }
       }
 
       let summaryLine3 = '';
@@ -3926,14 +3929,9 @@
 
       // Store calculated values in wizardData for use by other functions
       wizardData.interestRate = interestRate;
-      wizardData.totalInterest = totalInterest;
-      wizardData.totalRepayAmount = totalRepayAmount;
-
-      // Store additional values from summary for Step 4 display
-      if (summary.firstPaymentDate) wizardData.firstPaymentDate = summary.firstPaymentDate;
-      if (summary.finalDueDate) wizardData.finalDueDate = summary.finalDueDate;
-      if (summary.dueDate) wizardData.dueDate = summary.dueDate;
-      if (summary.loanDurationLabel) wizardData.loanDurationLabel = summary.loanDurationLabel;
+      wizardData.totalInterest = totalInterestCents / 100; // convert to euros for compatibility
+      wizardData.totalRepayAmount = totalRepaymentCents / 100; // convert to euros for compatibility
+      wizardData.loanDurationLabel = summary.loanDuration || '';
 
       const summaryText = summaryLine1 + '\n' + summaryLine2 + '\n' + summaryLine3;
 
@@ -3960,7 +3958,7 @@
       // USE CALCULATED SCHEDULE FROM STEP 2
       const schedule = wizardData.calculatedSchedule;
       const summary = wizardData.calculatedSummary || {};
-      const interestRate = summary.interestRate || 0;
+      const interestRate = summary.annualInterestRate || 0;
 
       // For interest-free loans
       if (interestRate === 0) {
@@ -4004,10 +4002,10 @@
         html += `<tr style="${bgStyle}">`;
         html += `<td style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.04); color:#d1d5db">${row.index}</td>`;
         html += `<td style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.04); color:#d1d5db">${row.label}</td>`;
-        html += `<td class="align-right" style="padding:12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); color:#d1d5db; font-variant-numeric:tabular-nums">${window.formatCurrency2(row.principal)}</td>`;
-        html += `<td class="align-right" style="padding:12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); color:#d1d5db; font-variant-numeric:tabular-nums">${window.formatCurrency2(row.interest)}</td>`;
-        html += `<td class="align-right" style="padding:12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); color:#d1d5db; font-variant-numeric:tabular-nums; font-weight:600">${window.formatCurrency2(row.totalPayment)}</td>`;
-        html += `<td class="align-right" style="padding:12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); color:#d1d5db; font-variant-numeric:tabular-nums">${window.formatCurrency2(row.balance)}</td>`;
+        html += `<td class="align-right" style="padding:12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); color:#d1d5db; font-variant-numeric:tabular-nums">${formatCurrency2(row.principal)}</td>`;
+        html += `<td class="align-right" style="padding:12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); color:#d1d5db; font-variant-numeric:tabular-nums">${formatCurrency2(row.interest)}</td>`;
+        html += `<td class="align-right" style="padding:12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); color:#d1d5db; font-variant-numeric:tabular-nums; font-weight:600">${formatCurrency2(row.totalPayment)}</td>`;
+        html += `<td class="align-right" style="padding:12px; text-align:right; border-bottom:1px solid rgba(255,255,255,0.04); color:#d1d5db; font-variant-numeric:tabular-nums">${formatCurrency2(row.balance)}</td>`;
         html += `</tr>`;
       });
       html += `</tbody>`;
@@ -4016,9 +4014,9 @@
       html += `<tfoot>`;
       html += `<tr style="color:#34d399">`;
       html += `<td colspan="2" style="padding:14px 12px; border-top:1px solid rgba(16,185,129,0.6); font-weight:700; font-size:14px; text-transform:uppercase; letter-spacing:0.5px; color:#34d399; text-align:left">Loan totals</td>`;
-      html += `<td class="align-right" style="padding:14px 12px; border-top:1px solid rgba(16,185,129,0.6); font-weight:700; font-size:14px; text-align:right; font-variant-numeric:tabular-nums">${window.formatCurrency2(schedule.totals.principal)}</td>`;
-      html += `<td class="align-right" style="padding:14px 12px; border-top:1px solid rgba(16,185,129,0.6); font-weight:700; font-size:14px; text-align:right; font-variant-numeric:tabular-nums">${window.formatCurrency2(schedule.totals.interest)}</td>`;
-      html += `<td class="align-right" style="padding:14px 12px; border-top:1px solid rgba(16,185,129,0.6); font-weight:700; font-size:14px; text-align:right; font-variant-numeric:tabular-nums">${window.formatCurrency2(schedule.totals.totalRepayment)}</td>`;
+      html += `<td class="align-right" style="padding:14px 12px; border-top:1px solid rgba(16,185,129,0.6); font-weight:700; font-size:14px; text-align:right; font-variant-numeric:tabular-nums">${formatCurrency2(schedule.totals.principal)}</td>`;
+      html += `<td class="align-right" style="padding:14px 12px; border-top:1px solid rgba(16,185,129,0.6); font-weight:700; font-size:14px; text-align:right; font-variant-numeric:tabular-nums">${formatCurrency2(schedule.totals.interest)}</td>`;
+      html += `<td class="align-right" style="padding:14px 12px; border-top:1px solid rgba(16,185,129,0.6); font-weight:700; font-size:14px; text-align:right; font-variant-numeric:tabular-nums">${formatCurrency2(schedule.totals.totalRepayment)}</td>`;
       html += `<td></td>`;
       html += `</tr>`;
       html += `</tfoot>`;

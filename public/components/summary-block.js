@@ -159,8 +159,8 @@ function buildSummaryDataMap(wizardData, currentUser) {
 
   // Format loan duration - use calculated value from Step 2
   let durationText;
-  if (summary.loanDurationLabel) {
-    durationText = summary.loanDurationLabel;
+  if (summary.loanDuration) {
+    durationText = summary.loanDuration; // Already formatted string from calculator
   } else if (wizardData.loanDurationLabel) {
     durationText = wizardData.loanDurationLabel;
   } else if (wizardData.repaymentType === 'one_time') {
@@ -233,12 +233,15 @@ function buildSummaryDataMap(wizardData, currentUser) {
   const phoneNumber = wizardData.phoneNumber || '';
 
   // USE CALCULATED VALUES FROM STEP 2
-  const interestRate = summary.interestRate || 0;
-  const totalInterest = summary.totalInterest || 0;
-  const totalToRepay = summary.totalToRepay || wizardData.amount;
-  const firstPaymentDate = summary.firstPaymentDate || wizardData.firstPaymentDate;
-  const finalDueDate = summary.finalDueDate || wizardData.finalDueDate;
-  const dueDate = summary.dueDate || wizardData.dueDate;
+  // All amounts in summary are already in cents, dates are already formatted strings
+  const interestRate = summary.annualInterestRate || 0;
+  const totalInterestCents = summary.totalInterest || 0;
+  const totalRepaymentCents = summary.totalRepayment || (summary.loanAmount || Math.round(wizardData.amount * 100));
+  const loanAmountCents = summary.loanAmount || Math.round(wizardData.amount * 100);
+
+  // firstDueDate and lastDueDate are already formatted strings like "1 year after loan start"
+  const firstDueDateStr = summary.firstDueDate || '';
+  const lastDueDateStr = summary.lastDueDate || '';
 
   return {
     description: wizardData.description,
@@ -247,16 +250,16 @@ function buildSummaryDataMap(wizardData, currentUser) {
     borrowerEmail: wizardData.friendEmail,
     borrowerPhone: phoneNumber,
     moneyTransferDate: moneyTransferDate,
-    amount: formatCurrency2(Math.round(wizardData.amount * 100)),
+    amount: formatCurrency2(loanAmountCents),
     repaymentType: wizardData.repaymentType === 'one_time' ? 'One-time payment' : 'Installments',
     loanDuration: durationText,
     interestRate: interestRate > 0 ? `${interestRate}% per year` : '0% (interest-free)',
-    totalInterest: formatCurrency2(Math.round(totalInterest * 100)),
-    totalToRepay: formatCurrency2(Math.round(totalToRepay * 100)),
+    totalInterest: formatCurrency2(totalInterestCents),
+    totalToRepay: formatCurrency2(totalRepaymentCents),
     numberOfInstallments: wizardData.installmentCount || wizardData.numRepayments || '',
     paymentFrequency: paymentFrequency,
-    firstRepaymentDate: firstPaymentDate ? new Date(firstPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—',
-    finalDueDate: finalDueDate ? new Date(finalDueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—',
+    firstRepaymentDate: firstDueDateStr || '—',
+    finalDueDate: lastDueDateStr || '—',
     fullRepaymentDueDate: getFullRepaymentDueDateDisplay(wizardData),
     repaymentMethods: methodsText,
     requireProof: wizardData.proofRequired ? 'Yes — Borrower must upload proof (photo, screenshot, or PDF) with each payment' : null,
