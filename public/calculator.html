@@ -534,8 +534,16 @@
     // Get formatting functions from window
     const formatMoney = window.formatCurrency2;
 
-    // Safe DOM reference for principal error element
+    // Safe DOM references for principal input and error elements
+    let principalInput = null;
     let principalError = null;
+
+    function getPrincipalInputElement() {
+      if (!principalInput) {
+        principalInput = document.getElementById('principal');
+      }
+      return principalInput;
+    }
 
     function getPrincipalErrorElement() {
       if (!principalError) {
@@ -1661,12 +1669,14 @@
         // Check loan amount first - show error and focus if invalid
         if (principalValue === '') {
           showPrincipalError('Please enter a loan amount.');
-          principalInput.focus();
+          const input = getPrincipalInputElement();
+          if (input) input.focus();
           return;
         }
         if (!loanAmount || loanAmount <= 0 || isNaN(loanAmount)) {
           showPrincipalError('Loan amount must be more than €0.');
-          principalInput.focus();
+          const input = getPrincipalInputElement();
+          if (input) input.focus();
           return;
         }
         // Loan amount is valid - clear any errors
@@ -1929,7 +1939,6 @@
     document.getElementById('loanSummaryContent').innerHTML = 'Configure parameters to see loan summary...';
 
     // Loan amount validation and formatting
-    const principalInput = document.getElementById('principal');
 
     // Clear error message helper
     function clearPrincipalError() {
@@ -1957,37 +1966,40 @@
     }
 
     // On focus: remove formatting to let user type freely, clear errors
-    principalInput.addEventListener('focus', function() {
-      clearPrincipalError();
-      const num = parseMoney(this.value);
-      if (num > 0) {
-        this.value = num.toString();
-      }
-    });
+    const principalInputEl = getPrincipalInputElement();
+    if (principalInputEl) {
+      principalInputEl.addEventListener('focus', function() {
+        clearPrincipalError();
+        const num = parseMoney(this.value);
+        if (num > 0) {
+          this.value = num.toString();
+        }
+      });
 
-    // On blur: validate and format
-    principalInput.addEventListener('blur', function() {
-      const trimmed = this.value.trim();
+      // On blur: validate and format
+      principalInputEl.addEventListener('blur', function() {
+        const trimmed = this.value.trim();
 
-      // Empty field
-      if (trimmed === '') {
-        showPrincipalError('Please enter a loan amount.');
-        return;
-      }
+        // Empty field
+        if (trimmed === '') {
+          showPrincipalError('Please enter a loan amount.');
+          return;
+        }
 
-      // Parse the value
-      const num = parseMoney(trimmed);
+        // Parse the value
+        const num = parseMoney(trimmed);
 
-      // Invalid or zero/negative
-      if (num <= 0) {
-        showPrincipalError('Loan amount must be more than €0.');
-        return;
-      }
+        // Invalid or zero/negative
+        if (num <= 0) {
+          showPrincipalError('Loan amount must be more than €0.');
+          return;
+        }
 
-      // Valid - format and clear error
-      clearPrincipalError();
-      this.value = formatMoneyInput(num);
-    });
+        // Valid - format and clear error
+        clearPrincipalError();
+        this.value = formatMoneyInput(num);
+      });
+    }
 
     // ============================================================================
     // DATE PARSING AND FORMATTING HELPERS
