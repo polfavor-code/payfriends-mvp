@@ -1,0 +1,204 @@
+<!-- PayFriends Loan Calculator Layout Partial -->
+<!-- This partial contains the complete calculator UI that can be reused across pages -->
+
+<section class="loan-calculator" data-loan-calculator>
+  <div class="main-grid">
+    <!-- Left sidebar: Form inputs -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin-bottom: 0;">Configuration</h2>
+        <button type="button" id="calculator-reset-link" style="background: none; border: none; color: #34d399; cursor: pointer; font-size: 14px; padding: 0;">Reset</button>
+      </div>
+
+      <!-- 1. Loan amount -->
+      <div class="form-group">
+        <label for="principal">Loan amount (€)</label>
+        <input type="text" id="principal" placeholder="e.g. 6,000">
+        <div id="principalError" class="loan-amount-note" style="display: none;"></div>
+      </div>
+
+      <!-- 2. Loan start date -->
+      <div class="form-group">
+        <label for="loanStartMode">Loan start date (when borrower receives the money)</label>
+        <select id="loanStartMode">
+          <option value="upon_acceptance" selected>When agreement is accepted</option>
+          <option value="today">Today</option>
+          <option value="tomorrow">Tomorrow</option>
+          <option value="in-1-week">In 1 week</option>
+          <option value="in-1-month">In 1 month</option>
+          <option value="pick-date">Pick a date…</option>
+        </select>
+        <div class="form-hint">Date used for interest and repayment calculations.</div>
+      </div>
+
+      <div id="loanStartDateGroup" class="form-group hidden">
+        <label for="loanStartDate">Pick a date</label>
+        <input type="date" id="loanStartDate">
+      </div>
+
+      <!-- 4. Repayment type -->
+      <div class="form-group">
+        <label for="repaymentType">Repayment type</label>
+        <select id="repaymentType">
+          <option value="one_time" selected>One-time payment</option>
+          <option value="installments">Installments</option>
+        </select>
+      </div>
+
+      <!-- 5. First payment due -->
+      <div class="form-group" id="firstPaymentGroup">
+        <label for="firstPaymentDue">
+          <span id="paymentTimingLabel">First payment due (after loan start)</span>
+        </label>
+        <select id="firstPaymentDue">
+          <option value="1-week">In 1 week</option>
+          <option value="1-month">In 1 month</option>
+          <option value="6-months">In 6 months</option>
+          <option value="1-year" selected>In 1 year</option>
+          <option value="2-years">In 2 years</option>
+          <option value="3-years">In 3 years</option>
+          <option value="pick-date">Pick a date…</option>
+        </select>
+        <div class="form-hint" id="paymentTimingHint">When full repayment is due.</div>
+      </div>
+
+      <div id="firstPaymentDateGroup" class="form-group hidden">
+        <label for="firstPaymentDate">Pick a date</label>
+        <input type="date" id="firstPaymentDate">
+      </div>
+
+      <!-- 6. Payment frequency -->
+      <div class="form-group" id="frequencyGroup">
+        <label for="frequency">Payment frequency</label>
+        <select id="frequency">
+          <optgroup label="Day-based">
+            <option value="every-7-days">Every 7 days</option>
+            <option value="every-14-days">Every 14 days</option>
+            <option value="every-30-days">Every 30 days</option>
+          </optgroup>
+          <optgroup label="Month-based (same day of month)">
+            <option value="every-month" selected>Every month</option>
+            <option value="every-3-months">Every 3 months</option>
+            <option value="every-6-months">Every 6 months</option>
+          </optgroup>
+          <optgroup label="Weekday-based (same weekday)">
+            <option value="every-week">Every week</option>
+            <option value="every-2-weeks">Every 2 weeks</option>
+            <option value="every-4-weeks">Every 4 weeks</option>
+          </optgroup>
+          <optgroup label="Year-based (same date)">
+            <option value="every-year">Every year</option>
+            <option value="every-2-years">Every 2 years</option>
+            <option value="every-3-years">Every 3 years</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- 7. Number of installments -->
+      <div class="form-group" id="installmentsGroup">
+        <label for="numInstallments">Number of installments</label>
+        <input type="number" id="numInstallments" value="12" min="1" max="120" step="1">
+        <div class="form-hint" id="installmentsHint" style="display: none;">
+          For one-time payments the loan is repaid in a single payment.
+        </div>
+      </div>
+
+      <!-- 8. Interest Section -->
+      <div class="form-group" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+        <label style="display: block; margin-bottom: 12px;">Interest</label>
+
+        <!-- Interest / No interest toggle -->
+        <div id="interest-mode-toggle" style="display: inline-flex; background: #10151d; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 16px;">
+          <button id="mode-interest" type="button" style="padding: 10px 20px; border-radius: 8px; border: none; background: #6ee7b7; color: #000; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease; flex: 1; white-space: nowrap;">
+            Interest
+          </button>
+          <button id="mode-no-interest" type="button" style="padding: 10px 20px; border-radius: 8px; border: none; background: transparent; color: #e5e7eb; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; flex: 1; white-space: nowrap;">
+            No interest
+          </button>
+        </div>
+
+        <!-- Interest input row with Fair range pill -->
+        <div id="interest-input-row" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="number" id="interest" value="5" min="0" max="100" step="0.1" style="width: 80px; height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08); background: #10151d; color: var(--text); font-size: 16px; text-align: center;">
+            <span style="color: var(--text); font-size: 16px; font-weight: 500;">% per year</span>
+          </div>
+          <button id="fair-range-pill" type="button" aria-expanded="false" aria-controls="fair-range-explanation" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 22px; font-size: 13px; font-weight: 600; white-space: nowrap; border: none; cursor: pointer; transition: all 0.2s ease; background: rgba(52, 211, 153, 0.15); color: #34d399;">
+            <span id="fair-range-text">Fair range (4–7%)</span>
+            <svg style="width: 14px; height: 14px; opacity: 0.8;" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+              <circle cx="8" cy="8" r="6.5" stroke-width="1.5"/>
+              <path d="M8 7.5v4M8 5v0.5" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Expandable "Why this rate?" explanation -->
+        <div id="fair-range-explanation" class="hidden" style="margin-top: 12px; background: rgba(61, 220, 151, 0.08); border: 1px solid rgba(61, 220, 151, 0.2); border-radius: 10px; padding: 16px; transition: all 0.2s ease;">
+          <p style="margin: 0 0 12px 0; font-size: 13px; font-weight: 600; color: var(--text);">Why this rate?</p>
+          <ul style="margin: 0 0 12px 0; padding-left: 20px; font-size: 13px; line-height: 1.6; color: var(--text);">
+            <li style="margin-bottom: 6px;">Larger loan amounts increase risk ↑</li>
+            <li style="margin-bottom: 6px;">Longer durations increase uncertainty ↑</li>
+            <li style="margin-bottom: 6px;">More installments reduce repayment risk ↓</li>
+          </ul>
+          <p style="margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6;">
+            Together, these factors suggest a fair interest range for this loan. Your chosen rate should normally stay inside this range for balanced, respectful lending between friends.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right side: Results -->
+    <div>
+      <!-- Schedule table -->
+      <div class="card">
+        <div class="schedule-header">
+          <h2>Repayment schedule & interest calculation</h2>
+          <span id="modeBadge"><span class="badge badge-preview">Preview</span></span>
+        </div>
+        <div class="loan-meta">
+          <div class="loan-meta-primary" id="loanStartLabel">Enter loan amount and details to see the repayment schedule...</div>
+          <div class="loan-meta-secondary" id="loanDurationLabel" style="display: none;"></div>
+        </div>
+        <div class="schedule-table">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Due date</th>
+                <th class="align-right">Principal</th>
+                <th class="align-right">Interest</th>
+                <th class="align-right">Total payment</th>
+                <th class="align-right">Balance</th>
+              </tr>
+            </thead>
+            <tbody id="scheduleBody">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
+                  Enter loan amount and details to see the repayment schedule...
+                </td>
+              </tr>
+            </tbody>
+            <tfoot id="scheduleTotals" style="display: none;">
+              <tr style="color: #34d399;">
+                <td colspan="2" style="text-align: left;">Loan totals</td>
+                <td class="align-right" id="footerPrincipal">€ 0,00</td>
+                <td class="align-right" id="footerInterest">€ 0,00</td>
+                <td class="align-right" id="footerTotal">€ 0,00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Loan summary -->
+      <div class="card" style="margin-top: 24px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+        <h2 style="color: #34d399; margin-bottom: 16px;">Loan summary</h2>
+        <div id="loanSummaryContent" style="font-size: 15px; line-height: 1.8; color: #d1d5db;">
+          Configure parameters to see loan summary...
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
