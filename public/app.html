@@ -140,11 +140,30 @@
     .activity-item--issue,.message-item.activity-item--issue{background:var(--warning-bg) !important; border-color:var(--warning-border) !important}
     .activity-item--issue .message-date,.message-item.activity-item--issue .message-date{color:var(--warning-ink)}
     .activity-item--issue .unread-indicator,.message-item.activity-item--issue .unread-indicator{color:var(--warning) !important; text-shadow:0 0 8px rgba(249,115,22,.3)}
-    .wizard-steps{display:flex; gap:16px; margin-bottom:24px; align-items:center}
-    .wizard-step{flex:1; padding:8px 16px; background:#10151d; border-radius:8px; text-align:center; font-size:14px; border:2px solid transparent; cursor:pointer; transition:all 0.2s ease}
-    .wizard-step:hover{background:#1a2028; border-color:rgba(61,220,151,0.3)}
-    .wizard-step.active{border-color:var(--accent); color:var(--accent); font-weight:600}
-    .wizard-step.completed{color:var(--accent)}
+    /* Stepper container with lines */
+    .wizard-stepper{position:relative; width:100%; max-width:900px; margin:0 auto 32px auto; padding:0 20px}
+
+    /* Connecting lines */
+    .stepper-line{position:absolute; top:20px; left:60px; right:60px; height:2px; z-index:0}
+    .stepper-line--base{background:rgba(255,255,255,0.1)}
+    .stepper-line--progress{background:var(--accent); transition:width 0.3s ease}
+
+    /* Step nodes container */
+    .wizard-steps{position:relative; display:flex; justify-content:space-between; align-items:flex-start; z-index:1}
+
+    /* Individual step */
+    .wizard-step{display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; flex:0 0 auto; transition:all 0.2s ease}
+    .wizard-step:hover .wizard-step-circle{transform:scale(1.1)}
+
+    /* Step circle */
+    .wizard-step-circle{width:40px; height:40px; border-radius:50%; background:#10151d; border:2px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:16px; color:var(--muted); transition:all 0.2s ease}
+    .wizard-step.active .wizard-step-circle{background:var(--accent); border-color:var(--accent); color:#000}
+    .wizard-step.completed .wizard-step-circle{background:var(--accent); border-color:var(--accent); color:#000}
+
+    /* Step label */
+    .wizard-step-label{font-size:15px; color:var(--muted); font-weight:500; text-align:center; transition:all 0.2s ease}
+    .wizard-step.active .wizard-step-label{color:var(--accent); font-weight:600}
+    .wizard-step.completed .wizard-step-label{color:var(--accent)}
     .wizard-content{min-height:200px}
     .hidden{display:none}
     .role-badge{display:inline-block; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; background:#2a2a2a; color:#fff}
@@ -494,12 +513,33 @@
       </div>
 
       <!-- Wizard Steps -->
-      <div class="wizard-steps" role="navigation" aria-label="Agreement wizard steps">
-        <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
-        <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Loan terms + interest">2. Loan terms + interest</div>
-        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Payments">3. Payments</div>
-        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Summary">4. Summary</div>
-        <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Share">5. Share</div>
+      <div class="wizard-stepper" role="navigation" aria-label="Agreement wizard steps">
+        <!-- Connecting lines -->
+        <div class="stepper-line stepper-line--base"></div>
+        <div class="stepper-line stepper-line--progress" id="stepper-progress-line"></div>
+        <!-- Step nodes -->
+        <div class="wizard-steps">
+          <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">
+            <div class="wizard-step-circle">1</div>
+            <div class="wizard-step-label">Basics</div>
+          </div>
+          <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">
+            <div class="wizard-step-circle">2</div>
+            <div class="wizard-step-label">Terms</div>
+          </div>
+          <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Payments">
+            <div class="wizard-step-circle">3</div>
+            <div class="wizard-step-label">Payments</div>
+          </div>
+          <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Summary">
+            <div class="wizard-step-circle">4</div>
+            <div class="wizard-step-label">Summary</div>
+          </div>
+          <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Share">
+            <div class="wizard-step-circle">5</div>
+            <div class="wizard-step-label">Share</div>
+          </div>
+        </div>
       </div>
 
       <!-- Step 1: Setup -->
@@ -1355,6 +1395,20 @@
       return `${diffYear} year${diffYear > 1 ? 's' : ''} ago`;
     }
 
+    // Update stepper progress line based on current step
+    function updateStepperProgress(currentStep) {
+      const totalSteps = 5;
+      const progressLine = document.getElementById('stepper-progress-line');
+      if (!progressLine) return;
+
+      // Calculate progress width
+      // Progress goes from 0% (at step 1) to 100% (at step 5)
+      const completedSegments = Math.max(currentStep - 1, 0);
+      const progressWidth = (completedSegments / (totalSteps - 1)) * 100;
+
+      progressLine.style.width = `${progressWidth}%`;
+    }
+
     // Wizard functions
     function goToStep(step) {
       // Hide all steps
@@ -1375,6 +1429,9 @@
       for (let i = 1; i < step; i++) {
         document.getElementById(`step-indicator-${i}`).classList.add('completed');
       }
+
+      // Update progress line
+      updateStepperProgress(step);
 
       // Special handling for step 1: ensure borrower fields visibility is correct
       if (step === 1) {
@@ -2877,9 +2934,6 @@ function updateWorstCaseVisibility() {
       const firstName = wizardData.friendFirstName;
       const email = wizardData.friendEmail;
       const inviteUrl = wizardData.inviteUrl;
-
-      // Update step indicator
-      document.getElementById('step-indicator-6').textContent = '6. Share';
 
       // Populate all name placeholders
       document.getElementById('share-invite-name').textContent = firstName;
