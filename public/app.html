@@ -2450,10 +2450,47 @@
       // Interest mode ('interest' or 'no-interest')
       let interestMode = 'interest';
 
-      // Hide the reset button (not needed in wizard)
+      /**
+       * Reset calculator to defaults (wizard version)
+       */
+      function resetWizardCalculator() {
+        document.getElementById('principal').value = '';
+        document.getElementById('interest').value = 5;
+        document.getElementById('repaymentType').value = 'one_time';
+        document.getElementById('numInstallments').value = 1;
+        document.getElementById('frequency').value = 'every-month';
+        document.getElementById('firstPaymentDue').value = '1-year';
+        document.getElementById('loanStartMode').value = 'upon_acceptance';
+
+        setInterestMode('interest');
+        updateLoanAmountHighlight();
+
+        document.getElementById('loanStartDateGroup').classList.add('hidden');
+        document.getElementById('firstPaymentDateGroup').classList.add('hidden');
+        document.getElementById('loanStartDate').value = '';
+        document.getElementById('firstPaymentDate').value = '';
+
+        updateRepaymentTypeUI();
+
+        document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Enter loan amount and details to calculate...</td></tr>';
+        document.getElementById('scheduleTotals').style.display = 'none';
+        document.getElementById('loanSummaryContent').innerHTML = 'Configure parameters to see loan summary...';
+        document.getElementById('loanStartLabel').innerHTML = 'Enter loan amount and details to see the repayment schedule...';
+        document.getElementById('loanDurationLabel').style.display = 'none';
+
+        // Clear wizard results
+        wizardCalculatorSchedule = null;
+        wizardCalculatorSummary = null;
+      }
+
+      // Enable the reset button and attach handler
       const resetBtn = document.getElementById('calculator-reset-link');
       if (resetBtn) {
-        resetBtn.style.display = 'none';
+        resetBtn.style.display = 'inline-block';
+        resetBtn.addEventListener('click', function(event) {
+          event.preventDefault();
+          resetWizardCalculator();
+        });
       }
 
       /**
@@ -2645,7 +2682,35 @@
           lines.push(`<p><strong>${label}:</strong> ${summary.firstDueDate}</p>`);
         }
 
+        // Fairness Between Friends footer
+        lines.push(`
+          <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 13px; color: #9ca3af;">
+            <p style="margin-bottom: 8px;">
+              Amounts marked with <span class="pf-fairness-icon-inline" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle; margin: 0 2px;">${fairnessIcon}</span> are calculated using the Fairness Between Friends rules.
+              <a href="#" id="wizardFairnessToggle" style="color: #34d399; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s;" onmouseover="this.style.borderBottomColor='#34d399'" onmouseout="this.style.borderBottomColor='transparent'">How it works</a>
+            </p>
+            <div id="wizardFairnessExplanation" style="display: none; margin-top: 12px; padding: 12px; background: rgba(0, 0, 0, 0.2); border-radius: 6px; font-size: 12px; line-height: 1.6; color: #d1d5db;">
+              Fairness Between Friends adjusts interest dynamically based on the outstanding balance and the time that has passed. This means paying earlier or more reduces total interest, while paying later or less increases it. Both sides always see the current, fair value of the loan in real time.
+            </div>
+          </div>
+        `);
+
         container.innerHTML = lines.join('');
+
+        // Toggle Fairness "How it works" explanation
+        const fairnessToggle = document.getElementById('wizardFairnessToggle');
+        const fairnessExplanation = document.getElementById('wizardFairnessExplanation');
+
+        if (fairnessToggle && fairnessExplanation) {
+          fairnessToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (fairnessExplanation.style.display === 'none') {
+              fairnessExplanation.style.display = 'block';
+            } else {
+              fairnessExplanation.style.display = 'none';
+            }
+          });
+        }
       }
 
       function calculateSchedule() {
