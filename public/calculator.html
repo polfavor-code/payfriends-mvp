@@ -181,6 +181,23 @@
       margin-bottom: 12px;
     }
 
+    .loan-meta {
+      margin-bottom: 16px;
+    }
+
+    .loan-meta-primary {
+      font-size: 15px;
+      font-weight: 500;
+      color: #e5e7eb;
+    }
+
+    .loan-meta-secondary {
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #34d399;
+    }
+
     .schedule-subtitle {
       font-size: 13px;
       color: #9ca3af;
@@ -461,9 +478,9 @@
             <h2>Repayment schedule & interest calculation</h2>
             <span id="modeBadge"><span class="badge badge-preview">Preview</span></span>
           </div>
-          <div style="font-size: 14px; margin-bottom: 16px; margin-top: 4px; color: #9ca3af;">
-            <div id="loanStartLabel">Click "Calculate schedule" to generate...</div>
-            <div id="loanDurationLabel" style="display: none;"></div>
+          <div class="loan-meta">
+            <div class="loan-meta-primary" id="loanStartLabel">Click "Calculate schedule" to generate...</div>
+            <div class="loan-meta-secondary" id="loanDurationLabel" style="display: none;"></div>
           </div>
           <div class="schedule-table">
             <table>
@@ -960,6 +977,18 @@
     /**
      * Calculate loan duration from schedule (loan start to last payment)
      */
+    /**
+     * Format duration in months to "X years Y months" format
+     */
+    function formatDurationMonths(totalMonths) {
+      const years = Math.floor(totalMonths / 12);
+      const months = totalMonths % 12;
+      const parts = [];
+      if (years > 0) parts.push(`${years} year${years === 1 ? "" : "s"}`);
+      if (months > 0) parts.push(`${months} month${months === 1 ? "" : "s"}`);
+      return parts.join(" ");
+    }
+
     function calculateLoanDuration(rows, loanStartDate, effectiveMode) {
       if (!rows || rows.length === 0) {
         return null;
@@ -990,10 +1019,8 @@
           } else {
             return `${daysDiff} days (${startStr} to ${endStr})`;
           }
-        } else if (totalMonths === 1) {
-          return `1 month (${startStr} to ${endStr})`;
         } else {
-          return `${totalMonths} months (${startStr} to ${endStr})`;
+          return `${formatDurationMonths(totalMonths)} (${startStr} to ${endStr})`;
         }
       } else {
         // Preview mode: describe duration relative to agreement acceptance
@@ -1007,14 +1034,11 @@
 
         if (yearsMatch) {
           const years = parseInt(yearsMatch[1]);
-          return years === 1
-            ? `1 year after agreement is accepted`
-            : `${years} years after agreement is accepted`;
+          const totalMonths = years * 12;
+          return `${formatDurationMonths(totalMonths)} after agreement is accepted`;
         } else if (monthsMatch) {
           const months = parseInt(monthsMatch[1]);
-          return months === 1
-            ? `1 month after agreement is accepted`
-            : `${months} months after agreement is accepted`;
+          return `${formatDurationMonths(months)} after agreement is accepted`;
         } else if (daysMatch) {
           const days = parseInt(daysMatch[1]);
           return days === 1
@@ -1032,14 +1056,12 @@
      */
     function getLoanStartLabelWithContext(loanStartDate, effectiveMode, loanStartMode) {
       if (!loanStartDate && loanStartMode === 'upon_acceptance') {
-        return effectiveMode === 'preview'
-          ? 'When agreement is accepted (preview)'
-          : 'When agreement is accepted';
+        return 'When agreement is accepted';
       }
 
       if (loanStartDate) {
         const dateStr = formatDateDisplay(loanStartDate);
-        return effectiveMode === 'preview' ? `${dateStr} (preview)` : dateStr;
+        return dateStr;
       }
 
       return 'Unknown';
@@ -1766,11 +1788,10 @@
         // Update loan start label (line 1)
         document.getElementById('loanStartLabel').innerHTML = `Loan start: ${loanStartText}`;
 
-        // Update loan duration label (line 2 with entire line in green color)
+        // Update loan duration label (line 2)
         const loanDurationLabel = document.getElementById('loanDurationLabel');
         if (loanDuration) {
           loanDurationLabel.innerHTML = `Loan duration: ${loanDuration}`;
-          loanDurationLabel.style.color = '#34d399';
           loanDurationLabel.style.display = 'block';
         } else {
           loanDurationLabel.style.display = 'none';
