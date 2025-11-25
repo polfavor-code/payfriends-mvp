@@ -413,8 +413,11 @@
       margin: 0 0 12px 0;
       color: var(--text);
     }
+    /* Step 4 toggle buttons should be full-width, but not footer buttons */
     #wizard-step-4 .secondary {
       padding: 12px 16px;
+    }
+    #wizard-step-4 .secondary:not(.wizard-footer .secondary) {
       margin: 0;
       width: 100%;
     }
@@ -1081,7 +1084,7 @@
         <!-- Wizard navigation footer - before sending -->
         <div id="invite-not-sent" class="wizard-footer">
           <button class="secondary wizard-back" onclick="goToStep(3)">Back to edit</button>
-          <button class="wizard-next" onclick="sendInvite()">Send to <span id="send-friend-name"></span> for review</button>
+          <button class="wizard-next" onclick="sendInvite()">Share to <span id="send-friend-name"></span> for review</button>
         </div>
 
         <!-- After sending state -->
@@ -1660,7 +1663,7 @@
       goToStep(2);
       // Initialize default due date for one-time payment if not already set
       const dueDateInput = document.getElementById('due-date');
-      if (!dueDateInput.value) {
+      if (dueDateInput && !dueDateInput.value) {
         updateOneTimeDueOption();
       }
     }
