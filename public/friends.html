@@ -23,7 +23,8 @@
     .container{max-width:1200px; margin:0 auto; padding:32px 16px;}
     .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
     h1{margin:0 0 8px 0; font-size:28px; font-weight:600}
-    .subtitle{color:var(--muted); font-size:14px; margin:0 0 24px 0; line-height:1.6}
+    .subtitle{color:var(--muted); font-size:14px; margin:0 0 36px 0; line-height:1.6; text-align:left}
+    .page-title{font-size:28px; font-weight:600; margin:0 0 24px 0}
     .friends-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px; margin-top:24px}
     .friend-card{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; transition:all 0.2s ease; cursor:pointer}
     .friend-card:hover{background:rgba(255,255,255,0.04); border-color:rgba(61,220,151,0.3); transform:translateY(-2px)}
@@ -71,8 +72,9 @@
   <div class="container">
     <!-- Header will be loaded dynamically by header.js -->
 
+    <h1 class="page-title">Your friends</h1>
+
     <div class="card">
-      <h1>Your friends</h1>
       <p class="subtitle">People you have money agreements with.</p>
 
       <div id="loading" class="loading">Loading your friends...</div>
