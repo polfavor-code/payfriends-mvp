@@ -190,11 +190,11 @@
     const count = unreadCount || 0;
 
     if (count > 0) {
-      activityLabel.textContent = `Status (${count})`;
+      activityLabel.textContent = `Activity (${count})`;
       activityButton.classList.add('inbox-widget-has-unread');
     } else {
       // No parentheses when count is 0
-      activityLabel.textContent = 'Status';
+      activityLabel.textContent = 'Activity';
       activityButton.classList.remove('inbox-widget-has-unread');
     }
   }
