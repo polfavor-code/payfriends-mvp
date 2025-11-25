@@ -111,6 +111,12 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* Highlight for empty loan amount input */
+    .loan-amount-empty {
+      border-color: #34d399 !important;
+      box-shadow: 0 0 0 1px #34d399;
+    }
+
     .form-hint {
       font-size: 12px;
       color: #9ca3af;
@@ -348,6 +354,7 @@
             <option value="today">Today</option>
             <option value="tomorrow">Tomorrow</option>
             <option value="in-1-week">In 1 week</option>
+            <option value="in-1-month">In 1 month</option>
             <option value="pick-date">Pick a date…</option>
           </select>
           <div class="form-hint">Date used for interest and repayment calculations.</div>
@@ -479,7 +486,7 @@
             <span id="modeBadge"><span class="badge badge-preview">Preview</span></span>
           </div>
           <div class="loan-meta">
-            <div class="loan-meta-primary" id="loanStartLabel">Click "Calculate schedule" to generate...</div>
+            <div class="loan-meta-primary" id="loanStartLabel">Enter loan amount and details to see the repayment schedule...</div>
             <div class="loan-meta-secondary" id="loanDurationLabel" style="display: none;"></div>
           </div>
           <div class="schedule-table">
@@ -497,7 +504,7 @@
               <tbody id="scheduleBody">
                 <tr>
                   <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
-                    Click "Calculate schedule" to generate repayment schedule...
+                    Enter loan amount and details to see the repayment schedule...
                   </td>
                 </tr>
               </tbody>
@@ -1296,8 +1303,9 @@
       // Reset interest mode to "Interest" with 5%
       setInterestMode('interest');
 
-      // Clear loan amount error
+      // Clear loan amount error and update highlight
       clearPrincipalError();
+      updateLoanAmountHighlight();
 
       // Context mode dropdown was removed on calculator.html, but keep this safe
       const contextModeSelect = document.getElementById('contextMode');
@@ -1351,6 +1359,7 @@
 
     // Loan amount - use debounced for smooth typing and update fair range
     document.getElementById('principal').addEventListener('input', () => {
+      updateLoanAmountHighlight();
       debouncedCalculation();
       updateFairRangePill();
     });
@@ -1456,6 +1465,8 @@
           return addDays(today, 1);
         case 'in-1-week':
           return addDays(today, 7);
+        case 'in-1-month':
+          return addMonths(today, 1);
         case 'pick-date':
           // Parse the date from YYYY-MM-DD format (native date input)
           return explicitLoanStartDate ? parseIsoDate(explicitLoanStartDate) : null;
@@ -1965,6 +1976,19 @@
       }
     }
 
+    // Update loan amount highlight based on whether field is empty
+    function updateLoanAmountHighlight() {
+      const input = getPrincipalInputElement();
+      if (!input) return;
+
+      const value = input.value.trim();
+      if (value === '') {
+        input.classList.add('loan-amount-empty');
+      } else {
+        input.classList.remove('loan-amount-empty');
+      }
+    }
+
     // On focus: remove formatting to let user type freely, clear errors
     const principalInputEl = getPrincipalInputElement();
     if (principalInputEl) {
@@ -2147,6 +2171,14 @@
     } else {
       // DOM already loaded, run immediately
       enableClickToOpenDatepickers();
+    }
+
+    // Initialize loan amount highlight on page load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateLoanAmountHighlight);
+    } else {
+      // DOM already loaded, run immediately
+      updateLoanAmountHighlight();
     }
   </script>
 </body>
