@@ -472,6 +472,7 @@
   </div>
 
   <script src="/js/formatters.js"></script>
+  <script src="/components/fairness-icon.js"></script>
   <script>
     // Calculator Playground Logic - Single Source of Truth
     // This generateRepaymentSchedule function can be reused across wizard, manage, and review pages
@@ -1350,11 +1351,12 @@
         lines.push(`<p><strong>Annual interest rate:</strong> ${summary.annualInterestRate.toFixed(2)}% per year</p>`);
       }
 
-      // Total interest
-      lines.push(`<p><strong>Total interest:</strong> ${formatMoney(summary.totalInterest)}</p>`);
+      // Total interest (with Fairness icon)
+      const fairnessIcon = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginLeft: '4px'});
+      lines.push(`<p><strong>Total interest:</strong> ${formatMoney(summary.totalInterest)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
 
-      // Total to repay
-      lines.push(`<p><strong>Total to repay:</strong> ${formatMoney(summary.totalRepayment)}</p>`);
+      // Total to repay (with Fairness icon)
+      lines.push(`<p><strong>Total to repay:</strong> ${formatMoney(summary.totalRepayment)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
 
       // Additional details based on repayment type
       if (summary.repaymentType === 'installments' && summary.numberOfInstallments > 1) {
@@ -1368,7 +1370,35 @@
         lines.push(`<p><strong>${label}:</strong> ${summary.firstDueDate}</p>`);
       }
 
+      // Fairness Between Friends summary note
+      lines.push(`
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 13px; color: #9ca3af;">
+          <p style="margin-bottom: 8px;">
+            Amounts marked with <span class="pf-fairness-icon-inline" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle; margin: 0 2px;">${fairnessIcon}</span> are calculated using the Fairness Between Friends rules.
+            <a href="#" id="fairnessToggle" style="color: #34d399; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s;" onmouseover="this.style.borderBottomColor='#34d399'" onmouseout="this.style.borderBottomColor='transparent'">How it works</a>
+          </p>
+          <div id="fairnessExplanation" style="display: none; margin-top: 12px; padding: 12px; background: rgba(0, 0, 0, 0.2); border-radius: 6px; font-size: 12px; line-height: 1.6; color: #d1d5db;">
+            Fairness Between Friends adjusts interest dynamically based on the outstanding balance and the time that has passed. This means paying earlier or more reduces total interest, while paying later or less increases it. Both sides always see the current, fair value of the loan in real time.
+          </div>
+        </div>
+      `);
+
       container.innerHTML = lines.join('');
+
+      // Toggle Fairness "How it works" explanation
+      const fairnessToggle = document.getElementById('fairnessToggle');
+      const fairnessExplanation = document.getElementById('fairnessExplanation');
+
+      if (fairnessToggle && fairnessExplanation) {
+        fairnessToggle.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (fairnessExplanation.style.display === 'none') {
+            fairnessExplanation.style.display = 'block';
+          } else {
+            fairnessExplanation.style.display = 'none';
+          }
+        });
+      }
     }
 
     /**
