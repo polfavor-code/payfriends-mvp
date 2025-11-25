@@ -1839,6 +1839,60 @@
 
     // Update min date when loan start mode changes
     document.getElementById('loanStartMode').addEventListener('change', updateRepaymentMinDate);
+
+    // ============================================================================
+    // CLICK-TO-OPEN DATE PICKERS
+    // ============================================================================
+
+    /**
+     * Enable click-to-open behavior for native date inputs
+     * Ensures clicking anywhere in the input opens the date picker,
+     * not just the small calendar icon
+     */
+    function enableClickToOpenDatepickers() {
+      const dateInputIds = ['loanStartDate', 'firstPaymentDate'];
+
+      dateInputIds.forEach((id) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+
+        // Open picker when input is clicked
+        input.addEventListener('click', () => {
+          try {
+            // Modern browsers support showPicker()
+            if (input.showPicker) {
+              input.showPicker();
+            } else {
+              // Fallback: focus usually opens the picker
+              input.focus();
+            }
+          } catch (e) {
+            // Some browsers may throw SecurityError, ignore it
+            console.debug('Date picker open attempt:', e);
+          }
+        });
+
+        // Also open when input receives focus (keyboard navigation)
+        input.addEventListener('focus', () => {
+          try {
+            if (input.showPicker) {
+              input.showPicker();
+            }
+          } catch (e) {
+            // Ignore errors
+            console.debug('Date picker open attempt:', e);
+          }
+        });
+      });
+    }
+
+    // Initialize click-to-open behavior after DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', enableClickToOpenDatepickers);
+    } else {
+      // DOM already loaded, run immediately
+      enableClickToOpenDatepickers();
+    }
   </script>
 </body>
 </html>
