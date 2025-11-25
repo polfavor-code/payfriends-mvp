@@ -5,8 +5,8 @@
   <div class="main-grid">
     <!-- Left sidebar: Form inputs -->
     <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0;">Configuration</h2>
+      <div class="config-header">
+        <h2>Configuration</h2>
         <button type="button" id="calculator-reset-link" style="background: none; border: none; color: #34d399; cursor: pointer; font-size: 14px; padding: 0; margin: 0; line-height: 1;">Reset</button>
       </div>
 
@@ -166,12 +166,12 @@
           <table>
             <thead>
               <tr>
-                <th>#</th>
-                <th>Due date</th>
-                <th class="align-right">Principal</th>
-                <th class="align-right">Interest</th>
-                <th class="align-right">Total payment</th>
-                <th class="align-right">Balance</th>
+                <th class="col-index">#</th>
+                <th class="col-due-date">Due date</th>
+                <th class="align-right col-principal">Principal</th>
+                <th class="align-right col-interest">Interest</th>
+                <th class="align-right col-total-payment">Total payment</th>
+                <th class="align-right col-balance">Balance</th>
               </tr>
             </thead>
             <tbody id="scheduleBody">
@@ -197,7 +197,7 @@
       <!-- Loan summary -->
       <div class="card" style="margin-top: 24px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
         <h2 style="color: #34d399; margin-bottom: 16px;">Loan summary</h2>
-        <div id="loanSummaryContent" style="font-size: 15px; line-height: 1.8; color: #d1d5db;">
+        <div id="loanSummaryContent" style="font-size: 15px; line-height: 1.5; color: #d1d5db;">
           Configure parameters to see loan summary...
         </div>
       </div>

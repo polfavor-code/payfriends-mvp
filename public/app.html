@@ -524,7 +524,22 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
+    }
+
+    .loan-calculator .schedule-header h2 {
+      margin: 0;
+    }
+
+    .loan-calculator .config-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .loan-calculator .config-header h2 {
+      margin: 0;
     }
 
     .loan-calculator .loan-meta {
@@ -573,6 +588,37 @@
 
     .loan-calculator thead th.align-right {
       text-align: right;
+    }
+
+    /* Column widths for repayment schedule table */
+    .loan-calculator .col-index {
+      width: 40px;
+      min-width: 40px;
+    }
+
+    .loan-calculator .col-due-date {
+      width: 180px;
+      min-width: 180px;
+    }
+
+    .loan-calculator .col-principal {
+      width: 110px;
+      min-width: 110px;
+    }
+
+    .loan-calculator .col-interest {
+      width: 110px;
+      min-width: 110px;
+    }
+
+    .loan-calculator .col-total-payment {
+      width: 130px;
+      min-width: 130px;
+    }
+
+    .loan-calculator .col-balance {
+      width: 110px;
+      min-width: 110px;
     }
 
     .loan-calculator tbody td {
@@ -2709,7 +2755,7 @@
         if (!container) return;
 
         const lines = [];
-        const pStyle = 'margin: 0 0 8px 0;'; // Tighter spacing between lines
+        const pStyle = 'margin: 0 0 4px 0; line-height: 1.5;'; // Compact spacing between lines
 
         lines.push(`<p style="${pStyle}"><strong>Loan amount:</strong> ${formatMoney(summary.loanAmount)}</p>`);
 
@@ -2816,9 +2862,9 @@
           const configLoanDuration = document.getElementById('config-loan-duration');
 
           if (configLoanTiming && configLoanStart && configLoanDuration) {
-            configLoanStart.innerHTML = `Loan start: ${loanStartText}`;
+            configLoanStart.innerHTML = `Loan start: <span style="color: #34d399;">${loanStartText}</span>`;
             if (loanDuration) {
-              configLoanDuration.innerHTML = `Loan duration: ${loanDuration}`;
+              configLoanDuration.innerHTML = `Loan duration: <span style="color: #34d399;">${loanDuration}</span>`;
               configLoanDuration.style.display = 'block';
             } else {
               configLoanDuration.style.display = 'none';
@@ -2832,12 +2878,12 @@
           result.rows.forEach(row => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-              <td>${row.index}</td>
-              <td>${row.label}</td>
-              <td class="align-right">${formatMoney(row.principal)}</td>
-              <td class="align-right">${formatMoney(row.interest)}</td>
-              <td class="align-right" style="font-weight: 600;">${formatMoney(row.totalPayment)}</td>
-              <td class="align-right">${formatMoney(row.balance)}</td>
+              <td class="col-index">${row.index}</td>
+              <td class="col-due-date">${row.label}</td>
+              <td class="align-right col-principal">${formatMoney(row.principal)}</td>
+              <td class="align-right col-interest">${formatMoney(row.interest)}</td>
+              <td class="align-right col-total-payment" style="font-weight: 600;">${formatMoney(row.totalPayment)}</td>
+              <td class="align-right col-balance">${formatMoney(row.balance)}</td>
             `;
             tbody.appendChild(tr);
           });
