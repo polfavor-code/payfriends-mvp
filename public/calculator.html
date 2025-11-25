@@ -364,7 +364,7 @@
             <option value="3-years">In 3 years</option>
             <option value="pick-date">Pick a date…</option>
           </select>
-          <div class="form-hint">When the first repayment is due after the loan starts.</div>
+          <div class="form-hint" id="paymentTimingHint">When full repayment is due.</div>
         </div>
 
         <div id="firstPaymentDateGroup" class="form-group hidden">
@@ -1056,6 +1056,7 @@
       const frequencyGroup = document.getElementById('frequencyGroup');
       const installmentsHint = document.getElementById('installmentsHint');
       const paymentTimingLabel = document.getElementById('paymentTimingLabel');
+      const paymentTimingHint = document.getElementById('paymentTimingHint');
       const firstPaymentDue = document.getElementById('firstPaymentDue');
       const numInstallments = document.getElementById('numInstallments');
 
@@ -1064,6 +1065,7 @@
 
         // 1) Change label to "Full repayment due (after loan start)"
         paymentTimingLabel.textContent = 'Full repayment due (after loan start)';
+        paymentTimingHint.textContent = 'When full repayment is due.';
 
         // 2) Lock installments to 1 and hide
         numInstallments.value = 1;
@@ -1084,6 +1086,7 @@
 
         // 1) Change label to "First payment due (after loan start)"
         paymentTimingLabel.textContent = 'First payment due (after loan start)';
+        paymentTimingHint.textContent = 'When the first repayment is due.';
 
         // 2) Show and enable installments, auto-set to 12 when switching
         numInstallmentsGroup.style.display = 'block';
