@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Loan Calculator - PayFriends</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <style>
     * {
       box-sizing: border-box;
@@ -305,174 +304,6 @@
       color: #ef4444;
       font-weight: 600;
     }
-
-    /* Flatpickr dark theme customization */
-    .flatpickr-calendar {
-      background: #1a1f25;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
-
-    .flatpickr-months {
-      background: rgba(12, 16, 21, 0.8);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .flatpickr-current-month {
-      padding: 10px 0;
-    }
-
-    .flatpickr-current-month .flatpickr-monthDropdown-months,
-    .flatpickr-current-month input.cur-year {
-      color: #e6eef6;
-      background: transparent;
-      font-weight: 600;
-    }
-
-    .flatpickr-current-month .numInputWrapper {
-      color: #a7b0b7;
-      font-weight: 500;
-    }
-
-    .flatpickr-current-month .numInputWrapper input.cur-year {
-      color: #a7b0b7;
-      font-weight: 500;
-    }
-
-    /* Make navigation arrows bigger and easier to hit */
-    .flatpickr-months .flatpickr-prev-month,
-    .flatpickr-months .flatpickr-next-month {
-      position: static;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #e6eef6;
-      fill: #e6eef6;
-      padding: 0;
-    }
-
-    .flatpickr-months .flatpickr-prev-month svg,
-    .flatpickr-months .flatpickr-next-month svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    .flatpickr-months .flatpickr-prev-month:hover,
-    .flatpickr-months .flatpickr-next-month:hover {
-      color: #5be49b;
-      fill: #5be49b;
-      background: rgba(91, 228, 155, 0.08);
-      border-radius: 999px;
-    }
-
-    /* Weekday labels */
-    .flatpickr-weekdays {
-      background: rgba(12, 16, 21, 0.6);
-      height: auto;
-      padding: 8px 0;
-    }
-
-    .flatpickr-weekday {
-      color: rgba(230, 238, 246, 0.55);
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.3px;
-    }
-
-    /* Day cells: smaller, rounded pills */
-    .flatpickr-day {
-      width: 34px;
-      height: 34px;
-      line-height: 34px;
-      max-width: 34px;
-      margin: 3px;
-      border-radius: 999px;
-      color: #e6eef6;
-      border-color: transparent;
-    }
-
-    .flatpickr-day:hover {
-      background: rgba(255, 255, 255, 0.07);
-      border-color: transparent;
-    }
-
-    /* Selected date - PayFriends green */
-    .flatpickr-day.selected,
-    .flatpickr-day.startRange,
-    .flatpickr-day.endRange,
-    .flatpickr-day.selected.inRange,
-    .flatpickr-day.startRange.inRange,
-    .flatpickr-day.endRange.inRange,
-    .flatpickr-day.selected:focus,
-    .flatpickr-day.startRange:focus,
-    .flatpickr-day.endRange:focus,
-    .flatpickr-day.selected:hover,
-    .flatpickr-day.startRange:hover,
-    .flatpickr-day.endRange:hover,
-    .flatpickr-day.selected.prevMonthDay,
-    .flatpickr-day.startRange.prevMonthDay,
-    .flatpickr-day.endRange.prevMonthDay,
-    .flatpickr-day.selected.nextMonthDay,
-    .flatpickr-day.startRange.nextMonthDay,
-    .flatpickr-day.endRange.nextMonthDay {
-      background: #5be49b;
-      border-color: #5be49b;
-      color: #0e1116;
-    }
-
-    /* Today indicator */
-    .flatpickr-day.today {
-      border: 1px solid #5be49b;
-      background: transparent;
-      color: #5be49b;
-    }
-
-    .flatpickr-day.today:hover {
-      background: rgba(91, 228, 155, 0.08);
-      border-color: #5be49b;
-      color: #5be49b;
-    }
-
-    .flatpickr-day.today.selected {
-      background: #5be49b;
-      border-color: #5be49b;
-      color: #0e1116;
-    }
-
-    /* Disabled / unavailable days */
-    .flatpickr-day.flatpickr-disabled,
-    .flatpickr-day.flatpickr-disabled:hover,
-    .flatpickr-day.prevMonthDay,
-    .flatpickr-day.nextMonthDay,
-    .flatpickr-day.notAllowed,
-    .flatpickr-day.notAllowed.prevMonthDay,
-    .flatpickr-day.notAllowed.nextMonthDay {
-      color: rgba(255, 255, 255, 0.2);
-      background: transparent;
-      border-color: transparent;
-      cursor: not-allowed;
-    }
-
-    /* In range styling (for date ranges if used) */
-    .flatpickr-day.inRange {
-      background: rgba(91, 228, 155, 0.15);
-      border-color: transparent;
-      box-shadow: -5px 0 0 rgba(91, 228, 155, 0.15), 5px 0 0 rgba(91, 228, 155, 0.15);
-    }
-
-    /* Month navigation */
-    span.flatpickr-prev-month,
-    span.flatpickr-next-month {
-      fill: #e6eef6;
-    }
-
-    span.flatpickr-prev-month:hover svg,
-    span.flatpickr-next-month:hover svg {
-      fill: #5be49b;
-    }
   </style>
 </head>
 <body>
@@ -513,7 +344,7 @@
 
         <div id="loanStartDateGroup" class="form-group hidden">
           <label for="loanStartDate">Pick a date</label>
-          <input type="text" id="loanStartDate" placeholder="dd/mm/yyyy">
+          <input type="date" id="loanStartDate">
         </div>
 
         <!-- 4. Repayment type -->
@@ -544,7 +375,7 @@
 
         <div id="firstPaymentDateGroup" class="form-group hidden">
           <label for="firstPaymentDate">Pick a date</label>
-          <input type="text" id="firstPaymentDate" placeholder="dd/mm/yyyy">
+          <input type="date" id="firstPaymentDate">
         </div>
 
         <!-- 6. Payment frequency -->
@@ -641,7 +472,6 @@
   </div>
 
   <script src="/js/formatters.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
     // Calculator Playground Logic - Single Source of Truth
     // This generateRepaymentSchedule function can be reused across wizard, manage, and review pages
@@ -1310,7 +1140,7 @@
     // Loan start date mode - immediate update
     document.getElementById('loanStartMode').addEventListener('change', runRepaymentCalculation);
 
-    // Loan start date picker - handled by Flatpickr onChange callback
+    // Loan start date picker - handled by native date input change event (see below)
 
     // Repayment type - handled by updateRepaymentTypeUI which calls runRepaymentCalculation
     // (see event listener below in UI-only section)
@@ -1318,7 +1148,7 @@
     // First payment due - immediate update
     document.getElementById('firstPaymentDue').addEventListener('change', runRepaymentCalculation);
 
-    // First payment date picker - handled by Flatpickr onChange callback
+    // First payment date picker - handled by native date input change event (see below)
 
     // Payment frequency - immediate update
     document.getElementById('frequency').addEventListener('change', runRepaymentCalculation);
@@ -1372,11 +1202,9 @@
       }
     });
 
-    // Date picker click/focus handlers are now managed by Flatpickr
-
     /**
      * Helper function to calculate loan start date from dropdown
-     * Uses parseEuDate to safely parse user-entered dates in dd/mm/yyyy format
+     * Uses parseIsoDate to safely parse dates from native date input (YYYY-MM-DD)
      */
     function calculateLoanStartDate(loanStartMode, explicitLoanStartDate) {
       const today = new Date();
@@ -1392,8 +1220,8 @@
         case 'in-1-week':
           return addDays(today, 7);
         case 'pick-date':
-          // Parse the date from dd/mm/yyyy format
-          return explicitLoanStartDate ? parseEuDate(explicitLoanStartDate) : null;
+          // Parse the date from YYYY-MM-DD format (native date input)
+          return explicitLoanStartDate ? parseIsoDate(explicitLoanStartDate) : null;
         default:
           return null;
       }
@@ -1442,7 +1270,7 @@
     /**
      * Helper function to calculate first payment timing
      * Returns {days, months, years, isMonthBased, isYearBased, exactDate}
-     * Uses parseEuDate to safely parse dates in dd/mm/yyyy format
+     * Uses parseIsoDate to safely parse dates from native date input (YYYY-MM-DD)
      */
     function calculateFirstPaymentTiming(firstPaymentDue, firstPaymentDate, loanStartDate) {
       switch (firstPaymentDue) {
@@ -1460,8 +1288,8 @@
           return { days: 1095, months: 36, years: 3, isMonthBased: false, isYearBased: true, exactDate: null };
         case 'pick-date':
           if (firstPaymentDate) {
-            // Parse the date string from dd/mm/yyyy format
-            const pickedDate = parseEuDate(firstPaymentDate);
+            // Parse the date string from YYYY-MM-DD format (native date input)
+            const pickedDate = parseIsoDate(firstPaymentDate);
 
             if (!pickedDate) {
               // Invalid date - return default
@@ -1606,9 +1434,9 @@
           if (!explicitLoanStartDate) {
             errors.push('Loan start date is required when "Pick a date…" is selected.');
           } else {
-            const parsedLoanStart = parseEuDate(explicitLoanStartDate);
+            const parsedLoanStart = parseIsoDate(explicitLoanStartDate);
             if (!parsedLoanStart) {
-              errors.push('Invalid loan start date. Please enter a valid date in dd/mm/yyyy format.');
+              errors.push('Invalid loan start date. Please select a valid date.');
             }
           }
         }
@@ -1619,9 +1447,9 @@
           if (!firstPaymentDate) {
             errors.push(`${fieldName} is required when "Pick a date…" is selected.`);
           } else {
-            const parsedRepaymentDate = parseEuDate(firstPaymentDate);
+            const parsedRepaymentDate = parseIsoDate(firstPaymentDate);
             if (!parsedRepaymentDate) {
-              errors.push(`Invalid ${fieldName.toLowerCase()}. Please enter a valid date in dd/mm/yyyy format.`);
+              errors.push(`Invalid ${fieldName.toLowerCase()}. Please select a valid date.`);
             } else {
               // Check if repayment date is not in the past
               const today = getTodayMidnight();
@@ -1893,11 +1721,11 @@
     // ============================================================================
 
     /**
-     * Parse European date format (dd/mm/yyyy or dd/MM/yyyy) to Date object
-     * @param {string} dateStr - Date string in dd/mm/yyyy format
+     * Parse ISO date format (YYYY-MM-DD) from native date input to Date object
+     * @param {string} dateStr - Date string in YYYY-MM-DD format
      * @returns {Date|null} - Date object or null if invalid
      */
-    function parseEuDate(dateStr) {
+    function parseIsoDate(dateStr) {
       if (!dateStr || typeof dateStr !== 'string') {
         return null;
       }
@@ -1907,60 +1735,20 @@
         return null;
       }
 
-      // Match dd/mm/yyyy or dd/MM/yyyy
-      const parts = trimmed.split('/');
-      if (parts.length !== 3) {
-        return null;
-      }
+      // Native date input returns YYYY-MM-DD format
+      // Add T00:00:00 to ensure we get midnight in local time
+      const date = new Date(trimmed + 'T00:00:00');
 
-      const day = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10);
-      const year = parseInt(parts[2], 10);
-
-      // Validate ranges
-      if (isNaN(day) || isNaN(month) || isNaN(year)) {
-        return null;
-      }
-      if (day < 1 || day > 31) {
-        return null;
-      }
-      if (month < 1 || month > 12) {
-        return null;
-      }
-      if (year < 1900 || year > 2100) {
-        return null;
-      }
-
-      // Create date object (month is 0-indexed in JS)
-      const date = new Date(year, month - 1, day);
-
-      // Verify the date is valid (catches invalid dates like 31/02/2025)
-      if (date.getDate() !== day || date.getMonth() !== month - 1 || date.getFullYear() !== year) {
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
         return null;
       }
 
       return date;
     }
 
-    /**
-     * Format Date object to European format (dd/mm/yyyy)
-     * @param {Date} date - Date object
-     * @returns {string} - Formatted date string
-     */
-    function formatDateToEu(date) {
-      if (!(date instanceof Date) || isNaN(date.getTime())) {
-        return '';
-      }
-
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-
-      return `${day}/${month}/${year}`;
-    }
-
     // ============================================================================
-    // FLATPICKR DATE PICKERS
+    // DATE PICKERS
     // ============================================================================
 
     /**
@@ -1971,73 +1759,56 @@
       return new Date(now.getFullYear(), now.getMonth(), now.getDate());
     }
 
-    // Initialize Flatpickr for loan start date (no restrictions - can be in the past)
-    const loanStartDatePicker = flatpickr("#loanStartDate", {
-      dateFormat: "d/m/Y",
-      allowInput: true,
-      onChange: function(selectedDates) {
-        if (selectedDates.length > 0) {
-          updateRepaymentMinDates(selectedDates[0]);
-          runRepaymentCalculation();
-        }
-      }
+    // Add event listeners for date inputs
+    document.getElementById('loanStartDate').addEventListener('change', function() {
+      updateRepaymentMinDate();
+      runRepaymentCalculation();
     });
 
-    // Initialize Flatpickr for first payment / full repayment date (restricted to today or future)
-    const firstPaymentDatePicker = flatpickr("#firstPaymentDate", {
-      dateFormat: "d/m/Y",
-      allowInput: true,
-      minDate: getTodayMidnight(),
-      onChange: function(selectedDates) {
-        runRepaymentCalculation();
-      }
+    document.getElementById('firstPaymentDate').addEventListener('change', function() {
+      runRepaymentCalculation();
     });
 
     /**
-     * Update minimum dates for repayment pickers based on loan start date
+     * Update minimum date for repayment picker based on loan start date
+     * Uses native HTML5 date input min attribute
      */
-    function updateRepaymentMinDates(effectiveLoanStartDate) {
-      const today = getTodayMidnight();
-      let minEffectiveDate = today;
-
-      if (effectiveLoanStartDate instanceof Date) {
-        const loanStartMidnight = new Date(
-          effectiveLoanStartDate.getFullYear(),
-          effectiveLoanStartDate.getMonth(),
-          effectiveLoanStartDate.getDate()
-        );
-
-        if (loanStartMidnight > minEffectiveDate) {
-          minEffectiveDate = loanStartMidnight;
-        }
-      }
-
-      if (firstPaymentDatePicker) {
-        firstPaymentDatePicker.set("minDate", minEffectiveDate);
-        // If currently selected date is now before min, clear it
-        const selected = firstPaymentDatePicker.selectedDates[0];
-        if (selected && selected < minEffectiveDate) {
-          firstPaymentDatePicker.clear();
-        }
-      }
-    }
-
-    /**
-     * Update min dates when loan start mode changes
-     */
-    function updateMinDatesFromLoanStartMode() {
+    function updateRepaymentMinDate() {
       const loanStartMode = document.getElementById('loanStartMode').value;
-      const explicitLoanStartDate = document.getElementById('loanStartDate').value;
+      const loanStartDateInput = document.getElementById('loanStartDate');
+      const firstPaymentDateInput = document.getElementById('firstPaymentDate');
 
-      const calculatedLoanStartDate = calculateLoanStartDate(loanStartMode, explicitLoanStartDate);
-      updateRepaymentMinDates(calculatedLoanStartDate);
+      const today = getTodayMidnight();
+      let minDate = today;
+
+      // If user picked a specific loan start date, use it as minimum
+      if (loanStartMode === 'pick-date' && loanStartDateInput.value) {
+        const loanStartDate = new Date(loanStartDateInput.value + 'T00:00:00');
+        if (loanStartDate > minDate) {
+          minDate = loanStartDate;
+        }
+      }
+
+      // Set min attribute in YYYY-MM-DD format
+      const minDateStr = minDate.toISOString().split('T')[0];
+      firstPaymentDateInput.setAttribute('min', minDateStr);
+
+      // Clear the date if it's now invalid
+      if (firstPaymentDateInput.value) {
+        const selectedDate = new Date(firstPaymentDateInput.value + 'T00:00:00');
+        if (selectedDate < minDate) {
+          firstPaymentDateInput.value = '';
+        }
+      }
     }
 
-    // Update min dates when loan start mode changes
-    document.getElementById('loanStartMode').addEventListener('change', updateMinDatesFromLoanStartMode);
+    // Initialize minimum date for repayment picker on page load
+    const today = getTodayMidnight();
+    const todayStr = today.toISOString().split('T')[0];
+    document.getElementById('firstPaymentDate').setAttribute('min', todayStr);
 
-    // Initialize min dates on page load
-    updateMinDatesFromLoanStartMode();
+    // Update min date when loan start mode changes
+    document.getElementById('loanStartMode').addEventListener('change', updateRepaymentMinDate);
   </script>
 </body>
 </html>
