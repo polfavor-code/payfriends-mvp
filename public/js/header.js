@@ -183,20 +183,18 @@
    */
   function updateActivityButton(unreadCount) {
     const activityButton = document.getElementById('activity-button');
-    const activityCountEl = document.getElementById('activity-count');
+    const activityLabel = document.getElementById('activity-label');
 
-    if (!activityButton) return;
+    if (!activityButton || !activityLabel) return;
 
-    if (unreadCount > 0) {
-      if (activityCountEl) {
-        activityCountEl.textContent = ` (${unreadCount})`;
-      }
+    const count = unreadCount || 0;
+
+    if (count > 0) {
+      activityLabel.textContent = `Activity (${count})`;
       activityButton.classList.add('inbox-widget-has-unread');
     } else {
-      // Show count even when zero
-      if (activityCountEl) {
-        activityCountEl.textContent = ' (0)';
-      }
+      // No parentheses when count is 0
+      activityLabel.textContent = 'Activity';
       activityButton.classList.remove('inbox-widget-has-unread');
     }
   }
