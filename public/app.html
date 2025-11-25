@@ -447,6 +447,15 @@
       }
     }
 
+    /* Flatten schedule card layout for Step 2 - remove inner box */
+    #wizard-step-2 .schedule-table {
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+    }
+
     .loan-calculator .form-group {
       margin-bottom: 20px;
     }
@@ -2519,8 +2528,6 @@
         document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Enter loan amount and details to calculate...</td></tr>';
         document.getElementById('scheduleTotals').style.display = 'none';
         document.getElementById('loanSummaryContent').innerHTML = 'Configure parameters to see loan summary...';
-        document.getElementById('loanStartLabel').innerHTML = 'Enter loan amount and details to see the repayment schedule...';
-        document.getElementById('loanDurationLabel').style.display = 'none';
 
         // Hide config loan timing
         const configLoanTiming = document.getElementById('config-loan-timing');
@@ -2804,17 +2811,7 @@
             result.effectiveMode
           );
 
-          document.getElementById('loanStartLabel').innerHTML = `Loan start: ${loanStartText}`;
-
-          const loanDurationLabel = document.getElementById('loanDurationLabel');
-          if (loanDuration) {
-            loanDurationLabel.innerHTML = `Loan duration: ${loanDuration}`;
-            loanDurationLabel.style.display = 'block';
-          } else {
-            loanDurationLabel.style.display = 'none';
-          }
-
-          // Also update the configuration card with loan timing info
+          // Update the configuration card with loan timing info
           const configLoanTiming = document.getElementById('config-loan-timing');
           const configLoanStart = document.getElementById('config-loan-start');
           const configLoanDuration = document.getElementById('config-loan-duration');
