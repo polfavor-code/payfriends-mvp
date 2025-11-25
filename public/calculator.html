@@ -534,6 +534,16 @@
     // Get formatting functions from window
     const formatMoney = window.formatCurrency2;
 
+    // Safe DOM reference for principal error element
+    let principalError = null;
+
+    function getPrincipalErrorElement() {
+      if (!principalError) {
+        principalError = document.getElementById('principalError');
+      }
+      return principalError;
+    }
+
     /**
      * Add days to a date
      */
@@ -1920,18 +1930,30 @@
 
     // Loan amount validation and formatting
     const principalInput = document.getElementById('principal');
-    const principalError = document.getElementById('principalError');
 
     // Clear error message helper
     function clearPrincipalError() {
-      principalError.style.display = 'none';
-      principalError.textContent = '';
+      const el = getPrincipalErrorElement();
+      if (!el) return;
+      el.style.display = 'none';
+      el.textContent = '';
     }
 
     // Show error message helper
     function showPrincipalError(message) {
-      principalError.textContent = message;
-      principalError.style.display = 'block';
+      const el = getPrincipalErrorElement();
+      if (!el) {
+        // Fail-safe: do nothing if the element is missing
+        return;
+      }
+
+      if (message) {
+        el.textContent = message;
+        el.style.display = 'block';
+      } else {
+        el.textContent = '';
+        el.style.display = 'none';
+      }
     }
 
     // On focus: remove formatting to let user type freely, clear errors
