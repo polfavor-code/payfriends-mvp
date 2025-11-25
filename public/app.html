@@ -20,6 +20,8 @@
   <script src="/components/summary-block.js"></script>
   <!-- Fairness icon component -->
   <script src="/components/fairness-icon.js"></script>
+  <!-- Loan calculator engine (shared calculation logic) -->
+  <script src="/js/loanCalculatorEngine.js"></script>
   <!-- Legal pages router -->
   <script src="/js/legal-router.js"></script>
   <!-- Legal pages content -->
@@ -156,6 +158,10 @@
     .wizard-step.active{background-color:var(--accent); border-color:var(--accent); color:#0e1116; font-weight:600}
     .wizard-step.completed{color:#9da7b8}
     .wizard-content{min-height:200px}
+    .wizard-footer{display:flex; justify-content:space-between; align-items:center; margin-top:24px; padding-top:0; gap:12px}
+    .wizard-footer button{flex:0 0 auto}
+    .wizard-footer .wizard-back{order:1}
+    .wizard-footer .wizard-next{order:2; margin-left:auto}
     .hidden{display:none}
     .role-badge{display:inline-block; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; background:#2a2a2a; color:#fff}
     .role-badge.lend{background:#3d7bdc; color:#fff}
@@ -395,6 +401,235 @@
         grid-column:span 8;
       }
     }
+
+    /* Loan Calculator Styles - used in Step 2 */
+    .loan-calculator .main-grid {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .loan-calculator .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Align wizard footer with calculator grid on Step 2 */
+    #wizard-step-2 .wizard-footer {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    #wizard-step-2 .wizard-footer .wizard-back {
+      order: 0;
+      justify-self: start;
+    }
+
+    #wizard-step-2 .wizard-footer .wizard-next {
+      order: 0;
+      justify-self: end;
+      margin-left: 0;
+    }
+
+    @media (max-width: 1024px) {
+      #wizard-step-2 .wizard-footer {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      #wizard-step-2 .wizard-footer .wizard-back,
+      #wizard-step-2 .wizard-footer .wizard-next {
+        justify-self: stretch;
+      }
+    }
+
+    /* Flatten schedule card layout for Step 2 - remove inner box */
+    #wizard-step-2 .schedule-table {
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+    }
+
+    .loan-calculator .form-group {
+      margin-bottom: 20px;
+    }
+
+    .loan-calculator .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #d1d5db;
+    }
+
+    .loan-calculator .form-group input,
+    .loan-calculator .form-group select {
+      width: 100%;
+      background: rgba(12, 16, 21, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #e5e7eb;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .loan-calculator .form-group select {
+      padding-right: 36px;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23e5e7eb' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      cursor: pointer;
+    }
+
+    .loan-calculator .form-group input:focus,
+    .loan-calculator .form-group select:focus {
+      outline: none;
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+
+    .loan-calculator .form-group input[type="number"] {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .loan-calculator .loan-amount-empty {
+      border-color: #34d399 !important;
+      box-shadow: 0 0 0 1px #34d399;
+    }
+
+    .loan-calculator .loan-amount-note {
+      font-size: 12px;
+      margin-top: 6px;
+      font-style: normal;
+      color: #34d399;
+    }
+
+    .loan-calculator .form-hint {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    .loan-calculator .schedule-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .loan-calculator .loan-meta {
+      margin-bottom: 16px;
+    }
+
+    .loan-calculator .loan-meta-primary {
+      font-size: 15px;
+      font-weight: 500;
+      color: #e5e7eb;
+    }
+
+    .loan-calculator .loan-meta-secondary {
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #34d399;
+    }
+
+    .loan-calculator .schedule-table {
+      overflow-x: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      background: rgba(12, 16, 21, 0.8);
+    }
+
+    .loan-calculator table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .loan-calculator thead th {
+      background: rgba(31, 41, 55, 0.98);
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #9ca3af;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .loan-calculator thead th.align-right {
+      text-align: right;
+    }
+
+    .loan-calculator tbody td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #d1d5db;
+    }
+
+    .loan-calculator tbody td.align-right {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .loan-calculator tbody tr:nth-child(even) {
+      background: rgba(10, 13, 17, 0.6);
+    }
+
+    .loan-calculator tbody tr:hover {
+      background: rgba(55, 65, 81, 0.3);
+    }
+
+    .loan-calculator tfoot td {
+      padding: 14px 12px;
+      border-top: 1px solid rgba(16, 185, 129, 0.6);
+      font-weight: 700;
+      color: #34d399;
+      font-size: 14px;
+    }
+
+    .loan-calculator tfoot td.align-right {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .loan-calculator tfoot td:first-child {
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .loan-calculator .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .loan-calculator .badge-preview {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+    }
+
+    .loan-calculator .badge-actual {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
   </style>
 </head>
 <body>
@@ -508,14 +743,13 @@
       <nav class="wizard-steps" role="navigation" aria-label="Agreement wizard steps">
         <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
         <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">2. Terms</div>
-        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Interest">3. Interest</div>
-        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Payments">4. Payments</div>
-        <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Summary">5. Summary</div>
-        <div class="wizard-step" id="step-indicator-6" onclick="clickStep(6)" aria-label="Step 6, Share">6. Share</div>
+        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Payments">3. Payments</div>
+        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Summary">4. Summary</div>
+        <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Share">5. Share</div>
       </nav>
 
-      <!-- Main card starts here, matching Settings card structure -->
-      <section class="card">
+      <!-- Wizard steps container -->
+      <div class="wizard-steps-container">
         <!-- Step 1: Setup -->
       <div id="wizard-step-1" class="wizard-content">
         <div id="readonly-banner-1" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
@@ -577,301 +811,37 @@
             <input id="description" type="text" placeholder="e.g. Money for rent, Car repair, Holiday loan" required maxlength="30" oninput="autoCapitalizeDescription()" />
           </div>
           <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to identify this agreement.</p>
+        </div>
 
-          <div style="margin-top:24px">
-            <button onclick="goToTerms()">Continue to Terms</button>
-          </div>
+        <!-- Wizard navigation footer -->
+        <div class="wizard-footer">
+          <button class="wizard-next" onclick="goToTerms()">Continue to Terms</button>
         </div>
         <p id="step1-status" class="status"></p>
       </div>
 
-      <!-- Step 2: Terms -->
+      <!-- Step 2: Loan Calculator -->
       <div id="wizard-step-2" class="wizard-content hidden">
         <div id="readonly-banner-2" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
           ⚠️ This agreement has already been sent to <span id="readonly-name-2"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
         </div>
-        <h3 style="margin-top:0">Define the loan terms.</h3>
+        <h3 style="margin-top:0">Configure loan terms and repayment schedule.</h3>
 
-        <div class="row">
-          <label>Loan amount (€)</label>
-          <input id="amount" type="text" placeholder="e.g. 6.000" required onblur="formatAmountInput(); validateAmountField();" onfocus="unformatAmountInput()" oninput="updateEstimate()" />
-        </div>
-        <p style="color:var(--muted); font-size:12px; margin:6px 0 4px 172px">Enter the amount in euros.</p>
-        <p id="amount-error" class="hidden" style="color:#f87171; font-size:13px; margin:0 0 16px 172px"></p>
+        <!-- Calculator will be loaded here -->
+        <div id="wizard-calculator-container"></div>
 
-        <div class="row">
-          <label>Money transfer date (Loan start)</label>
-          <select id="money-sent-option" onchange="updateMoneySentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-            <option value="on-acceptance">When agreement is accepted</option>
-            <option value="today">Today</option>
-            <option value="tomorrow">Tomorrow</option>
-            <option value="3days">In 3 days</option>
-            <option value="7days">In 7 days</option>
-            <option value="custom">Pick a date…</option>
-          </select>
-        </div>
-        <div id="custom-money-sent-date" class="hidden" style="margin:16px 0">
-          <div class="row">
-            <label>Pick a date</label>
-            <input id="money-sent-date" type="date" required onchange="onMoneySentDateChange()" />
-          </div>
-        </div>
-        <p style="color:var(--muted); font-size:12px; margin:-6px 0 20px 172px">When was or will the money be sent to the borrower? You can also choose a date in the past when adding an existing loan.</p>
-
-        <div style="margin:16px 0 24px 0">
-          <label style="font-weight:600; font-size:14px; margin-bottom:8px; display:block">Repayment type</label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:8px; transition:all 0.2s" id="repayment-onetime-card">
-            <input type="radio" name="repayment-type" value="one_time" onchange="toggleInstallmentFields()" checked />
-            <span>One-time payment</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:12px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); transition:all 0.2s" id="repayment-installments-card">
-            <input type="radio" name="repayment-type" value="installments" onchange="toggleInstallmentFields()" />
-            <span>Installments</span>
-          </label>
-        </div>
-
-        <!-- One-time payment fields -->
-        <div id="one-time-fields">
-          <div class="row">
-            <label>Full repayment due</label>
-            <select id="one-time-due-option" onchange="updateOneTimeDueOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="in_1_week">1 week after loan start</option>
-              <option value="in_1_month">1 month after loan start</option>
-              <option value="in_3_months">3 months after loan start</option>
-              <option value="in_6_months">6 months after loan start</option>
-              <option value="in_1_year" selected>1 year after loan start</option>
-              <option value="pick_date">Pick a date</option>
-            </select>
-          </div>
-          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">Select when the borrower is expected to repay the full loan amount.</p>
-
-          <div id="custom-one-time-due-date" class="hidden" style="margin:16px 0">
-            <div class="row">
-              <label>Pick a date</label>
-              <input id="due-date" type="date" required onchange="updateDueDateHelper()" />
-            </div>
-          </div>
-
-          <div id="one-time-estimate" style="color:var(--accent); font-size:14px; font-weight:500; margin:32px 0 12px 0; line-height:1.6"></div>
-        </div>
-
-        <!-- Installment fields -->
-        <div id="installment-fields" class="hidden">
-          <!-- Loan duration (only visible for installments) -->
-          <div id="loan-duration-section">
-            <div class="row">
-              <label>Loan duration</label>
-              <div style="flex:1; display:flex; gap:8px">
-                <input id="loan-duration-value" type="number" min="1" max="600" step="1" value="12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
-                <select id="loan-duration-unit" onchange="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-                  <option value="days">Days</option>
-                  <option value="weeks">Weeks</option>
-                  <option value="months" selected>Months</option>
-                  <option value="years">Years</option>
-                </select>
-              </div>
-            </div>
-            <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">How long the loan lasts in total (for example 12 months or 3 years).</p>
-          </div>
-
-          <div class="row">
-            <label>Number of payments</label>
-            <input id="num-repayments" type="number" min="2" max="120" step="1" value="12" placeholder="e.g. 12" oninput="calculateInstallments()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
-          </div>
-          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">How many separate payments the borrower will make over this period.</p>
-          <p id="num-repayments-error" class="hidden" style="color:#f87171; font-size:13px; margin:-14px 0 20px 172px"></p>
-
-          <div class="row">
-            <label>Payment frequency</label>
-            <div id="repayment-interval-display" style="flex:1; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,0.02); color:var(--muted); font-size:14px">
-              Every 1 month
-            </div>
-          </div>
-          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">Automatically calculated from the loan duration and number of payments.</p>
-
-          <div class="row">
-            <label>First payment due</label>
-            <select id="first-payment-option" onchange="updateFirstPaymentOption()" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)">
-              <option value="3days">In 3 days after loan start</option>
-              <option value="7days">In 7 days after loan start</option>
-              <option value="1month" selected>In 1 month after loan start</option>
-              <option value="2months">In 2 months after loan start</option>
-              <option value="3months">In 3 months after loan start</option>
-              <option value="6months">In 6 months after loan start</option>
-              <option value="12months">In 12 months after loan start</option>
-              <option value="custom">Pick a date…</option>
-            </select>
-          </div>
-          <p style="color:var(--muted); font-size:12px; margin:6px 0 20px 172px">When will the borrower start paying you back?</p>
-
-          <div id="custom-first-payment-date" class="hidden" style="margin:16px 0">
-            <div class="row">
-              <label>Pick a date</label>
-              <input id="first-payment-date" type="date" required onchange="calculateInstallments()" />
-            </div>
-          </div>
-
-          <div id="installment-summary" style="margin:32px 0 12px 0; line-height:1.8">
-            <p id="plan-length-summary" style="color:var(--accent); font-size:14px; font-weight:500; margin:0 0 4px 0"></p>
-            <p id="installment-estimate" style="color:var(--accent); font-size:14px; font-weight:500; margin:0"></p>
-          </div>
-        </div>
-
-        <div style="margin-top:24px">
-          <button onclick="goToInterest()">Continue to Interest</button>
-          <button class="secondary" onclick="goToStep(1)">Back</button>
+        <!-- Wizard navigation footer -->
+        <div class="wizard-footer">
+          <button class="secondary wizard-back" onclick="goToStep(1)">Back</button>
+          <button class="wizard-next" onclick="saveCalculatorAndContinue()">Continue to Payments</button>
         </div>
         <p id="step2-status" class="status"></p>
       </div>
 
-      <!-- Step 3: Interest & Calculation -->
+      <!-- Step 3: Payments & Reminders -->
       <div id="wizard-step-3" class="wizard-content hidden">
         <div id="readonly-banner-3" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
           ⚠️ This agreement has already been sent to <span id="readonly-name-3"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
-        </div>
-        <h3 style="margin-top:0">Interest & payment calculation</h3>
-
-        <!-- Interest Mode Toggle -->
-        <div style="margin-top:20px; margin-bottom:24px">
-          <div id="interest-mode-toggle" style="display:inline-flex; background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:4px; gap:4px">
-            <button id="mode-rate" onclick="setInterestMode('rate')" style="padding:10px 20px; border-radius:8px; border:none; background:var(--accent); color:#000; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
-              Set interest rate
-            </button>
-            <button id="mode-none" onclick="setInterestMode('none')" style="padding:10px 20px; border-radius:8px; border:none; background:transparent; color:var(--text); font-weight:500; font-size:14px; cursor:pointer; transition:all 0.2s ease; flex:1; white-space:nowrap">
-              No interest
-            </button>
-          </div>
-        </div>
-
-        <!-- Interest Input Row -->
-        <div style="margin-top:20px; display:flex; align-items:center; gap:12px">
-          <input id="interest-rate" type="number" min="0" max="99" step="0.1" placeholder="6" oninput="handleInterestInput()" style="width:80px; height:44px; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-size:16px; text-align:center" />
-          <span style="color:var(--text); font-size:16px; font-weight:500">% per year</span>
-          <button id="interest-rate-badge" onclick="toggleFairnessExplanation()" aria-expanded="false" aria-controls="fairness-explanation" style="display:inline-flex; align-items:center; gap:6px; height:44px; padding:0 16px; border-radius:22px; font-size:13px; font-weight:600; white-space:nowrap; border:none; cursor:pointer; transition:all 0.2s ease">
-            <span id="interest-rate-badge-text"></span>
-            <svg style="width:14px; height:14px; opacity:0.8" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-              <circle cx="8" cy="8" r="6.5" stroke-width="1.5"/>
-              <path d="M8 7.5v4M8 5v0.5" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Expandable Fairness Explanation -->
-        <div id="fairness-explanation" class="hidden" style="margin-top:12px; background:rgba(61,220,151,0.08); border:1px solid rgba(61,220,151,0.2); border-radius:10px; padding:16px; transition:all 0.2s ease">
-          <p style="margin:0 0 12px 0; font-size:13px; font-weight:600; color:var(--text)">Why this rate?</p>
-          <ul style="margin:0 0 12px 0; padding-left:20px; font-size:13px; line-height:1.6; color:var(--text)">
-            <li style="margin-bottom:6px">Larger loan amounts increase risk ↑</li>
-            <li style="margin-bottom:6px">Longer durations increase uncertainty ↑</li>
-            <li style="margin-bottom:6px">More installments reduce repayment risk ↓</li>
-          </ul>
-          <p id="fairness-explanation-summary" style="margin:0; font-size:13px; color:var(--muted); line-height:1.6"></p>
-        </div>
-
-        <div id="interest-summary-card" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin:24px 0">
-          <h4 style="margin:0 0 16px 0; font-size:16px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px">Loan summary</h4>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted)">Loan amount</span>
-            <span style="font-weight:600" id="summary-loan-amount">€ 0,00</span>
-          </div>
-          <div id="summary-repayment-type-row" style="display:none; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted)">Repayment type</span>
-            <span style="font-weight:600" id="summary-repayment-type">—</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted)">Duration</span>
-            <span style="font-weight:600" id="summary-duration">—</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted)">Interest rate</span>
-            <span style="font-weight:600"><span id="summary-interest-rate">0</span>% per year</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid rgba(255,255,255,0.08); margin-top:8px; padding-top:12px">
-            <span style="color:var(--muted)">Total interest</span>
-            <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px">
-              <span style="font-weight:600" id="total-interest-display">€ 0,00</span>
-              <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
-            </div>
-          </div>
-          <script>
-            document.currentScript.previousElementSibling.querySelector('div > span:last-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
-          </script>
-          <div style="display:flex; justify-content:space-between; padding:8px 0">
-            <span style="color:var(--muted); font-weight:600">Total to repay</span>
-            <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px; color:var(--accent)">
-              <span style="font-weight:700; font-size:18px;" id="total-repay-display">€ 0,00</span>
-              <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
-            </div>
-          </div>
-          <script>
-            document.currentScript.previousElementSibling.querySelector('div > span:last-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
-          </script>
-          <p style="margin:12px 0 0 0; color:var(--muted); font-size:12px; line-height:1.5; display:flex; align-items:center; gap:4px">
-            <span>Amounts marked with</span>
-            <span style="display:inline-flex; align-items:center; width:16px; height:16px; flex-shrink:0;" title="Fairness Between Friends"></span>
-            <span>are calculated using the Fairness Between Friends rules.</span>
-          </p>
-          <script>
-            document.currentScript.previousElementSibling.querySelectorAll('span')[1].innerHTML = fairnessIconSVG('', {width:'16px', height:'16px', display:'block'});
-          </script>
-        </div>
-
-        <!-- Fairness Between Friends (collapsible) -->
-        <div style="margin:20px 0">
-          <button onclick="toggleSection('fairness-step3-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-            <div style="display:flex; align-items:center; gap:8px; color:var(--accent)">
-              <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
-              <span>Fairness Between Friends (How it Works)</span>
-            </div>
-            <span id="fairness-step3-toggle">▼</span>
-          </button>
-          <script>
-            document.currentScript.previousElementSibling.querySelector('div > span:first-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
-          </script>
-          <div id="fairness-step3-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
-            <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
-              PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
-            </p>
-            <ul style="margin:0 0 12px 0; padding-left:20px; font-size:14px; line-height:1.6">
-              <li style="margin-bottom:8px">Interest is calculated dynamically on the outstanding balance and the time elapsed.</li>
-              <li style="margin-bottom:8px"><strong>Early or higher payments</strong> reduce the total interest and, where applicable, lower future installment amounts.</li>
-              <li style="margin-bottom:8px"><strong>Late or smaller payments</strong> increase the total interest for the period the amount remains outstanding.</li>
-              <li style="margin-bottom:8px">These recalculations happen automatically and are reflected instantly in the agreement for both lender and borrower.</li>
-            </ul>
-            <p style="margin:0; font-size:14px; line-height:1.6">
-              Each repayment entry in the payment history clearly notes when a payment caused a change in the total interest, outstanding balance, or future installments.
-              This ensures both parties always see the current, fair value of the loan.
-            </p>
-          </div>
-        </div>
-
-        <div style="margin:20px 0">
-          <button onclick="toggleBreakdown()" class="secondary" style="padding:8px 16px; font-size:14px">
-            <span id="breakdown-toggle-text">Show payment breakdown</span>
-          </button>
-        </div>
-
-        <div id="interest-breakdown" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin:20px 0; max-height:400px; overflow-y:auto">
-          <h5 style="margin:0 0 12px 0; font-size:14px">Payment breakdown</h5>
-          <table style="width:100%; font-size:13px">
-            <thead>
-              <tr id="breakdown-thead" style="border-bottom:1px solid rgba(255,255,255,0.08)">
-              </tr>
-            </thead>
-            <tbody id="breakdown-tbody"></tbody>
-          </table>
-        </div>
-
-        <div style="margin-top:32px">
-          <button onclick="goToPayments()">Continue to Payments</button>
-          <button class="secondary" onclick="goToStep(2)">Back</button>
-        </div>
-        <p id="step3-status" class="status"></p>
-      </div>
-
-      <!-- Step 4: Payments & Reminders -->
-      <div id="wizard-step-4" class="wizard-content hidden">
-        <div id="readonly-banner-4" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
-          ⚠️ This agreement has already been sent to <span id="readonly-name-4"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
         </div>
         <h3 style="margin-top:0">Decide how repayments will be made and managed.</h3>
 
@@ -1009,17 +979,18 @@
           <p style="color:var(--muted); font-size:13px; margin:0; line-height:1.5">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</p>
         </div>
 
-        <div style="margin-top:32px">
-          <button onclick="goToSummary()">Continue to Summary</button>
-          <button class="secondary" onclick="goToStep(3)">Back</button>
+        <!-- Wizard navigation footer -->
+        <div class="wizard-footer">
+          <button class="secondary wizard-back" onclick="goToStep(2)">Back</button>
+          <button class="wizard-next" onclick="goToSummary()">Continue to Summary</button>
         </div>
-        <p id="step4-status" class="status"></p>
+        <p id="step3-status" class="status"></p>
       </div>
 
-      <!-- Step 5: Summary -->
-      <div id="wizard-step-5" class="wizard-content hidden">
-        <div id="readonly-banner-5" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
-          ⚠️ This agreement has already been sent to <span id="readonly-name-5"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
+      <!-- Step 4: Summary -->
+      <div id="wizard-step-4" class="wizard-content hidden">
+        <div id="readonly-banner-4" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
+          ⚠️ This agreement has already been sent to <span id="readonly-name-4"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
         </div>
         <h3 style="margin-top:0">Review and send your agreement.</h3>
 
@@ -1087,26 +1058,32 @@
           </div>
         </div>
 
-        <div id="invite-not-sent" style="margin-top:32px">
-          <button onclick="sendInvite()">Send to <span id="send-friend-name"></span> for review</button>
-          <button class="secondary" onclick="goToStep(4)">Back to edit</button>
+        <!-- Wizard navigation footer - before sending -->
+        <div id="invite-not-sent" class="wizard-footer">
+          <button class="secondary wizard-back" onclick="goToStep(3)">Back to edit</button>
+          <button class="wizard-next" onclick="sendInvite()">Send to <span id="send-friend-name"></span> for review</button>
         </div>
 
+        <!-- After sending state -->
         <div id="invite-sent" class="hidden">
           <div style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.2); border-radius:12px; padding:16px; margin:24px 0">
             <p style="margin:0; color:var(--accent); font-weight:600; font-size:16px">✓ Invite sent!</p>
           </div>
           <p style="color:var(--muted); font-size:14px">Share this invite link with your friend:</p>
           <div class="invite-url-box" id="invite-url"></div>
-          <button onclick="copyInviteUrl()">Copy invite link</button>
-          <button class="secondary" onclick="resetWizard()">Create another agreement</button>
+
+          <!-- Wizard navigation footer - after sending -->
+          <div class="wizard-footer">
+            <button class="wizard-next" onclick="copyInviteUrl()">Copy invite link</button>
+            <button class="secondary" onclick="resetWizard()">Create another agreement</button>
+          </div>
         </div>
 
-        <p id="step5-status" class="status"></p>
+        <p id="step3-status" class="status"></p>
       </div>
 
-      <!-- Step 6: Share -->
-      <div id="wizard-step-6" class="wizard-content hidden">
+      <!-- Step 5: Share -->
+      <div id="wizard-step-5" class="wizard-content hidden">
         <h3 style="margin-top:0">Sharing options</h3>
 
         <!-- Success header -->
@@ -1131,15 +1108,15 @@
           <div id="qr-code-container"></div>
         </div>
 
-        <!-- Buttons -->
-        <div style="margin-top:32px; display:flex; gap:12px">
-          <button onclick="goToDashboard()">Done, return to dashboard</button>
+        <!-- Wizard navigation footer -->
+        <div class="wizard-footer">
           <button class="secondary" onclick="createAnotherAgreement()">Create another agreement</button>
+          <button class="wizard-next" onclick="goToDashboard()">Done, return to dashboard</button>
         </div>
 
-        <p id="step6-status" class="status"></p>
+        <p id="step5-status" class="status"></p>
       </div>
-      </section>
+      </div>
     </div>
 
     <!-- Payment Confirmation Modal -->
@@ -1395,7 +1372,7 @@
     // Wizard functions
     function goToStep(step) {
       // Hide all steps
-      for (let i = 1; i <= 6; i++) {
+      for (let i = 1; i <= 5; i++) {
         document.getElementById(`wizard-step-${i}`).classList.add('hidden');
         const indicator = document.getElementById(`step-indicator-${i}`);
         indicator.classList.remove('active');
@@ -1418,28 +1395,18 @@
         toggleBorrowerFields();
       }
 
-      // Special handling for step 2: initialize repayment type card styling
+      // Special handling for step 2: load and initialize calculator
       if (step === 2) {
-        const oneTimeCard = document.getElementById('repayment-onetime-card');
-        const installmentsCard = document.getElementById('repayment-installments-card');
-        const repaymentType = document.querySelector('input[name="repayment-type"]:checked').value;
-
-        if (repaymentType === 'one_time') {
-          oneTimeCard.classList.add('reminder-option-active');
-          installmentsCard.classList.remove('reminder-option-active');
-        } else {
-          oneTimeCard.classList.remove('reminder-option-active');
-          installmentsCard.classList.add('reminder-option-active');
-        }
+        initializeWizardCalculator();
       }
 
-      // Special handling for step 4: initialize reminder mode highlight
-      if (step === 4) {
+      // Special handling for step 3: initialize reminder mode highlight
+      if (step === 3) {
         toggleReminderMode();
       }
 
       // Apply read-only mode if agreement has been sent
-      if (wizardData.agreementSent && step <= 5) {
+      if (wizardData.agreementSent && step <= 4) {
         applyReadOnlyMode(step);
       }
     }
@@ -1483,15 +1450,15 @@
           inviteSent.classList.add('hidden');
         }
 
-        // Add a button to navigate to Step 6 if it doesn't exist
-        const step5Div = document.getElementById('wizard-step-5');
+        // Add a button to navigate to Step 5 (Share) if it doesn't exist
+        const step4Div = document.getElementById('wizard-step-4');
         let viewShareBtn = document.getElementById('view-share-btn');
-        if (!viewShareBtn && step5Div) {
+        if (!viewShareBtn && step4Div) {
           viewShareBtn = document.createElement('div');
           viewShareBtn.id = 'view-share-btn';
           viewShareBtn.style.marginTop = '32px';
-          viewShareBtn.innerHTML = '<button onclick="goToStep(6)">View Share options</button>';
-          step5Div.appendChild(viewShareBtn);
+          viewShareBtn.innerHTML = '<button onclick="goToStep(5)">View Share options</button>';
+          step4Div.appendChild(viewShareBtn);
         }
       }
     }
@@ -1500,14 +1467,14 @@
     function clickStep(targetStep) {
       // Determine current step
       let currentStep = 1;
-      for (let i = 1; i <= 6; i++) {
+      for (let i = 1; i <= 5; i++) {
         if (!document.getElementById(`wizard-step-${i}`).classList.contains('hidden')) {
           currentStep = i;
           break;
         }
       }
 
-      // If agreement has been sent, allow navigation to all steps including Step 6
+      // If agreement has been sent, allow navigation to all steps including Step 5
       if (wizardData.agreementSent) {
         goToStep(targetStep);
         return;
@@ -1530,36 +1497,27 @@
           }
         }
 
-        // Step 2 → 3+: Validate step 2 fields
+        // Step 2 → 3+: Validate calculator and navigate to Payments
         if (currentStep === 2 && targetStep >= 3) {
-          if (!validateStep2()) return;
-          if (targetStep === 3) {
-            goToInterest();
-            return;
-          }
-        }
-
-        // Step 3 → 4+: Navigate to payments
-        if (currentStep === 3 && targetStep >= 4) {
-          if (targetStep === 4) {
-            goToPayments();
-            return;
-          }
-        }
-
-        // Step 4 → 5: Navigate to summary
-        if (currentStep === 4 && targetStep === 5) {
-          goToSummary();
+          saveCalculatorAndContinue();
           return;
         }
 
-        // Step 5 → 6: Can only happen after sending (handled by sendInvite)
-        if (currentStep === 5 && targetStep === 6) {
-          return; // Prevent manual navigation to step 6
+        // Step 3 → 4+: Navigate to summary
+        if (currentStep === 3 && targetStep >= 4) {
+          if (targetStep === 4) {
+            goToSummary();
+            return;
+          }
         }
 
-        // Step 6 allows clicking back
-        if (currentStep === 6 && targetStep < 6) {
+        // Step 4 → 5: Can only happen after sending (handled by sendInvite)
+        if (currentStep === 4 && targetStep === 5) {
+          return; // Prevent manual navigation to step 5
+        }
+
+        // Step 5 allows clicking back
+        if (currentStep === 5 && targetStep < 5) {
           goToStep(targetStep);
           return;
         }
@@ -2497,6 +2455,603 @@
     }
 
     // Navigate to interest step
+    // ============================================================================
+    // LOAN CALCULATOR INTEGRATION FOR STEP 2
+    // ============================================================================
+
+    let wizardCalculatorInitialized = false;
+    let wizardCalculatorSchedule = null;
+    let wizardCalculatorSummary = null;
+
+    /**
+     * Initialize the loan calculator in Step 2
+     */
+    async function initializeWizardCalculator() {
+      // Only load calculator once
+      if (wizardCalculatorInitialized) {
+        return;
+      }
+
+      try {
+        // Fetch the calculator partial HTML
+        const response = await fetch('/partials/loan-calculator-form.html');
+        if (!response.ok) {
+          throw new Error(`Failed to load calculator: ${response.status}`);
+        }
+
+        const html = await response.text();
+        document.getElementById('wizard-calculator-container').innerHTML = html;
+
+        // Set up the calculator logic
+        setupWizardCalculatorLogic();
+
+        wizardCalculatorInitialized = true;
+      } catch (error) {
+        console.error('Error initializing wizard calculator:', error);
+        document.getElementById('wizard-calculator-container').innerHTML =
+          '<div style="padding: 20px; color: #ef4444;">Error loading calculator. Please refresh the page.</div>';
+      }
+    }
+
+    /**
+     * Set up calculator UI logic and event listeners for wizard Step 2
+     */
+    function setupWizardCalculatorLogic() {
+      const formatMoney = window.formatCurrency2;
+
+      // Interest mode ('interest' or 'no-interest')
+      let interestMode = 'interest';
+
+      /**
+       * Reset calculator to defaults (wizard version)
+       */
+      function resetWizardCalculator() {
+        document.getElementById('principal').value = '';
+        document.getElementById('interest').value = 5;
+        document.getElementById('repaymentType').value = 'one_time';
+        document.getElementById('numInstallments').value = 1;
+        document.getElementById('frequency').value = 'every-month';
+        document.getElementById('firstPaymentDue').value = '1-year';
+        document.getElementById('loanStartMode').value = 'upon_acceptance';
+
+        setInterestMode('interest');
+        updateLoanAmountHighlight();
+
+        document.getElementById('loanStartDateGroup').classList.add('hidden');
+        document.getElementById('firstPaymentDateGroup').classList.add('hidden');
+        document.getElementById('loanStartDate').value = '';
+        document.getElementById('firstPaymentDate').value = '';
+
+        updateRepaymentTypeUI();
+
+        document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Enter loan amount and details to calculate...</td></tr>';
+        document.getElementById('scheduleTotals').style.display = 'none';
+        document.getElementById('loanSummaryContent').innerHTML = 'Configure parameters to see loan summary...';
+
+        // Hide config loan timing
+        const configLoanTiming = document.getElementById('config-loan-timing');
+        if (configLoanTiming) {
+          configLoanTiming.style.display = 'none';
+        }
+
+        // Clear wizard results
+        wizardCalculatorSchedule = null;
+        wizardCalculatorSummary = null;
+      }
+
+      // Enable the reset button and attach handler
+      const resetBtn = document.getElementById('calculator-reset-link');
+      if (resetBtn) {
+        resetBtn.style.display = 'inline-block';
+        resetBtn.addEventListener('click', function(event) {
+          event.preventDefault();
+          resetWizardCalculator();
+        });
+      }
+
+      /**
+       * Set interest mode (Interest or No interest)
+       */
+      function setInterestMode(mode) {
+        interestMode = mode;
+        const modeInterestBtn = document.getElementById('mode-interest');
+        const modeNoInterestBtn = document.getElementById('mode-no-interest');
+        const interestInputRow = document.getElementById('interest-input-row');
+        const fairRangeExplanation = document.getElementById('fair-range-explanation');
+
+        if (mode === 'interest') {
+          modeInterestBtn.style.background = '#6ee7b7';
+          modeInterestBtn.style.color = '#000';
+          modeNoInterestBtn.style.background = 'transparent';
+          modeNoInterestBtn.style.color = '#e5e7eb';
+          interestInputRow.style.display = 'flex';
+        } else {
+          modeInterestBtn.style.background = 'transparent';
+          modeInterestBtn.style.color = '#e5e7eb';
+          modeNoInterestBtn.style.background = '#6ee7b7';
+          modeNoInterestBtn.style.color = '#000';
+          interestInputRow.style.display = 'none';
+          fairRangeExplanation.classList.add('hidden');
+          document.getElementById('fair-range-pill').setAttribute('aria-expanded', 'false');
+        }
+
+        runCalculation();
+      }
+
+      /**
+       * Toggle fair range explanation visibility
+       */
+      function toggleFairRangeExplanation() {
+        const explanation = document.getElementById('fair-range-explanation');
+        const pill = document.getElementById('fair-range-pill');
+        const isExpanded = pill.getAttribute('aria-expanded') === 'true';
+
+        if (isExpanded) {
+          explanation.classList.add('hidden');
+          pill.setAttribute('aria-expanded', 'false');
+        } else {
+          explanation.classList.remove('hidden');
+          pill.setAttribute('aria-expanded', 'true');
+        }
+      }
+
+      /**
+       * Calculate fair interest range
+       */
+      function calculateFairRange() {
+        const principalValue = document.getElementById('principal').value.trim();
+        const loanAmount = window.PayFriendsCalculator.parseMoney(principalValue);
+        const repaymentType = document.getElementById('repaymentType').value;
+        const numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
+        const firstPaymentDueOption = document.getElementById('firstPaymentDue').value;
+
+        let minRate = 4;
+        let maxRate = 7;
+
+        if (loanAmount > 0) {
+          if (loanAmount > 10000 * 100) {
+            minRate += 1;
+            maxRate += 1;
+          } else if (loanAmount < 2000 * 100) {
+            minRate = Math.max(3, minRate - 1);
+            maxRate = Math.max(5, maxRate - 1);
+          }
+        }
+
+        const durationMonths = estimateLoanDurationMonths(firstPaymentDueOption, numberOfInstallments);
+        if (durationMonths > 24) {
+          minRate += 1;
+          maxRate += 1;
+        } else if (durationMonths < 6) {
+          minRate = Math.max(3, minRate - 1);
+          maxRate = Math.max(5, maxRate - 1);
+        }
+
+        if (repaymentType === 'installments' && numberOfInstallments >= 12) {
+          maxRate = Math.max(5, maxRate - 1);
+        }
+
+        return { min: minRate, max: maxRate };
+      }
+
+      function estimateLoanDurationMonths(firstPaymentOption, installments) {
+        let months = 12;
+        if (firstPaymentOption === '1-week') months = 0.25;
+        else if (firstPaymentOption === '1-month') months = 1;
+        else if (firstPaymentOption === '6-months') months = 6;
+        else if (firstPaymentOption === '1-year') months = 12;
+        else if (firstPaymentOption === '2-years') months = 24;
+        else if (firstPaymentOption === '3-years') months = 36;
+
+        if (installments > 1) {
+          months = months * installments;
+        }
+        return months;
+      }
+
+      function updateFairRangePill() {
+        const range = calculateFairRange();
+        document.getElementById('fair-range-text').textContent = `Fair range (${range.min}–${range.max}%)`;
+      }
+
+      function updateRepaymentTypeUI() {
+        const repaymentType = document.getElementById('repaymentType').value;
+        const isOneTime = repaymentType === 'one_time';
+
+        const numInstallmentsGroup = document.getElementById('numInstallments').closest('.form-group');
+        const frequencyGroup = document.getElementById('frequencyGroup');
+        const installmentsHint = document.getElementById('installmentsHint');
+        const paymentTimingLabel = document.getElementById('paymentTimingLabel');
+        const paymentTimingHint = document.getElementById('paymentTimingHint');
+        const firstPaymentDue = document.getElementById('firstPaymentDue');
+        const numInstallments = document.getElementById('numInstallments');
+
+        if (isOneTime) {
+          paymentTimingLabel.textContent = 'Full repayment due (after loan start)';
+          paymentTimingHint.textContent = 'When full repayment is due.';
+          numInstallments.value = 1;
+          numInstallmentsGroup.style.display = 'none';
+          frequencyGroup.style.display = 'none';
+          installmentsHint.style.display = 'block';
+          if (!firstPaymentDue.value || firstPaymentDue.value === '') {
+            firstPaymentDue.value = '1-year';
+          }
+        } else {
+          paymentTimingLabel.textContent = 'First payment due (after loan start)';
+          paymentTimingHint.textContent = 'When the first repayment is due.';
+          numInstallmentsGroup.style.display = 'block';
+          numInstallments.value = 12;
+          frequencyGroup.style.display = 'block';
+          installmentsHint.style.display = 'none';
+          firstPaymentDue.value = '1-year';
+        }
+
+        runCalculation();
+        updateFairRangePill();
+      }
+
+      function debounce(func, delay) {
+        let timeoutId;
+        return function(...args) {
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => func.apply(this, args), delay);
+        };
+      }
+
+      function runCalculation() {
+        calculateSchedule();
+      }
+
+      const debouncedCalculation = debounce(runCalculation, 300);
+
+      function renderLoanSummary(summary) {
+        const container = document.getElementById('loanSummaryContent');
+        if (!container) return;
+
+        const lines = [];
+        const pStyle = 'margin: 0 0 8px 0;'; // Tighter spacing between lines
+
+        lines.push(`<p style="${pStyle}"><strong>Loan amount:</strong> ${formatMoney(summary.loanAmount)}</p>`);
+
+        const repaymentTypeLabel = summary.repaymentType === 'one_time' ? 'One-time payment' : 'Installments';
+        lines.push(`<p style="${pStyle}"><strong>Repayment type:</strong> ${repaymentTypeLabel}</p>`);
+
+        if (summary.loanDuration) {
+          lines.push(`<p style="${pStyle}"><strong>Loan duration:</strong> ${summary.loanDuration}</p>`);
+        }
+
+        if (summary.annualInterestRate === 0) {
+          lines.push(`<p style="${pStyle}"><strong>Annual interest rate:</strong> No interest (0%)</p>`);
+        } else {
+          lines.push(`<p style="${pStyle}"><strong>Annual interest rate:</strong> ${summary.annualInterestRate.toFixed(2)}% per year</p>`);
+        }
+
+        const fairnessIcon = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginLeft: '4px'});
+        lines.push(`<p style="${pStyle}"><strong>Total interest:</strong> ${formatMoney(summary.totalInterest)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
+        lines.push(`<p style="${pStyle}"><strong>Total to repay:</strong> ${formatMoney(summary.totalRepayment)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
+
+        if (summary.repaymentType === 'installments' && summary.numberOfInstallments > 1) {
+          const principalPerInstallment = Math.round(summary.loanAmount / summary.numberOfInstallments);
+          lines.push(`<p style="${pStyle}"><strong>Principal per installment:</strong> ~${formatMoney(principalPerInstallment)} (excluding interest)</p>`);
+        }
+
+        if (summary.firstDueDate) {
+          const label = summary.repaymentType === 'one_time' ? 'Full repayment due' : 'First payment due';
+          lines.push(`<p style="margin: 0;"><strong>${label}:</strong> ${summary.firstDueDate}</p>`);
+        }
+
+        // Fairness Between Friends footer
+        lines.push(`
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 13px; color: #9ca3af;">
+            <p style="margin-bottom: 8px;">
+              Amounts marked with <span class="pf-fairness-icon-inline" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle; margin: 0 2px;">${fairnessIcon}</span> are calculated using the Fairness Between Friends rules.
+              <a href="#" id="wizardFairnessToggle" style="color: #34d399; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s;" onmouseover="this.style.borderBottomColor='#34d399'" onmouseout="this.style.borderBottomColor='transparent'">How it works</a>
+            </p>
+            <div id="wizardFairnessExplanation" style="display: none; margin-top: 12px; padding: 12px; background: rgba(0, 0, 0, 0.2); border-radius: 6px; font-size: 12px; line-height: 1.6; color: #d1d5db;">
+              Fairness Between Friends adjusts interest dynamically based on the outstanding balance and the time that has passed. This means paying earlier or more reduces total interest, while paying later or less increases it. Both sides always see the current, fair value of the loan in real time.
+            </div>
+          </div>
+        `);
+
+        container.innerHTML = lines.join('');
+
+        // Toggle Fairness "How it works" explanation
+        const fairnessToggle = document.getElementById('wizardFairnessToggle');
+        const fairnessExplanation = document.getElementById('wizardFairnessExplanation');
+
+        if (fairnessToggle && fairnessExplanation) {
+          fairnessToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (fairnessExplanation.style.display === 'none') {
+              fairnessExplanation.style.display = 'block';
+            } else {
+              fairnessExplanation.style.display = 'none';
+            }
+          });
+        }
+      }
+
+      function calculateSchedule() {
+        try {
+          const calculatorContainer = document.querySelector('[data-loan-calculator]');
+          const loanInputs = window.PayFriendsCalculator.buildLoanInputsFromForm(calculatorContainer);
+
+          if (interestMode === 'no-interest') {
+            loanInputs.annualInterestRate = 0;
+          }
+
+          const principalValue = document.getElementById('principal').value.trim();
+          const loanAmount = window.PayFriendsCalculator.parseMoney(principalValue);
+
+          if (principalValue === '' || !loanAmount || loanAmount <= 0 || isNaN(loanAmount)) {
+            document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">Enter loan amount and details to calculate...</td></tr>';
+            document.getElementById('scheduleTotals').style.display = 'none';
+            wizardCalculatorSchedule = null;
+            wizardCalculatorSummary = null;
+            return;
+          }
+
+          const result = window.PayFriendsCalculator.calculateLoanSchedule(loanInputs);
+
+          const badge = result.effectiveMode === 'preview'
+            ? '<span class="badge badge-preview">Preview</span>'
+            : '<span class="badge badge-actual">Actual</span>';
+          document.getElementById('modeBadge').innerHTML = badge;
+
+          const loanStartText = window.PayFriendsCalculator.getLoanStartLabelWithContext(
+            loanInputs.explicitLoanStartDate,
+            result.effectiveMode,
+            loanInputs.loanStartMode
+          );
+
+          const loanDuration = window.PayFriendsCalculator.calculateLoanDuration(
+            result.rows,
+            loanInputs.explicitLoanStartDate,
+            result.effectiveMode
+          );
+
+          // Update the configuration card with loan timing info
+          const configLoanTiming = document.getElementById('config-loan-timing');
+          const configLoanStart = document.getElementById('config-loan-start');
+          const configLoanDuration = document.getElementById('config-loan-duration');
+
+          if (configLoanTiming && configLoanStart && configLoanDuration) {
+            configLoanStart.innerHTML = `Loan start: ${loanStartText}`;
+            if (loanDuration) {
+              configLoanDuration.innerHTML = `Loan duration: ${loanDuration}`;
+              configLoanDuration.style.display = 'block';
+            } else {
+              configLoanDuration.style.display = 'none';
+            }
+            configLoanTiming.style.display = 'block';
+          }
+
+          const tbody = document.getElementById('scheduleBody');
+          tbody.innerHTML = '';
+
+          result.rows.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${row.index}</td>
+              <td>${row.label}</td>
+              <td class="align-right">${formatMoney(row.principal)}</td>
+              <td class="align-right">${formatMoney(row.interest)}</td>
+              <td class="align-right" style="font-weight: 600;">${formatMoney(row.totalPayment)}</td>
+              <td class="align-right">${formatMoney(row.balance)}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+
+          document.getElementById('scheduleTotals').style.display = 'table-footer-group';
+          document.getElementById('footerPrincipal').textContent = formatMoney(result.totals.principal);
+          document.getElementById('footerInterest').textContent = formatMoney(result.totals.interest);
+          document.getElementById('footerTotal').textContent = formatMoney(result.totals.totalRepayment);
+
+          const summary = window.PayFriendsCalculator.calculateLoanSummary(loanInputs, result);
+          renderLoanSummary(summary);
+
+          // Store results for wizard
+          wizardCalculatorSchedule = result;
+          wizardCalculatorSummary = summary;
+
+        } catch (error) {
+          console.error('Calculation error:', error);
+          document.getElementById('loanSummaryContent').innerHTML =
+            '<p style="color: #ef4444;">Error calculating loan schedule. Please check your inputs.</p>';
+        }
+      }
+
+      function updateLoanAmountHighlight() {
+        const input = document.getElementById('principal');
+        if (!input) return;
+
+        const value = input.value.trim();
+        if (value === '') {
+          input.classList.add('loan-amount-empty');
+        } else {
+          input.classList.remove('loan-amount-empty');
+        }
+      }
+
+      // Event listeners
+      document.getElementById('principal').addEventListener('input', () => {
+        updateLoanAmountHighlight();
+        debouncedCalculation();
+        updateFairRangePill();
+      });
+
+      document.getElementById('principal').addEventListener('blur', function() {
+        const trimmed = this.value.trim();
+        if (trimmed !== '') {
+          const num = window.PayFriendsCalculator.parseMoney(trimmed);
+          if (num > 0) {
+            this.value = window.PayFriendsCalculator.formatMoneyInput(num);
+          }
+        }
+      });
+
+      document.getElementById('interest').addEventListener('input', () => {
+        debouncedCalculation();
+        updateFairRangePill();
+      });
+
+      document.getElementById('mode-interest').addEventListener('click', () => setInterestMode('interest'));
+      document.getElementById('mode-no-interest').addEventListener('click', () => setInterestMode('no-interest'));
+      document.getElementById('fair-range-pill').addEventListener('click', toggleFairRangeExplanation);
+      document.getElementById('loanStartMode').addEventListener('change', runCalculation);
+      document.getElementById('repaymentType').addEventListener('change', updateRepaymentTypeUI);
+
+      document.getElementById('firstPaymentDue').addEventListener('change', () => {
+        runCalculation();
+        updateFairRangePill();
+      });
+
+      document.getElementById('frequency').addEventListener('change', runCalculation);
+
+      document.getElementById('numInstallments').addEventListener('input', () => {
+        debouncedCalculation();
+        updateFairRangePill();
+      });
+
+      document.getElementById('loanStartMode').addEventListener('change', function() {
+        const loanStartDateGroup = document.getElementById('loanStartDateGroup');
+        const loanStartDateInput = document.getElementById('loanStartDate');
+        if (this.value === 'pick-date') {
+          loanStartDateGroup.classList.remove('hidden');
+        } else {
+          loanStartDateGroup.classList.add('hidden');
+          loanStartDateInput.value = '';
+        }
+      });
+
+      document.getElementById('firstPaymentDue').addEventListener('change', function() {
+        const firstPaymentDateGroup = document.getElementById('firstPaymentDateGroup');
+        const firstPaymentDateInput = document.getElementById('firstPaymentDate');
+        if (this.value === 'pick-date') {
+          firstPaymentDateGroup.classList.remove('hidden');
+        } else {
+          firstPaymentDateGroup.classList.add('hidden');
+          firstPaymentDateInput.value = '';
+        }
+      });
+
+      document.getElementById('loanStartDate').addEventListener('change', runCalculation);
+      document.getElementById('firstPaymentDate').addEventListener('change', runCalculation);
+
+      // Initialize
+      document.getElementById('repaymentType').value = 'one_time';
+      document.getElementById('firstPaymentDue').value = '1-year';
+      updateRepaymentTypeUI();
+      updateFairRangePill();
+      updateLoanAmountHighlight();
+    }
+
+    /**
+     * Save calculator results and proceed to next step (Interest)
+     */
+    function saveCalculatorAndContinue() {
+      // Validate that calculator has been used and has valid results
+      if (!wizardCalculatorSchedule || !wizardCalculatorSummary) {
+        document.getElementById('step2-status').textContent = 'Please configure the loan terms and wait for the calculation to complete.';
+        document.getElementById('step2-status').style.color = '#ef4444';
+        return;
+      }
+
+      const principalValue = document.getElementById('principal').value.trim();
+      const loanAmount = window.PayFriendsCalculator.parseMoney(principalValue);
+
+      if (!loanAmount || loanAmount <= 0) {
+        document.getElementById('step2-status').textContent = 'Please enter a valid loan amount.';
+        document.getElementById('step2-status').style.color = '#ef4444';
+        return;
+      }
+
+      // Extract values from calculator
+      const repaymentType = document.getElementById('repaymentType').value;
+      const numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
+      const paymentFrequency = document.getElementById('frequency').value;
+      const loanStartMode = document.getElementById('loanStartMode').value;
+      const loanStartDate = document.getElementById('loanStartDate').value;
+      const firstPaymentDue = document.getElementById('firstPaymentDue').value;
+      const firstPaymentDate = document.getElementById('firstPaymentDate').value;
+
+      // Store in wizard data
+      wizardData.amount = loanAmount / 100; // Convert cents to euros
+      wizardData.repaymentType = repaymentType;
+      wizardData.moneySentOption = loanStartMode;
+      wizardData.moneySentDate = loanStartDate;
+
+      if (repaymentType === 'one_time') {
+        wizardData.installmentCount = 1;
+        wizardData.oneTimeDueOption = firstPaymentDue;
+        wizardData.dueDate = firstPaymentDate || null;
+      } else {
+        wizardData.installmentCount = numberOfInstallments;
+        wizardData.paymentFrequency = paymentFrequency;
+        wizardData.firstPaymentOption = firstPaymentDue;
+        wizardData.firstPaymentDate = firstPaymentDate;
+      }
+
+      // Store schedule and summary for later use
+      wizardData.calculatedSchedule = wizardCalculatorSchedule;
+      wizardData.calculatedSummary = wizardCalculatorSummary;
+
+      // Clear status and proceed
+      document.getElementById('step2-status').textContent = '';
+
+      // Interest is now fully handled in the calculator, so proceed directly to Payments
+      goToStep(3);
+    }
+
+    /**
+     * Calculate fair range for wizard (helper function)
+     */
+    function calculateFairRangeForWizard() {
+      const loanAmount = wizardData.amount * 100; // convert back to cents
+      const repaymentType = wizardData.repaymentType;
+      const numberOfInstallments = wizardData.installmentCount || 1;
+
+      let minRate = 4;
+      let maxRate = 7;
+
+      if (loanAmount > 0) {
+        if (loanAmount > 10000 * 100) {
+          minRate += 1;
+          maxRate += 1;
+        } else if (loanAmount < 2000 * 100) {
+          minRate = Math.max(3, minRate - 1);
+          maxRate = Math.max(5, maxRate - 1);
+        }
+      }
+
+      // Estimate duration from summary if available
+      if (wizardData.calculatedSummary && wizardData.calculatedSummary.loanDuration) {
+        const durationStr = wizardData.calculatedSummary.loanDuration.toLowerCase();
+        if (durationStr.includes('year')) {
+          const years = parseInt(durationStr);
+          if (years > 2) {
+            minRate += 1;
+            maxRate += 1;
+          }
+        } else if (durationStr.includes('month')) {
+          const months = parseInt(durationStr);
+          if (months > 24) {
+            minRate += 1;
+            maxRate += 1;
+          } else if (months < 6) {
+            minRate = Math.max(3, minRate - 1);
+            maxRate = Math.max(5, maxRate - 1);
+          }
+        }
+      }
+
+      if (repaymentType === 'installments' && numberOfInstallments >= 12) {
+        maxRate = Math.max(5, maxRate - 1);
+      }
+
+      return { min: minRate, max: maxRate };
+    }
+
     function goToInterest() {
       if (!validateStep2()) return;
 
@@ -3048,7 +3603,7 @@
         wizardData.totalRepayAmount = wizardData.amount;
       }
 
-      goToStep(4);
+      goToStep(3);
 
       // Update worst case scenario visibility based on loan amount
       updateWorstCaseVisibility();
@@ -3061,7 +3616,7 @@
 
       // Validate at least one payment method is selected
       if (selectedMethods.length === 0) {
-        document.getElementById('step4-status').textContent = 'Please select at least one payment method';
+        document.getElementById('step3-status').textContent = 'Please select at least one payment method';
         return;
       }
 
@@ -3072,7 +3627,7 @@
       if (selectedMethods.includes('bank')) {
         const bankInstructions = document.getElementById('bank-instructions').value.trim();
         if (!bankInstructions) {
-          document.getElementById('step4-status').textContent = 'Please enter bank transfer instructions';
+          document.getElementById('step3-status').textContent = 'Please enter bank transfer instructions';
           return;
         }
         paymentMethodsData.push({
@@ -3086,7 +3641,7 @@
       if (selectedMethods.includes('paypal')) {
         const paypalEmail = document.getElementById('paypal-email').value.trim();
         if (!paypalEmail) {
-          document.getElementById('step4-status').textContent = 'Please enter PayPal email';
+          document.getElementById('step3-status').textContent = 'Please enter PayPal email';
           return;
         }
         paymentMethodsData.push({
@@ -3100,7 +3655,7 @@
       if (selectedMethods.includes('crypto')) {
         const cryptoInstructions = document.getElementById('crypto-instructions').value.trim();
         if (!cryptoInstructions) {
-          document.getElementById('step4-status').textContent = 'Please enter crypto payment instructions';
+          document.getElementById('step3-status').textContent = 'Please enter crypto payment instructions';
           return;
         }
         paymentMethodsData.push({
@@ -3123,7 +3678,7 @@
       if (selectedMethods.includes('other')) {
         const otherDescription = document.getElementById('other-payment-description').value.trim();
         if (!otherDescription) {
-          document.getElementById('step4-status').textContent = 'Please describe the other payment method';
+          document.getElementById('step3-status').textContent = 'Please describe the other payment method';
           return;
         }
         paymentMethodsData.push({
@@ -3148,7 +3703,7 @@
         const checkboxes = document.querySelectorAll('.custom-reminder-checkbox:checked');
         if (checkboxes.length === 0) {
           document.getElementById('custom-reminder-error').style.display = 'block';
-          document.getElementById('step4-status').textContent = 'Please select at least one reminder';
+          document.getElementById('step3-status').textContent = 'Please select at least one reminder';
           return;
         }
         wizardData.reminderOffsets = Array.from(checkboxes).map(cb => parseInt(cb.value));
@@ -3164,7 +3719,7 @@
         wizardData.debtCollectionClause = false;
       }
 
-      goToStep(5);
+      goToStep(4);
       updateSummary();
     }
 
@@ -3270,7 +3825,7 @@
       togglePaymentMethodDetails();
 
       // Clear any error messages
-      document.getElementById('step4-status').textContent = '';
+      document.getElementById('step3-status').textContent = '';
     }
 
     // Update card visual state (selected/unselected)
@@ -3657,9 +4212,9 @@
         wizardData.inviteUrl = data.inviteUrl;
         wizardData.agreementSent = true;
 
-        // Navigate to Step 6 (Share)
+        // Navigate to Step 5 (Share)
         status.textContent = '';
-        goToStep(6);
+        goToStep(5);
         populateShareStep();
         refresh();
         loadMessages();
@@ -3686,7 +4241,7 @@
       const inviteUrl = wizardData.inviteUrl;
 
       // Update step indicator
-      document.getElementById('step-indicator-6').textContent = '6. Share';
+      document.getElementById('step-indicator-5').textContent = '5. Share';
 
       // Populate all name placeholders
       document.getElementById('share-invite-name').textContent = firstName;
@@ -3724,7 +4279,7 @@
           button.style.background = '';
         }, 2000);
       }).catch(() => {
-        document.getElementById('step6-status').textContent = '❌ Failed to copy';
+        document.getElementById('step5-status').textContent = '❌ Failed to copy';
       });
     }
 
@@ -3814,7 +4369,7 @@
       document.getElementById('step1-status').textContent = '';
       document.getElementById('step2-status').textContent = '';
       document.getElementById('step3-status').textContent = '';
-      document.getElementById('step4-status').textContent = '';
+      document.getElementById('step3-status').textContent = '';
       document.getElementById('step5-status').textContent = '';
 
       // Reset invite section
