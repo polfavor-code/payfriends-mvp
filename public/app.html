@@ -1127,6 +1127,9 @@
           </div>
         </div>
 
+        <!-- Status message for Step 4 -->
+        <p id="step4-status" class="status-message" style="color:var(--text); margin:16px 0; font-size:14px"></p>
+
         <!-- Wizard navigation footer - before sending -->
         <div id="invite-not-sent" class="wizard-footer">
           <button class="secondary wizard-back" onclick="goToStep(3)">Back to edit</button>
@@ -4265,10 +4268,86 @@
     }
 
     async function sendInvite() {
-      const status = document.getElementById('step5-status');
-      status.textContent = 'Creating agreement...';
+      // Use Step 4 status element
+      const status = document.getElementById('step4-status');
+      status.textContent = 'Creating agreement…';
 
       try {
+        // Helper function to parse amount - handles formats like "4.444,00" or "4444.00"
+        function parseAmount(value) {
+          if (typeof value === 'number') return value;
+          if (!value) return 0;
+
+          // Remove any currency symbols and whitespace
+          let cleaned = String(value).replace(/[€$\s]/g, '');
+
+          // If it contains both dot and comma, determine which is decimal separator
+          if (cleaned.includes('.') && cleaned.includes(',')) {
+            // European format: 4.444,00 -> 4444.00
+            cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+          } else if (cleaned.includes(',')) {
+            // Just comma: 4444,00 -> 4444.00
+            cleaned = cleaned.replace(',', '.');
+          }
+          // Otherwise it's already in correct format
+
+          const parsed = parseFloat(cleaned);
+          return isNaN(parsed) ? 0 : parsed;
+        }
+
+        // Helper function to parse interest rate - handles formats like "5% per year" or "5"
+        function parseInterestRate(value) {
+          if (typeof value === 'number') return value;
+          if (!value) return 0;
+
+          const cleaned = String(value).replace(/[%]/g, '').replace(/per year/gi, '').trim();
+          const parsed = parseFloat(cleaned);
+          return isNaN(parsed) ? 0 : parsed;
+        }
+
+        // Helper function to format date to ISO string (YYYY-MM-DD)
+        function formatDateISO(value) {
+          if (!value) return null;
+
+          // If it's already a date object
+          if (value instanceof Date) {
+            if (isNaN(value.getTime())) return null;
+            return value.toISOString().split('T')[0];
+          }
+
+          // If it's a string
+          const str = String(value).trim();
+          if (!str) return null;
+
+          // Try to parse it
+          const date = new Date(str);
+          if (isNaN(date.getTime())) return null;
+
+          return date.toISOString().split('T')[0];
+        }
+
+        // Use calculated summary values from Step 2 if available
+        const summary = wizardData.calculatedSummary || {};
+
+        // Parse amount from cents or from raw value
+        const amountValue = summary.loanAmount
+          ? summary.loanAmount / 100  // Convert from cents to euros
+          : parseAmount(wizardData.amount);
+
+        // Parse interest rate
+        const interestRateValue = summary.annualInterestRate !== undefined
+          ? summary.annualInterestRate
+          : parseInterestRate(wizardData.interestRate);
+
+        // Parse total interest and repay amount
+        const totalInterestValue = summary.totalInterest
+          ? summary.totalInterest / 100
+          : parseAmount(wizardData.totalInterest);
+
+        const totalRepayValue = summary.totalRepayment
+          ? summary.totalRepayment / 100
+          : parseAmount(wizardData.totalRepayAmount);
+
         // Send all selected payment methods as comma-separated string
         const paymentMethodsStr = wizardData.paymentMethods && wizardData.paymentMethods.length > 0
           ? wizardData.paymentMethods.join(',')
@@ -4279,14 +4358,14 @@
           borrowerEmail: wizardData.friendEmail,
           phoneNumber: wizardData.phoneNumber,
           description: wizardData.description,
-          amount: wizardData.amount,
-          moneySentDate: wizardData.moneySentDate,
-          dueDate: wizardData.dueDate,
+          amount: amountValue,
+          moneySentDate: formatDateISO(wizardData.moneySentDate),
+          dueDate: formatDateISO(wizardData.dueDate),
           direction: wizardData.role,
           repaymentType: wizardData.repaymentType,
-          interestRate: wizardData.interestRate,
-          totalInterest: wizardData.totalInterest,
-          totalRepayAmount: wizardData.totalRepayAmount,
+          interestRate: interestRateValue,
+          totalInterest: totalInterestValue,
+          totalRepayAmount: totalRepayValue,
           paymentPreferenceMethod: paymentMethodsStr,
           paymentMethodsJson: wizardData.paymentMethodsJson,
           paymentOtherDescription: wizardData.paymentOtherDescription,
@@ -4294,17 +4373,17 @@
           reminderOffsets: wizardData.reminderOffsets,
           proofRequired: wizardData.proofRequired,
           // Only include debt collection clause if amount >= 6000 EUR
-          debtCollectionClause: (wizardData.amount >= WORST_CASE_MIN_AMOUNT_EUR) ? wizardData.debtCollectionClause : false
+          debtCollectionClause: (amountValue >= WORST_CASE_MIN_AMOUNT_EUR) ? wizardData.debtCollectionClause : false
         };
 
         // Add installment-specific fields if applicable
         if (wizardData.repaymentType === 'installments') {
           payload.planLength = wizardData.planLength;
           payload.planUnit = wizardData.planUnit;
-          payload.installmentCount = wizardData.installmentCount;
+          payload.installmentCount = summary.numberOfInstallments || wizardData.installmentCount;
           payload.installmentAmount = wizardData.installmentAmount;
-          payload.firstPaymentDate = wizardData.firstPaymentDate;
-          payload.finalDueDate = wizardData.finalDueDate;
+          payload.firstPaymentDate = formatDateISO(wizardData.firstPaymentDate);
+          payload.finalDueDate = formatDateISO(wizardData.finalDueDate);
           payload.paymentFrequency = wizardData.paymentFrequency;
         }
 
@@ -4313,6 +4392,9 @@
           payload.oneTimeDueOption = wizardData.oneTimeDueOption;
         }
 
+        // Log the payload for debugging
+        console.log('Sending agreement payload:', payload);
+
         const res = await fetch('/api/agreements', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -4320,19 +4402,28 @@
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed');
 
+        // If backend returns error, show it and stay on Step 4
+        if (!res.ok) {
+          status.textContent = '❌ ' + (data.error || 'Failed to create agreement');
+          console.error('Backend error:', data);
+          return; // Don't navigate to Step 5
+        }
+
+        // Success! Store invite URL and navigate to Step 5
         wizardData.inviteUrl = data.inviteUrl;
         wizardData.agreementSent = true;
 
-        // Navigate to Step 5 (Share)
+        // Clear status and navigate to Step 5 (Share)
         status.textContent = '';
         goToStep(5);
         populateShareStep();
         refresh();
         loadMessages();
       } catch (err) {
+        // Network or other errors
         status.textContent = '❌ ' + err.message;
+        console.error('Error sending invite:', err);
       }
     }
 
