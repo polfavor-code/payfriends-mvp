@@ -323,13 +323,7 @@
           <div id="principalError" class="form-hint" style="display: none; color: #ef4444; font-style: normal; margin-top: 6px;"></div>
         </div>
 
-        <!-- 2. Annual interest rate -->
-        <div class="form-group">
-          <label for="interest">Annual interest rate (%)</label>
-          <input type="number" id="interest" value="5" min="0" max="100" step="0.1">
-        </div>
-
-        <!-- 3. Loan start date -->
+        <!-- 2. Loan start date -->
         <div class="form-group">
           <label for="loanStartMode">Loan start date (when borrower receives the money)</label>
           <select id="loanStartMode">
@@ -411,6 +405,49 @@
           <input type="number" id="numInstallments" value="12" min="1" max="120" step="1">
           <div class="form-hint" id="installmentsHint" style="display: none;">
             For one-time payments the loan is repaid in a single payment.
+          </div>
+        </div>
+
+        <!-- 8. Interest Section -->
+        <div class="form-group" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+          <label style="display: block; margin-bottom: 12px;">Interest</label>
+
+          <!-- Interest / No interest toggle -->
+          <div id="interest-mode-toggle" style="display: inline-flex; background: #10151d; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 16px;">
+            <button id="mode-interest" type="button" style="padding: 10px 20px; border-radius: 8px; border: none; background: var(--accent); color: #000; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease; flex: 1; white-space: nowrap;">
+              Interest
+            </button>
+            <button id="mode-no-interest" type="button" style="padding: 10px 20px; border-radius: 8px; border: none; background: transparent; color: var(--text); font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; flex: 1; white-space: nowrap;">
+              No interest
+            </button>
+          </div>
+
+          <!-- Interest input row with Fair range pill -->
+          <div id="interest-input-row" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="number" id="interest" value="5" min="0" max="100" step="0.1" style="width: 80px; height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08); background: #10151d; color: var(--text); font-size: 16px; text-align: center;">
+              <span style="color: var(--text); font-size: 16px; font-weight: 500;">% per year</span>
+            </div>
+            <button id="fair-range-pill" type="button" aria-expanded="false" aria-controls="fair-range-explanation" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 22px; font-size: 13px; font-weight: 600; white-space: nowrap; border: none; cursor: pointer; transition: all 0.2s ease; background: rgba(52, 211, 153, 0.15); color: #34d399;">
+              <span id="fair-range-text">Fair range (4–7%)</span>
+              <svg style="width: 14px; height: 14px; opacity: 0.8;" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+                <circle cx="8" cy="8" r="6.5" stroke-width="1.5"/>
+                <path d="M8 7.5v4M8 5v0.5" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Expandable "Why this rate?" explanation -->
+          <div id="fair-range-explanation" class="hidden" style="margin-top: 12px; background: rgba(61, 220, 151, 0.08); border: 1px solid rgba(61, 220, 151, 0.2); border-radius: 10px; padding: 16px; transition: all 0.2s ease;">
+            <p style="margin: 0 0 12px 0; font-size: 13px; font-weight: 600; color: var(--text);">Why this rate?</p>
+            <ul style="margin: 0 0 12px 0; padding-left: 20px; font-size: 13px; line-height: 1.6; color: var(--text);">
+              <li style="margin-bottom: 6px;">Larger loan amounts increase risk ↑</li>
+              <li style="margin-bottom: 6px;">Longer durations increase uncertainty ↑</li>
+              <li style="margin-bottom: 6px;">More installments reduce repayment risk ↓</li>
+            </ul>
+            <p style="margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6;">
+              Together, these factors suggest a fair interest range for this loan. Your chosen rate should normally stay inside this range for balanced, respectful lending between friends.
+            </p>
           </div>
         </div>
 
@@ -1064,6 +1101,140 @@
 
       // Trigger recalculation after UI update to ensure schedule matches new mode
       runRepaymentCalculation();
+
+      // Update fair range pill since repayment type affects the calculation
+      updateFairRangePill();
+    }
+
+    // ============================================================================
+    // INTEREST MODE TOGGLE
+    // ============================================================================
+
+    let interestMode = 'interest'; // 'interest' or 'no-interest'
+
+    /**
+     * Set interest mode (Interest or No interest)
+     */
+    function setInterestMode(mode) {
+      interestMode = mode;
+      const modeInterestBtn = document.getElementById('mode-interest');
+      const modeNoInterestBtn = document.getElementById('mode-no-interest');
+      const interestInputRow = document.getElementById('interest-input-row');
+      const fairRangeExplanation = document.getElementById('fair-range-explanation');
+
+      if (mode === 'interest') {
+        // Interest mode: show input and fair range
+        modeInterestBtn.style.background = 'var(--accent)';
+        modeInterestBtn.style.color = '#000';
+        modeNoInterestBtn.style.background = 'transparent';
+        modeNoInterestBtn.style.color = 'var(--text)';
+        interestInputRow.style.display = 'flex';
+      } else {
+        // No interest mode: hide input and fair range
+        modeInterestBtn.style.background = 'transparent';
+        modeInterestBtn.style.color = 'var(--text)';
+        modeNoInterestBtn.style.background = 'var(--accent)';
+        modeNoInterestBtn.style.color = '#000';
+        interestInputRow.style.display = 'none';
+        // Also hide explanation if it was open
+        fairRangeExplanation.classList.add('hidden');
+        document.getElementById('fair-range-pill').setAttribute('aria-expanded', 'false');
+      }
+
+      // Trigger recalculation
+      runRepaymentCalculation();
+    }
+
+    /**
+     * Toggle fair range explanation visibility
+     */
+    function toggleFairRangeExplanation() {
+      const explanation = document.getElementById('fair-range-explanation');
+      const pill = document.getElementById('fair-range-pill');
+      const isExpanded = pill.getAttribute('aria-expanded') === 'true';
+
+      if (isExpanded) {
+        explanation.classList.add('hidden');
+        pill.setAttribute('aria-expanded', 'false');
+      } else {
+        explanation.classList.remove('hidden');
+        pill.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    /**
+     * Calculate fair interest range based on loan parameters
+     * Returns {min, max} percentage values
+     */
+    function calculateFairRange() {
+      // Get loan parameters
+      const principalValue = document.getElementById('principal').value.trim();
+      const loanAmount = parseMoney(principalValue);
+      const repaymentType = document.getElementById('repaymentType').value;
+      const numberOfInstallments = parseInt(document.getElementById('numInstallments').value);
+      const firstPaymentDueOption = document.getElementById('firstPaymentDue').value;
+
+      // Base range
+      let minRate = 4;
+      let maxRate = 7;
+
+      // Adjust based on loan amount (higher amounts = higher risk)
+      if (loanAmount > 0) {
+        if (loanAmount > 10000 * 100) { // > €10,000
+          minRate += 1;
+          maxRate += 1;
+        } else if (loanAmount < 2000 * 100) { // < €2,000
+          minRate = Math.max(3, minRate - 1);
+          maxRate = Math.max(5, maxRate - 1);
+        }
+      }
+
+      // Adjust based on duration (longer = more uncertainty)
+      const durationMonths = estimateLoanDurationMonths(firstPaymentDueOption, numberOfInstallments);
+      if (durationMonths > 24) { // > 2 years
+        minRate += 1;
+        maxRate += 1;
+      } else if (durationMonths < 6) { // < 6 months
+        minRate = Math.max(3, minRate - 1);
+        maxRate = Math.max(5, maxRate - 1);
+      }
+
+      // Adjust based on installments (more installments = lower risk)
+      if (repaymentType === 'installments' && numberOfInstallments >= 12) {
+        maxRate = Math.max(5, maxRate - 1);
+      }
+
+      return { min: minRate, max: maxRate };
+    }
+
+    /**
+     * Estimate loan duration in months for fair range calculation
+     */
+    function estimateLoanDurationMonths(firstPaymentOption, installments) {
+      let months = 12; // default 1 year
+
+      // Estimate from first payment option
+      if (firstPaymentOption === '1-week') months = 0.25;
+      else if (firstPaymentOption === '1-month') months = 1;
+      else if (firstPaymentOption === '6-months') months = 6;
+      else if (firstPaymentOption === '1-year') months = 12;
+      else if (firstPaymentOption === '2-years') months = 24;
+      else if (firstPaymentOption === '3-years') months = 36;
+
+      // For installments, approximate total duration
+      if (installments > 1) {
+        months = months * installments;
+      }
+
+      return months;
+    }
+
+    /**
+     * Update fair range pill text
+     */
+    function updateFairRangePill() {
+      const range = calculateFairRange();
+      document.getElementById('fair-range-text').textContent = `Fair range (${range.min}–${range.max}%)`;
     }
 
     /**
@@ -1078,6 +1249,9 @@
       document.getElementById('frequency').value = 'every-month';
       document.getElementById('firstPaymentDue').value = '1-year';
       document.getElementById('loanStartMode').value = 'upon_acceptance';
+
+      // Reset interest mode to "Interest" with 5%
+      setInterestMode('interest');
 
       // Clear loan amount error
       clearPrincipalError();
@@ -1132,11 +1306,24 @@
     // AUTO-UPDATE: Event listeners for all configuration inputs
     // ============================================================================
 
-    // Loan amount - use debounced for smooth typing
-    document.getElementById('principal').addEventListener('input', debouncedCalculation);
+    // Loan amount - use debounced for smooth typing and update fair range
+    document.getElementById('principal').addEventListener('input', () => {
+      debouncedCalculation();
+      updateFairRangePill();
+    });
 
-    // Annual interest rate - use debounced for smooth typing
-    document.getElementById('interest').addEventListener('input', debouncedCalculation);
+    // Annual interest rate - use debounced for smooth typing and update fair range
+    document.getElementById('interest').addEventListener('input', () => {
+      debouncedCalculation();
+      updateFairRangePill();
+    });
+
+    // Interest mode toggle buttons
+    document.getElementById('mode-interest').addEventListener('click', () => setInterestMode('interest'));
+    document.getElementById('mode-no-interest').addEventListener('click', () => setInterestMode('no-interest'));
+
+    // Fair range pill toggle
+    document.getElementById('fair-range-pill').addEventListener('click', toggleFairRangeExplanation);
 
     // Loan start date mode - immediate update
     document.getElementById('loanStartMode').addEventListener('change', runRepaymentCalculation);
@@ -1146,16 +1333,22 @@
     // Repayment type - handled by updateRepaymentTypeUI which calls runRepaymentCalculation
     // (see event listener below in UI-only section)
 
-    // First payment due - immediate update
-    document.getElementById('firstPaymentDue').addEventListener('change', runRepaymentCalculation);
+    // First payment due - immediate update and update fair range
+    document.getElementById('firstPaymentDue').addEventListener('change', () => {
+      runRepaymentCalculation();
+      updateFairRangePill();
+    });
 
     // First payment date picker - handled by native date input change event (see below)
 
     // Payment frequency - immediate update
     document.getElementById('frequency').addEventListener('change', runRepaymentCalculation);
 
-    // Number of installments - use debounced for smooth typing
-    document.getElementById('numInstallments').addEventListener('input', debouncedCalculation);
+    // Number of installments - use debounced for smooth typing and update fair range
+    document.getElementById('numInstallments').addEventListener('input', () => {
+      debouncedCalculation();
+      updateFairRangePill();
+    });
 
     // Context mode - immediate update (only exists on calculate.html)
     const contextModeSelect = document.getElementById('contextMode');
@@ -1409,7 +1602,8 @@
         // Gather form data
         const principalValue = document.getElementById('principal').value.trim();
         const loanAmount = parseMoney(principalValue);
-        const annualInterestRate = parseFloat(document.getElementById('interest').value);
+        // Use 0% interest if "No interest" mode is active, otherwise use input value
+        const annualInterestRate = interestMode === 'no-interest' ? 0 : parseFloat(document.getElementById('interest').value);
         const repaymentType = document.getElementById('repaymentType').value;
 
         // Force installments to 1 for one-time payment, regardless of field value
@@ -1691,6 +1885,9 @@
     document.getElementById('repaymentType').value = 'one_time';
     document.getElementById('firstPaymentDue').value = '1-year';
     updateRepaymentTypeUI();
+
+    // Initialize fair range pill
+    updateFairRangePill();
 
     // Don't trigger initial calculation - wait for user to enter loan amount
     // Show waiting message instead
