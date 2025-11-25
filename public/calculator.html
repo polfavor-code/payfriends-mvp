@@ -117,6 +117,14 @@
       box-shadow: 0 0 0 1px #34d399;
     }
 
+    /* Loan amount helper / validation note */
+    .loan-amount-note {
+      font-size: 12px;
+      margin-top: 6px;
+      font-style: normal;
+      color: #34d399;
+    }
+
     .form-hint {
       font-size: 12px;
       color: #9ca3af;
@@ -343,7 +351,7 @@
         <div class="form-group">
           <label for="principal">Loan amount (€)</label>
           <input type="text" id="principal" placeholder="e.g. 6,000">
-          <div id="principalError" class="form-hint" style="display: none; color: #ef4444; font-style: normal; margin-top: 6px;"></div>
+          <div id="principalError" class="loan-amount-note" style="display: none;"></div>
         </div>
 
         <!-- 2. Loan start date -->
