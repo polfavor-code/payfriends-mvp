@@ -3922,12 +3922,6 @@
       // Full summary text (3 lines)
       let summaryLine1 = `${lenderName} lends ${amountFormatted} to ${borrowerName} for '${description}'.`;
 
-      // Determine loan start suffix based on when money is sent
-      let loanStartSuffix = '';
-      if (wizardData.moneySentOption === 'on-acceptance' || wizardData.moneySentOption === 'upon_acceptance') {
-        loanStartSuffix = ' after agreement is accepted';
-      }
-
       let summaryLine2 = '';
       if (wizardData.repaymentType === 'one_time') {
         // For one-time loans, use the firstDueDate from summary
@@ -3943,14 +3937,26 @@
         const frequencyLabel = summary.paymentFrequencyLabel || '';
         const frequencyAdj = getFrequencyAdjective(frequencyLabel);
 
+        // Clean the duration label - remove any existing start context suffixes
+        // loanDuration may contain text like "1 year 11 months after agreement is accepted" or "1 year 11 months after loan start"
+        const rawDurationLabel = loanDuration
+          .replace(' after agreement is accepted', '')
+          .replace(' after loan start', '');
+
+        // Build loan start suffix based only on start type
+        let loanStartSuffix = '';
+        if (wizardData.moneySentOption === 'on-acceptance' || wizardData.moneySentOption === 'upon_acceptance') {
+          loanStartSuffix = ' after agreement is accepted';
+        }
+
         // Build: "To be repaid in {numberOfInstallments} {paymentFrequencyLabel} installments over {loanDurationLabel}{loanStartSuffix}."
         let sentence = `To be repaid in ${numInstallments}`;
         if (frequencyAdj) {
           sentence += ` ${frequencyAdj}`;
         }
         sentence += ` installment${numInstallments === 1 ? '' : 's'}`;
-        if (loanDuration) {
-          sentence += ` over ${loanDuration}`;
+        if (rawDurationLabel) {
+          sentence += ` over ${rawDurationLabel}`;
         }
         sentence += loanStartSuffix + '.';
         summaryLine2 = sentence;
