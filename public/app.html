@@ -151,13 +151,50 @@
       .new-agreement-header{flex-direction:column; align-items:flex-start; gap:4px}
       .back-to-agreements-link{align-self:flex-start}
     }
-    /* Wizard steps navigation */
+    /* Old Wizard steps navigation (deprecated, keeping for compatibility) */
     .wizard-steps{display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap}
     .wizard-step{border-radius:999px; border:1px solid #2c333d; padding:8px 16px; background-color:#151a21; color:#9da7b8; font-size:14px; font-weight:500; cursor:pointer; transition:background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; white-space:nowrap}
     .wizard-step:hover:not(.active){background-color:#1b222c; border-color:#3a4453; color:#e6eef6}
     .wizard-step.active{background-color:var(--accent); border-color:var(--accent); color:#0e1116; font-weight:600}
     .wizard-step.completed{color:#9da7b8}
     .wizard-content{min-height:200px}
+
+    /* New Agreement Stepper */
+    #new-agreement-stepper{margin-bottom:32px; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch}
+    .stepper-container{display:flex; align-items:flex-start; justify-content:center; min-width:min-content; padding:8px 0}
+    .stepper-step-wrapper{display:flex; align-items:center; position:relative}
+    .stepper-step{display:flex; flex-direction:column; align-items:center; gap:8px; position:relative; z-index:2; cursor:pointer; padding:4px}
+    .stepper-circle{width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:all 0.3s ease; position:relative}
+    .stepper-icon{display:flex; align-items:center; justify-content:center; transition:all 0.3s ease}
+    .stepper-label{font-size:13px; font-weight:500; white-space:nowrap; transition:all 0.3s ease; text-align:center}
+    .stepper-line{height:3px; width:60px; position:relative; z-index:1; transition:all 0.3s ease}
+
+    /* Stepper state: upcoming (default) */
+    .stepper-upcoming .stepper-circle{background:transparent; border:2px solid #2c333d}
+    .stepper-upcoming .stepper-icon{color:#6b7280}
+    .stepper-upcoming .stepper-label{color:#6b7280}
+    .stepper-line.stepper-upcoming{background:#2c333d}
+
+    /* Stepper state: current */
+    .stepper-current .stepper-circle{background:var(--accent); border:2px solid var(--accent)}
+    .stepper-current .stepper-icon{color:#0e1116}
+    .stepper-current .stepper-label{color:#e6eef6; font-weight:600}
+    .stepper-line.stepper-current{background:var(--accent)}
+
+    /* Stepper state: completed */
+    .stepper-completed .stepper-circle{background:var(--accent); border:2px solid var(--accent)}
+    .stepper-completed .stepper-icon{color:#ffffff}
+    .stepper-completed .stepper-label{color:#a7b0bd}
+    .stepper-line.stepper-completed{background:var(--accent)}
+
+    /* Responsive stepper */
+    @media (max-width:768px){
+      #new-agreement-stepper{margin-left:-16px; margin-right:-16px; padding:0 16px}
+      .stepper-line{width:40px}
+      .stepper-circle{width:40px; height:40px}
+      .stepper-icon svg{width:16px; height:16px}
+      .stepper-label{font-size:12px}
+    }
     .wizard-footer{display:flex; justify-content:space-between; align-items:center; margin-top:24px; padding-top:0; gap:12px}
     .wizard-footer button{flex:0 0 auto}
     .wizard-footer .wizard-back{order:1}
@@ -739,14 +776,17 @@
         <a onclick="closeNewAgreement()" class="back-to-agreements-link">&lt; Back to My agreements</a>
       </div>
 
-      <!-- Wizard step navigation -->
-      <nav class="wizard-steps" role="navigation" aria-label="Agreement wizard steps">
-        <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
-        <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">2. Terms</div>
-        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Payments">3. Payments</div>
-        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Summary">4. Summary</div>
-        <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Share">5. Share</div>
-      </nav>
+      <!-- New Agreement Stepper -->
+      <div id="new-agreement-stepper" role="navigation" aria-label="Agreement wizard steps"></div>
+
+      <!-- Hidden old step indicators (kept for compatibility with existing JS) -->
+      <div style="display:none">
+        <div id="step-indicator-1"></div>
+        <div id="step-indicator-2"></div>
+        <div id="step-indicator-3"></div>
+        <div id="step-indicator-4"></div>
+        <div id="step-indicator-5"></div>
+      </div>
 
       <!-- Wizard steps container -->
       <div class="wizard-steps-container">
@@ -1369,6 +1409,148 @@
       return `${diffYear} year${diffYear > 1 ? 's' : ''} ago`;
     }
 
+    // Stepper SVG Icons
+    function stepperIconUser() {
+      return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+    }
+
+    function stepperIconDocument() {
+      return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+    }
+
+    function stepperIconPercent() {
+      return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>`;
+    }
+
+    function stepperIconCalendar() {
+      return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
+    }
+
+    function stepperIconList() {
+      return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
+    }
+
+    function stepperIconShare() {
+      return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>`;
+    }
+
+    function stepperIconCheck() {
+      return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+    }
+
+    // Stepper configuration
+    const STEPPER_STEPS = [
+      { id: 1, label: 'Basics', icon: 'user' },
+      { id: 2, label: 'Terms', icon: 'document' },
+      { id: 3, label: 'Interest', icon: 'percent' },
+      { id: 4, label: 'Payments', icon: 'calendar' },
+      { id: 5, label: 'Summary', icon: 'list' },
+      { id: 6, label: 'Share', icon: 'share' }
+    ];
+
+    function getStepperIcon(iconName) {
+      const icons = {
+        'user': stepperIconUser(),
+        'document': stepperIconDocument(),
+        'percent': stepperIconPercent(),
+        'calendar': stepperIconCalendar(),
+        'list': stepperIconList(),
+        'share': stepperIconShare(),
+        'check': stepperIconCheck()
+      };
+      return icons[iconName] || '';
+    }
+
+    // Initialize the stepper component
+    function initializeStepper() {
+      const stepperContainer = document.getElementById('new-agreement-stepper');
+      if (!stepperContainer) return;
+
+      const stepsHTML = STEPPER_STEPS.map((step, index) => {
+        const isFirst = index === 0;
+        const isLast = index === STEPPER_STEPS.length - 1;
+
+        return `
+          <div class="stepper-step-wrapper">
+            ${!isFirst ? '<div class="stepper-line stepper-line-before" data-step="${step.id}"></div>' : ''}
+            <div class="stepper-step" data-step="${step.id}" onclick="clickStepperStep(${step.id})" role="button" tabindex="0" aria-label="${step.label}">
+              <div class="stepper-circle" data-step="${step.id}">
+                <div class="stepper-icon" data-step="${step.id}">
+                  ${getStepperIcon(step.icon)}
+                </div>
+              </div>
+              <div class="stepper-label" data-step="${step.id}">${step.label}</div>
+            </div>
+            ${!isLast ? '<div class="stepper-line stepper-line-after" data-step="${step.id}"></div>' : ''}
+          </div>
+        `;
+      }).join('');
+
+      stepperContainer.innerHTML = `<div class="stepper-container">${stepsHTML}</div>`;
+    }
+
+    // Update stepper state based on current wizard step
+    function updateStepper(currentWizardStep) {
+      // Map wizard steps (1-5) to stepper steps (1-6)
+      // Current mapping:
+      //   Wizard 1 (Basics)   → Stepper 1 (Basics)
+      //   Wizard 2 (Terms)    → Stepper 2 & 3 (Terms + Interest) [TODO: Split into separate wizard steps]
+      //   Wizard 3 (Payments) → Stepper 4 (Payments)
+      //   Wizard 4 (Summary)  → Stepper 5 (Summary)
+      //   Wizard 5 (Share)    → Stepper 6 (Share)
+      let currentStepperStep = currentWizardStep;
+      if (currentWizardStep >= 3) {
+        currentStepperStep = currentWizardStep + 1; // Offset by 1 for steps 3+
+      }
+
+      STEPPER_STEPS.forEach((step) => {
+        const stepElements = document.querySelectorAll(`[data-step="${step.id}"]`);
+
+        stepElements.forEach(el => {
+          el.classList.remove('stepper-completed', 'stepper-current', 'stepper-upcoming');
+
+          if (step.id < currentStepperStep) {
+            // Completed step
+            el.classList.add('stepper-completed');
+          } else if (step.id === currentStepperStep || (currentWizardStep === 2 && (step.id === 2 || step.id === 3))) {
+            // Current step (or both Terms and Interest when on wizard step 2)
+            el.classList.add('stepper-current');
+          } else {
+            // Upcoming step
+            el.classList.add('stepper-upcoming');
+          }
+        });
+
+        // Update icon for completed steps
+        const iconEl = document.querySelector(`.stepper-icon[data-step="${step.id}"]`);
+        if (iconEl) {
+          if (step.id < currentStepperStep) {
+            iconEl.innerHTML = getStepperIcon('check');
+          } else {
+            iconEl.innerHTML = getStepperIcon(step.icon);
+          }
+        }
+      });
+    }
+
+    // Handle stepper step clicks
+    function clickStepperStep(stepperStep) {
+      // Map stepper step back to wizard step
+      let wizardStep = stepperStep;
+      if (stepperStep >= 4) {
+        wizardStep = stepperStep - 1; // Offset back for wizard
+      } else if (stepperStep === 3) {
+        wizardStep = 2; // Interest maps to Terms wizard step
+      }
+
+      // Use existing clickStep function if available, otherwise use goToStep
+      if (typeof clickStep === 'function') {
+        clickStep(wizardStep);
+      } else if (typeof goToStep === 'function') {
+        goToStep(wizardStep);
+      }
+    }
+
     // Wizard functions
     function goToStep(step) {
       // Hide all steps
@@ -1409,6 +1591,9 @@
       if (wizardData.agreementSent && step <= 4) {
         applyReadOnlyMode(step);
       }
+
+      // Update the new stepper component
+      updateStepper(step);
     }
 
     function applyReadOnlyMode(step) {
@@ -4394,6 +4579,9 @@
         if (listSection) {
           listSection.style.display = 'none';
         }
+        // Initialize the stepper component
+        initializeStepper();
+        updateStepper(1);
         // Scroll the wizard into view
         setTimeout(() => {
           section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4421,6 +4609,9 @@
       // Show the new agreement wizard
       if (newAgreementSection) {
         newAgreementSection.classList.remove('hidden');
+        // Initialize the stepper component
+        initializeStepper();
+        updateStepper(1);
         // Scroll the wizard into view
         setTimeout(() => {
           newAgreementSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
