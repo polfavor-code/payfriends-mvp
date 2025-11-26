@@ -791,6 +791,42 @@
       </div>
     </section>
 
+    <!-- Compact hero for returning users with agreements -->
+    <section class="dashboard-hero-compact" id="compact-hero" style="display:none">
+      <div class="dashboard-hero-compact-inner">
+        <div class="dashboard-hero-compact-text">
+          <h1 class="dashboard-hero-compact__title" id="compact-hero-heading">Welcome back</h1>
+          <p class="dashboard-hero-compact__subtitle">Here's a quick overview of your agreements.</p>
+        </div>
+        <div class="dashboard-hero-compact-actions">
+          <button onclick="toggleNewAgreement()" class="primary-button new-agreement-btn">
+            + New Agreement
+          </button>
+          <a href="/agreements.html" class="secondary view-agreements-btn">
+            View all agreements
+          </a>
+        </div>
+        <div class="dashboard-hero-mascot-small">
+          <img src="/images/mascot.png" alt="PayFriends mascot" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Agreements overview for returning users -->
+    <section class="dashboard-agreements-overview" id="agreements-overview" style="display:none">
+      <div class="dashboard-agreements-overview-inner">
+        <div class="dashboard-agreements-header">
+          <h2>Your agreements</h2>
+          <a href="/agreements.html" class="dashboard-view-all-link" id="view-all-link">
+            View all
+          </a>
+        </div>
+        <div class="dashboard-agreements-list" id="overview-list">
+          <!-- Agreement cards will be rendered here -->
+        </div>
+      </div>
+    </section>
+
     <!-- Wizard for creating agreements -->
     <div id="new-agreement-section" class="hidden">
       <!-- Header: title + back link on same row -->

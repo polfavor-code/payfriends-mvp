@@ -25,6 +25,17 @@ function getColorClass(name) {
   return `color-${colorIndex}`;
 }
 
+function escapeHTML(str) {
+  if (str == null || str === '') return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
 function generateAvatarHTML(user, size = 'small') {
   const name = user.name || user.counterparty_name || '';
   const profilePictureUrl = user.profile_picture_url;
@@ -156,6 +167,91 @@ function renderActionsColumn(agreement, currentUser, currentAgreementId = null) 
 }
 
 /**
+ * Render agreements overview (dashboard preview of 3-5 agreements)
+ * @param {Array} agreements - Array of agreement objects
+ * @param {Object} currentUser - Current user object with id
+ */
+function renderAgreementsOverview(agreements, currentUser) {
+  const overviewList = document.getElementById('overview-list');
+  if (!overviewList) return;
+
+  // Show up to 5 most recent agreements
+  const recentAgreements = agreements.slice(0, 5);
+
+  // Generate HTML for each agreement card
+  const cards = recentAgreements.map(agreement => {
+    const isLender = agreement.lender_user_id === currentUser.id;
+
+    // Determine counterparty information
+    let counterpartyName, counterpartyUserId, counterpartyProfilePicture;
+    if (isLender) {
+      counterpartyName = agreement.counterparty_name || agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email || '—';
+      counterpartyUserId = agreement.borrower_user_id;
+      counterpartyProfilePicture = agreement.counterparty_profile_picture_url || agreement.borrower_profile_picture;
+    } else {
+      counterpartyName = agreement.counterparty_name || agreement.lender_full_name || agreement.lender_name || agreement.lender_email || '—';
+      counterpartyUserId = agreement.lender_user_id;
+      counterpartyProfilePicture = agreement.counterparty_profile_picture_url || agreement.lender_profile_picture;
+    }
+
+    // Generate avatar
+    const avatarUser = {
+      user_id: counterpartyUserId,
+      name: counterpartyName,
+      profile_picture_url: counterpartyProfilePicture
+    };
+    const avatar = generateAvatarHTML(avatarUser, 'medium');
+
+    // Format outstanding amount
+    const outstandingCents = agreement.outstanding_cents || 0;
+    const outstandingAmount = formatCurrency0(outstandingCents);
+
+    // Format due date
+    const dueDateInfo = formatDueDate(agreement, isLender);
+
+    // Get status
+    const status = agreement.status || 'pending';
+    const statusDot = renderStatusDot(status);
+
+    // Determine button text and action based on status and role
+    let buttonText = 'Manage';
+    let buttonAction = `window.location.href='/manage.html?id=${agreement.id}'`;
+
+    if (status === 'pending') {
+      if (isLender) {
+        buttonText = 'Review';
+      } else {
+        buttonText = 'Review';
+        buttonAction = `window.location.href='/manage.html?id=${agreement.id}'`;
+      }
+    }
+
+    return `
+      <div class="dashboard-agreement-card" data-id="${agreement.id}">
+        <div class="dashboard-agreement-avatar">
+          ${avatar}
+        </div>
+        <div class="dashboard-agreement-info">
+          <div class="dashboard-agreement-title">
+            ${escapeHTML(counterpartyName)}
+            ${statusDot}
+          </div>
+          <div class="dashboard-agreement-meta">
+            <span class="agreement-amount">${outstandingAmount} due</span>
+            <span class="agreement-due-date">${dueDateInfo}</span>
+          </div>
+        </div>
+        <div class="dashboard-agreement-actions">
+          <a href="/manage.html?id=${agreement.id}" class="btn-small">${buttonText}</a>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  overviewList.innerHTML = cards;
+}
+
+/**
  * Main function to render the agreements table
  * @param {Array} agreements - Array of agreement objects
  * @param {Object} currentUser - Current user object with id
@@ -170,33 +266,70 @@ function renderAgreementsTable(agreements, currentUser, currentFilter = 'all', c
   const dueHeader = document.getElementById('due-header');
   const listSection = document.getElementById('list-section');
   const welcomeCard = document.getElementById('welcome-card');
+  const compactHero = document.getElementById('compact-hero');
+  const agreementsOverview = document.getElementById('agreements-overview');
+
+  // Helper function to get user's first name
+  function getFirstName(user) {
+    const fullName = user.full_name || user.name || '';
+    const firstName = fullName.trim().split(/\s+/)[0] || '';
+    const email = user.email || '';
+    const fallbackName = email.includes('@') ? email.split('@')[0] : email;
+    return firstName || fallbackName || 'there';
+  }
 
   // Show welcome card if user has zero agreements overall (only on dashboard)
   if (welcomeCard && agreements.length === 0) {
     listSection.style.display = 'none';
     welcomeCard.style.display = 'block';
+    if (compactHero) compactHero.style.display = 'none';
+    if (agreementsOverview) agreementsOverview.style.display = 'none';
 
     // Personalize welcome heading with user's first name
     const welcomeHeading = document.getElementById('welcome-heading');
     if (welcomeHeading && currentUser) {
-      const fullName = currentUser.full_name || currentUser.name || '';
-      const firstName = fullName.trim().split(/\s+/)[0] || '';
-
-      // Fallback to email prefix if first name is empty
-      const email = currentUser.email || '';
-      const fallbackName = email.includes('@') ? email.split('@')[0] : email;
-      const displayName = firstName || fallbackName || 'there';
-
-      welcomeHeading.textContent = `Welcome, ${displayName}`;
+      welcomeHeading.textContent = `Welcome, ${getFirstName(currentUser)}`;
     }
 
     return;
   }
 
-  // Hide welcome card when there are agreements
-  if (welcomeCard) {
-    listSection.style.display = 'block';
+  // Show compact hero and agreements overview when there are agreements (dashboard only)
+  if (compactHero && agreementsOverview && agreements.length > 0) {
     welcomeCard.style.display = 'none';
+    compactHero.style.display = 'block';
+    agreementsOverview.style.display = 'block';
+    listSection.style.display = 'none';
+
+    // Personalize compact hero heading
+    const compactHeroHeading = document.getElementById('compact-hero-heading');
+    if (compactHeroHeading && currentUser) {
+      compactHeroHeading.textContent = `Welcome back, ${getFirstName(currentUser)}`;
+    }
+
+    // Update "View all" link with count
+    const viewAllLink = document.getElementById('view-all-link');
+    if (viewAllLink) {
+      viewAllLink.textContent = `View all ${agreements.length} agreement${agreements.length !== 1 ? 's' : ''}`;
+    }
+
+    // Render agreements overview
+    renderAgreementsOverview(agreements, currentUser);
+    return;
+  }
+
+  // Hide welcome card and compact hero when showing full table (agreements.html page)
+  if (welcomeCard) {
+    welcomeCard.style.display = 'none';
+  }
+  if (compactHero) {
+    compactHero.style.display = 'none';
+  }
+  if (agreementsOverview) {
+    agreementsOverview.style.display = 'none';
+  }
+  if (listSection) {
+    listSection.style.display = 'block';
   }
 
   // Filter agreements
