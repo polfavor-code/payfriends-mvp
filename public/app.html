@@ -1456,6 +1456,28 @@
         document.getElementById(`step-indicator-${i}`).classList.add('completed');
       }
 
+      // Manage hero and list visibility based on current step
+      const listSection = document.getElementById('list-section');
+      const welcomeCard = document.getElementById('welcome-card');
+      const compactHero = document.getElementById('compact-hero');
+      const hasAgreements = allAgreements && allAgreements.length > 0;
+
+      if (step === 5) {
+        // Step 5 (Share): show My Agreements list, hide all heroes
+        if (listSection && hasAgreements) {
+          listSection.style.display = 'block';
+        }
+        if (welcomeCard) welcomeCard.style.display = 'none';
+        if (compactHero) compactHero.style.display = 'none';
+      } else {
+        // Steps 1-4: hide list (user is editing), hide all heroes
+        if (listSection) {
+          listSection.style.display = 'none';
+        }
+        if (welcomeCard) welcomeCard.style.display = 'none';
+        if (compactHero) compactHero.style.display = 'none';
+      }
+
       // Special handling for step 1: ensure borrower fields visibility is correct
       if (step === 1) {
         toggleBorrowerFields();
@@ -4828,13 +4850,22 @@
     function toggleNewAgreement() {
       const section = document.getElementById('new-agreement-section');
       const listSection = document.getElementById('list-section');
+      const welcomeCard = document.getElementById('welcome-card');
+      const compactHero = document.getElementById('compact-hero');
+
       if (section.classList.contains('hidden')) {
         section.classList.remove('hidden');
         document.getElementById('new-agreement-btn').style.display = 'none';
-        // Hide the My Agreements section when showing the wizard
+
+        // Hide all heroes when opening wizard
+        if (welcomeCard) welcomeCard.style.display = 'none';
+        if (compactHero) compactHero.style.display = 'none';
+
+        // Hide the My Agreements section when showing the wizard (for steps 1-4)
         if (listSection) {
           listSection.style.display = 'none';
         }
+
         // Scroll the wizard into view
         setTimeout(() => {
           section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4872,8 +4903,6 @@
     function closeNewAgreement() {
       const newAgreementSection = document.getElementById('new-agreement-section');
       const newAgreementBtn = document.getElementById('new-agreement-btn');
-      const welcomeCard = document.getElementById('welcome-card');
-      const listSection = document.getElementById('list-section');
 
       // Hide the new agreement wizard
       if (newAgreementSection) {
@@ -4885,18 +4914,8 @@
         newAgreementBtn.style.display = 'flex';
       }
 
-      // If there are no agreements, restore the welcome card
-      if (welcomeCard && allAgreements.length === 0) {
-        welcomeCard.style.display = 'block';
-        if (listSection) {
-          listSection.style.display = 'none';
-        }
-      } else {
-        // If there are agreements, show the list section
-        if (listSection) {
-          listSection.style.display = 'block';
-        }
-      }
+      // Restore proper dashboard state (heroes and list) based on agreements
+      renderAgreements();
     }
 
     // Fetch current user (now handled by shared header, but we still need to set currentUser)
@@ -5092,34 +5111,45 @@
 
     // Render agreements based on current filter
     function renderAgreements() {
-      // Dashboard hero logic (only on dashboard, not in wizard)
       const welcomeCard = document.getElementById('welcome-card');
       const compactHero = document.getElementById('compact-hero');
       const listSection = document.getElementById('list-section');
+      const newAgreementSection = document.getElementById('new-agreement-section');
 
-      if (allAgreements.length === 0) {
-        // Zero state: show welcome hero
-        if (welcomeCard) welcomeCard.style.display = 'block';
-        if (compactHero) compactHero.style.display = 'none';
-        if (listSection) listSection.style.display = 'none';
+      // Check if wizard is currently visible
+      const wizardVisible = newAgreementSection && !newAgreementSection.classList.contains('hidden');
 
-        // Personalize welcome heading
-        const welcomeHeading = document.getElementById('welcome-heading');
-        if (welcomeHeading && currentUser) {
-          const firstName = getFirstName(currentUser);
-          welcomeHeading.textContent = `Welcome, ${firstName}`;
-        }
-      } else {
-        // Active state: show compact hero and full My Agreements container
+      if (wizardVisible) {
+        // When wizard is open: hide all heroes, manage list visibility separately
         if (welcomeCard) welcomeCard.style.display = 'none';
-        if (compactHero) compactHero.style.display = 'block';
-        if (listSection) listSection.style.display = 'block';
+        if (compactHero) compactHero.style.display = 'none';
+        // Note: list-section visibility is managed by goToStep() for wizard steps
+      } else {
+        // Dashboard state (wizard closed): show appropriate hero based on agreements
+        if (allAgreements.length === 0) {
+          // Zero state: show welcome hero
+          if (welcomeCard) welcomeCard.style.display = 'block';
+          if (compactHero) compactHero.style.display = 'none';
+          if (listSection) listSection.style.display = 'none';
 
-        // Personalize compact hero heading
-        const compactHeroHeading = document.getElementById('compact-hero-heading');
-        if (compactHeroHeading && currentUser) {
-          const firstName = getFirstName(currentUser);
-          compactHeroHeading.textContent = `Welcome back, ${firstName}`;
+          // Personalize welcome heading
+          const welcomeHeading = document.getElementById('welcome-heading');
+          if (welcomeHeading && currentUser) {
+            const firstName = getFirstName(currentUser);
+            welcomeHeading.textContent = `Welcome, ${firstName}`;
+          }
+        } else {
+          // Active state: show compact hero and full My Agreements container
+          if (welcomeCard) welcomeCard.style.display = 'none';
+          if (compactHero) compactHero.style.display = 'block';
+          if (listSection) listSection.style.display = 'block';
+
+          // Personalize compact hero heading
+          const compactHeroHeading = document.getElementById('compact-hero-heading');
+          if (compactHeroHeading && currentUser) {
+            const firstName = getFirstName(currentUser);
+            compactHeroHeading.textContent = `Welcome back, ${firstName}`;
+          }
         }
       }
 
