@@ -82,12 +82,12 @@
 }
 
 .dashboard-hero-inner {
-  max-width: 1200px;
+  max-width: 1140px;
   margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 60px;
+  justify-content: center;
+  gap: 3.5rem;
 }
 
 .dashboard-hero-text {
@@ -118,17 +118,18 @@
 }
 
 .dashboard-hero__actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
   margin-bottom: 1.5rem;
+  padding: 8px 12px;
+  border-radius: 999px;
+  box-shadow: 0 0 26px rgba(0, 255, 140, 0.28);
+  width: fit-content;
 }
 
-.dashboard-hero__button {
-  box-shadow: 0 0 18px rgba(0, 255, 140, 0.20);
-  transition: all 0.3s ease;
-}
-
-.dashboard-hero__button:hover {
-  box-shadow: 0 0 24px rgba(0, 255, 140, 0.28);
-  transform: translateY(-1px);
+.dashboard-hero__actions button {
+  margin: 0;
 }
 
 .dashboard-hero__features-link {
@@ -154,7 +155,8 @@
 }
 
 .dashboard-hero-mascot img {
-  width: 280px;
+  width: 360px;
+  max-width: 100%;
   height: auto;
   display: block;
   position: relative;
@@ -194,13 +196,21 @@
     font-size: 1.9rem;
   }
 
-  .dashboard-hero-mascot img {
-    width: 200px;
-  }
-
-  .dashboard-hero__button {
+  .dashboard-hero__actions {
+    flex-direction: column;
     width: 100%;
     max-width: 320px;
+    margin: 0 auto 1.5rem;
+    padding: 10px 14px;
+    border-radius: 16px;
+  }
+
+  .dashboard-hero__actions button {
+    width: 100%;
+  }
+
+  .dashboard-hero-mascot img {
+    width: 240px;
   }
 }
 
@@ -214,6 +224,6 @@
   }
 
   .dashboard-hero-mascot img {
-    width: 160px;
+    width: 180px;
   }
 }
