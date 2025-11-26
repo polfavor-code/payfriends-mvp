@@ -176,8 +176,7 @@
         if (!agreementsResponse.ok) {
           throw new Error('Failed to fetch agreements');
         }
-        const agreementsData = await agreementsResponse.json();
-        allAgreements = agreementsData.agreements || [];
+        allAgreements = await agreementsResponse.json();
 
         document.getElementById('loading').style.display = 'none';
 
