@@ -3056,11 +3056,55 @@
         console.log('Repayment type:', repaymentType);
 
         // Helper to convert Date object or date string to YYYY-MM-DD
-        function formatDateYMD(date) {
+        // Also handles parsing relative date labels when date is null (preview mode)
+        function formatDateYMD(date, labelFallback, loanStartDate) {
           console.log('formatDateYMD called with:', date, 'Type:', typeof date, 'instanceof Date:', date instanceof Date);
+          console.log('labelFallback:', labelFallback, 'loanStartDate:', loanStartDate);
+
+          // If date is null but we have a label (preview mode), calculate from label
+          if (!date && labelFallback) {
+            console.log('formatDateYMD: date is null, attempting to parse from label');
+
+            // Use today as loan start if not specified (preview mode default behavior)
+            const baseDate = loanStartDate ? new Date(loanStartDate) : new Date();
+            baseDate.setHours(0, 0, 0, 0);
+            console.log('formatDateYMD: using base date:', baseDate);
+
+            // Parse relative labels like "1 year after loan start", "6 months after loan start", etc.
+            const yearsMatch = labelFallback.match(/(\d+)\s+years?\s+after/);
+            const monthsMatch = labelFallback.match(/(\d+)\s+months?\s+after/);
+            const daysMatch = labelFallback.match(/(\d+)\s+days?\s+after/);
+            const weekMatch = labelFallback.match(/(\d+)\s+weeks?\s+after/);
+
+            let calculatedDate = null;
+            if (yearsMatch) {
+              const years = parseInt(yearsMatch[1]);
+              calculatedDate = window.PayFriendsCalculator.addYears(baseDate, years);
+              console.log(`formatDateYMD: parsed ${years} years, calculated date:`, calculatedDate);
+            } else if (monthsMatch) {
+              const months = parseInt(monthsMatch[1]);
+              calculatedDate = window.PayFriendsCalculator.addMonths(baseDate, months);
+              console.log(`formatDateYMD: parsed ${months} months, calculated date:`, calculatedDate);
+            } else if (weekMatch) {
+              const weeks = parseInt(weekMatch[1]);
+              calculatedDate = window.PayFriendsCalculator.addDays(baseDate, weeks * 7);
+              console.log(`formatDateYMD: parsed ${weeks} weeks, calculated date:`, calculatedDate);
+            } else if (daysMatch) {
+              const days = parseInt(daysMatch[1]);
+              calculatedDate = window.PayFriendsCalculator.addDays(baseDate, days);
+              console.log(`formatDateYMD: parsed ${days} days, calculated date:`, calculatedDate);
+            } else if (labelFallback.includes('On loan start')) {
+              calculatedDate = baseDate;
+              console.log('formatDateYMD: parsed "On loan start", using base date');
+            }
+
+            if (calculatedDate) {
+              date = calculatedDate;
+            }
+          }
 
           if (!date) {
-            console.log('formatDateYMD returning null - no date provided');
+            console.log('formatDateYMD returning null - no date provided and could not parse label');
             return null;
           }
 
@@ -3091,7 +3135,8 @@
 
         if (repaymentType === 'one_time') {
           // For one-time, there's only one payment date
-          const onlyDueDate = formatDateYMD(firstRow.dueDate);
+          // Pass label as fallback for preview mode, and loan start date for calculation
+          const onlyDueDate = formatDateYMD(firstRow.dueDate, firstRow.label, loanStartDate);
           console.log('One-time: onlyDueDate =', onlyDueDate);
           wizardData.installmentCount = 1;
           wizardData.oneTimeDueOption = firstPaymentDue;
@@ -3100,8 +3145,9 @@
           console.log('One-time: Set wizardData.dueDate =', wizardData.dueDate);
         } else {
           // For installments, save first and final payment dates from schedule
-          const firstDueDate = formatDateYMD(firstRow.dueDate);
-          const finalDueDate = formatDateYMD(lastRow.dueDate);
+          // Pass labels as fallback for preview mode, and loan start date for calculation
+          const firstDueDate = formatDateYMD(firstRow.dueDate, firstRow.label, loanStartDate);
+          const finalDueDate = formatDateYMD(lastRow.dueDate, lastRow.label, loanStartDate);
           console.log('Installments: firstDueDate =', firstDueDate);
           console.log('Installments: finalDueDate =', finalDueDate);
 
