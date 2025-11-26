@@ -1073,6 +1073,17 @@
           <h4 style="margin:0 0 12px 0; font-size:16px">Agreement Details</h4>
           <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px">
             <div id="general-details-content"></div>
+
+            <!-- Fairness Between Friends footer -->
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 13px; color: #9ca3af;">
+              <p style="margin-bottom: 8px;">
+                Amounts marked with <span class="pf-fairness-icon-inline" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle; margin: 0 2px;"></span> are calculated using the Fairness Between Friends rules.
+                <a href="#" id="step4FairnessToggle" style="color: #34d399; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s;" onmouseover="this.style.borderBottomColor='#34d399'" onmouseout="this.style.borderBottomColor='transparent'">How it works</a>
+              </p>
+              <div id="step4FairnessExplanation" style="display: none; margin-top: 12px; padding: 12px; background: rgba(0, 0, 0, 0.2); border-radius: 6px; font-size: 12px; line-height: 1.6; color: #d1d5db;">
+                Fairness Between Friends adjusts interest dynamically based on the outstanding balance and the time that has passed. This means paying earlier or more reduces total interest, while paying later or less increases it. Both sides always see the current, fair value of the loan in real time.
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1098,34 +1109,8 @@
           </div>
         </div>
 
-        <!-- Expandable: Fairness Between Friends -->
-        <div style="margin:16px 0">
-          <button onclick="toggleSection('fairness-step5-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-            <div style="display:flex; align-items:center; gap:8px; color:var(--accent)">
-              <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
-              <span>Fairness Between Friends (How it Works)</span>
-            </div>
-            <span id="fairness-step5-toggle">▼</span>
-          </button>
-          <script>
-            document.currentScript.previousElementSibling.querySelector('div > span:first-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
-          </script>
-          <div id="fairness-step5-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
-            <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
-              PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
-              Interest is calculated dynamically on the outstanding balance and the time elapsed.
-            </p>
-            <ul style="margin:0 0 12px 0; padding-left:20px; font-size:14px; line-height:1.6">
-              <li style="margin-bottom:8px"><strong>Early or higher payments</strong> reduce the total interest and, where applicable, lower future installment amounts.</li>
-              <li style="margin-bottom:8px"><strong>Late or smaller payments</strong> increase the total interest for the period the amount remains outstanding.</li>
-              <li style="margin-bottom:8px">These recalculations happen automatically and are reflected instantly in the agreement for both lender and borrower.</li>
-            </ul>
-            <p style="margin:0; font-size:14px; line-height:1.6">
-              Each repayment entry in the payment history clearly notes when a payment caused a change in the total interest, outstanding balance, or future installments.
-              This ensures both parties always see the current, fair value of the loan.
-            </p>
-          </div>
-        </div>
+        <!-- Status message for Step 4 -->
+        <p id="step4-status" class="status-message" style="color:var(--text); margin:16px 0; font-size:14px"></p>
 
         <!-- Wizard navigation footer - before sending -->
         <div id="invite-not-sent" class="wizard-footer">
@@ -3050,20 +3035,152 @@
       wizardData.moneySentOption = loanStartMode;
       wizardData.moneySentDate = loanStartDate;
 
-      if (repaymentType === 'one_time') {
-        wizardData.installmentCount = 1;
-        wizardData.oneTimeDueOption = firstPaymentDue;
-        wizardData.dueDate = firstPaymentDate || null;
-      } else {
-        wizardData.installmentCount = numberOfInstallments;
-        wizardData.paymentFrequency = paymentFrequency;
-        wizardData.firstPaymentOption = firstPaymentDue;
-        wizardData.firstPaymentDate = firstPaymentDate;
-      }
-
       // Store schedule and summary for later use
       wizardData.calculatedSchedule = wizardCalculatorSchedule;
       wizardData.calculatedSummary = wizardCalculatorSummary;
+
+      // Extract actual dates from calculator schedule rows
+      // The calculator produces exact dates in the schedule, use those as the source of truth
+      if (wizardCalculatorSchedule && wizardCalculatorSchedule.rows && wizardCalculatorSchedule.rows.length > 0) {
+        const firstRow = wizardCalculatorSchedule.rows[0];
+        const lastRow = wizardCalculatorSchedule.rows[wizardCalculatorSchedule.rows.length - 1];
+
+        console.log('=== DEBUG: saveCalculatorAndContinue - Extracting Dates ===');
+        console.log('Schedule rows count:', wizardCalculatorSchedule.rows.length);
+        console.log('First row:', firstRow);
+        console.log('First row dueDate:', firstRow.dueDate);
+        console.log('First row dueDate type:', typeof firstRow.dueDate);
+        console.log('First row dueDate instanceof Date:', firstRow.dueDate instanceof Date);
+        console.log('Last row:', lastRow);
+        console.log('Last row dueDate:', lastRow.dueDate);
+        console.log('Repayment type:', repaymentType);
+
+        // Helper to convert Date object or date string to YYYY-MM-DD
+        // Also handles parsing relative date labels when date is null (preview mode)
+        function formatDateYMD(date, labelFallback, loanStartDate) {
+          console.log('formatDateYMD called with:', date, 'Type:', typeof date, 'instanceof Date:', date instanceof Date);
+          console.log('labelFallback:', labelFallback, 'loanStartDate:', loanStartDate);
+
+          // If date is null but we have a label (preview mode), calculate from label
+          if (!date && labelFallback) {
+            console.log('formatDateYMD: date is null, attempting to parse from label');
+
+            // Use today as loan start if not specified (preview mode default behavior)
+            const baseDate = loanStartDate ? new Date(loanStartDate) : new Date();
+            baseDate.setHours(0, 0, 0, 0);
+            console.log('formatDateYMD: using base date:', baseDate);
+
+            // Parse relative labels like "1 year after loan start", "6 months after loan start", etc.
+            const yearsMatch = labelFallback.match(/(\d+)\s+years?\s+after/);
+            const monthsMatch = labelFallback.match(/(\d+)\s+months?\s+after/);
+            const daysMatch = labelFallback.match(/(\d+)\s+days?\s+after/);
+            const weekMatch = labelFallback.match(/(\d+)\s+weeks?\s+after/);
+
+            let calculatedDate = null;
+            if (yearsMatch) {
+              const years = parseInt(yearsMatch[1]);
+              calculatedDate = window.PayFriendsCalculator.addYears(baseDate, years);
+              console.log(`formatDateYMD: parsed ${years} years, calculated date:`, calculatedDate);
+            } else if (monthsMatch) {
+              const months = parseInt(monthsMatch[1]);
+              calculatedDate = window.PayFriendsCalculator.addMonths(baseDate, months);
+              console.log(`formatDateYMD: parsed ${months} months, calculated date:`, calculatedDate);
+            } else if (weekMatch) {
+              const weeks = parseInt(weekMatch[1]);
+              calculatedDate = window.PayFriendsCalculator.addDays(baseDate, weeks * 7);
+              console.log(`formatDateYMD: parsed ${weeks} weeks, calculated date:`, calculatedDate);
+            } else if (daysMatch) {
+              const days = parseInt(daysMatch[1]);
+              calculatedDate = window.PayFriendsCalculator.addDays(baseDate, days);
+              console.log(`formatDateYMD: parsed ${days} days, calculated date:`, calculatedDate);
+            } else if (labelFallback.includes('On loan start')) {
+              calculatedDate = baseDate;
+              console.log('formatDateYMD: parsed "On loan start", using base date');
+            }
+
+            if (calculatedDate) {
+              date = calculatedDate;
+            }
+          }
+
+          if (!date) {
+            console.log('formatDateYMD returning null - no date provided and could not parse label');
+            return null;
+          }
+
+          // If it's already a string in YYYY-MM-DD format, return as-is
+          if (typeof date === 'string') {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+              console.log('formatDateYMD: date already in YYYY-MM-DD format:', date);
+              return date;
+            }
+            // Try to parse string as date
+            console.log('formatDateYMD: attempting to parse string as date');
+            date = new Date(date);
+          }
+
+          // Now it should be a Date object
+          if (!(date instanceof Date) || isNaN(date.getTime())) {
+            console.log('formatDateYMD returning null - invalid date after parsing');
+            return null;
+          }
+
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const formatted = `${year}-${month}-${day}`;
+          console.log('formatDateYMD formatted result:', formatted);
+          return formatted;
+        }
+
+        if (repaymentType === 'one_time') {
+          // For one-time, there's only one payment date
+          // Pass label as fallback for preview mode, and loan start date for calculation
+          const onlyDueDate = formatDateYMD(firstRow.dueDate, firstRow.label, loanStartDate);
+          console.log('One-time: onlyDueDate =', onlyDueDate);
+          wizardData.installmentCount = 1;
+          wizardData.oneTimeDueOption = firstPaymentDue;
+          wizardData.dueDate = onlyDueDate;
+          wizardData.finalDueDate = onlyDueDate; // Same as dueDate for one-time
+          console.log('One-time: Set wizardData.dueDate =', wizardData.dueDate);
+        } else {
+          // For installments, save first and final payment dates from schedule
+          // Pass labels as fallback for preview mode, and loan start date for calculation
+          const firstDueDate = formatDateYMD(firstRow.dueDate, firstRow.label, loanStartDate);
+          const finalDueDate = formatDateYMD(lastRow.dueDate, lastRow.label, loanStartDate);
+          console.log('Installments: firstDueDate =', firstDueDate);
+          console.log('Installments: finalDueDate =', finalDueDate);
+
+          wizardData.installmentCount = numberOfInstallments;
+          wizardData.paymentFrequency = paymentFrequency;
+          wizardData.firstPaymentOption = firstPaymentDue;
+          wizardData.firstPaymentDate = firstDueDate;
+          wizardData.finalDueDate = finalDueDate;
+          // Backend expects dueDate to be the final due date for installments
+          wizardData.dueDate = finalDueDate;
+          console.log('Installments: Set wizardData.dueDate =', wizardData.dueDate);
+        }
+      } else {
+        // Fallback if calculator didn't produce schedule (shouldn't happen)
+        console.log('=== WARNING: Calculator schedule missing or empty ===');
+        console.log('wizardCalculatorSchedule:', wizardCalculatorSchedule);
+        console.log('Has rows?:', wizardCalculatorSchedule?.rows);
+        console.log('Rows length?:', wizardCalculatorSchedule?.rows?.length);
+
+        if (repaymentType === 'one_time') {
+          wizardData.installmentCount = 1;
+          wizardData.oneTimeDueOption = firstPaymentDue;
+          wizardData.dueDate = firstPaymentDate || null;
+          console.log('Fallback: Set wizardData.dueDate =', wizardData.dueDate);
+        } else {
+          wizardData.installmentCount = numberOfInstallments;
+          wizardData.paymentFrequency = paymentFrequency;
+          wizardData.firstPaymentOption = firstPaymentDue;
+          wizardData.firstPaymentDate = firstPaymentDate;
+          console.log('Fallback: Set wizardData.firstPaymentDate =', wizardData.firstPaymentDate);
+          console.log('Fallback: wizardData.dueDate NOT SET (missing for installments!)');
+        }
+      }
 
       // Clear status and proceed
       document.getElementById('step2-status').textContent = '';
@@ -4037,6 +4154,58 @@
       const content = document.getElementById('general-details-content');
       const html = renderSummaryFields(wizardData, currentUser);
       content.innerHTML = html;
+
+      // Inject fairness icons into "Total interest" and "Total to repay" rows
+      const rows = content.querySelectorAll('.summary-grid-row');
+      rows.forEach(row => {
+        const label = row.querySelector('.summary-grid-label');
+        const valueSpan = row.querySelector('.summary-grid-value');
+
+        if (label && valueSpan) {
+          const labelText = label.textContent.trim();
+
+          // Add heart icon to "Total interest" and "Total to repay" rows
+          if (labelText === 'Total interest:' || labelText === 'Total to repay:') {
+            // Create icon span
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'pf-fairness-icon';
+            iconSpan.title = 'Fairness Between Friends';
+            iconSpan.style.display = 'inline-flex';
+            iconSpan.style.alignItems = 'center';
+            iconSpan.style.verticalAlign = 'middle';
+            iconSpan.style.marginLeft = '4px';
+            iconSpan.innerHTML = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle'});
+
+            // Append icon to value span
+            valueSpan.appendChild(iconSpan);
+          }
+        }
+      });
+
+      // Inject icon in the footer text
+      const footerIcon = content.parentElement.querySelector('.pf-fairness-icon-inline');
+      if (footerIcon) {
+        footerIcon.innerHTML = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle'});
+      }
+
+      // Set up "How it works" toggle event listener
+      const fairnessToggle = document.getElementById('step4FairnessToggle');
+      const fairnessExplanation = document.getElementById('step4FairnessExplanation');
+
+      if (fairnessToggle && fairnessExplanation) {
+        // Remove any existing listeners to avoid duplicates
+        const newToggle = fairnessToggle.cloneNode(true);
+        fairnessToggle.parentNode.replaceChild(newToggle, fairnessToggle);
+
+        newToggle.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (fairnessExplanation.style.display === 'none') {
+            fairnessExplanation.style.display = 'block';
+          } else {
+            fairnessExplanation.style.display = 'none';
+          }
+        });
+      }
     }
 
     // Populate interest calculation section
@@ -4265,53 +4434,189 @@
     }
 
     async function sendInvite() {
-      const status = document.getElementById('step5-status');
-      status.textContent = 'Creating agreement...';
+      // Use Step 4 status element
+      const status = document.getElementById('step4-status');
+      status.textContent = 'Creating agreement…';
 
       try {
+        // Helper function to parse amount - handles formats like "4.444,00" or "4444.00"
+        function parseAmount(value) {
+          if (typeof value === 'number') return value;
+          if (!value) return 0;
+
+          // Remove any currency symbols and whitespace
+          let cleaned = String(value).replace(/[€$\s]/g, '');
+
+          // If it contains both dot and comma, determine which is decimal separator
+          if (cleaned.includes('.') && cleaned.includes(',')) {
+            // European format: 4.444,00 -> 4444.00
+            cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+          } else if (cleaned.includes(',')) {
+            // Just comma: 4444,00 -> 4444.00
+            cleaned = cleaned.replace(',', '.');
+          }
+          // Otherwise it's already in correct format
+
+          const parsed = parseFloat(cleaned);
+          return isNaN(parsed) ? 0 : parsed;
+        }
+
+        // Helper function to parse interest rate - handles formats like "5% per year" or "5"
+        function parseInterestRate(value) {
+          if (typeof value === 'number') return value;
+          if (!value) return 0;
+
+          const cleaned = String(value).replace(/[%]/g, '').replace(/per year/gi, '').trim();
+          const parsed = parseFloat(cleaned);
+          return isNaN(parsed) ? 0 : parsed;
+        }
+
+        // Helper function to format date to ISO string (YYYY-MM-DD)
+        function formatDateISO(value) {
+          if (!value) return null;
+
+          // If it's already a date object
+          if (value instanceof Date) {
+            if (isNaN(value.getTime())) return null;
+            return value.toISOString().split('T')[0];
+          }
+
+          // If it's a string
+          const str = String(value).trim();
+          if (!str) return null;
+
+          // If already in YYYY-MM-DD format, return as-is
+          if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+            return str;
+          }
+
+          // Try to parse it
+          const date = new Date(str);
+          if (isNaN(date.getTime())) return null;
+
+          return date.toISOString().split('T')[0];
+        }
+
+        // ===== CAPTURE REQUIRED FIELDS =====
+        // wizardData is now properly populated by Step 2's saveCalculatorAndContinue()
+        // which extracts dates directly from the calculator schedule
+
+        console.log('=== DEBUG: sendInvite - Start ===');
+        console.log('Full wizardData:', JSON.parse(JSON.stringify(wizardData)));
+        console.log('wizardData.dueDate:', wizardData.dueDate);
+        console.log('wizardData.finalDueDate:', wizardData.finalDueDate);
+        console.log('wizardData.firstPaymentDate:', wizardData.firstPaymentDate);
+
+        // 1. borrowerEmail - REQUIRED
+        const borrowerEmail = wizardData.friendEmail;
+
+        // 2. description - REQUIRED
+        const description = wizardData.description;
+
+        // 3. amount - REQUIRED (as a number)
+        const summary = wizardData.calculatedSummary || {};
+        const amountValue = summary.loanAmount
+          ? summary.loanAmount / 100  // Convert from cents to euros
+          : wizardData.amount;
+
+        // 4. dueDate - REQUIRED (as YYYY-MM-DD string)
+        // Step 2 now saves this from calculator schedule rows
+        // For one-time: dueDate = the single payment date
+        // For installments: dueDate = finalDueDate (last payment)
+        const dueDate = wizardData.dueDate;
+        console.log('dueDate captured:', dueDate);
+
+        // 5. moneySentDate - can be null for "on acceptance"
+        const moneySentDate = formatDateISO(wizardData.moneySentDate);
+
+        // ===== VALIDATE REQUIRED FIELDS =====
+        const missingFields = [];
+        if (!borrowerEmail) missingFields.push('borrower email');
+        if (!description) missingFields.push('description');
+        if (!amountValue || amountValue <= 0) missingFields.push('amount');
+        if (!dueDate) missingFields.push('due date');
+
+        if (missingFields.length > 0) {
+          status.textContent = `❌ Missing required fields: ${missingFields.join(', ')}`;
+          console.error('=== Missing Required Fields ===');
+          console.error('borrowerEmail:', borrowerEmail);
+          console.error('description:', description);
+          console.error('amountValue:', amountValue);
+          console.error('dueDate:', dueDate);
+          console.error('Full wizardData:', wizardData);
+          console.error('Calculator summary:', wizardData.calculatedSummary);
+          console.error('Calculator schedule:', wizardData.calculatedSchedule);
+          return;
+        }
+
+        // ===== BUILD PAYLOAD =====
+
+        // Parse interest rate
+        const interestRateValue = summary.annualInterestRate !== undefined
+          ? summary.annualInterestRate
+          : parseInterestRate(wizardData.interestRate);
+
+        // Parse total interest and repay amount
+        const totalInterestValue = summary.totalInterest
+          ? summary.totalInterest / 100
+          : parseAmount(wizardData.totalInterest);
+
+        const totalRepayValue = summary.totalRepayment
+          ? summary.totalRepayment / 100
+          : parseAmount(wizardData.totalRepayAmount);
+
         // Send all selected payment methods as comma-separated string
         const paymentMethodsStr = wizardData.paymentMethods && wizardData.paymentMethods.length > 0
           ? wizardData.paymentMethods.join(',')
           : 'bank';
 
         const payload = {
-          friendFirstName: wizardData.friendFirstName,
-          borrowerEmail: wizardData.friendEmail,
+          friendFirstName: wizardData.friendFirstName || document.getElementById('friend-first-name')?.value,
+          borrowerEmail: borrowerEmail,
           phoneNumber: wizardData.phoneNumber,
-          description: wizardData.description,
-          amount: wizardData.amount,
-          moneySentDate: wizardData.moneySentDate,
-          dueDate: wizardData.dueDate,
-          direction: wizardData.role,
-          repaymentType: wizardData.repaymentType,
-          interestRate: wizardData.interestRate,
-          totalInterest: wizardData.totalInterest,
-          totalRepayAmount: wizardData.totalRepayAmount,
+          description: description,
+          amount: amountValue,
+          moneySentDate: moneySentDate,
+          dueDate: dueDate,
+          direction: wizardData.role || 'lend',
+          repaymentType: wizardData.repaymentType || 'one_time',
+          interestRate: interestRateValue,
+          totalInterest: totalInterestValue,
+          totalRepayAmount: totalRepayValue,
           paymentPreferenceMethod: paymentMethodsStr,
           paymentMethodsJson: wizardData.paymentMethodsJson,
           paymentOtherDescription: wizardData.paymentOtherDescription,
-          reminderMode: wizardData.reminderMode,
+          reminderMode: wizardData.reminderMode || 'auto',
           reminderOffsets: wizardData.reminderOffsets,
-          proofRequired: wizardData.proofRequired,
+          proofRequired: wizardData.proofRequired !== undefined ? wizardData.proofRequired : true,
           // Only include debt collection clause if amount >= 6000 EUR
-          debtCollectionClause: (wizardData.amount >= WORST_CASE_MIN_AMOUNT_EUR) ? wizardData.debtCollectionClause : false
+          debtCollectionClause: (amountValue >= WORST_CASE_MIN_AMOUNT_EUR) ? wizardData.debtCollectionClause : false
         };
 
         // Add installment-specific fields if applicable
         if (wizardData.repaymentType === 'installments') {
           payload.planLength = wizardData.planLength;
           payload.planUnit = wizardData.planUnit;
-          payload.installmentCount = wizardData.installmentCount;
+          payload.installmentCount = summary.numberOfInstallments || wizardData.installmentCount;
           payload.installmentAmount = wizardData.installmentAmount;
-          payload.firstPaymentDate = wizardData.firstPaymentDate;
-          payload.finalDueDate = wizardData.finalDueDate;
-          payload.paymentFrequency = wizardData.paymentFrequency;
+          payload.firstPaymentDate = formatDateISO(wizardData.firstPaymentDate);
+          payload.finalDueDate = formatDateISO(wizardData.finalDueDate);
+          payload.paymentFrequency = wizardData.paymentFrequency || 'monthly';
         }
 
         // Add one-time specific fields if applicable
         if (wizardData.repaymentType === 'one_time') {
-          payload.oneTimeDueOption = wizardData.oneTimeDueOption;
+          payload.oneTimeDueOption = wizardData.oneTimeDueOption || 'in_1_year';
         }
+
+        // Log the payload for debugging (show all fields clearly)
+        console.log('=== Sending Agreement Payload ===');
+        console.log('Required fields:');
+        console.log('  - borrowerEmail:', payload.borrowerEmail);
+        console.log('  - description:', payload.description);
+        console.log('  - amount:', payload.amount, '(EUR)');
+        console.log('  - dueDate:', payload.dueDate);
+        console.log('Full payload:', JSON.stringify(payload, null, 2));
 
         const res = await fetch('/api/agreements', {
           method: 'POST',
@@ -4320,19 +4625,30 @@
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed');
 
+        // If backend returns error, show it and stay on Step 4
+        if (!res.ok) {
+          const errorMessage = data.error || data.message || 'Failed to create agreement';
+          status.textContent = '❌ ' + errorMessage;
+          console.error('Backend error response:', data);
+          console.error('Status code:', res.status);
+          return; // Don't navigate to Step 5
+        }
+
+        // Success! Store invite URL and navigate to Step 5
         wizardData.inviteUrl = data.inviteUrl;
         wizardData.agreementSent = true;
 
-        // Navigate to Step 5 (Share)
+        // Clear status and navigate to Step 5 (Share)
         status.textContent = '';
         goToStep(5);
         populateShareStep();
         refresh();
         loadMessages();
       } catch (err) {
+        // Network or other errors
         status.textContent = '❌ ' + err.message;
+        console.error('Error sending invite:', err);
       }
     }
 
