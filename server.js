@@ -4440,10 +4440,96 @@ app.get('/', (req, res) => {
 
 // App: serve app page if authenticated, else redirect to /
 app.get('/app', (req, res) => {
-  if (req.user) {
-    res.sendFile(path.join(__dirname, 'public', 'app.html'));
-  } else {
-    res.redirect('/');
+  if (!req.user) {
+    return res.redirect('/');
+  }
+
+  try {
+    // Auto-link any pending agreements for this user
+    autoLinkPendingAgreements(req.user.id, req.user.email, req.user.full_name);
+
+    // Fetch agreements
+    const agreements = db.prepare(`
+      SELECT a.*,
+        u_lender.full_name as lender_full_name,
+        u_lender.email as lender_email,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email,
+        invite.accepted_at as accepted_at
+      FROM agreements a
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      LEFT JOIN agreement_invites invite ON a.id = invite.agreement_id
+      WHERE lender_user_id = ? OR borrower_user_id = ?
+      ORDER BY created_at DESC
+    `).all(req.user.id, req.user.id);
+
+    // Calculate stats
+    const totalAgreements = agreements.length;
+    const totalPendingAgreements = agreements.filter(a => a.status === 'pending').length;
+    const totalActiveAgreements = agreements.filter(a => a.status === 'active').length;
+    const totalSettledAgreements = agreements.filter(a => a.status === 'settled').length;
+    const totalOverdueAgreements = 0; // TODO: implement overdue tracking
+
+    // GroupTabs not yet implemented, use empty array
+    const groupTabs = [];
+    const totalGroupTabs = groupTabs.length;
+
+    // Prepare agreements summary (first 3) with counterparty info
+    const agreementsSummary = agreements.slice(0, 3).map(agreement => {
+      const isLender = agreement.lender_user_id === req.user.id;
+      const counterpartyName = isLender
+        ? (agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email)
+        : (agreement.lender_full_name || agreement.lender_name || agreement.lender_email);
+
+      const totals = getPaymentTotals(agreement.id);
+      const outstandingAmountCents = totals.principal_remaining + totals.interest_remaining;
+
+      return {
+        id: agreement.id,
+        counterpartyName,
+        status: agreement.status,
+        statusLabel: agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1),
+        outstandingAmountCents,
+        outstandingAmountFormatted: formatCurrency0(outstandingAmountCents),
+        currency: '€',
+        nextPaymentLabel: null // TODO: calculate next payment date
+      };
+    });
+
+    // Read the HTML template
+    const htmlPath = path.join(__dirname, 'public', 'app.html');
+    let html = fs.readFileSync(htmlPath, 'utf8');
+
+    // Inject dashboard data as JSON
+    const dashboardData = JSON.stringify({
+      user: {
+        id: req.user.id,
+        email: req.user.email,
+        fullName: req.user.full_name,
+        firstName: req.user.full_name ? req.user.full_name.split(' ')[0] : req.user.email.split('@')[0]
+      },
+      stats: {
+        totalAgreements,
+        totalPendingAgreements,
+        totalActiveAgreements,
+        totalSettledAgreements,
+        totalOverdueAgreements,
+        totalGroupTabs
+      },
+      agreementsSummary,
+      hasAnyAgreements: totalAgreements > 0,
+      hasAnyGroupTabs: totalGroupTabs > 0,
+      isZeroState: totalAgreements === 0 && totalGroupTabs === 0
+    });
+
+    // Replace the placeholder with actual data
+    html = html.replace('/*DASHBOARD_DATA_INJECTION*/', `window.__DASHBOARD_DATA__ = ${dashboardData};`);
+
+    res.send(html);
+  } catch (err) {
+    console.error('Error loading dashboard:', err);
+    res.status(500).send('Error loading dashboard');
   }
 });
 

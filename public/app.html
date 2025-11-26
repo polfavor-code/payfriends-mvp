@@ -699,6 +699,181 @@
       background: rgba(16, 185, 129, 0.2);
       color: #34d399;
     }
+
+    /* Dashboard Main Section Styles */
+    .dashboard-main {
+      margin: 32px 0;
+    }
+
+    .dashboard-header {
+      margin-bottom: 32px;
+    }
+
+    .dashboard-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+    }
+
+    .dashboard-header p {
+      color: var(--muted);
+      font-size: 15px;
+      margin: 0;
+    }
+
+    .dashboard-status-row {
+      display: flex;
+      gap: 16px;
+      margin: 24px 0;
+      flex-wrap: wrap;
+    }
+
+    .status-chip {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+    }
+
+    .status-chip-label {
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .status-chip-value {
+      color: var(--text);
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .dashboard-section {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+
+    .dashboard-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .dashboard-section-header h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .dashboard-section-header a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: opacity 0.2s;
+    }
+
+    .dashboard-section-header a:hover {
+      opacity: 0.8;
+      text-decoration: underline;
+    }
+
+    .dashboard-agreements-summary {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .agreement-summary-item {
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .agreement-summary-item:last-child {
+      border-bottom: none;
+    }
+
+    .agreement-summary-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .agreement-summary-name {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .agreement-summary-description {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .agreement-summary-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .agreement-summary-amount {
+      font-weight: 600;
+      font-size: 15px;
+      text-align: right;
+    }
+
+    .dashboard-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    .dashboard-placeholder {
+      color: var(--muted);
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    .dashboard-hero-zero {
+      /* Same as dashboard-hero but with specific class for zero state */
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-status-row {
+        flex-direction: column;
+      }
+
+      .status-chip {
+        width: 100%;
+      }
+
+      .agreement-summary-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .agreement-summary-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
   </style>
 </head>
 <body>
@@ -719,47 +894,11 @@
       </div>
     </section>
 
-    <section class="card" id="list-section">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
-        <h2 style="margin:0">My Agreements</h2>
-      </div>
-
-      <div class="tabs">
-        <div class="tab active" data-filter="all" onclick="filterByStatus('all')">All</div>
-        <div class="tab" data-filter="pending" onclick="filterByStatus('pending')">Pending</div>
-        <div class="tab" data-filter="active" onclick="filterByStatus('active')">Active</div>
-        <div class="tab" data-filter="settled" onclick="filterByStatus('settled')">Settled</div>
-      </div>
-
-      <table id="list">
-        <thead>
-          <tr>
-            <th id="counterparty-header">Borrower</th>
-            <th>Description</th>
-            <th>Outstanding / Total</th>
-            <th id="due-header">Next repayment due</th>
-            <th>Status</th>
-            <th><span class="actions-header-text">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div id="empty-state" class="empty-state" style="display:none">
-        No agreements found for this filter.
-      </div>
-      <div style="display:flex; justify-content:flex-end; margin-top:16px">
-        <button id="new-agreement-btn" onclick="toggleNewAgreement()" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
-          <span style="font-size:18px; font-weight:bold">+</span>
-          <span>New Agreement</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- Welcome hero for first-time users with no agreements -->
-    <section class="dashboard-hero" id="welcome-card" style="display:none">
+    <!-- Zero-state hero (shown when user has no agreements) -->
+    <section class="dashboard-hero dashboard-hero-zero" id="dashboard-hero-zero" style="display:none">
       <div class="dashboard-hero-inner">
         <div class="dashboard-hero-text">
-          <h1 class="dashboard-hero__title" id="welcome-heading">Welcome</h1>
+          <h1 class="dashboard-hero__title" id="welcome-heading-zero">Welcome</h1>
 
           <p class="dashboard-hero__lead">
             PayFriends keeps money and friendships in balance. Create simple agreements with friends, let us handle the reminders, and always know exactly where you stand.
@@ -776,11 +915,8 @@
           </p>
 
           <div class="dashboard-hero__actions">
-            <button id="new-agreement-from-welcome" onclick="startNewAgreementFromWelcome()" class="primary-button">
+            <button onclick="startNewAgreementFromWelcome()" class="primary-button">
               + New Agreement
-            </button>
-            <button onclick="closeNewAgreement()" class="secondary">
-              View my agreements
             </button>
           </div>
         </div>
@@ -790,6 +926,55 @@
         </div>
       </div>
     </section>
+
+    <!-- Dashboard main (shown when user has agreements) -->
+    <div id="dashboard-main" class="dashboard-main" style="display:none">
+      <!-- Greeting and status chips -->
+      <div class="dashboard-header">
+        <h1 id="dashboard-greeting">Hi, welcome to your dashboard.</h1>
+        <p>Here is your overview.</p>
+      </div>
+
+      <div class="dashboard-status-row" id="dashboard-status-row">
+        <!-- Status chips will be populated by JavaScript -->
+      </div>
+
+      <!-- My agreements section -->
+      <div class="dashboard-section">
+        <div class="dashboard-section-header">
+          <h2>My agreements</h2>
+          <a href="/agreements" id="view-all-agreements-link">View all agreements →</a>
+        </div>
+        <ul class="dashboard-agreements-summary" id="dashboard-agreements-list">
+          <!-- Agreements will be populated by JavaScript -->
+        </ul>
+      </div>
+
+      <!-- GroupTabs section -->
+      <div class="dashboard-section" id="dashboard-grouptabs-section" style="display:none">
+        <div class="dashboard-section-header">
+          <h2>GroupTabs</h2>
+          <a href="/grouptabs">Go to GroupTabs →</a>
+        </div>
+        <p class="dashboard-placeholder" id="dashboard-grouptabs-text">
+          <!-- GroupTabs info will be populated by JavaScript -->
+        </p>
+      </div>
+
+      <!-- Actions -->
+      <div class="dashboard-actions">
+        <button onclick="toggleNewAgreement()" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
+          <span style="font-size:18px; font-weight:bold">+</span>
+          <span>New Agreement</span>
+        </button>
+        <a href="/grouptabs">
+          <button class="secondary" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
+            <span style="font-size:18px; font-weight:bold">+</span>
+            <span>New GroupTab</span>
+          </button>
+        </a>
+      </div>
+    </div>
 
     <!-- Wizard for creating agreements -->
     <div id="new-agreement-section" class="hidden">
@@ -4806,13 +4991,17 @@
 
     function toggleNewAgreement() {
       const section = document.getElementById('new-agreement-section');
-      const listSection = document.getElementById('list-section');
+      const dashboardMain = document.getElementById('dashboard-main');
+      const zeroState = document.getElementById('dashboard-hero-zero');
+
       if (section.classList.contains('hidden')) {
         section.classList.remove('hidden');
-        document.getElementById('new-agreement-btn').style.display = 'none';
-        // Hide the My Agreements section when showing the wizard
-        if (listSection) {
-          listSection.style.display = 'none';
+        // Hide both dashboard sections when showing the wizard
+        if (dashboardMain) {
+          dashboardMain.style.display = 'none';
+        }
+        if (zeroState) {
+          zeroState.style.display = 'none';
         }
         // Scroll the wizard into view
         setTimeout(() => {
@@ -4824,18 +5013,18 @@
     }
 
     function startNewAgreementFromWelcome() {
-      const welcomeCard = document.getElementById('welcome-card');
+      const zeroState = document.getElementById('dashboard-hero-zero');
       const newAgreementSection = document.getElementById('new-agreement-section');
-      const listSection = document.getElementById('list-section');
+      const dashboardMain = document.getElementById('dashboard-main');
 
-      // Hide the welcome card
-      if (welcomeCard) {
-        welcomeCard.style.display = 'none';
+      // Hide the zero state hero
+      if (zeroState) {
+        zeroState.style.display = 'none';
       }
 
-      // Hide the list section when showing the wizard
-      if (listSection) {
-        listSection.style.display = 'none';
+      // Hide the dashboard main when showing the wizard
+      if (dashboardMain) {
+        dashboardMain.style.display = 'none';
       }
 
       // Show the new agreement wizard
@@ -4850,32 +5039,36 @@
 
     function closeNewAgreement() {
       const newAgreementSection = document.getElementById('new-agreement-section');
-      const newAgreementBtn = document.getElementById('new-agreement-btn');
-      const welcomeCard = document.getElementById('welcome-card');
-      const listSection = document.getElementById('list-section');
+      const zeroState = document.getElementById('dashboard-hero-zero');
+      const dashboardMain = document.getElementById('dashboard-main');
+      const data = window.__DASHBOARD_DATA__;
 
       // Hide the new agreement wizard
       if (newAgreementSection) {
         newAgreementSection.classList.add('hidden');
       }
 
-      // Show the new agreement button (if it exists - it won't exist in welcome state)
-      if (newAgreementBtn) {
-        newAgreementBtn.style.display = 'flex';
-      }
-
-      // If there are no agreements, restore the welcome card
-      if (welcomeCard && allAgreements.length === 0) {
-        welcomeCard.style.display = 'block';
-        if (listSection) {
-          listSection.style.display = 'none';
+      // Show appropriate dashboard section based on current state
+      if (data && data.isZeroState) {
+        // Show zero state
+        if (zeroState) {
+          zeroState.style.display = 'block';
+        }
+        if (dashboardMain) {
+          dashboardMain.style.display = 'none';
         }
       } else {
-        // If there are agreements, show the list section
-        if (listSection) {
-          listSection.style.display = 'block';
+        // Show dashboard main
+        if (dashboardMain) {
+          dashboardMain.style.display = 'block';
+        }
+        if (zeroState) {
+          zeroState.style.display = 'none';
         }
       }
+
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // Fetch current user (now handled by shared header, but we still need to set currentUser)
@@ -5318,6 +5511,157 @@
     // Initialize intl-tel-input for agreement phone
     let agreementPhoneInput;
 
+    // Dashboard initialization function
+    function initDashboard() {
+      const data = window.__DASHBOARD_DATA__;
+      if (!data) {
+        console.warn('Dashboard data not available');
+        return;
+      }
+
+      const zeroStateSection = document.getElementById('dashboard-hero-zero');
+      const dashboardMain = document.getElementById('dashboard-main');
+
+      // Show appropriate section based on isZeroState flag
+      if (data.isZeroState) {
+        // Zero state: show hero
+        if (zeroStateSection) {
+          zeroStateSection.style.display = 'block';
+
+          // Personalize welcome heading
+          const welcomeHeading = document.getElementById('welcome-heading-zero');
+          if (welcomeHeading && data.user) {
+            const fullName = data.user.full_name || data.user.name || '';
+            const firstName = fullName.trim().split(/\s+/)[0] || '';
+            const email = data.user.email || '';
+            const fallbackName = email.includes('@') ? email.split('@')[0] : email;
+            const displayName = firstName || fallbackName || 'there';
+            welcomeHeading.textContent = `Welcome, ${displayName}`;
+          }
+        }
+        if (dashboardMain) {
+          dashboardMain.style.display = 'none';
+        }
+      } else {
+        // Dashboard state: show main dashboard
+        if (zeroStateSection) {
+          zeroStateSection.style.display = 'none';
+        }
+        if (dashboardMain) {
+          dashboardMain.style.display = 'block';
+
+          // Update greeting
+          const greeting = document.getElementById('dashboard-greeting');
+          if (greeting && data.user) {
+            const fullName = data.user.full_name || data.user.name || '';
+            const firstName = fullName.trim().split(/\s+/)[0] || '';
+            const email = data.user.email || '';
+            const fallbackName = email.includes('@') ? email.split('@')[0] : email;
+            const displayName = firstName || fallbackName || 'you';
+            greeting.textContent = `Hi ${displayName}, welcome to your dashboard.`;
+          }
+
+          // Populate status chips
+          const statusRow = document.getElementById('dashboard-status-row');
+          if (statusRow && data.stats) {
+            const chips = [];
+
+            if (data.stats.totalActiveAgreements !== undefined) {
+              chips.push(`
+                <div class="status-chip">
+                  <span class="status-chip-label">Active agreements</span>
+                  <span class="status-chip-value">${data.stats.totalActiveAgreements}</span>
+                </div>
+              `);
+            }
+
+            if (data.stats.totalPendingAgreements !== undefined) {
+              chips.push(`
+                <div class="status-chip">
+                  <span class="status-chip-label">Pending</span>
+                  <span class="status-chip-value">${data.stats.totalPendingAgreements}</span>
+                </div>
+              `);
+            }
+
+            if (data.stats.totalSettledAgreements !== undefined) {
+              chips.push(`
+                <div class="status-chip">
+                  <span class="status-chip-label">Settled</span>
+                  <span class="status-chip-value">${data.stats.totalSettledAgreements}</span>
+                </div>
+              `);
+            }
+
+            if (data.hasAnyGroupTabs) {
+              chips.push(`
+                <div class="status-chip">
+                  <span class="status-chip-label">GroupTabs</span>
+                  <span class="status-chip-value">Available</span>
+                </div>
+              `);
+            }
+
+            statusRow.innerHTML = chips.join('');
+          }
+
+          // Populate agreements summary (max 3)
+          const agreementsList = document.getElementById('dashboard-agreements-list');
+          if (agreementsList && data.agreementsSummary) {
+            if (data.agreementsSummary.length === 0) {
+              agreementsList.innerHTML = '<li class="empty-state">No agreements yet</li>';
+            } else {
+              const items = data.agreementsSummary.slice(0, 3).map(agreement => {
+                const name = agreement.friend_first_name || agreement.borrower_email || 'Unknown';
+                const description = agreement.description || 'No description';
+                const amount = formatCurrency2(agreement.amount_cents || 0);
+                const statusClass = `status-badge ${agreement.status || 'pending'}`;
+                const statusText = (agreement.status || 'pending').charAt(0).toUpperCase() + (agreement.status || 'pending').slice(1);
+
+                return `
+                  <li class="agreement-summary-item">
+                    <div class="agreement-summary-left">
+                      <div class="agreement-summary-name">${escapeHTML(name)}</div>
+                      <div class="agreement-summary-description">${escapeHTML(description)}</div>
+                    </div>
+                    <div class="agreement-summary-right">
+                      <div class="agreement-summary-amount">${amount}</div>
+                      <span class="${statusClass}">${statusText}</span>
+                    </div>
+                  </li>
+                `;
+              }).join('');
+              agreementsList.innerHTML = items;
+            }
+          }
+
+          // Handle GroupTabs section
+          const grouptabsSection = document.getElementById('dashboard-grouptabs-section');
+          const grouptabsText = document.getElementById('dashboard-grouptabs-text');
+          if (data.hasAnyGroupTabs) {
+            if (grouptabsSection) grouptabsSection.style.display = 'block';
+            if (grouptabsText) grouptabsText.textContent = 'You have active GroupTabs. Click above to view and manage them.';
+          } else {
+            if (grouptabsSection) grouptabsSection.style.display = 'none';
+          }
+        }
+      }
+    }
+
+    // Helper function to escape HTML
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Data injection placeholder - backend will inject window.__DASHBOARD_DATA__ here
+    /*DASHBOARD_DATA_INJECTION*/
+
     document.addEventListener('DOMContentLoaded', async () => {
       // Check if we're on a legal page route
       if (window.LegalRouter && window.LegalRouter.initialize()) {
@@ -5352,6 +5696,9 @@
 
       // Initialize payment method cards
       setupPaymentMethodCards();
+
+      // Initialize dashboard with injected data
+      initDashboard();
 
       // Load user and other data
       loadUser();

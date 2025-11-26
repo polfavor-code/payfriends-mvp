@@ -171,6 +171,11 @@ function renderAgreementsTable(agreements, currentUser, currentFilter = 'all', c
   const listSection = document.getElementById('list-section');
   const welcomeCard = document.getElementById('welcome-card');
 
+  // Early return if table elements don't exist (e.g., on new dashboard)
+  if (!tbody || !table) {
+    return;
+  }
+
   // Filter out agreements cancelled before borrower approval
   // These should not appear in My Agreements but only in Activity
   const visibleAgreements = agreements.filter(a => {
