@@ -127,12 +127,24 @@
           <div class="empty-state-text">No agreements found</div>
           <div class="empty-state-subtext">Try adjusting the filter above.</div>
         </div>
+        <div style="display:flex; justify-content:flex-end; margin-top:16px">
+          <button onclick="window.location.href='/app?new=true'" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
+            <span style="font-size:18px; font-weight:bold">+</span>
+            <span>New Agreement</span>
+          </button>
+        </div>
       </div>
 
       <div id="welcome-card" class="empty-state" style="display:none">
         <div class="empty-state-icon">🤝</div>
         <div class="empty-state-text">You have no agreements yet</div>
         <div class="empty-state-subtext">Start by creating your first agreement to track loans with friends.</div>
+        <div style="margin-top:24px">
+          <button onclick="window.location.href='/app?new=true'" style="display:flex; align-items:center; gap:8px; padding:12px 20px; margin:0 auto">
+            <span style="font-size:18px; font-weight:bold">+</span>
+            <span>New Agreement</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -164,8 +176,7 @@
         if (!agreementsResponse.ok) {
           throw new Error('Failed to fetch agreements');
         }
-        const agreementsData = await agreementsResponse.json();
-        allAgreements = agreementsData.agreements || [];
+        allAgreements = await agreementsResponse.json();
 
         document.getElementById('loading').style.display = 'none';
 
@@ -197,24 +208,29 @@
     }
 
     // Action handlers for buttons
+    // Navigate to manage page for lenders and borrowers
     function viewAgreement(id) {
-      window.location.href = `/app?agreement=${id}`;
+      window.location.href = `/agreements/${id}/manage`;
     }
 
+    // Navigate to review page for borrowers
     function reviewAgreement(id) {
-      window.location.href = `/app?agreement=${id}`;
+      window.location.href = `/agreements/${id}/review`;
     }
 
+    // Scroll to manage (not used on this page, but needed for agreements-table.js)
     function scrollToManage() {
-      window.location.href = `/app`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // Navigate to manage page for payment confirmation (modal not available on this page)
     function openConfirmPaymentModal(id) {
-      window.location.href = `/app?agreement=${id}`;
+      window.location.href = `/agreements/${id}/manage`;
     }
 
+    // Navigate to manage page for difficulty handling (modal not available on this page)
     function openDifficultyModal(id) {
-      window.location.href = `/app?agreement=${id}`;
+      window.location.href = `/agreements/${id}/manage`;
     }
 
     // Initialize on page load
