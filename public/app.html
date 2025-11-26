@@ -978,6 +978,17 @@
 
     <!-- Wizard for creating agreements -->
     <div id="new-agreement-section" class="hidden">
+      <!-- Agreements summary (shown on Step 5) -->
+      <div id="wizard-agreements-summary" class="dashboard-section" style="display:none; margin-bottom:24px">
+        <div class="dashboard-section-header">
+          <h2>My agreements</h2>
+          <a href="/agreements">View all agreements →</a>
+        </div>
+        <ul class="dashboard-agreements-summary" id="wizard-agreements-list">
+          <!-- Agreements will be populated by JavaScript -->
+        </ul>
+      </div>
+
       <!-- Header: title + back link on same row -->
       <div class="new-agreement-header">
         <h1 class="new-agreement-title">New Agreement</h1>
@@ -1618,6 +1629,20 @@
       // Mark previous steps as completed
       for (let i = 1; i < step; i++) {
         document.getElementById(`step-indicator-${i}`).classList.add('completed');
+      }
+
+      // Show/hide wizard agreements summary (only on step 5)
+      const wizardSummary = document.getElementById('wizard-agreements-summary');
+      if (wizardSummary) {
+        if (step === 5) {
+          wizardSummary.style.display = 'block';
+          // Populate with latest data
+          if (window.__DASHBOARD_DATA__ && window.__DASHBOARD_DATA__.agreementsSummary) {
+            renderAgreementsSummaryInContainer('wizard-agreements-list', window.__DASHBOARD_DATA__.agreementsSummary);
+          }
+        } else {
+          wizardSummary.style.display = 'none';
+        }
       }
 
       // Special handling for step 1: ensure borrower fields visibility is correct
@@ -4815,6 +4840,9 @@
         wizardData.inviteUrl = data.inviteUrl;
         wizardData.agreementSent = true;
 
+        // Reload dashboard data to get the new agreement
+        await reloadDashboardData();
+
         // Clear status and navigate to Step 5 (Share)
         status.textContent = '';
         goToStep(5);
@@ -5047,6 +5075,9 @@
       if (newAgreementSection) {
         newAgreementSection.classList.add('hidden');
       }
+
+      // Reinitialize dashboard to populate with latest data
+      initDashboard();
 
       // Show appropriate dashboard section based on current state
       if (data && data.isZeroState) {
@@ -5511,6 +5542,66 @@
     // Initialize intl-tel-input for agreement phone
     let agreementPhoneInput;
 
+    // Shared function to render agreements summary in a container
+    function renderAgreementsSummaryInContainer(containerId, agreementsSummary) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      if (!agreementsSummary || agreementsSummary.length === 0) {
+        container.innerHTML = '<li class="empty-state" style="padding:32px; text-align:center; color:var(--muted)">No agreements yet</li>';
+        return;
+      }
+
+      const items = agreementsSummary.slice(0, 3).map(agreement => {
+        // Use the correct field names from backend
+        const name = agreement.counterpartyName || 'Unknown';
+        const amount = agreement.outstandingAmountFormatted || '€0,00';
+        const currency = agreement.currency || '€';
+        const statusText = agreement.statusLabel || 'Pending';
+        const status = agreement.status || 'pending';
+        const statusClass = `status-badge ${status}`;
+        const nextPayment = agreement.nextPaymentLabel || '';
+
+        return `
+          <li class="agreement-summary-item">
+            <div class="agreement-summary-left">
+              <div class="agreement-summary-name">${escapeHTML(name)}</div>
+              ${nextPayment ? `<div class="agreement-summary-next" style="font-size:13px; color:var(--muted); margin-top:4px">Next: ${escapeHTML(nextPayment)}</div>` : ''}
+            </div>
+            <div class="agreement-summary-right">
+              <div class="agreement-summary-amount">${currency}${amount}</div>
+              <span class="${statusClass}">${statusText}</span>
+            </div>
+          </li>
+        `;
+      }).join('');
+
+      container.innerHTML = items;
+    }
+
+    // Reload dashboard data from server (after creating agreement, etc.)
+    async function reloadDashboardData() {
+      try {
+        // Reload the /app page to get fresh data
+        const response = await fetch('/app');
+        if (!response.ok) {
+          console.error('Failed to reload dashboard data');
+          return;
+        }
+
+        const html = await response.text();
+
+        // Extract the dashboard data from the response HTML
+        const match = html.match(/window\.__DASHBOARD_DATA__\s*=\s*({.*?});/s);
+        if (match && match[1]) {
+          window.__DASHBOARD_DATA__ = JSON.parse(match[1]);
+          console.log('Dashboard data reloaded:', window.__DASHBOARD_DATA__);
+        }
+      } catch (err) {
+        console.error('Error reloading dashboard data:', err);
+      }
+    }
+
     // Dashboard initialization function
     function initDashboard() {
       const data = window.__DASHBOARD_DATA__;
@@ -5606,34 +5697,7 @@
           }
 
           // Populate agreements summary (max 3)
-          const agreementsList = document.getElementById('dashboard-agreements-list');
-          if (agreementsList && data.agreementsSummary) {
-            if (data.agreementsSummary.length === 0) {
-              agreementsList.innerHTML = '<li class="empty-state">No agreements yet</li>';
-            } else {
-              const items = data.agreementsSummary.slice(0, 3).map(agreement => {
-                const name = agreement.friend_first_name || agreement.borrower_email || 'Unknown';
-                const description = agreement.description || 'No description';
-                const amount = formatCurrency2(agreement.amount_cents || 0);
-                const statusClass = `status-badge ${agreement.status || 'pending'}`;
-                const statusText = (agreement.status || 'pending').charAt(0).toUpperCase() + (agreement.status || 'pending').slice(1);
-
-                return `
-                  <li class="agreement-summary-item">
-                    <div class="agreement-summary-left">
-                      <div class="agreement-summary-name">${escapeHTML(name)}</div>
-                      <div class="agreement-summary-description">${escapeHTML(description)}</div>
-                    </div>
-                    <div class="agreement-summary-right">
-                      <div class="agreement-summary-amount">${amount}</div>
-                      <span class="${statusClass}">${statusText}</span>
-                    </div>
-                  </li>
-                `;
-              }).join('');
-              agreementsList.innerHTML = items;
-            }
-          }
+          renderAgreementsSummaryInContainer('dashboard-agreements-list', data.agreementsSummary);
 
           // Handle GroupTabs section
           const grouptabsSection = document.getElementById('dashboard-grouptabs-section');
