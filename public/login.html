@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PayFriends — Login</title>
+  <title>PayFriends &mdash; Login</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <style>
     :root{
@@ -159,26 +159,9 @@
       position:absolute; width:1px; height:1px; padding:0; margin:-1px;
       overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0;
     }
-
-    /* Money Airplanes background canvas */
-    #money-airplanes-canvas{
-      position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
-      z-index:0;
-      pointer-events:none;
-    }
-    .page{
-      position:relative;
-      z-index:1;
-    }
   </style>
 </head>
 <body>
-  <!-- Money Airplanes Background -->
-  <canvas id="money-airplanes-canvas"></canvas>
   <div class="page">
     <!-- HERO (single instance, responsive) -->
     <section class="hero" aria-labelledby="pf-hero-title">
@@ -278,29 +261,6 @@
       </section>
     </main>
   </div>
-
-  <!-- Paper Plane Animated Background Component -->
-  <script src="/components/PayFriendsPaperPlaneBackground.js"></script>
-
-  <script>
-    // Initialize Paper Plane background
-    (function(){
-      const canvas = document.getElementById('money-airplanes-canvas');
-      if (canvas && window.PayFriendsPaperPlaneBackground) {
-        const paperPlaneBg = new window.PayFriendsPaperPlaneBackground(canvas, {
-          density: 1,
-          speed: 1,
-          opacity: 0.33
-        });
-        paperPlaneBg.start();
-
-        // Clean up on page unload
-        window.addEventListener('beforeunload', () => {
-          paperPlaneBg.destroy();
-        });
-      }
-    })();
-  </script>
 
   <script>
     // Accessible, reliable tabs (no global 'event' reliance)
