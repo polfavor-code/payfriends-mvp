@@ -3053,20 +3053,58 @@
       wizardData.moneySentOption = loanStartMode;
       wizardData.moneySentDate = loanStartDate;
 
-      if (repaymentType === 'one_time') {
-        wizardData.installmentCount = 1;
-        wizardData.oneTimeDueOption = firstPaymentDue;
-        wizardData.dueDate = firstPaymentDate || null;
-      } else {
-        wizardData.installmentCount = numberOfInstallments;
-        wizardData.paymentFrequency = paymentFrequency;
-        wizardData.firstPaymentOption = firstPaymentDue;
-        wizardData.firstPaymentDate = firstPaymentDate;
-      }
-
       // Store schedule and summary for later use
       wizardData.calculatedSchedule = wizardCalculatorSchedule;
       wizardData.calculatedSummary = wizardCalculatorSummary;
+
+      // Extract actual dates from calculator schedule rows
+      // The calculator produces exact dates in the schedule, use those as the source of truth
+      if (wizardCalculatorSchedule && wizardCalculatorSchedule.rows && wizardCalculatorSchedule.rows.length > 0) {
+        const firstRow = wizardCalculatorSchedule.rows[0];
+        const lastRow = wizardCalculatorSchedule.rows[wizardCalculatorSchedule.rows.length - 1];
+
+        // Helper to convert Date object to YYYY-MM-DD
+        function formatDateYMD(date) {
+          if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+
+        if (repaymentType === 'one_time') {
+          // For one-time, there's only one payment date
+          const onlyDueDate = formatDateYMD(firstRow.dueDate);
+          wizardData.installmentCount = 1;
+          wizardData.oneTimeDueOption = firstPaymentDue;
+          wizardData.dueDate = onlyDueDate;
+          wizardData.finalDueDate = onlyDueDate; // Same as dueDate for one-time
+        } else {
+          // For installments, save first and final payment dates from schedule
+          const firstDueDate = formatDateYMD(firstRow.dueDate);
+          const finalDueDate = formatDateYMD(lastRow.dueDate);
+
+          wizardData.installmentCount = numberOfInstallments;
+          wizardData.paymentFrequency = paymentFrequency;
+          wizardData.firstPaymentOption = firstPaymentDue;
+          wizardData.firstPaymentDate = firstDueDate;
+          wizardData.finalDueDate = finalDueDate;
+          // Backend expects dueDate to be the final due date for installments
+          wizardData.dueDate = finalDueDate;
+        }
+      } else {
+        // Fallback if calculator didn't produce schedule (shouldn't happen)
+        if (repaymentType === 'one_time') {
+          wizardData.installmentCount = 1;
+          wizardData.oneTimeDueOption = firstPaymentDue;
+          wizardData.dueDate = firstPaymentDate || null;
+        } else {
+          wizardData.installmentCount = numberOfInstallments;
+          wizardData.paymentFrequency = paymentFrequency;
+          wizardData.firstPaymentOption = firstPaymentDue;
+          wizardData.firstPaymentDate = firstPaymentDate;
+        }
+      }
 
       // Clear status and proceed
       document.getElementById('step2-status').textContent = '';
@@ -4331,53 +4369,30 @@
           return date.toISOString().split('T')[0];
         }
 
-        // ===== CAPTURE REQUIRED FIELDS FROM DOM IF MISSING IN wizardData =====
+        // ===== CAPTURE REQUIRED FIELDS =====
+        // wizardData is now properly populated by Step 2's saveCalculatorAndContinue()
+        // which extracts dates directly from the calculator schedule
 
         // 1. borrowerEmail - REQUIRED
-        const borrowerEmail = wizardData.friendEmail || document.getElementById('friend-email')?.value;
+        const borrowerEmail = wizardData.friendEmail;
 
         // 2. description - REQUIRED
-        const description = wizardData.description || document.getElementById('description')?.value;
+        const description = wizardData.description;
 
         // 3. amount - REQUIRED (as a number)
         const summary = wizardData.calculatedSummary || {};
-        let amountValue = summary.loanAmount
+        const amountValue = summary.loanAmount
           ? summary.loanAmount / 100  // Convert from cents to euros
-          : parseAmount(wizardData.amount);
-
-        // If still 0, try reading from DOM
-        if (!amountValue) {
-          const amountInput = document.getElementById('amount');
-          if (amountInput) {
-            amountValue = parseAmount(amountInput.value);
-          }
-        }
+          : wizardData.amount;
 
         // 4. dueDate - REQUIRED (as YYYY-MM-DD string)
-        // For one-time payments, dueDate might be in the #due-date input
-        // For installments, use finalDueDate
-        let dueDate = formatDateISO(wizardData.dueDate);
-
-        if (!dueDate) {
-          const dueDateInput = document.getElementById('due-date');
-          if (dueDateInput && dueDateInput.value) {
-            dueDate = formatDateISO(dueDateInput.value);
-          }
-        }
-
-        // For installments, use finalDueDate if dueDate is not set
-        if (!dueDate && wizardData.repaymentType === 'installments') {
-          dueDate = formatDateISO(wizardData.finalDueDate);
-        }
+        // Step 2 now saves this from calculator schedule rows
+        // For one-time: dueDate = the single payment date
+        // For installments: dueDate = finalDueDate (last payment)
+        const dueDate = wizardData.dueDate;
 
         // 5. moneySentDate - can be null for "on acceptance"
-        let moneySentDate = formatDateISO(wizardData.moneySentDate);
-        if (!moneySentDate && wizardData.moneySentOption !== 'on-acceptance') {
-          const moneySentInput = document.getElementById('money-sent-date');
-          if (moneySentInput && moneySentInput.value) {
-            moneySentDate = formatDateISO(moneySentInput.value);
-          }
-        }
+        const moneySentDate = formatDateISO(wizardData.moneySentDate);
 
         // ===== VALIDATE REQUIRED FIELDS =====
         const missingFields = [];
@@ -4388,8 +4403,14 @@
 
         if (missingFields.length > 0) {
           status.textContent = `❌ Missing required fields: ${missingFields.join(', ')}`;
-          console.error('Missing required fields:', { borrowerEmail, description, amountValue, dueDate });
-          console.error('wizardData:', wizardData);
+          console.error('=== Missing Required Fields ===');
+          console.error('borrowerEmail:', borrowerEmail);
+          console.error('description:', description);
+          console.error('amountValue:', amountValue);
+          console.error('dueDate:', dueDate);
+          console.error('Full wizardData:', wizardData);
+          console.error('Calculator summary:', wizardData.calculatedSummary);
+          console.error('Calculator schedule:', wizardData.calculatedSchedule);
           return;
         }
 
