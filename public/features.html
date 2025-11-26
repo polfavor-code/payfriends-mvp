@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayFriends - Features</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
+
+  <style>
+    :root {
+      --bg: #0e1116;
+      --card: #151a21;
+      --text: #e6eef6;
+      --muted: #9aa6bc;
+      --accent: #45d48b;
+      --accent-soft: rgba(69, 212, 139, 0.12);
+      --border-subtle: #242b36;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #152434 0, #0e1116 45%, #05070b 100%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .page-shell {
+      max-width: 1080px;
+      margin: 96px auto 72px;
+      padding: 0 24px 40px;
+    }
+
+    .features-header-card {
+      background: linear-gradient(135deg, rgba(69, 212, 139, 0.16), rgba(12, 18, 27, 0.95));
+      border-radius: 18px;
+      padding: 28px 28px 24px;
+      border: 1px solid rgba(69, 212, 139, 0.25);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+      margin-bottom: 28px;
+    }
+
+    .features-header-card h1 {
+      font-size: 1.8rem;
+      margin: 0 0 0.75rem;
+    }
+
+    .features-header-card p {
+      margin: 0;
+      font-size: 0.96rem;
+      color: #d2deec;
+      max-width: 720px;
+    }
+
+    .features-header-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.25rem;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .features-tagline {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .features-cta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .features-cta a.primary-button {
+      text-decoration: none;
+    }
+
+    .features-cta-link {
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .features-cta-link a {
+      color: var(--accent);
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .features-cta-link a:hover {
+      text-decoration: underline;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 18px 18px 16px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 14px 38px rgba(0, 0, 0, 0.55);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(69, 212, 139, 0.08), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .feature-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(69, 212, 139, 0.65);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .feature-icon span {
+      font-size: 16px;
+      color: var(--accent);
+    }
+
+    .feature-title {
+      font-size: 0.98rem;
+      font-weight: 600;
+    }
+
+    .feature-body {
+      position: relative;
+      z-index: 1;
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .feature-tag {
+      position: relative;
+      z-index: 1;
+      align-self: flex-start;
+      margin-top: 4px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(11, 164, 97, 0.08);
+      color: #8be9b3;
+      border: 1px solid rgba(69, 212, 139, 0.45);
+    }
+
+    @media (max-width: 720px) {
+      .page-shell {
+        margin-top: 80px;
+        padding-inline: 16px;
+      }
+
+      .features-header-card {
+        padding-inline: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header injected by header.js -->
+  <div id="app-header"></div>
+
+  <main class="page-shell">
+    <section class="features-header-card">
+      <h1>Everything PayFriends does for you</h1>
+      <p>
+        PayFriends turns awkward money conversations into clear agreements that run on autopilot.
+        Set up a plan once, then let us track the numbers, the reminders and the fairness for both sides.
+      </p>
+
+      <div class="features-header-meta">
+        <div class="features-tagline">
+          Built for real friendships, shared trips, long term loans and everything in between.
+        </div>
+        <div class="features-cta">
+          <a href="/app" class="primary-button">
+            + New agreement
+          </a>
+          <div class="features-cta-link">
+            Already have an agreement running?
+            <a href="/app">Go back to your dashboard</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-grid" aria-label="PayFriends features">
+      <!-- Card 1 -->
+      <article class="feature-card">
+        <div class="feature-card-header">
+          <div class="feature-icon"><span>✓</span></div>
+          <h2 class="feature-title">Clear repayment plans you both agree on</h2>
+        </div>
+        <p class="feature-body">
+          Set loan amounts, start dates and repayment schedules in a few clicks.
+          Both sides see the same plan so expectations are clear from day one.
+        </p>
+        <div class="feature-tag">Clarity</div>
+      </article>
+
+      <!-- Card 2 -->
+      <article class="feature-card">
+        <div class="feature-card-header">
+          <div class="feature-icon"><span>✓</span></div>
+          <h2 class="feature-title">Smart reminders that never feel like chasing</h2>
+        </div>
+        <p class="feature-body">
+          PayFriends sends gentle reminders when payments are due so it never has to come from the lender personally.
+          You keep the friendship, we handle the nudges.
+        </p>
+        <div class="feature-tag">Reminders</div>
+      </article>
+
+      <!-- Card 3 -->
+      <article class="feature-card">
+        <div class="feature-card-header">
+          <div class="feature-icon"><span>✓</span></div>
+          <h2 class="feature-title">Fair interest for early, late or different payments</h2>
+        </div>
+        <p class="feature-body">
+          When someone pays early, late or a different amount, we recalculate the interest automatically so both sides stay treated fairly.
+        </p>
+        <div class="feature-tag">Fairness</div>
+      </article>
+
+      <!-- Card 4 -->
+      <article class="feature-card">
+        <div class="feature-card-header">
+          <div class="feature-icon"><span>✓</span></div>
+          <h2 class="feature-title">Future instalments adjust automatically</h2>
+        </div>
+        <p class="feature-body">
+          If a payment changes, the system updates the remaining schedule for you.
+          No spreadsheets or manual math, just a clean new plan ready to go.
+        </p>
+        <div class="feature-tag">Automation</div>
+      </article>
+
+      <!-- Card 5 -->
+      <article class="feature-card">
+        <div class="feature-card-header">
+          <div class="feature-icon"><span>✓</span></div>
+          <h2 class="feature-title">Live outstanding balance to the cent</h2>
+        </div>
+        <p class="feature-body">
+          See at any moment who owes what, including interest and upcoming payments.
+          The balance updates in real time after every payment that is logged.
+        </p>
+        <div class="feature-tag">Live balance</div>
+      </article>
+
+      <!-- Card 6 -->
+      <article class="feature-card">
+        <div class="feature-card-header">
+          <div class="feature-icon"><span>✓</span></div>
+          <h2 class="feature-title">Support when someone is struggling to pay</h2>
+        </div>
+        <p class="feature-body">
+          If life gets in the way, you can easily suggest a new plan with smaller or fewer payments.
+          PayFriends helps you keep things fair without breaking the relationship.
+        </p>
+        <div class="feature-tag">Flexible plans</div>
+      </article>
+
+      <!-- Card 7 -->
+      <article class="feature-card">
+        <div class="feature-card-header">
+          <div class="feature-icon"><span>✓</span></div>
+          <h2 class="feature-title">Clean history and timelines for full transparency</h2>
+        </div>
+        <p class="feature-body">
+          Every payment, change and agreement update is stored in one place.
+          Both sides can always see the full story, from day one until the final cent is repaid.
+        </p>
+        <div class="feature-tag">Transparency</div>
+      </article>
+    </section>
+  </main>
+
+  <script type="module">
+    // Initialize header when page loads
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.PayFriendsHeader) {
+        await window.PayFriendsHeader.initialize();
+      }
+    });
+  </script>
+</body>
+</html>

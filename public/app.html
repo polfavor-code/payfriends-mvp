@@ -756,48 +756,29 @@
     </section>
 
     <!-- Welcome card for first-time users with no agreements -->
-    <section class="card" id="welcome-card" style="display:none; text-align:center; padding:48px 32px">
-      <h2 id="welcome-heading" style="margin:0 0 16px 0; font-size:28px">Welcome</h2>
-      <p style="color:var(--text); font-size:15px; line-height:1.6; max-width:960px; margin:0 auto 32px auto">
-        PayFriends makes lending and borrowing between friends simple, transparent and fair. We take away all the hassle, send reminders, do the chasing when required, and keep everything out of your hands so you can relax and just stay friends.
+    <section class="card dashboard-empty" id="welcome-card" style="display:none">
+      <h1 class="dashboard-empty__title" id="welcome-heading">Welcome</h1>
+
+      <p class="dashboard-empty__lead">
+        PayFriends keeps money and friendships in balance. Create simple agreements with friends, let us handle the reminders, and always know exactly where you stand.
       </p>
-      <div style="max-width:960px; margin:0 auto 32px auto; text-align:left">
-        <div style="display:flex; gap:12px; margin-bottom:16px">
-          <div style="color:var(--accent); font-size:20px; flex-shrink:0">•</div>
-          <div style="color:var(--text); font-size:14px">Creates clear repayment plans you and your friend both agree on</div>
-        </div>
-        <div style="display:flex; gap:12px; margin-bottom:16px">
-          <div style="color:var(--accent); font-size:20px; flex-shrink:0">•</div>
-          <div style="color:var(--text); font-size:14px">PayFriends handles all reminders and any chasing, so it never has to come from the lender</div>
-        </div>
-        <div style="display:flex; gap:12px; margin-bottom:16px">
-          <div style="color:var(--accent); font-size:20px; flex-shrink:0">•</div>
-          <div style="color:var(--text); font-size:14px">Recalculates interest fairly whenever payments are early, late or different</div>
-        </div>
-        <div style="display:flex; gap:12px; margin-bottom:16px">
-          <div style="color:var(--accent); font-size:20px; flex-shrink:0">•</div>
-          <div style="color:var(--text); font-size:14px">Adjusts future instalments automatically so the agreement stays balanced</div>
-        </div>
-        <div style="display:flex; gap:12px; margin-bottom:16px">
-          <div style="color:var(--accent); font-size:20px; flex-shrink:0">•</div>
-          <div style="color:var(--text); font-size:14px">Tracks the outstanding balance down to the cent, updated in real time</div>
-        </div>
-        <div style="display:flex; gap:12px; margin-bottom:16px">
-          <div style="color:var(--accent); font-size:20px; flex-shrink:0">•</div>
-          <div style="color:var(--text); font-size:14px">Helps suggest new plans if someone is struggling to pay</div>
-        </div>
-        <div style="display:flex; gap:12px; margin-bottom:16px">
-          <div style="color:var(--accent); font-size:20px; flex-shrink:0">•</div>
-          <div style="color:var(--text); font-size:14px">Shows clean timelines, schedules and history for full transparency</div>
-        </div>
+
+      <p class="dashboard-empty__text">
+        Start by creating your first agreement. You can lend money to a friend or set up a plan to repay someone else. We will take care of the plan, the schedule and the follow up.
+      </p>
+
+      <div class="dashboard-empty__actions">
+        <button id="new-agreement-from-welcome" onclick="startNewAgreementFromWelcome()" class="primary-button">
+          + New Agreement
+        </button>
       </div>
-      <p style="color:var(--text); font-size:15px; line-height:1.6; max-width:960px; margin:0 auto 24px auto">
-        Whenever you're ready, create your first agreement — whether you're lending to a friend or borrowing from one.
+
+      <p class="dashboard-empty__features-link">
+        Curious what PayFriends can do for you?
+        <a href="/features" class="link-accent">
+          See all features and how we work our magic
+        </a>
       </p>
-      <button onclick="startNewAgreementFromWelcome()" style="display:inline-flex; align-items:center; gap:8px; padding:14px 24px; width:auto; font-size:16px">
-        <span style="font-size:20px; font-weight:bold">+</span>
-        <span>New Agreement</span>
-      </button>
     </section>
 
     <!-- Wizard for creating agreements -->
