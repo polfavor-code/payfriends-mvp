@@ -1216,6 +1216,7 @@
     let allAgreements = [];
     let currentFilter = 'all';
     let currentUser = null;
+    let currentStep = 1; // Track which wizard step we're on
     let wizardData = {
       role: null,
       friendFirstName: '',
@@ -1437,6 +1438,9 @@
 
     // Wizard functions
     function goToStep(step) {
+      // Track current step globally
+      currentStep = step;
+
       // Hide all steps
       for (let i = 1; i <= 5; i++) {
         document.getElementById(`wizard-step-${i}`).classList.add('hidden');
@@ -1462,20 +1466,20 @@
       const compactHero = document.getElementById('compact-hero');
       const hasAgreements = allAgreements && allAgreements.length > 0;
 
+      // Always hide heroes when wizard is open
+      if (welcomeCard) welcomeCard.style.display = 'none';
+      if (compactHero) compactHero.style.display = 'none';
+
       if (step === 5) {
-        // Step 5 (Share): show My Agreements list, hide all heroes
+        // Step 5 (Share): show My Agreements list at the top
         if (listSection && hasAgreements) {
           listSection.style.display = 'block';
         }
-        if (welcomeCard) welcomeCard.style.display = 'none';
-        if (compactHero) compactHero.style.display = 'none';
       } else {
-        // Steps 1-4: hide list (user is editing), hide all heroes
+        // Steps 1-4: hide list while user is editing
         if (listSection) {
           listSection.style.display = 'none';
         }
-        if (welcomeCard) welcomeCard.style.display = 'none';
-        if (compactHero) compactHero.style.display = 'none';
       }
 
       // Special handling for step 1: ensure borrower fields visibility is correct
@@ -4909,6 +4913,9 @@
         newAgreementSection.classList.add('hidden');
       }
 
+      // Reset wizard step tracking
+      currentStep = 1;
+
       // Show the new agreement button (if it exists - it won't exist in welcome state)
       if (newAgreementBtn) {
         newAgreementBtn.style.display = 'flex';
@@ -5119,8 +5126,16 @@
       // Check if wizard is currently visible
       const wizardVisible = newAgreementSection && !newAgreementSection.classList.contains('hidden');
 
+      // If wizard is visible and we're on step 5, don't touch anything
+      // Let goToStep() control the layout (list visible, heroes hidden)
+      if (wizardVisible && currentStep === 5) {
+        // Just render the table, don't modify visibility
+        renderAgreementsTable(allAgreements, currentUser, currentFilter);
+        return;
+      }
+
       if (wizardVisible) {
-        // When wizard is open: hide all heroes, manage list visibility separately
+        // When wizard is open (steps 1-4): hide all heroes, let goToStep() manage list
         if (welcomeCard) welcomeCard.style.display = 'none';
         if (compactHero) compactHero.style.display = 'none';
         // Note: list-section visibility is managed by goToStep() for wizard steps
