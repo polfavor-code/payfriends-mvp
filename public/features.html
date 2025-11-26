@@ -23,6 +23,8 @@
     h1{margin:0 0 8px 0; font-size:28px; font-weight:600}
     .subtitle{color:var(--muted); font-size:14px; margin:0 0 24px 0; line-height:1.6; text-align:left}
     .page-title{font-size:28px; font-weight:600; margin:0 0 24px 0}
+
+    /* Header styles */
     .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
     .top-header-left{display:flex; align-items:center; gap:12px}
     .top-header-right{display:flex; gap:12px; align-items:center}
@@ -97,6 +99,165 @@
       letter-spacing:0.05em;
       color:rgba(61,220,151,0.8);
       font-weight:600;
+    /* Features page styles */
+    .features-header-card {
+      background: linear-gradient(135deg, rgba(69, 212, 139, 0.16), rgba(12, 18, 27, 0.95));
+      border-radius: 18px;
+      padding: 28px 28px 24px;
+      border: 1px solid rgba(69, 212, 139, 0.25);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+      margin-bottom: 28px;
+    }
+
+    .features-header-card h1 {
+      font-size: 1.8rem;
+      margin: 0 0 0.75rem;
+    }
+
+    .features-header-card p {
+      margin: 0;
+      font-size: 0.96rem;
+      color: #d2deec;
+      max-width: 720px;
+    }
+
+    .features-header-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.25rem;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .features-tagline {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .features-cta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .features-cta a.primary-button {
+      text-decoration: none;
+    }
+
+    .features-cta-link {
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .features-cta-link a {
+      color: var(--accent);
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .features-cta-link a:hover {
+      text-decoration: underline;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: rgba(21, 26, 33, 0.85);
+      border-radius: 16px;
+      padding: 28px 24px 24px;
+      border: 1px solid rgba(69, 212, 139, 0.12);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (max-width: 1100px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 680px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .feature-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(69, 212, 139, 0.08), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .feature-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: rgba(69, 212, 139, 0.12);
+      border: 1px solid rgba(69, 212, 139, 0.65);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .feature-icon span {
+      font-size: 16px;
+      color: var(--accent);
+    }
+
+    .feature-title {
+      font-size: 0.98rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .feature-body {
+      position: relative;
+      z-index: 1;
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .feature-tag {
+      position: relative;
+      z-index: 1;
+      align-self: flex-start;
+      margin-top: 4px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(11, 164, 97, 0.08);
+      color: #8be9b3;
+      border: 1px solid rgba(69, 212, 139, 0.45);
+    }
+
+    @media (max-width: 720px) {
+      .features-header-card {
+        padding-inline: 18px;
+      }
     }
   </style>
 </head>

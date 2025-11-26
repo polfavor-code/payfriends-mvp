@@ -755,36 +755,38 @@
       </div>
     </section>
 
-    <!-- Welcome card for first-time users with no agreements -->
-    <section class="card dashboard-empty" id="welcome-card" style="display:none">
-      <div class="dashboard-empty-wrapper">
-        <div class="dashboard-empty-mascot">
-          <img src="/images/mascot.png" alt="PayFriends mascot" />
-        </div>
+    <!-- Welcome hero for first-time users with no agreements -->
+    <section class="dashboard-hero" id="welcome-card" style="display:none">
+      <div class="dashboard-hero-inner">
+        <div class="dashboard-hero-text">
+          <h1 class="dashboard-hero__title" id="welcome-heading">Welcome</h1>
 
-        <div class="dashboard-empty-card">
-          <h1 class="dashboard-empty__title" id="welcome-heading">Welcome</h1>
-
-          <p class="dashboard-empty__lead">
+          <p class="dashboard-hero__lead">
             PayFriends keeps money and friendships in balance. Create simple agreements with friends, let us handle the reminders, and always know exactly where you stand.
           </p>
 
-          <p class="dashboard-empty__text">
+          <p class="dashboard-hero__text">
             Start by creating your first agreement. You can lend money to a friend or set up a plan to repay someone else. We will take care of the plan, the schedule and the follow up.
           </p>
 
-          <div class="dashboard-empty__actions">
-            <button id="new-agreement-from-welcome" onclick="startNewAgreementFromWelcome()" class="primary-button">
-              + New Agreement
-            </button>
-          </div>
-
-          <p class="dashboard-empty__features-link">
-            Curious what PayFriends can do for you?
+          <p class="dashboard-hero__features-link">
             <a href="/features" class="link-accent">
               See all features and how we work our magic
             </a>
           </p>
+
+          <div class="dashboard-hero__actions">
+            <button id="new-agreement-from-welcome" onclick="startNewAgreementFromWelcome()" class="primary-button">
+              + New Agreement
+            </button>
+            <button onclick="closeNewAgreement()" class="secondary">
+              View my agreements
+            </button>
+          </div>
+        </div>
+
+        <div class="dashboard-hero-mascot">
+          <img src="/images/mascot.png" alt="PayFriends mascot" />
         </div>
       </div>
     </section>
