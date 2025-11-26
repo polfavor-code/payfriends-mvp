@@ -4990,6 +4990,10 @@
             const isPaymentDifficulty = msg.event_type === 'HARDSHIP_REQUEST_LENDER' || msg.event_type === 'HARDSHIP_REQUEST_BORROWER';
             const warningIcon = isPaymentDifficulty ? '<span style="color:var(--warning); font-weight:700; margin-right:8px" title="Payment issue requires attention">⚠</span>' : '';
 
+            // Add cancelled badge for cancelled agreements
+            const isCancelled = msg.event_type === 'AGREEMENT_CANCELLED_LENDER' || msg.event_type === 'AGREEMENT_CANCELLED_BORROWER';
+            const cancelledBadge = isCancelled ? '<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; background:#6c757d; color:#fff; margin-left:8px">Cancelled</span>' : '';
+
             // Apply issue modifier class for payment issues
             const issueClass = isPaymentDifficulty ? 'activity-item--issue' : '';
 
@@ -4999,7 +5003,7 @@
                   <div class="message-date">${timestamp} (${relativeTime})</div>
                   ${isUnread ? '<span class="unread-indicator">●</span>' : ''}
                 </div>
-                <div style="margin-top:4px; ${isPaymentDifficulty ? 'font-weight:600; color:var(--text)' : ''}">${warningIcon}${activityText}</div>
+                <div style="margin-top:4px; ${isPaymentDifficulty ? 'font-weight:600; color:var(--text)' : ''}">${warningIcon}${activityText}${cancelledBadge}</div>
               </div>
             `;
           }).join('');
