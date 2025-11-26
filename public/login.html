@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PayFriends — Login</title>
+  <title>PayFriends - Login</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -63,40 +64,25 @@
       color:var(--muted); line-height:1.6; margin:0 0 16px; font-size:16px;
     }
 
-    /* Feature list */
+    /* Features */
     .feature-list{
       list-style:none; padding:0 0 0 4px; margin:28px 0 0 0; max-width:100%;
     }
     .feature-item{
       display:flex; align-items:center; gap:7px; margin-bottom:12px;
     }
-    .feature-item:last-child{margin-bottom:0}
-    .feature-icon{
-      flex-shrink:0; width:19px; height:19px;
-    }
     .feature-text{
       color:#c8d2dd; font-size:15px; line-height:1.55; margin:0;
-    }
-    .hero-copy{max-width:440px; margin-top:4px}
-    .hero-copy > p:first-child{
-      font-size:18px; color:var(--text); font-weight:600;
     }
     .priceless{
       font-style:italic;
       opacity:0.85;
     }
 
-    /* Mobile hero stack */
     @media (max-width:899px){
-      .page{padding:48px 16px 32px; gap:28px}
       .hero h1{font-size:28px; text-align:center}
       .hero-row{flex-direction:column; align-items:center; gap:16px}
       .hero img.hero-logo{width:120px}
-      .hero-copy{max-width:48ch}
-      .hero p{text-align:center; padding:0 8px; font-size:15px}
-      .hero-copy > p:first-child{font-size:16px}
-      .feature-list{margin-left:auto; margin-right:auto}
-      .card{width:95%; max-width:420px; padding:24px}
     }
 
     /* AUTH CARD */
@@ -104,23 +90,23 @@
       background:var(--card);
       border:1px solid var(--card-border);
       border-radius:16px;
-      padding:28px;
+      padding:32px;
       box-shadow:0 10px 30px rgba(0,0,0,.35);
       max-width:400px;
       margin:0 auto;
       flex:0 0 auto; width:100%;
     }
     @media (min-width:900px){
-      .card{padding:32px; flex:0 0 40%; width:auto; max-width:400px; margin:0;}
+      .card{flex:0 0 40%; width:auto; margin:0;}
     }
     .tabs{
       display:flex; gap:8px; border-bottom:1px solid var(--card-border);
-      margin:0 0 20px;
+      margin-bottom:20px;
     }
     .tab{
-      appearance:none; background:none; border:none; color:var(--muted);
-      padding:10px 4px; margin:0; cursor:pointer; font:inherit; font-weight:600;
-      font-size:16px; border-bottom:2px solid transparent;
+      background:none; border:none; color:var(--muted);
+      padding:10px 4px; cursor:pointer; font-weight:600; font-size:16px;
+      border-bottom:2px solid transparent;
     }
     .tab[aria-selected="true"]{
       color:var(--accent); border-bottom-color:var(--accent);
@@ -130,211 +116,85 @@
 
     label{display:block; margin:10px 0 6px; color:var(--muted); font-size:14px}
     input{
-      width:100%; padding:12px 12px; border-radius:10px; border:1px solid var(--card-border);
+      width:100%; padding:12px; border-radius:10px; border:1px solid var(--card-border);
       background:var(--input-bg); color:var(--text); font-size:15px;
-      outline:none; transition:border-color .2s ease;
     }
-    input:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(61,220,151,.15)}
-    input::placeholder{color:#6f7881; opacity:0.75; font-size:15px}
-    input:-webkit-autofill,
-    input:-webkit-autofill:hover,
-    input:-webkit-autofill:focus,
-    input:-webkit-autofill:active{
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:var(--text);
-      transition:background-color 5000s ease-in-out 0s;
-      box-shadow:inset 0 0 20px 20px #10151d !important;
-    }
+    input:focus{border-color:var(--accent)}
+
     button.primary{
-      width:100%; padding:14px 12px; border-radius:12px; border:0; margin-top:20px;
-      background:#3bd48f; color:#0d130f; font-weight:800; font-size:17px; cursor:pointer;
-    }
-    button.primary:hover{filter:brightness(1.04)}
-    .row{margin-top:10px}
-    .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px}
-    .status.error{color:#ff6b6b}
-
-    /* Screen reader only utility */
-    .sr-only{
-      position:absolute; width:1px; height:1px; padding:0; margin:-1px;
-      overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0;
-    }
-
-    /* Money Airplanes background canvas */
-    #money-airplanes-canvas{
-      position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
-      z-index:0;
-      pointer-events:none;
-    }
-    .page{
-      position:relative;
-      z-index:1;
+      width:100%; padding:14px; border-radius:12px; border:0; margin-top:20px;
+      background:#3bd48f; color:#0d130f; font-weight:800; font-size:17px;
     }
   </style>
 </head>
+
 <body>
-  <!-- Money Airplanes Background -->
-  <canvas id="money-airplanes-canvas"></canvas>
   <div class="page">
-    <!-- HERO (single instance, responsive) -->
-    <section class="hero" aria-labelledby="pf-hero-title">
-      <h1 id="pf-hero-title">Pay friends, stay friends</h1>
+    <section class="hero">
+      <h1>Pay friends, stay friends</h1>
       <div class="hero-row">
-        <!-- Use YOUR existing PNG only -->
-        <img class="hero-logo" src="/images/payfriends-logov2.png" alt="PayFriends logo" />
-        <div class="hero-copy">
-          <p>
-            Friends are GREAT!<br>
-            Asking them to pay you back? NOT SO GREAT!
-          </p>
-          <p>
-            PayFriends does the awkward stuff for you: the reminders, the nudges, the "hey… remember that money?" messages, so you don't have to become the annoying debt collector.
-          </p>
-          <p class="priceless">
-            Because friendships are priceless…<br>
-            But your money isn't!
-          </p>
+        <img class="hero-logo" src="/images/payfriends-logov2.png" alt="">
+        <div>
+          <p>Friends are GREAT!<br>Asking them to pay you back? NOT SO GREAT!</p>
+          <p>PayFriends does the awkward stuff for you: reminders, nudges, and all awkward money messages.</p>
+          <p class="priceless">Because friendships are priceless...<br>But your money is not!</p>
         </div>
       </div>
-      <ul class="feature-list">
-        <li class="feature-item">
-          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
-            <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span class="feature-text">Clear agreements that don't feel like a contract with your friends</span>
-        </li>
-        <li class="feature-item">
-          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
-            <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span class="feature-text">Automatic reminders so you never have to chase anyone</span>
-        </li>
-        <li class="feature-item">
-          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
-            <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span class="feature-text">Fair recalculations for 'I'll pay a bit now and the rest later' situations</span>
-        </li>
-        <li class="feature-item">
-          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke="#3ddc97" stroke-width="2" fill="none"/>
-            <path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#3ddc97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span class="feature-text">New plan suggestions when your friends face difficulties paying you back</span>
-        </li>
-      </ul>
     </section>
 
-    <!-- AUTH CARD -->
-    <main class="card" aria-label="Authentication">
-      <div class="tabs" role="tablist" aria-label="Auth tabs">
-        <button class="tab" role="tab" aria-selected="true" aria-controls="login-section"
-                id="tab-login" data-target="login">Login</button>
-        <button class="tab" role="tab" aria-selected="false" aria-controls="signup-section"
-                id="tab-signup" data-target="signup">Sign Up</button>
+    <main class="card">
+      <div class="tabs" role="tablist">
+        <button class="tab" aria-selected="true" data-target="login">Login</button>
+        <button class="tab" aria-selected="false" data-target="signup">Sign Up</button>
       </div>
 
-      <!-- LOGIN -->
-      <section class="form-section active" id="login-section" role="tabpanel" aria-labelledby="tab-login">
-        <form id="login-form" novalidate>
-          <div class="row">
-            <label for="login-email" class="sr-only">Email</label>
-            <input id="login-email" name="email" type="email" placeholder="you@example.com" required autocomplete="username" />
-          </div>
-          <div class="row">
-            <label for="login-password" class="sr-only">Password</label>
-            <input id="login-password" name="password" type="password" placeholder="Password" required autocomplete="current-password" />
-          </div>
+      <section id="login-section" class="form-section active">
+        <form id="login-form">
+          <label>Email</label>
+          <input id="login-email" type="email" placeholder="you@example.com" required>
+
+          <label>Password</label>
+          <input id="login-password" type="password" placeholder="Password" required>
+
           <button type="submit" class="primary">Login</button>
-          <p id="login-status" class="status" role="status" aria-live="polite"></p>
         </form>
       </section>
 
-      <!-- SIGNUP -->
-      <section class="form-section" id="signup-section" role="tabpanel" aria-labelledby="tab-signup">
-        <form id="signup-form" novalidate>
-          <div class="row">
-            <label for="signup-fullname" class="sr-only">Full legal name (as on passport)</label>
-            <input id="signup-fullname" name="fullName" type="text" placeholder="Your full name" required />
-          </div>
-          <div class="row">
-            <label for="signup-email" class="sr-only">Email</label>
-            <input id="signup-email" name="email" type="email" placeholder="you@example.com" required autocomplete="email" />
-          </div>
-          <div class="row">
-            <label for="signup-password" class="sr-only">Password</label>
-            <input id="signup-password" name="password" type="password" placeholder="Password" required autocomplete="new-password" />
-          </div>
+      <section id="signup-section" class="form-section">
+        <form id="signup-form">
+          <label>Full Name</label>
+          <input id="signup-fullname" type="text" placeholder="Your full name" required>
+
+          <label>Email</label>
+          <input id="signup-email" type="email" placeholder="you@example.com" required>
+
+          <label>Password</label>
+          <input id="signup-password" type="password" placeholder="Password" required>
+
           <button type="submit" class="primary">Create account</button>
-          <p id="signup-status" class="status" role="status" aria-live="polite"></p>
         </form>
       </section>
     </main>
   </div>
 
-  <!-- Paper Plane Animated Background Component -->
-  <script src="/components/PayFriendsPaperPlaneBackground.js"></script>
-
   <script>
-    // Initialize Paper Plane background
-    (function(){
-      const canvas = document.getElementById('money-airplanes-canvas');
-      if (canvas && window.PayFriendsPaperPlaneBackground) {
-        const paperPlaneBg = new window.PayFriendsPaperPlaneBackground(canvas, {
-          density: 1,
-          speed: 1,
-          opacity: 0.33
-        });
-        paperPlaneBg.start();
-
-        // Clean up on page unload
-        window.addEventListener('beforeunload', () => {
-          paperPlaneBg.destroy();
-        });
-      }
-    })();
-  </script>
-
-  <script>
-    // Accessible, reliable tabs (no global 'event' reliance)
-    (function(){
-      const tabs = document.querySelectorAll('.tab');
-      const panes = document.querySelectorAll('.form-section');
-
-      function activate(target){
-        tabs.forEach(btn=>{
-          const isActive = btn.dataset.target === target;
-          btn.setAttribute('aria-selected', String(isActive));
-        });
-        panes.forEach(pane=>{
-          pane.classList.toggle('active', pane.id === target + '-section');
-        });
-      }
-
-      tabs.forEach(btn=>{
-        btn.addEventListener('click', (e)=>{
-          e.preventDefault();
-          activate(btn.dataset.target);
-        });
-      });
-    })();
+    // Tabs
+    const tabs=document.querySelectorAll(".tab");
+    const sections=document.querySelectorAll(".form-section");
+    tabs.forEach(t=>{
+      t.onclick=()=>{
+        tabs.forEach(x=>x.setAttribute("aria-selected","false"));
+        t.setAttribute("aria-selected","true");
+        sections.forEach(s=>s.classList.remove("active"));
+        document.querySelector("#"+t.dataset.target+"-section").classList.add("active");
+      };
+    });
 
     // LOGIN
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
-      const status = document.getElementById('login-status');
-
-      status.textContent = 'Logging in...';
-      status.className = 'status';
 
       try {
         const res = await fetch('/auth/login', {
@@ -344,11 +204,9 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Login failed');
-        status.textContent = 'Success! Redirecting...';
-        setTimeout(()=> window.location.href = '/app', 400);
+        window.location.href = '/app';
       } catch (err) {
-        status.textContent = err.message || 'Login failed';
-        status.className = 'status error';
+        alert(err.message || 'Login failed');
       }
     });
 
@@ -358,19 +216,15 @@
       const fullName = document.getElementById('signup-fullname').value.trim();
       const email = document.getElementById('signup-email').value.trim();
       const password = document.getElementById('signup-password').value;
-      const status = document.getElementById('signup-status');
 
       if (!fullName || fullName.split(/\s+/).length < 2){
-        status.textContent = 'Please enter your full name (first and last name).';
-        status.className = 'status error'; return;
+        alert('Please enter your full name (first and last name).');
+        return;
       }
       if (!password || password.length < 6){
-        status.textContent = 'Password must be at least 6 characters.';
-        status.className = 'status error'; return;
+        alert('Password must be at least 6 characters.');
+        return;
       }
-
-      status.textContent = 'Creating account...';
-      status.className = 'status';
 
       // Detect user's timezone
       let timezone = null;
@@ -388,11 +242,9 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Signup failed');
-        status.textContent = 'Account created! Redirecting...';
-        setTimeout(()=> window.location.href = '/app', 400);
+        window.location.href = '/app';
       } catch (err) {
-        status.textContent = err.message || 'Signup failed';
-        status.className = 'status error';
+        alert(err.message || 'Signup failed');
       }
     });
   </script>
