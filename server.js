@@ -4610,6 +4610,15 @@ app.get('/friends/:publicId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'friend-profile.html'));
 });
 
+// Features page (serves features.html)
+app.get('/features', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'features.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
 // Serve other static files from "public" folder
 app.use(express.static(path.join(__dirname, 'public')));
 
