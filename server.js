@@ -935,6 +935,46 @@ app.post('/api/profile', requireAuth, (req, res) => {
   }
 });
 
+// Change password
+app.post('/api/security/change-password', requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current password and new password are required' });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'New password must be at least 8 characters' });
+  }
+
+  try {
+    // Get current user's password hash
+    const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Verify current password
+    const valid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!valid) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    // Update password
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+      .run(newPasswordHash, req.user.id);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error changing password:', err);
+    res.status(500).json({ error: 'Server error while changing password' });
+  }
+});
+
 // Upload profile picture
 app.post('/api/profile/picture', requireAuth, (req, res, next) => {
   uploadProfilePicture.single('picture')(req, res, (err) => {

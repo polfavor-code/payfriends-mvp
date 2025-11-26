@@ -642,30 +642,265 @@
 
     container.innerHTML = `
       <style>
-        .security-page-title { font-size: 28px; font-weight: 600; margin: 0 0 24px 0; }
+        .security-page-title { font-size: 28px; font-weight: 600; margin: 0 0 8px 0; color: var(--text); }
+        .security-page-subtitle { font-size: 15px; color: var(--muted); margin: 0 0 24px 0; line-height: 1.5; }
         .security-card { background: var(--card); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; margin: 16px 0; }
-        .security-section-title { font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: var(--text); }
+        .security-section-title { font-size: 18px; font-weight: 600; margin: 0 0 8px 0; color: var(--text); display: flex; align-items: center; gap: 8px; }
         .security-section-description { color: var(--muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
         .security-row { margin: 20px 0; }
-        .security-button { width: 100%; padding: 12px; border-radius: 10px; border: 0; background: #6366f1; color: #fff; font-weight: 700; cursor: pointer; font-size: 15px; margin-top: 8px; }
-        .security-button:hover { filter: brightness(1.06); }
+        .security-row label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 14px; font-weight: 500; }
+        .security-row input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: #10151d; color: var(--text); font-size: 15px; }
+        .security-row input:focus { outline: none; border-color: var(--accent); background: #10151d; }
+        .security-row input:hover { background: #10151d; }
+        .security-row input.error { border-color: #ff6b6b; }
         .helper-text { color: var(--muted); font-size: 13px; margin-top: 6px; line-height: 1.4; }
+        .error-text { color: #ff6b6b; font-size: 13px; margin-top: 4px; display: none; }
+        .error-text.show { display: block; }
+        .security-button-group { display: flex; gap: 12px; margin-top: 24px; align-items: center; }
+        .security-button { padding: 12px 24px; border-radius: 10px; border: 0; background: var(--accent); color: #0d130f; font-weight: 700; cursor: pointer; font-size: 15px; }
+        .security-button:hover:not(:disabled) { filter: brightness(1.06); }
+        .security-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .security-cancel { background: none; border: 0; padding: 0; color: var(--muted); cursor: pointer; font-size: 15px; text-decoration: none; }
+        .security-cancel:hover { color: var(--text); text-decoration: underline; }
+        .security-status { padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; display: none; }
+        .security-status.show { display: block; }
+        .security-status.success { background: rgba(97, 218, 175, 0.1); color: var(--accent); border: 1px solid rgba(97, 218, 175, 0.2); }
+        .security-status.error { background: rgba(255, 107, 107, 0.1); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.2); }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .disabled-card { opacity: 0.6; pointer-events: none; position: relative; }
+        .disabled-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.3); border-radius: 16px; pointer-events: none; }
       </style>
 
       <h1 class="security-page-title">Security</h1>
+      <p class="security-page-subtitle">Manage your account security settings.</p>
 
+      <!-- Change Password Card -->
       <div class="security-card">
-        <h2 class="security-section-title">Security</h2>
-        <p class="security-section-description">Manage your account security settings</p>
+        <h2 class="security-section-title">Change password</h2>
+        <p class="security-section-description">Update the password you use to log in.</p>
+
+        <div id="password-status" class="security-status"></div>
+
+        <form id="change-password-form">
+          <div class="security-row">
+            <label for="current-password">Current password</label>
+            <input
+              type="password"
+              id="current-password"
+              name="current-password"
+              autocomplete="current-password"
+              required
+            />
+            <div id="current-password-error" class="error-text"></div>
+          </div>
+
+          <div class="security-row">
+            <label for="new-password">New password</label>
+            <input
+              type="password"
+              id="new-password"
+              name="new-password"
+              autocomplete="new-password"
+              required
+            />
+            <div class="helper-text">Min 8 characters</div>
+            <div id="new-password-error" class="error-text"></div>
+          </div>
+
+          <div class="security-row">
+            <label for="confirm-password">Confirm new password</label>
+            <input
+              type="password"
+              id="confirm-password"
+              name="confirm-password"
+              autocomplete="new-password"
+              required
+            />
+            <div id="confirm-password-error" class="error-text"></div>
+          </div>
+
+          <div class="security-button-group">
+            <button type="submit" id="save-password-btn" class="security-button">Save password</button>
+            <button type="button" id="cancel-password-btn" class="security-cancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Two Step Verification Card (Disabled) -->
+      <div class="security-card disabled-card">
+        <h2 class="security-section-title">
+          Two step verification
+          <span class="badge">Coming soon</span>
+        </h2>
+        <p class="security-section-description">Add an extra layer of security to your account using an authenticator app or SMS.</p>
 
         <div class="security-row">
-          <button class="security-button">Change Password</button>
-          <div class="helper-text">
-            Coming soon: Update your password and enable two-factor authentication
-          </div>
+          <button type="button" class="security-button" disabled>Set up two step verification</button>
         </div>
       </div>
     `;
+
+    // Initialize security page after rendering
+    initializeSecurityPage();
+  }
+
+  // Initialize Security Page functionality
+  function initializeSecurityPage() {
+    const form = document.getElementById('change-password-form');
+    const currentPasswordInput = document.getElementById('current-password');
+    const newPasswordInput = document.getElementById('new-password');
+    const confirmPasswordInput = document.getElementById('confirm-password');
+    const saveBtn = document.getElementById('save-password-btn');
+    const cancelBtn = document.getElementById('cancel-password-btn');
+    const statusDiv = document.getElementById('password-status');
+
+    // Error message elements
+    const currentPasswordError = document.getElementById('current-password-error');
+    const newPasswordError = document.getElementById('new-password-error');
+    const confirmPasswordError = document.getElementById('confirm-password-error');
+
+    // Clear all errors and status
+    function clearErrors() {
+      currentPasswordInput.classList.remove('error');
+      newPasswordInput.classList.remove('error');
+      confirmPasswordInput.classList.remove('error');
+      currentPasswordError.classList.remove('show');
+      newPasswordError.classList.remove('show');
+      confirmPasswordError.classList.remove('show');
+      currentPasswordError.textContent = '';
+      newPasswordError.textContent = '';
+      confirmPasswordError.textContent = '';
+    }
+
+    function showError(input, errorElement, message) {
+      input.classList.add('error');
+      errorElement.textContent = message;
+      errorElement.classList.add('show');
+    }
+
+    function showStatus(message, type) {
+      statusDiv.textContent = message;
+      statusDiv.className = 'security-status show ' + type;
+
+      if (type === 'success') {
+        setTimeout(() => {
+          statusDiv.classList.remove('show');
+        }, 5000);
+      }
+    }
+
+    function hideStatus() {
+      statusDiv.classList.remove('show');
+    }
+
+    // Clear errors when user starts typing
+    currentPasswordInput.addEventListener('input', () => {
+      currentPasswordInput.classList.remove('error');
+      currentPasswordError.classList.remove('show');
+      hideStatus();
+    });
+
+    newPasswordInput.addEventListener('input', () => {
+      newPasswordInput.classList.remove('error');
+      newPasswordError.classList.remove('show');
+      hideStatus();
+    });
+
+    confirmPasswordInput.addEventListener('input', () => {
+      confirmPasswordInput.classList.remove('error');
+      confirmPasswordError.classList.remove('show');
+      hideStatus();
+    });
+
+    // Cancel button - reset form
+    cancelBtn.addEventListener('click', () => {
+      form.reset();
+      clearErrors();
+      hideStatus();
+    });
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearErrors();
+      hideStatus();
+
+      const currentPassword = currentPasswordInput.value;
+      const newPassword = newPasswordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+
+      // Client-side validation
+      let hasError = false;
+
+      if (!currentPassword) {
+        showError(currentPasswordInput, currentPasswordError, 'Current password is required');
+        hasError = true;
+      }
+
+      if (!newPassword) {
+        showError(newPasswordInput, newPasswordError, 'New password is required');
+        hasError = true;
+      } else if (newPassword.length < 8) {
+        showError(newPasswordInput, newPasswordError, 'New password must be at least 8 characters');
+        hasError = true;
+      }
+
+      if (!confirmPassword) {
+        showError(confirmPasswordInput, confirmPasswordError, 'Please confirm your new password');
+        hasError = true;
+      } else if (newPassword !== confirmPassword) {
+        showError(confirmPasswordInput, confirmPasswordError, 'Passwords do not match');
+        hasError = true;
+      }
+
+      if (hasError) {
+        // Focus first error field
+        if (currentPasswordInput.classList.contains('error')) {
+          currentPasswordInput.focus();
+        } else if (newPasswordInput.classList.contains('error')) {
+          newPasswordInput.focus();
+        } else if (confirmPasswordInput.classList.contains('error')) {
+          confirmPasswordInput.focus();
+        }
+        return;
+      }
+
+      // Disable button and show loading state
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+
+      try {
+        const response = await fetch('/api/security/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          // Check for specific errors
+          if (data.error === 'Current password is incorrect') {
+            showError(currentPasswordInput, currentPasswordError, data.error);
+            currentPasswordInput.focus();
+          } else {
+            showStatus(data.error || 'Something went wrong while updating your password. Please try again.', 'error');
+          }
+          return;
+        }
+
+        // Success
+        form.reset();
+        showStatus('Password updated successfully.', 'success');
+      } catch (err) {
+        console.error('Error changing password:', err);
+        showStatus('Something went wrong while updating your password. Please try again.', 'error');
+      } finally {
+        // Re-enable button
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save password';
+      }
+    });
   }
 
   // Export render functions
