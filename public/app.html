@@ -802,7 +802,7 @@
           <button onclick="toggleNewAgreement()" class="primary-button new-agreement-btn">
             + New Agreement
           </button>
-          <a href="/agreements.html" class="secondary view-agreements-btn">
+          <a href="/agreements.html" class="view-all-link">
             View all agreements
           </a>
         </div>
@@ -812,27 +812,12 @@
       </div>
     </section>
 
-    <!-- Agreements overview for returning users -->
-    <section class="dashboard-agreements-overview" id="agreements-overview" style="display:none">
-      <div class="dashboard-agreements-overview-inner">
-        <div class="dashboard-agreements-header">
-          <h2>Your agreements</h2>
-          <a href="/agreements.html" class="dashboard-view-all-link" id="view-all-link">
-            View all
-          </a>
-        </div>
-        <div class="dashboard-agreements-list" id="overview-list">
-          <!-- Agreement cards will be rendered here -->
-        </div>
-      </div>
-    </section>
-
     <!-- Wizard for creating agreements -->
     <div id="new-agreement-section" class="hidden">
       <!-- Header: title + back link on same row -->
       <div class="new-agreement-header">
         <h1 class="new-agreement-title">New Agreement</h1>
-        <a onclick="closeNewAgreement()" class="back-to-agreements-link">&lt; Back to My agreements</a>
+        <a onclick="closeNewAgreement()" class="back-to-agreements-link">&lt; Back to My Agreements</a>
       </div>
 
       <!-- Wizard step navigation -->
@@ -5107,8 +5092,48 @@
 
     // Render agreements based on current filter
     function renderAgreements() {
-      // Use shared component
+      // Dashboard hero logic (only on dashboard, not in wizard)
+      const welcomeCard = document.getElementById('welcome-card');
+      const compactHero = document.getElementById('compact-hero');
+      const listSection = document.getElementById('list-section');
+
+      if (allAgreements.length === 0) {
+        // Zero state: show welcome hero
+        if (welcomeCard) welcomeCard.style.display = 'block';
+        if (compactHero) compactHero.style.display = 'none';
+        if (listSection) listSection.style.display = 'none';
+
+        // Personalize welcome heading
+        const welcomeHeading = document.getElementById('welcome-heading');
+        if (welcomeHeading && currentUser) {
+          const firstName = getFirstName(currentUser);
+          welcomeHeading.textContent = `Welcome, ${firstName}`;
+        }
+      } else {
+        // Active state: show compact hero and full My Agreements container
+        if (welcomeCard) welcomeCard.style.display = 'none';
+        if (compactHero) compactHero.style.display = 'block';
+        if (listSection) listSection.style.display = 'block';
+
+        // Personalize compact hero heading
+        const compactHeroHeading = document.getElementById('compact-hero-heading');
+        if (compactHeroHeading && currentUser) {
+          const firstName = getFirstName(currentUser);
+          compactHeroHeading.textContent = `Welcome back, ${firstName}`;
+        }
+      }
+
+      // Use shared component to render the table
       renderAgreementsTable(allAgreements, currentUser, currentFilter);
+    }
+
+    // Helper to get user's first name
+    function getFirstName(user) {
+      const fullName = user.full_name || user.name || '';
+      const firstName = fullName.trim().split(/\s+/)[0] || '';
+      const email = user.email || '';
+      const fallbackName = email.includes('@') ? email.split('@')[0] : email;
+      return firstName || fallbackName || 'there';
     }
 
     // Refresh agreements

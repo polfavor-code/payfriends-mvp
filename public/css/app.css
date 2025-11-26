@@ -239,9 +239,12 @@
 
 .dashboard-hero-compact-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: flex-start;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.625rem;
+  background: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
 
 .dashboard-hero-mascot-small {
@@ -252,7 +255,7 @@
 }
 
 .dashboard-hero-mascot-small img {
-  width: 140px;
+  width: 150px;
   max-width: 100%;
   height: auto;
   display: block;
@@ -270,143 +273,22 @@
   transform: translateY(-1px);
 }
 
-.view-agreements-btn {
-  box-shadow: 0 0 16px rgba(0, 255, 140, 0.16);
-  transition: all 0.3s ease;
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-}
-
-.view-agreements-btn:hover {
-  box-shadow: 0 0 20px rgba(0, 255, 140, 0.22);
-  transform: translateY(-1px);
-}
-
-/* Agreements overview section */
-.dashboard-agreements-overview {
-  padding: 0 2rem 3rem;
-  width: 100%;
-}
-
-.dashboard-agreements-overview-inner {
-  max-width: 1140px;
-  margin: 0 auto;
-}
-
-.dashboard-agreements-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.dashboard-agreements-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.dashboard-view-all-link {
+/* View all link (simple text link, no glow) */
+.view-all-link {
   color: #45d48b;
   font-weight: 500;
   text-decoration: none;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+  background: none;
+  box-shadow: none;
+  border: none;
+  padding: 0;
 }
 
-.dashboard-view-all-link:hover {
-  text-decoration: underline;
+.view-all-link:hover {
   color: #5ae39d;
-}
-
-.dashboard-agreements-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.dashboard-agreement-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 1.25rem 1.5rem;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 1rem;
-  align-items: center;
-  transition: all 0.2s ease;
-}
-
-.dashboard-agreement-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.dashboard-agreement-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-.dashboard-agreement-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 0;
-}
-
-.dashboard-agreement-title {
-  font-weight: 600;
-  font-size: 1rem;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dashboard-agreement-meta {
-  font-size: 0.875rem;
-  color: #a7b5c7;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.dashboard-agreement-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.dashboard-agreement-actions .btn-small {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.dashboard-agreement-actions .btn-small:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.18);
+  text-decoration: underline;
 }
 
 /* Responsive styles */
@@ -482,14 +364,7 @@
   }
 
   .dashboard-hero-compact-actions {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .dashboard-hero-compact-actions button,
-  .dashboard-hero-compact-actions a {
-    flex: 1;
-    min-width: 140px;
+    align-items: center;
   }
 
   .dashboard-hero-mascot-small {
@@ -498,26 +373,6 @@
 
   .dashboard-hero-mascot-small img {
     width: 120px;
-  }
-
-  .dashboard-agreements-overview {
-    padding: 0 1.5rem 2rem;
-  }
-
-  .dashboard-agreement-card {
-    grid-template-columns: auto 1fr;
-    gap: 0.875rem;
-    padding: 1rem 1.25rem;
-  }
-
-  .dashboard-agreement-actions {
-    grid-column: 1 / -1;
-    justify-content: stretch;
-  }
-
-  .dashboard-agreement-actions .btn-small {
-    flex: 1;
-    text-align: center;
   }
 }
 
@@ -530,42 +385,7 @@
     font-size: 1.5rem;
   }
 
-  .dashboard-hero-compact-actions {
-    flex-direction: column;
-    gap: 0.625rem;
-  }
-
-  .dashboard-hero-compact-actions button,
-  .dashboard-hero-compact-actions a {
-    width: 100%;
-  }
-
   .dashboard-hero-mascot-small img {
     width: 100px;
-  }
-
-  .dashboard-agreements-overview {
-    padding: 0 1rem 1.5rem;
-  }
-
-  .dashboard-agreement-card {
-    padding: 0.875rem 1rem;
-  }
-
-  .dashboard-agreement-avatar {
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
-  }
-
-  .dashboard-agreement-title {
-    font-size: 0.9375rem;
-  }
-
-  .dashboard-agreement-meta {
-    font-size: 0.8125rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
   }
 }
