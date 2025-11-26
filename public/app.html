@@ -16,8 +16,6 @@
   <script src="/js/phone-input.js"></script>
   <!-- Centralized currency formatters -->
   <script src="/js/formatters.js"></script>
-  <!-- Shared agreements list module -->
-  <script src="/js/agreements-list.js"></script>
   <!-- Summary block component -->
   <script src="/components/summary-block.js"></script>
   <!-- Fairness icon component -->
@@ -721,45 +719,39 @@
       </div>
     </section>
 
-    <section class="card agreements-card" id="agreements-card">
+    <section class="card" id="list-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
         <h2 style="margin:0">My Agreements</h2>
       </div>
 
-      <div class="tabs card-tabs">
-        <div class="tab agreements-tab active" data-filter="all">All</div>
-        <div class="tab agreements-tab" data-filter="pending">Pending</div>
-        <div class="tab agreements-tab" data-filter="active">Active</div>
-        <div class="tab agreements-tab" data-filter="settled">Settled</div>
+      <div class="tabs">
+        <div class="tab active" data-filter="all" onclick="filterByStatus('all')">All</div>
+        <div class="tab" data-filter="pending" onclick="filterByStatus('pending')">Pending</div>
+        <div class="tab" data-filter="active" onclick="filterByStatus('active')">Active</div>
+        <div class="tab" data-filter="settled" onclick="filterByStatus('settled')">Settled</div>
       </div>
 
-      <div class="agreements-table-wrapper" id="agreements-table-wrapper">
-        <table class="agreements-table" id="list">
-          <thead>
-            <tr>
-              <th id="counterparty-header">Borrower</th>
-              <th>Description</th>
-              <th>Outstanding / Total</th>
-              <th id="due-header">Next repayment due</th>
-              <th>Status</th>
-              <th><span class="actions-header-text">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody id="agreements-table-body"></tbody>
-        </table>
+      <table id="list">
+        <thead>
+          <tr>
+            <th id="counterparty-header">Borrower</th>
+            <th>Description</th>
+            <th>Outstanding / Total</th>
+            <th id="due-header">Next repayment due</th>
+            <th>Status</th>
+            <th><span class="actions-header-text">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="empty-state" class="empty-state" style="display:none">
+        No agreements found for this filter.
       </div>
-
-      <div class="agreements-empty-state" id="agreements-empty-state" style="display:none">
-        <div class="empty-state-icon">🤝</div>
-        <div class="empty-state-text">You have no agreements yet</div>
-        <div class="empty-state-subtext">Start by creating your first agreement to track loans with friends.</div>
-      </div>
-
-      <div class="agreements-footer" style="display:flex; justify-content:flex-end; margin-top:16px">
-        <a href="/new-agreement/search-friend" id="new-agreement-btn" class="btn btn-primary" style="display:flex; align-items:center; gap:8px; padding:12px 20px; text-decoration:none">
+      <div style="display:flex; justify-content:flex-end; margin-top:16px">
+        <button id="new-agreement-btn" onclick="window.location.href='/new-agreement/search-friend'" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
           <span style="font-size:18px; font-weight:bold">+</span>
           <span>New Agreement</span>
-        </a>
+        </button>
       </div>
     </section>
 
@@ -5059,22 +5051,35 @@
       window.location.href = `/agreements/${id}/manage`;
     }
 
-    // Filter agreements by status (kept for compatibility with old code, delegates to shared module)
+    // Filter agreements by status
     function filterByStatus(status) {
-      if (window.AgreementsList && typeof window.AgreementsList.filter === 'function') {
-        window.AgreementsList.filter(status);
-      }
+      currentFilter = status;
+
+      // Update active tab
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.getAttribute('data-filter') === status) {
+          tab.classList.add('active');
+        }
+      });
+
+      renderAgreements();
     }
 
-    // Render agreements (kept for compatibility, now handled by shared module)
+    // Render agreements based on current filter
     function renderAgreements() {
-      // Handled by shared module
+      // Use shared component
+      renderAgreementsTable(allAgreements, currentUser, currentFilter);
     }
 
-    // Refresh agreements (delegates to shared module)
+    // Refresh agreements
     async function refresh() {
-      if (window.AgreementsList && typeof window.AgreementsList.refresh === 'function') {
-        await window.AgreementsList.refresh();
+      try {
+        const res = await fetch('/api/agreements');
+        allAgreements = await res.json();
+        renderAgreements();
+      } catch (err) {
+        console.error('Error loading agreements:', err);
       }
     }
 
@@ -5343,15 +5348,7 @@
 
       // Load user and other data
       loadUser();
-
-      // Initialize agreements list using shared module
-      if (window.AgreementsList && typeof window.AgreementsList.init === 'function') {
-        const user = PayFriendsHeader.getCurrentUser();
-        if (user) {
-          await window.AgreementsList.init({ user });
-        }
-      }
-
+      refresh();
       loadMessages();
       goToStep(1);
     });
@@ -5359,5 +5356,8 @@
 
   <!-- Shared Schedule Calculation Utility -->
   <script src="/js/schedule.js"></script>
+
+  <!-- Shared Agreements Table Component -->
+  <script src="/components/agreements-table.js"></script>
 </body>
 </html>
