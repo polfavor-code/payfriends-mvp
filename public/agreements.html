@@ -127,12 +127,24 @@
           <div class="empty-state-text">No agreements found</div>
           <div class="empty-state-subtext">Try adjusting the filter above.</div>
         </div>
+        <div style="display:flex; justify-content:flex-end; margin-top:16px">
+          <button onclick="createNewAgreement()" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
+            <span style="font-size:18px; font-weight:bold">+</span>
+            <span>New Agreement</span>
+          </button>
+        </div>
       </div>
 
       <div id="welcome-card" class="empty-state" style="display:none">
         <div class="empty-state-icon">🤝</div>
         <div class="empty-state-text">You have no agreements yet</div>
         <div class="empty-state-subtext">Start by creating your first agreement to track loans with friends.</div>
+        <div style="margin-top:24px">
+          <button onclick="createNewAgreement()" style="display:flex; align-items:center; gap:8px; padding:12px 20px; margin:0 auto">
+            <span style="font-size:18px; font-weight:bold">+</span>
+            <span>New Agreement</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -215,6 +227,10 @@
 
     function openDifficultyModal(id) {
       window.location.href = `/app?agreement=${id}`;
+    }
+
+    function createNewAgreement() {
+      window.location.href = '/calculate.html';
     }
 
     // Initialize on page load
