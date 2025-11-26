@@ -113,30 +113,48 @@
 .dashboard-hero__text {
   font-size: 0.95rem;
   color: #a7b5c7;
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
   line-height: 1.6;
+}
+
+.dashboard-hero__features-link {
+  font-size: 0.9rem;
+  color: #7f8ea3;
+  margin-top: 1.25rem;
+  margin-bottom: 0;
+  display: block;
 }
 
 .dashboard-hero__actions {
   display: flex;
   gap: 0.75rem;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding: 8px 12px;
-  border-radius: 999px;
-  box-shadow: 0 0 26px rgba(0, 255, 140, 0.28);
-  width: fit-content;
+  margin-top: 1.75rem;
 }
 
 .dashboard-hero__actions button {
   margin: 0;
 }
 
-.dashboard-hero__features-link {
-  font-size: 0.9rem;
-  color: #7f8ea3;
-  margin-top: 1rem;
-  display: block;
+/* Individual button glows for dashboard hero */
+.dashboard-hero__actions .primary-button {
+  box-shadow: 0 0 22px rgba(0, 255, 140, 0.22);
+  transition: all 0.3s ease;
+}
+
+.dashboard-hero__actions .primary-button:hover {
+  box-shadow: 0 0 26px rgba(0, 255, 140, 0.30);
+  transform: translateY(-1px);
+}
+
+.dashboard-hero__actions .secondary {
+  box-shadow: 0 0 16px rgba(0, 255, 140, 0.16);
+  transition: all 0.3s ease;
+}
+
+.dashboard-hero__actions .secondary:hover {
+  box-shadow: 0 0 20px rgba(0, 255, 140, 0.22);
+  transform: translateY(-1px);
 }
 
 .dashboard-hero__features-link .link-accent {
@@ -152,6 +170,9 @@
 .dashboard-hero-mascot {
   flex-shrink: 0;
   position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
 
 .dashboard-hero-mascot img {
@@ -163,16 +184,22 @@
   z-index: 1;
 }
 
-/* Subtle bottom shadow/fade under mascot */
+/* Refined soft shadow ellipse under mascot feet */
 .dashboard-hero-mascot::after {
   content: '';
   position: absolute;
-  bottom: -10px;
+  bottom: -8px;
   left: 50%;
   transform: translateX(-50%);
   width: 70%;
-  height: 30px;
-  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.25) 0%, transparent 70%);
+  height: 18%;
+  max-width: 260px;
+  background: radial-gradient(ellipse at center,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0) 70%
+  );
+  filter: blur(6px);
+  opacity: 0.7;
   z-index: 0;
 }
 
@@ -198,11 +225,10 @@
 
   .dashboard-hero__actions {
     flex-direction: column;
+    gap: 0.75rem;
     width: 100%;
     max-width: 320px;
-    margin: 0 auto 1.5rem;
-    padding: 10px 14px;
-    border-radius: 16px;
+    margin: 1.75rem auto 0;
   }
 
   .dashboard-hero__actions button {
