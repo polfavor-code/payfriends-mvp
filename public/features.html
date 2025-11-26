@@ -189,10 +189,8 @@
   </style>
 </head>
 <body>
-  <!-- Header injected by header.js -->
-  <div id="app-header"></div>
-
-  <main class="page-shell">
+  <main class="container page-shell">
+    <!-- Header will be loaded dynamically by header.js -->
     <section class="features-header-card">
       <h1>Everything PayFriends does for you</h1>
       <p>
@@ -309,13 +307,11 @@
     </section>
   </main>
 
-  <script type="module">
-    // Initialize header when page loads
-    document.addEventListener('DOMContentLoaded', async () => {
-      if (window.PayFriendsHeader) {
-        await window.PayFriendsHeader.initialize();
-      }
-    });
+  <script>
+    // Initialize header
+    if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
+      window.PayFriendsHeader.initialize({ hasActivitySection: false });
+    }
   </script>
 </body>
 </html>
