@@ -171,8 +171,18 @@ function renderAgreementsTable(agreements, currentUser, currentFilter = 'all', c
   const listSection = document.getElementById('list-section');
   const welcomeCard = document.getElementById('welcome-card');
 
-  // Show welcome card if user has zero agreements overall (only on dashboard)
-  if (welcomeCard && agreements.length === 0) {
+  // Filter out agreements cancelled before borrower approval
+  // These should not appear in My Agreements but only in Activity
+  const visibleAgreements = agreements.filter(a => {
+    // Exclude cancelled agreements that were never accepted by the borrower
+    if (a.status === 'cancelled' && !a.accepted_at) {
+      return false;
+    }
+    return true;
+  });
+
+  // Show welcome card if user has zero visible agreements (only on dashboard)
+  if (welcomeCard && visibleAgreements.length === 0) {
     listSection.style.display = 'none';
     welcomeCard.style.display = 'block';
 
@@ -199,14 +209,14 @@ function renderAgreementsTable(agreements, currentUser, currentFilter = 'all', c
     welcomeCard.style.display = 'none';
   }
 
-  // Filter agreements
-  let filtered = agreements;
+  // Filter agreements by status
+  let filtered = visibleAgreements;
   if (currentFilter !== 'all') {
     if (currentFilter === 'pending') {
-      // For Pending tab, exclude cancelled agreements
-      filtered = agreements.filter(a => a.status === 'pending');
+      // For Pending tab, show only pending agreements
+      filtered = visibleAgreements.filter(a => a.status === 'pending');
     } else {
-      filtered = agreements.filter(a => a.status === currentFilter);
+      filtered = visibleAgreements.filter(a => a.status === currentFilter);
     }
   }
 

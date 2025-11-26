@@ -1114,10 +1114,12 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       u_lender.profile_picture as lender_profile_picture,
       u_borrower.full_name as borrower_full_name,
       u_borrower.email as borrower_email,
-      u_borrower.profile_picture as borrower_profile_picture
+      u_borrower.profile_picture as borrower_profile_picture,
+      invite.accepted_at as accepted_at
     FROM agreements a
     LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
     LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+    LEFT JOIN agreement_invites invite ON a.id = invite.agreement_id
     WHERE lender_user_id = ? OR borrower_user_id = ?
     ORDER BY created_at DESC
   `).all(req.user.id, req.user.id);
@@ -1172,8 +1174,11 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       planned_total_cents: plannedTotalCents,
       counterparty_name,
       counterparty_role,
+      counterparty_profile_picture_url: isLender ? agreement.borrower_profile_picture : agreement.lender_profile_picture,
       hasOpenDifficulty,
-      hasPendingPaymentToConfirm
+      hasPendingPaymentToConfirm,
+      // Include accepted_at to identify agreements cancelled before approval
+      accepted_at: agreement.accepted_at
     };
   });
 
