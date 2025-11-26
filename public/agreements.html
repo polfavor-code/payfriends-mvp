@@ -14,8 +14,8 @@
   <script src="/js/header.js"></script>
   <!-- Centralized currency formatters -->
   <script src="/js/formatters.js"></script>
-  <!-- Agreements table component -->
-  <script src="/components/agreements-table.js"></script>
+  <!-- Shared agreements list module -->
+  <script src="/js/agreements-list.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -27,14 +27,18 @@
     h1{margin:0 0 8px 0; font-size:28px; font-weight:600}
     .subtitle{color:var(--muted); font-size:14px; margin:0 0 24px 0; line-height:1.6; text-align:left}
     .page-title{font-size:28px; font-weight:600; margin:0 0 24px 0}
-    .tabs{display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .tab{padding:10px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
-    .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
-    .tab:hover{color:var(--text)}
-    table{width:100%;border-collapse:collapse;margin-top:8px}
-    th,td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; vertical-align:middle}
-    th{color:var(--muted); font-weight:600; font-size:13px}
-    th:nth-child(5), td:nth-child(5){text-align:center; width:80px}
+    .card-header{display:flex; flex-direction:column; gap:8px; margin-bottom:16px}
+    .card-header h2{margin:0; font-size:24px; font-weight:600}
+    .card-tabs{display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .tab, .agreements-tab{padding:10px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
+    .tab.active, .agreements-tab.active{color:var(--accent); border-bottom-color:var(--accent)}
+    .tab:hover, .agreements-tab:hover{color:var(--text)}
+    .agreements-table-wrapper{display:none}
+    .agreements-table{width:100%;border-collapse:collapse;margin-top:8px}
+    .agreements-table th,.agreements-table td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; vertical-align:middle}
+    .agreements-table th{color:var(--muted); font-weight:600; font-size:13px}
+    .agreements-table th:nth-child(5),.agreements-table td:nth-child(5){text-align:center; width:80px}
+    .agreements-table th:last-child,.agreements-table td:last-child{text-align:right}
     .status-dot{display:inline-block; width:16px; height:16px; border-radius:9999px; cursor:help; position:relative}
     .status-dot--active{background:#22c55e}
     .status-dot--pending{background:#facc15}
@@ -56,10 +60,14 @@
     .btn-confirm-payment:hover{background:#ea580c}
     .btn-payment-issue{background:#dc2626; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px}
     .btn-payment-issue:hover{background:#b91c1c}
-    .empty-state{text-align:center; padding:64px 32px; color:var(--muted)}
+    .agreements-empty-state{display:none; text-align:center; padding:64px 32px; color:var(--muted)}
     .empty-state-icon{font-size:48px; margin-bottom:16px; opacity:0.5}
     .empty-state-text{font-size:16px; margin-bottom:8px}
     .empty-state-subtext{font-size:14px; color:rgba(167,176,189,0.7)}
+    .agreements-footer{display:flex; justify-content:flex-end; margin-top:16px}
+    .agreements-footer .btn{display:flex; align-items:center; gap:8px; padding:12px 20px; text-decoration:none}
+    .btn-primary{background:var(--accent); color:#0d130f; font-weight:700; border-radius:10px}
+    .btn-primary:hover{filter:brightness(1.06)}
     .loading{text-align:center; padding:32px; color:var(--muted)}
     .user-avatar{display:inline-flex; align-items:center; justify-content:center; border-radius:50%; overflow:hidden; flex-shrink:0; vertical-align:middle}
     .user-avatar.size-small{width:36px; height:36px; min-width:36px; font-size:13px; font-weight:600; line-height:1; letter-spacing:-0.2px}
@@ -78,16 +86,6 @@
     .due-date-soon{color:#fbbf24}
     .due-date-upcoming{color:var(--muted)}
     .due-date-settled{color:#9ca3af}
-    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .top-header-left{display:flex; align-items:center; gap:12px}
-    .top-header-right{display:flex; gap:12px; align-items:center}
-    .logo-coin{height:54px; width:auto}
-    .top-header-text{display:flex; flex-direction:column; gap:2px}
-    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
-    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
-    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
-    .top-header-user-info{color:var(--text); font-size:14px; line-height:1; white-space:nowrap; display:inline-flex; align-items:center; height:40px}
-    .top-header-actions{display:flex; gap:12px; align-items:center}
   </style>
 </head>
 <body>
@@ -96,20 +94,22 @@
 
     <h1 class="page-title">My Agreements</h1>
 
-    <div class="card">
-      <p class="subtitle">All your loan agreements in one place.</p>
+    <section class="card agreements-card" id="agreements-card">
+      <div class="card-header">
+        <p class="subtitle">All your loan agreements in one place.</p>
+      </div>
 
-      <div class="tabs">
-        <div class="tab active" data-filter="all" onclick="filterAgreements('all')">All</div>
-        <div class="tab" data-filter="pending" onclick="filterAgreements('pending')">Pending</div>
-        <div class="tab" data-filter="active" onclick="filterAgreements('active')">Active</div>
-        <div class="tab" data-filter="settled" onclick="filterAgreements('settled')">Settled</div>
+      <div class="card-tabs">
+        <div class="agreements-tab tab active" data-filter="all">All</div>
+        <div class="agreements-tab tab" data-filter="pending">Pending</div>
+        <div class="agreements-tab tab" data-filter="active">Active</div>
+        <div class="agreements-tab tab" data-filter="settled">Settled</div>
       </div>
 
       <div id="loading" class="loading">Loading your agreements...</div>
 
-      <div id="list-section" style="display:none">
-        <table id="list">
+      <div class="agreements-table-wrapper" id="agreements-table-wrapper">
+        <table class="agreements-table">
           <thead>
             <tr>
               <th id="counterparty-header">Counterparty</th>
@@ -117,124 +117,69 @@
               <th>Outstanding / Total</th>
               <th id="due-header">Due</th>
               <th>Status</th>
-              <th style="text-align:right">Actions</th>
+              <th>Actions</th>
             </tr>
           </thead>
-          <tbody></tbody>
+          <tbody id="agreements-table-body"></tbody>
         </table>
-        <div id="empty-state" class="empty-state" style="display:none">
-          <div class="empty-state-icon">📋</div>
-          <div class="empty-state-text">No agreements found</div>
-          <div class="empty-state-subtext">Try adjusting the filter above.</div>
-        </div>
-        <div style="display:flex; justify-content:flex-end; margin-top:16px">
-          <button onclick="createNewAgreement()" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
-            <span style="font-size:18px; font-weight:bold">+</span>
-            <span>New Agreement</span>
-          </button>
-        </div>
       </div>
 
-      <div id="welcome-card" class="empty-state" style="display:none">
+      <div class="agreements-empty-state" id="agreements-empty-state">
         <div class="empty-state-icon">🤝</div>
         <div class="empty-state-text">You have no agreements yet</div>
         <div class="empty-state-subtext">Start by creating your first agreement to track loans with friends.</div>
-        <div style="margin-top:24px">
-          <button onclick="createNewAgreement()" style="display:flex; align-items:center; gap:8px; padding:12px 20px; margin:0 auto">
-            <span style="font-size:18px; font-weight:bold">+</span>
-            <span>New Agreement</span>
-          </button>
-        </div>
       </div>
-    </div>
+
+      <div class="agreements-footer">
+        <a href="/new-agreement/search-friend" class="btn btn-primary" id="new-agreement-btn">
+          <span style="font-size:18px; font-weight:bold">+</span>
+          <span>New Agreement</span>
+        </a>
+      </div>
+    </section>
   </div>
 
   <script>
-    // Initialize header
-    if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
-      window.PayFriendsHeader.initialize({ hasActivitySection: false });
-    }
-
-    let currentUser = null;
-    let allAgreements = [];
-    let currentFilter = 'all';
-
-    // Load user and agreements on page load
-    async function loadData() {
-      try {
-        // Load user
-        const userResponse = await fetch('/api/user');
-        if (!userResponse.ok) {
-          window.location.href = '/';
-          return;
-        }
-        const userData = await userResponse.json();
-        currentUser = userData.user;
-
-        // Load agreements
-        const agreementsResponse = await fetch('/api/agreements');
-        if (!agreementsResponse.ok) {
-          throw new Error('Failed to fetch agreements');
-        }
-        const agreementsData = await agreementsResponse.json();
-        allAgreements = agreementsData.agreements || [];
-
-        document.getElementById('loading').style.display = 'none';
-
-        renderAgreements();
-      } catch (error) {
-        console.error('Error loading data:', error);
-        document.getElementById('loading').innerHTML = '<p style="color:#ff6b6b">Error loading agreements. Please try again.</p>';
-      }
-    }
-
-    // Filter agreements by status
-    function filterAgreements(status) {
-      currentFilter = status;
-
-      // Update active tab
-      document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.getAttribute('data-filter') === status) {
-          tab.classList.add('active');
-        }
-      });
-
-      renderAgreements();
-    }
-
-    // Render agreements using shared component
-    function renderAgreements() {
-      renderAgreementsTable(allAgreements, currentUser, currentFilter);
-    }
-
-    // Action handlers for buttons
-    function viewAgreement(id) {
+    // Global action handlers (required by agreements-list.js)
+    window.viewAgreement = function(id) {
       window.location.href = `/app?agreement=${id}`;
-    }
+    };
 
-    function reviewAgreement(id) {
+    window.openConfirmPaymentModal = function(id) {
       window.location.href = `/app?agreement=${id}`;
-    }
+    };
 
-    function scrollToManage() {
-      window.location.href = `/app`;
-    }
-
-    function openConfirmPaymentModal(id) {
+    window.openDifficultyModal = function(id) {
       window.location.href = `/app?agreement=${id}`;
-    }
-
-    function openDifficultyModal(id) {
-      window.location.href = `/app?agreement=${id}`;
-    }
-
-    function createNewAgreement() {
-      window.location.href = '/calculate.html';
-    }
+    };
 
     // Initialize on page load
-    loadData();
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Initialize header
+      if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
+        await window.PayFriendsHeader.initialize({ hasActivitySection: false });
+      }
+
+      // Get current user
+      const currentUser = window.PayFriendsHeader ? window.PayFriendsHeader.getCurrentUser() : null;
+
+      if (!currentUser) {
+        window.location.href = '/';
+        return;
+      }
+
+      // Hide loading
+      document.getElementById('loading').style.display = 'none';
+
+      // Initialize agreements list using shared module
+      if (window.AgreementsList && typeof window.AgreementsList.init === 'function') {
+        await window.AgreementsList.init({ user: currentUser });
+      } else {
+        console.error('AgreementsList module not loaded');
+        document.getElementById('agreements-empty-state').innerHTML = '<p style="color:#ff6b6b">Error loading agreements. Please refresh the page.</p>';
+        document.getElementById('agreements-empty-state').style.display = 'block';
+      }
+    });
   </script>
 </body>
 </html>
