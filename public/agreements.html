@@ -208,24 +208,29 @@
     }
 
     // Action handlers for buttons
+    // Navigate to manage page for lenders and borrowers
     function viewAgreement(id) {
-      window.location.href = `/app?agreement=${id}`;
+      window.location.href = `/agreements/${id}/manage`;
     }
 
+    // Navigate to review page for borrowers
     function reviewAgreement(id) {
-      window.location.href = `/app?agreement=${id}`;
+      window.location.href = `/agreements/${id}/review`;
     }
 
+    // Scroll to manage (not used on this page, but needed for agreements-table.js)
     function scrollToManage() {
-      window.location.href = `/app`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // Navigate to manage page for payment confirmation (modal not available on this page)
     function openConfirmPaymentModal(id) {
-      window.location.href = `/app?agreement=${id}`;
+      window.location.href = `/agreements/${id}/manage`;
     }
 
+    // Navigate to manage page for difficulty handling (modal not available on this page)
     function openDifficultyModal(id) {
-      window.location.href = `/app?agreement=${id}`;
+      window.location.href = `/agreements/${id}/manage`;
     }
 
     // Initialize on page load
