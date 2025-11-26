@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>PayFriends — Features</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- App-wide styles -->
+  <link rel="stylesheet" href="/css/app.css" />
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:1200px; margin:0 auto; padding:32px 16px;}
+    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
+    h1{margin:0 0 8px 0; font-size:28px; font-weight:600}
+    .subtitle{color:var(--muted); font-size:14px; margin:0 0 24px 0; line-height:1.6; text-align:left}
+    .page-title{font-size:28px; font-weight:600; margin:0 0 24px 0}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; gap:12px; align-items:center}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
+
+    /* Features page specific styles */
+    .features-intro{
+      font-size:15px;
+      line-height:1.6;
+      color:var(--text);
+      margin-bottom:32px;
+      padding-bottom:24px;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+    }
+    .features-intro p{
+      margin:0 0 12px 0;
+    }
+    .features-intro p:last-child{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+    }
+    .features-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+      gap:24px;
+      margin-top:24px;
+    }
+    .feature-item{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .feature-header{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .feature-icon{
+      width:32px;
+      height:32px;
+      border-radius:50%;
+      background:rgba(61,220,151,0.1);
+      border:1px solid rgba(61,220,151,0.3);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+      font-size:16px;
+      color:var(--accent);
+    }
+    .feature-title{
+      font-size:16px;
+      font-weight:600;
+      color:var(--text);
+      margin:0;
+    }
+    .feature-description{
+      font-size:14px;
+      line-height:1.5;
+      color:var(--muted);
+      margin:0;
+      padding-left:44px;
+    }
+    .feature-tag{
+      padding-left:44px;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:0.05em;
+      color:rgba(61,220,151,0.8);
+      font-weight:600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header will be loaded dynamically by header.js -->
+
+    <h1 class="page-title">Features</h1>
+
+    <div class="card">
+      <div class="features-intro">
+        <p>
+          PayFriends turns awkward money conversations into clear agreements that run on autopilot.
+          Set up a plan once, then let us track the numbers, the reminders and the fairness for both sides.
+        </p>
+        <p>
+          Built for real friendships, shared trips, long term loans and everything in between.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-item">
+          <div class="feature-header">
+            <div class="feature-icon">✓</div>
+            <h2 class="feature-title">Clear repayment plans you both agree on</h2>
+          </div>
+          <p class="feature-description">
+            Set loan amounts, start dates and repayment schedules in a few clicks.
+            Both sides see the same plan so expectations are clear from day one.
+          </p>
+          <div class="feature-tag">Clarity</div>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-item">
+          <div class="feature-header">
+            <div class="feature-icon">✓</div>
+            <h2 class="feature-title">Smart reminders that never feel like chasing</h2>
+          </div>
+          <p class="feature-description">
+            PayFriends sends gentle reminders when payments are due so it never has to come from the lender personally.
+            You keep the friendship, we handle the nudges.
+          </p>
+          <div class="feature-tag">Reminders</div>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-item">
+          <div class="feature-header">
+            <div class="feature-icon">✓</div>
+            <h2 class="feature-title">Fair interest for early, late or different payments</h2>
+          </div>
+          <p class="feature-description">
+            When someone pays early, late or a different amount, we recalculate the interest automatically so both sides stay treated fairly.
+          </p>
+          <div class="feature-tag">Fairness</div>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-item">
+          <div class="feature-header">
+            <div class="feature-icon">✓</div>
+            <h2 class="feature-title">Future instalments adjust automatically</h2>
+          </div>
+          <p class="feature-description">
+            If a payment changes, the system updates the remaining schedule for you.
+            No spreadsheets or manual math, just a clean new plan ready to go.
+          </p>
+          <div class="feature-tag">Automation</div>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-item">
+          <div class="feature-header">
+            <div class="feature-icon">✓</div>
+            <h2 class="feature-title">Live outstanding balance to the cent</h2>
+          </div>
+          <p class="feature-description">
+            See at any moment who owes what, including interest and upcoming payments.
+            The balance updates in real time after every payment that is logged.
+          </p>
+          <div class="feature-tag">Live balance</div>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-item">
+          <div class="feature-header">
+            <div class="feature-icon">✓</div>
+            <h2 class="feature-title">Support when someone is struggling to pay</h2>
+          </div>
+          <p class="feature-description">
+            If life gets in the way, you can easily suggest a new plan with smaller or fewer payments.
+            PayFriends helps you keep things fair without breaking the relationship.
+          </p>
+          <div class="feature-tag">Flexible plans</div>
+        </div>
+
+        <!-- Feature 7 -->
+        <div class="feature-item">
+          <div class="feature-header">
+            <div class="feature-icon">✓</div>
+            <h2 class="feature-title">Clean history and timelines for full transparency</h2>
+          </div>
+          <p class="feature-description">
+            Every payment, change and agreement update is stored in one place.
+            Both sides can always see the full story, from day one until the final cent is repaid.
+          </p>
+          <div class="feature-tag">Transparency</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize header
+    if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
+      window.PayFriendsHeader.initialize({ hasActivitySection: false });
+    }
+  </script>
+</body>
+</html>
