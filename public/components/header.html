@@ -212,6 +212,12 @@
     background: rgba(255, 255, 255, 0.08);
   }
 
+  .dropdown-item.active {
+    background: rgba(61, 220, 151, 0.1);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
   .dropdown-item-disabled {
     color: var(--muted);
     cursor: default;
@@ -267,9 +273,19 @@
 
           <div class="dropdown-divider"></div>
 
+          <button class="dropdown-item" id="user-menu-agreements" role="menuitem">
+            My Agreements
+          </button>
+
+          <button class="dropdown-item" id="user-menu-grouptabs" role="menuitem">
+            GroupTabs
+          </button>
+
           <button class="dropdown-item" id="user-menu-friends" role="menuitem">
             Friends
           </button>
+
+          <div class="dropdown-divider"></div>
 
           <button class="dropdown-item" id="user-menu-profile" role="menuitem">
             My Profile
@@ -279,12 +295,18 @@
             Settings
           </button>
 
+          <button class="dropdown-item" id="user-menu-security" role="menuitem">
+            Security
+          </button>
+
+          <div class="dropdown-divider"></div>
+
           <button class="dropdown-item" id="user-menu-features" role="menuitem">
             Features
           </button>
 
-          <button class="dropdown-item" id="user-menu-security" role="menuitem">
-            Security
+          <button class="dropdown-item" id="user-menu-faq" role="menuitem">
+            FAQ
           </button>
 
           <button class="dropdown-item" id="user-menu-legal" role="menuitem">

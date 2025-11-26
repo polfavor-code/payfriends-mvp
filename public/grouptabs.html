@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>PayFriends — GroupTabs</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- App-wide styles -->
+  <link rel="stylesheet" href="/css/app.css" />
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:1200px; margin:0 auto; padding:32px 16px;}
+    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
+    h1{margin:0 0 8px 0; font-size:28px; font-weight:600}
+    .subtitle{color:var(--muted); font-size:14px; margin:0 0 24px 0; line-height:1.6; text-align:left}
+    .page-title{font-size:28px; font-weight:600; margin:0 0 24px 0}
+    .placeholder-content{text-align:center; padding:64px 32px; color:var(--muted)}
+    .placeholder-icon{font-size:64px; margin-bottom:24px; opacity:0.5}
+    .placeholder-text{font-size:18px; margin-bottom:12px; color:var(--text)}
+    .placeholder-subtext{font-size:15px; line-height:1.6}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; gap:12px; align-items:center}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
+    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
+    .top-header-user-info{color:var(--text); font-size:14px; line-height:1; white-space:nowrap; display:inline-flex; align-items:center; height:40px}
+    .top-header-actions{display:flex; gap:12px; align-items:center}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header will be loaded dynamically by header.js -->
+
+    <h1 class="page-title">GroupTabs</h1>
+
+    <div class="card">
+      <p class="subtitle">Split expenses and settle up with groups.</p>
+
+      <div class="placeholder-content">
+        <div class="placeholder-icon">🎉</div>
+        <div class="placeholder-text">Content of this page coming soon.</div>
+        <div class="placeholder-subtext">
+          GroupTabs will let you split expenses with multiple friends,<br />
+          track who paid what, and settle up fairly.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize header
+    if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
+      window.PayFriendsHeader.initialize({ hasActivitySection: false });
+    }
+  </script>
+</body>
+</html>

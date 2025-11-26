@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>PayFriends — My Agreements</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- App-wide styles -->
+  <link rel="stylesheet" href="/css/app.css" />
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
+  <!-- Centralized currency formatters -->
+  <script src="/js/formatters.js"></script>
+  <!-- Agreements table component -->
+  <script src="/components/agreements-table.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:1200px; margin:0 auto; padding:32px 16px;}
+    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
+    h1{margin:0 0 8px 0; font-size:28px; font-weight:600}
+    .subtitle{color:var(--muted); font-size:14px; margin:0 0 24px 0; line-height:1.6; text-align:left}
+    .page-title{font-size:28px; font-weight:600; margin:0 0 24px 0}
+    .tabs{display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .tab{padding:10px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
+    .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
+    .tab:hover{color:var(--text)}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; vertical-align:middle}
+    th{color:var(--muted); font-weight:600; font-size:13px}
+    th:nth-child(5), td:nth-child(5){text-align:center; width:80px}
+    .status-dot{display:inline-block; width:16px; height:16px; border-radius:9999px; cursor:help; position:relative}
+    .status-dot--active{background:#22c55e}
+    .status-dot--pending{background:#facc15}
+    .status-dot--settled{background:#9ca3af}
+    .status-dot--overdue{background:#f87171}
+    .status-dot--cancelled{background:#9ca3af}
+    .status-dot--declined{background:#f87171}
+    .status-dot-wrapper{display:inline-flex;align-items:center;justify-content:center;position:relative}
+    .status-dot-wrapper::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.2s ease;border:1px solid rgba(255,255,255,0.1);z-index:1000}
+    .status-dot-wrapper::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1f2937;opacity:0;pointer-events:none;transition:opacity 0.2s ease;z-index:1000}
+    .status-dot-wrapper:hover::after,.status-dot-wrapper:hover::before{opacity:1}
+    .actions-column{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; width:100%}
+    .actions-column button{flex:0 0 auto; padding:8px 12px; font-size:14px; white-space:nowrap; width:auto}
+    button{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#0d130f;font-weight:700; cursor:pointer}
+    button:hover{filter:brightness(1.06)}
+    button.btn-review-pending{background:#facc15; color:#0d130f}
+    button.btn-review-pending:hover{filter:brightness(1.1)}
+    .btn-confirm-payment{background:#f97316; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px}
+    .btn-confirm-payment:hover{background:#ea580c}
+    .btn-payment-issue{background:#dc2626; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px}
+    .btn-payment-issue:hover{background:#b91c1c}
+    .empty-state{text-align:center; padding:64px 32px; color:var(--muted)}
+    .empty-state-icon{font-size:48px; margin-bottom:16px; opacity:0.5}
+    .empty-state-text{font-size:16px; margin-bottom:8px}
+    .empty-state-subtext{font-size:14px; color:rgba(167,176,189,0.7)}
+    .loading{text-align:center; padding:32px; color:var(--muted)}
+    .user-avatar{display:inline-flex; align-items:center; justify-content:center; border-radius:50%; overflow:hidden; flex-shrink:0; vertical-align:middle}
+    .user-avatar.size-small{width:36px; height:36px; min-width:36px; font-size:13px; font-weight:600; line-height:1; letter-spacing:-0.2px}
+    .user-avatar-image{width:100%; height:100%; object-fit:cover}
+    .user-avatar-initials{width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; text-transform:uppercase}
+    .user-avatar-initials.color-1{background:#6366f1}
+    .user-avatar-initials.color-2{background:#8b5cf6}
+    .user-avatar-initials.color-3{background:#ec4899}
+    .user-avatar-initials.color-4{background:#f59e0b}
+    .user-avatar-initials.color-5{background:#10b981}
+    .user-avatar-initials.color-6{background:#3b82f6}
+    .user-avatar-initials.color-7{background:#14b8a6}
+    .counterparty-cell{display:flex; align-items:center; gap:10px}
+    .due-date-overdue{color:#f87171}
+    .due-date-today{color:#facc15}
+    .due-date-soon{color:#fbbf24}
+    .due-date-upcoming{color:var(--muted)}
+    .due-date-settled{color:#9ca3af}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; gap:12px; align-items:center}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
+    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
+    .top-header-user-info{color:var(--text); font-size:14px; line-height:1; white-space:nowrap; display:inline-flex; align-items:center; height:40px}
+    .top-header-actions{display:flex; gap:12px; align-items:center}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header will be loaded dynamically by header.js -->
+
+    <h1 class="page-title">My Agreements</h1>
+
+    <div class="card">
+      <p class="subtitle">All your loan agreements in one place.</p>
+
+      <div class="tabs">
+        <div class="tab active" data-filter="all" onclick="filterAgreements('all')">All</div>
+        <div class="tab" data-filter="pending" onclick="filterAgreements('pending')">Pending</div>
+        <div class="tab" data-filter="active" onclick="filterAgreements('active')">Active</div>
+        <div class="tab" data-filter="settled" onclick="filterAgreements('settled')">Settled</div>
+      </div>
+
+      <div id="loading" class="loading">Loading your agreements...</div>
+
+      <div id="list-section" style="display:none">
+        <table id="list">
+          <thead>
+            <tr>
+              <th id="counterparty-header">Counterparty</th>
+              <th>Description</th>
+              <th>Outstanding / Total</th>
+              <th id="due-header">Due</th>
+              <th>Status</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div id="empty-state" class="empty-state" style="display:none">
+          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-text">No agreements found</div>
+          <div class="empty-state-subtext">Try adjusting the filter above.</div>
+        </div>
+      </div>
+
+      <div id="welcome-card" class="empty-state" style="display:none">
+        <div class="empty-state-icon">🤝</div>
+        <div class="empty-state-text">You have no agreements yet</div>
+        <div class="empty-state-subtext">Start by creating your first agreement to track loans with friends.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize header
+    if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
+      window.PayFriendsHeader.initialize({ hasActivitySection: false });
+    }
+
+    let currentUser = null;
+    let allAgreements = [];
+    let currentFilter = 'all';
+
+    // Load user and agreements on page load
+    async function loadData() {
+      try {
+        // Load user
+        const userResponse = await fetch('/api/user');
+        if (!userResponse.ok) {
+          window.location.href = '/';
+          return;
+        }
+        const userData = await userResponse.json();
+        currentUser = userData.user;
+
+        // Load agreements
+        const agreementsResponse = await fetch('/api/agreements');
+        if (!agreementsResponse.ok) {
+          throw new Error('Failed to fetch agreements');
+        }
+        const agreementsData = await agreementsResponse.json();
+        allAgreements = agreementsData.agreements || [];
+
+        document.getElementById('loading').style.display = 'none';
+
+        renderAgreements();
+      } catch (error) {
+        console.error('Error loading data:', error);
+        document.getElementById('loading').innerHTML = '<p style="color:#ff6b6b">Error loading agreements. Please try again.</p>';
+      }
+    }
+
+    // Filter agreements by status
+    function filterAgreements(status) {
+      currentFilter = status;
+
+      // Update active tab
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.getAttribute('data-filter') === status) {
+          tab.classList.add('active');
+        }
+      });
+
+      renderAgreements();
+    }
+
+    // Render agreements using shared component
+    function renderAgreements() {
+      renderAgreementsTable(allAgreements, currentUser, currentFilter);
+    }
+
+    // Action handlers for buttons
+    function viewAgreement(id) {
+      window.location.href = `/app?agreement=${id}`;
+    }
+
+    function reviewAgreement(id) {
+      window.location.href = `/app?agreement=${id}`;
+    }
+
+    function scrollToManage() {
+      window.location.href = `/app`;
+    }
+
+    function openConfirmPaymentModal(id) {
+      window.location.href = `/app?agreement=${id}`;
+    }
+
+    function openDifficultyModal(id) {
+      window.location.href = `/app?agreement=${id}`;
+    }
+
+    // Initialize on page load
+    loadData();
+  </script>
+</body>
+</html>
