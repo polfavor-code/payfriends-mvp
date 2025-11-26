@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>PayFriends — FAQ</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- App-wide styles -->
+  <link rel="stylesheet" href="/css/app.css" />
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:1200px; margin:0 auto; padding:32px 16px;}
+    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
+    h1{margin:0 0 8px 0; font-size:28px; font-weight:600}
+    .subtitle{color:var(--muted); font-size:14px; margin:0 0 24px 0; line-height:1.6; text-align:left}
+    .page-title{font-size:28px; font-weight:600; margin:0 0 24px 0}
+    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .top-header-left{display:flex; align-items:center; gap:12px}
+    .top-header-right{display:flex; gap:12px; align-items:center}
+    .logo-coin{height:54px; width:auto}
+    .top-header-text{display:flex; flex-direction:column; gap:2px}
+    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
+    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
+
+    /* FAQ specific styles */
+    .faq-section{margin-bottom:32px}
+    .faq-section h2{font-size:20px; font-weight:600; color:var(--text); margin:0 0 16px 0; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .faq-item{margin-bottom:8px; border:1px solid rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; background:rgba(255,255,255,0.02)}
+    .faq-question{display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; transition:all 0.2s ease; user-select:none}
+    .faq-question:hover{background:rgba(255,255,255,0.04)}
+    .faq-icon{font-size:14px; color:var(--accent); flex-shrink:0; width:20px; text-align:center; transition:transform 0.2s ease}
+    .faq-question-text{flex:1; font-size:15px; font-weight:500; color:var(--text)}
+    .faq-answer{max-height:0; overflow:hidden; transition:max-height 0.3s ease; padding:0 16px; color:var(--muted); font-size:14px; line-height:1.6}
+    .faq-answer-inner{padding:0 0 16px 32px}
+    .faq-item.open .faq-icon{transform:rotate(90deg)}
+    .faq-item.open .faq-answer{max-height:1000px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header will be loaded dynamically by header.js -->
+
+    <h1 class="page-title">FAQ</h1>
+
+    <div class="card">
+      <p class="subtitle">Find answers to common questions about PayFriends.</p>
+
+      <!-- 1. Getting started -->
+      <div class="faq-section">
+        <h2>Getting started</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What is PayFriends?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              PayFriends is a simple tool to create clear money agreements between friends. You agree on who owes what, when it should be paid back, and optional interest. PayFriends then keeps track and reminds people so nobody has to nag.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Do I need an account to use PayFriends?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              The person who creates an agreement or GroupTab needs an account. People who receive an invite can first view the agreement from the link, and then create a profile to manage their side and keep everything in one place.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Who is PayFriends for?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              PayFriends is made for friends, family, room mates, trip buddies, and small groups who want fair and transparent money agreements without feeling like a bank.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Is PayFriends a bank or lending company?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              No. PayFriends does not lend money and does not handle payments. It only helps you track agreements and remind people what was agreed.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Agreements basics -->
+      <div class="faq-section">
+        <h2>Agreements basics</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What is an agreement in PayFriends?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              An agreement is a clear deal between two people. For example: "Paul lent 200 euro to Alex, full repayment in 3 months, interest 0 percent, monthly payments on the 1st."
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Who can create an agreement?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Anyone with an account can create an agreement. You pick who borrowed, who lent, the amount, due dates, and any interest or extra terms.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Do both sides need to confirm the agreement?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Yes, the ideal flow is that the borrower opens the link and confirms the agreement details. This helps avoid misunderstandings later.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Can I change an agreement after it is created?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              You can edit some parts of an agreement if both sides agree. Bigger changes like amount or due date should be clearly documented in the comments or by creating a new agreement, depending on how you prefer to keep history.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Can I cancel or delete an agreement?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              If an agreement was created by mistake, or both sides agree it should be cancelled, you can mark it as cancelled or fully settled. For legal or proof reasons, it is usually better to avoid hard deletes and instead mark the correct status.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Payments and repayments -->
+      <div class="faq-section">
+        <h2>Payments and repayments</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">How do I record that someone has paid?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Inside each agreement you can add a repayment. You enter how much was paid and the date. The remaining balance updates automatically.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Does PayFriends move real money between bank accounts?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              No. PayFriends does not touch your money. You still pay each other by bank transfer, cash, Revolut, Bizum, or anything you like. PayFriends only tracks who already paid and what is still open.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What is the repayment schedule?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              The repayment schedule is a list of planned payments and due dates for a loan. For example 3 monthly installments or 1 full repayment date. It helps both sides see what is expected.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What happens if someone pays earlier or later than planned?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              You can log repayments on the actual date they are made. The remaining schedule and balance will update. You can still see the original planned dates for reference.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Can I mark an agreement as fully repaid?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Yes. Once all payments are recorded and the balance is zero, you can mark the agreement as fully repaid. It will stay visible as history.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Interest and currencies -->
+      <div class="faq-section">
+        <h2>Interest and currencies</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Do I have to charge interest?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              No. Many agreements between friends are interest free. You can choose 0 percent interest if you want to keep it very friendly.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">When does interest make sense between friends?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Interest can make sense for larger amounts, longer periods, or when you want to make sure the loan is taken seriously. You should always agree on something that feels fair and comfortable to both sides.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Does PayFriends charge any fees on loans?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              No. PayFriends does not take a fee from your loans. If we ever add optional premium features in the future, we will clearly explain it.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What currency can I use?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              The default is euro, but the concept works for any currency as long as both sides understand what is used. In future versions we may support more explicit multi currency options.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Fairness icon in agreements -->
+      <div class="faq-section">
+        <h2>Fairness icon in agreements</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What does the fairness icon (handshake with heart) mean?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              This icon appears inside each agreement to show that PayFriends automatically keeps everything fair and up to date for both sides. It means the balance, interest and repayment schedule are dynamic and update the moment anything changes.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What does "fair and dynamic updates" mean?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              It means PayFriends automatically recalculates things like the remaining balance, interest (if used), early or late payments, underpayments and overpayments, updated due amounts, and updated expected totals. You do not have to manually adjust numbers. The system keeps both people synced with one clear version of the truth.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Does the fairness icon mean PayFriends judges who is right or wrong?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              No. The icon only means the agreement updates automatically. It does not judge your behavior, take sides, or give a score. It simply keeps the math fair based on your actual payments.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What happens when someone pays earlier than expected?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              If interest is enabled, paying early can reduce total interest if the loan terms are time based. If interest is disabled, the balance simply updates sooner and shows that less is still outstanding.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What if someone pays late?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              If interest is enabled, the system may show a higher final total if the loan terms include time based interest, because the loan is outstanding longer. If interest is disabled, nothing extra happens besides the balance updating on the date you record the payment.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What if someone pays more or less than the scheduled amount?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Any overpayment or underpayment will adjust the remaining balance and can change how future installments look and what the final repayment total will be. Everything stays mathematically correct and transparent for both sides.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Why is this fairness icon useful?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              It keeps both people aligned without confusion. No more mismatched spreadsheets or outdated screenshots. Everyone always sees the correct and updated status of the agreement.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. GroupTabs -->
+      <div class="faq-section">
+        <h2>GroupTabs</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What is a GroupTab?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              A GroupTab is a shared tab for group expenses. For example a holiday trip, a festival weekend, or shared house costs. Multiple people can add their expenses and everyone can see who should pay what.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">How is a GroupTab different from a normal agreement?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              A normal agreement is between two people. A GroupTab is for a group. Many people can add payments and many people can owe money. PayFriends then calculates a fair way to settle up.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Who can add expenses in a GroupTab?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              The GroupTab owner can add expenses and can allow other participants to add their own bills too. This works well when everyone pays some parts of the trip or event.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">How do people settle what they owe in a GroupTab?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              PayFriends can calculate who owes who and how much. You then settle by your usual payment methods outside PayFriends and mark debts as paid inside the GroupTab.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Can I use a GroupTab without creating an account?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              You can receive a link and see the summary, but for adding your own expenses and managing payments you will need an account so your data stays tied to you.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Reminders and notifications -->
+      <div class="faq-section">
+        <h2>Reminders and notifications</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">How do reminders work?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              PayFriends can send friendly reminders before and after due dates. The idea is to keep the agreement visible so people do not forget, without anyone having to nag personally.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Who receives reminders?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              By default the borrower receives reminders about upcoming or overdue payments. The lender may receive summary updates, depending on your notification settings.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Can I turn reminders on or off?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Yes. For each agreement and GroupTab there will be options to adjust reminder timing or turn them off completely if you both prefer a more relaxed approach.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Will reminders be aggressive or spammy?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              No. PayFriends is built to keep friendships healthy, not to stress people. The tone stays friendly and the frequency reasonable.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. Profiles and invitations -->
+      <div class="faq-section">
+        <h2>Profiles and invitations</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">How do I invite a friend to PayFriends?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              When you create an agreement or GroupTab, you can enter your friend's name and phone number or email. PayFriends will generate an invite link that you can send by WhatsApp, SMS or any chat app.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">My friend is not very tech savvy. Can they still use it?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Yes. The invite link opens a simple view of the agreement first. From there they can follow a few clear steps to confirm and create a basic profile.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What happens if my friend never confirms the agreement?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              The agreement still exists on your side as a record, but it is marked as not yet confirmed. You can remind them or decide together to cancel it if the money was never actually lent.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Can I see all my friends in one place?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Yes, the Friends page shows people you have money agreements with. From there you can open their profile and see agreements linked to that person.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. Security and privacy -->
+      <div class="faq-section">
+        <h2>Security and privacy</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Who can see my agreements?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Each agreement is visible only to the people involved and to your own account. PayFriends does not make your agreements public.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Does PayFriends see or store my bank details?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              No. PayFriends focuses on tracking agreements and repayments. Payments happen outside the app through your usual banking or payment apps.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">How do you protect my data?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              We use modern best practices for encryption in transit, secure passwords and restricted access on the server side. The Security page in the app explains the most important measures and tips.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What can I do to keep my account safe?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Use a strong, unique password and do not share it with anyone. When two step verification becomes available, enable it for extra protection.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 10. Troubleshooting -->
+      <div class="faq-section">
+        <h2>Troubleshooting</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">What if my friend does not pay me back?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              PayFriends cannot force anyone to pay. It is a tool to keep agreements clear and visible. In case of a conflict, the history in PayFriends can still help show what was agreed and what was already paid.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">I think a number or date is wrong. What should I do?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Talk to your friend first and agree on what is correct. Then either adjust the agreement if possible, or create a new corrected agreement and mark the old one as cancelled.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">I cannot see an agreement I expect to see.</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Check if you are logged in with the correct account and phone or email. Also check the filter or status in the agreements list, such as "active", "repaid", or "cancelled".
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">The app shows an error when saving something.</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Try again and check if your internet connection is stable. If the problem keeps happening, make a screenshot and contact us so we can investigate.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 11. Legal and policy -->
+      <div class="faq-section">
+        <h2>Legal and policy</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Is a PayFriends agreement legally binding?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              PayFriends helps you clearly document what you have agreed. Whether that is legally binding can depend on your local laws and the full context. If a large amount is involved or you have doubts, you should always seek independent legal advice.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Can I use PayFriends for business loans or customers?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              PayFriends is designed for private use between friends and small informal groups. For formal business lending or regulated financial services you should use tools made for that purpose and follow local regulations.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">Where can I see your terms and privacy policy?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              You can find them in the Legal & About section in the app. Always read them so you understand what we do and do not do.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <span class="faq-icon">▸</span>
+            <span class="faq-question-text">How can I give feedback or request a feature?</span>
+          </div>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              We welcome feedback. You can reach us through the contact options mentioned in Legal & About. Tell us what works well and what could be improved.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Initialize header
+    if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
+      window.PayFriendsHeader.initialize({ hasActivitySection: false });
+    }
+
+    // FAQ accordion functionality
+    document.addEventListener('DOMContentLoaded', () => {
+      const faqItems = document.querySelectorAll('.faq-item');
+
+      faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+
+        question.addEventListener('click', () => {
+          const isOpen = item.classList.contains('open');
+
+          // Close all items
+          faqItems.forEach(otherItem => {
+            otherItem.classList.remove('open');
+          });
+
+          // Toggle current item
+          if (!isOpen) {
+            item.classList.add('open');
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

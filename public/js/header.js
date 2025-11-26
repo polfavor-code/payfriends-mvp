@@ -257,13 +257,28 @@
     }
 
     // Dropdown menu item actions
+    const agreementsItem = document.getElementById('user-menu-agreements');
+    const grouptabsItem = document.getElementById('user-menu-grouptabs');
     const friendsItem = document.getElementById('user-menu-friends');
     const profileItem = document.getElementById('user-menu-profile');
     const settingsItem = document.getElementById('user-menu-settings');
-    const featuresItem = document.getElementById('user-menu-features');
     const securityItem = document.getElementById('user-menu-security');
+    const featuresItem = document.getElementById('user-menu-features');
+    const faqItem = document.getElementById('user-menu-faq');
     const legalItem = document.getElementById('user-menu-legal');
     const logoutItem = document.getElementById('user-menu-logout');
+
+    if (agreementsItem) {
+      agreementsItem.addEventListener('click', () => {
+        window.location.href = '/agreements';
+      });
+    }
+
+    if (grouptabsItem) {
+      grouptabsItem.addEventListener('click', () => {
+        window.location.href = '/grouptabs';
+      });
+    }
 
     if (friendsItem) {
       friendsItem.addEventListener('click', () => {
@@ -283,15 +298,21 @@
       });
     }
 
+    if (securityItem) {
+      securityItem.addEventListener('click', () => {
+        window.location.href = '/app/security';
+      });
+    }
+
     if (featuresItem) {
       featuresItem.addEventListener('click', () => {
         window.location.href = '/features';
       });
     }
 
-    if (securityItem) {
-      securityItem.addEventListener('click', () => {
-        window.location.href = '/app/security';
+    if (faqItem) {
+      faqItem.addEventListener('click', () => {
+        window.location.href = '/faq';
       });
     }
 
@@ -304,6 +325,9 @@
     if (logoutItem) {
       logoutItem.addEventListener('click', handleLogout);
     }
+
+    // Set active state based on current page
+    setActiveMenuItem();
   }
 
   /**
@@ -369,6 +393,49 @@
    */
   async function refreshUserInfo() {
     await loadUserInfo();
+  }
+
+  /**
+   * Set active state on menu item based on current page
+   */
+  function setActiveMenuItem() {
+    const currentPath = window.location.pathname;
+
+    // Remove any existing active classes
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+      item.classList.remove('active');
+    });
+
+    // Map paths to menu item IDs
+    let activeItemId = null;
+
+    if (currentPath === '/agreements' || currentPath === '/agreements.html') {
+      activeItemId = 'user-menu-agreements';
+    } else if (currentPath === '/grouptabs' || currentPath === '/grouptabs.html') {
+      activeItemId = 'user-menu-grouptabs';
+    } else if (currentPath === '/friends' || currentPath === '/friends.html') {
+      activeItemId = 'user-menu-friends';
+    } else if (currentPath.includes('/profile') || currentPath === '/app/profile') {
+      activeItemId = 'user-menu-profile';
+    } else if (currentPath.includes('/settings') || currentPath === '/app/settings') {
+      activeItemId = 'user-menu-settings';
+    } else if (currentPath.includes('/security') || currentPath === '/app/security') {
+      activeItemId = 'user-menu-security';
+    } else if (currentPath === '/features' || currentPath === '/features.html') {
+      activeItemId = 'user-menu-features';
+    } else if (currentPath === '/faq' || currentPath === '/faq.html') {
+      activeItemId = 'user-menu-faq';
+    } else if (currentPath.includes('/legal') || currentPath === '/app/legal') {
+      activeItemId = 'user-menu-legal';
+    }
+
+    // Add active class to the matching item
+    if (activeItemId) {
+      const activeItem = document.getElementById(activeItemId);
+      if (activeItem) {
+        activeItem.classList.add('active');
+      }
+    }
   }
 
   // Export functions to global scope

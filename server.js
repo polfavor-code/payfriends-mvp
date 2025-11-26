@@ -4619,6 +4619,33 @@ app.get('/features', (req, res) => {
   }
 });
 
+// Agreements page (serves agreements.html)
+app.get('/agreements', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'agreements.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// GroupTabs page (serves grouptabs.html)
+app.get('/grouptabs', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'grouptabs.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
+// FAQ page (serves faq.html)
+app.get('/faq', (req, res) => {
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'faq.html'));
+  } else {
+    res.redirect('/');
+  }
+});
+
 // Serve other static files from "public" folder
 app.use(express.static(path.join(__dirname, 'public')));
 
