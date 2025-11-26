@@ -127,14 +127,14 @@
     .btn-confirm-payment:hover{background:#ea580c}
     .btn-payment-issue{background:#dc2626; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px}
     .btn-payment-issue:hover{background:#b91c1c}
-    .messages-list{margin-top:12px}
-    .message-item{padding:10px; background:var(--card); border-radius:8px; margin:8px 0; font-size:14px; transition:all 0.2s ease; border:1px solid transparent}
+    .messages-list{margin-top:12px; display:flex; flex-direction:column; gap:8px}
+    .message-item{padding:16px 18px; background:transparent; border-radius:12px; margin:0; font-size:14px; transition:background 0.16s ease, border-color 0.16s ease, transform 0.08s ease; border:1px solid rgba(255,255,255,0.06); cursor:pointer}
     .message-item.message-clickable{cursor:pointer}
-    .message-item.message-clickable:hover{border-color:rgba(255,255,255,0.12)}
-    .message-item.message-unread{font-weight:500; background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.25)}
+    .message-item.message-clickable:hover{background:rgba(255,255,255,0.02); transform:translateY(-1px)}
+    .message-item.message-unread{font-weight:500; background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.3)}
     .message-item.message-unread.message-clickable{cursor:pointer}
-    .message-item.message-unread.message-clickable:hover{background:rgba(61,220,151,0.12); border-color:rgba(61,220,151,0.3); transform:translateX(2px)}
-    .unread-indicator{color:var(--accent); font-size:16px; margin-left:8px}
+    .message-item.message-unread.message-clickable:hover{background:rgba(61,220,151,0.08); border-color:rgba(61,220,151,0.35)}
+    .unread-indicator{color:var(--accent); font-size:16px; margin-left:8px; flex-shrink:0}
     .message-subject{font-weight:600; margin-bottom:4px}
     .message-date{color:var(--muted); font-size:12px}
     .empty-state{text-align:center; color:var(--muted); padding:32px; font-size:14px}
