@@ -3045,26 +3045,65 @@
         const firstRow = wizardCalculatorSchedule.rows[0];
         const lastRow = wizardCalculatorSchedule.rows[wizardCalculatorSchedule.rows.length - 1];
 
-        // Helper to convert Date object to YYYY-MM-DD
+        console.log('=== DEBUG: saveCalculatorAndContinue - Extracting Dates ===');
+        console.log('Schedule rows count:', wizardCalculatorSchedule.rows.length);
+        console.log('First row:', firstRow);
+        console.log('First row dueDate:', firstRow.dueDate);
+        console.log('First row dueDate type:', typeof firstRow.dueDate);
+        console.log('First row dueDate instanceof Date:', firstRow.dueDate instanceof Date);
+        console.log('Last row:', lastRow);
+        console.log('Last row dueDate:', lastRow.dueDate);
+        console.log('Repayment type:', repaymentType);
+
+        // Helper to convert Date object or date string to YYYY-MM-DD
         function formatDateYMD(date) {
-          if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
+          console.log('formatDateYMD called with:', date, 'Type:', typeof date, 'instanceof Date:', date instanceof Date);
+
+          if (!date) {
+            console.log('formatDateYMD returning null - no date provided');
+            return null;
+          }
+
+          // If it's already a string in YYYY-MM-DD format, return as-is
+          if (typeof date === 'string') {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+              console.log('formatDateYMD: date already in YYYY-MM-DD format:', date);
+              return date;
+            }
+            // Try to parse string as date
+            console.log('formatDateYMD: attempting to parse string as date');
+            date = new Date(date);
+          }
+
+          // Now it should be a Date object
+          if (!(date instanceof Date) || isNaN(date.getTime())) {
+            console.log('formatDateYMD returning null - invalid date after parsing');
+            return null;
+          }
+
           const year = date.getFullYear();
           const month = String(date.getMonth() + 1).padStart(2, '0');
           const day = String(date.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
+          const formatted = `${year}-${month}-${day}`;
+          console.log('formatDateYMD formatted result:', formatted);
+          return formatted;
         }
 
         if (repaymentType === 'one_time') {
           // For one-time, there's only one payment date
           const onlyDueDate = formatDateYMD(firstRow.dueDate);
+          console.log('One-time: onlyDueDate =', onlyDueDate);
           wizardData.installmentCount = 1;
           wizardData.oneTimeDueOption = firstPaymentDue;
           wizardData.dueDate = onlyDueDate;
           wizardData.finalDueDate = onlyDueDate; // Same as dueDate for one-time
+          console.log('One-time: Set wizardData.dueDate =', wizardData.dueDate);
         } else {
           // For installments, save first and final payment dates from schedule
           const firstDueDate = formatDateYMD(firstRow.dueDate);
           const finalDueDate = formatDateYMD(lastRow.dueDate);
+          console.log('Installments: firstDueDate =', firstDueDate);
+          console.log('Installments: finalDueDate =', finalDueDate);
 
           wizardData.installmentCount = numberOfInstallments;
           wizardData.paymentFrequency = paymentFrequency;
@@ -3073,18 +3112,27 @@
           wizardData.finalDueDate = finalDueDate;
           // Backend expects dueDate to be the final due date for installments
           wizardData.dueDate = finalDueDate;
+          console.log('Installments: Set wizardData.dueDate =', wizardData.dueDate);
         }
       } else {
         // Fallback if calculator didn't produce schedule (shouldn't happen)
+        console.log('=== WARNING: Calculator schedule missing or empty ===');
+        console.log('wizardCalculatorSchedule:', wizardCalculatorSchedule);
+        console.log('Has rows?:', wizardCalculatorSchedule?.rows);
+        console.log('Rows length?:', wizardCalculatorSchedule?.rows?.length);
+
         if (repaymentType === 'one_time') {
           wizardData.installmentCount = 1;
           wizardData.oneTimeDueOption = firstPaymentDue;
           wizardData.dueDate = firstPaymentDate || null;
+          console.log('Fallback: Set wizardData.dueDate =', wizardData.dueDate);
         } else {
           wizardData.installmentCount = numberOfInstallments;
           wizardData.paymentFrequency = paymentFrequency;
           wizardData.firstPaymentOption = firstPaymentDue;
           wizardData.firstPaymentDate = firstPaymentDate;
+          console.log('Fallback: Set wizardData.firstPaymentDate =', wizardData.firstPaymentDate);
+          console.log('Fallback: wizardData.dueDate NOT SET (missing for installments!)');
         }
       }
 
@@ -4061,13 +4109,34 @@
       const html = renderSummaryFields(wizardData, currentUser);
       content.innerHTML = html;
 
-      // Inject fairness icons into the table rows (Total interest and Total to repay)
-      const rowIcons = content.querySelectorAll('.pf-fairness-icon');
-      rowIcons.forEach(icon => {
-        icon.innerHTML = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle'});
+      // Inject fairness icons into "Total interest" and "Total to repay" rows
+      const rows = content.querySelectorAll('.summary-grid-row');
+      rows.forEach(row => {
+        const label = row.querySelector('.summary-grid-label');
+        const valueSpan = row.querySelector('.summary-grid-value');
+
+        if (label && valueSpan) {
+          const labelText = label.textContent.trim();
+
+          // Add heart icon to "Total interest" and "Total to repay" rows
+          if (labelText === 'Total interest:' || labelText === 'Total to repay:') {
+            // Create icon span
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'pf-fairness-icon';
+            iconSpan.title = 'Fairness Between Friends';
+            iconSpan.style.display = 'inline-flex';
+            iconSpan.style.alignItems = 'center';
+            iconSpan.style.verticalAlign = 'middle';
+            iconSpan.style.marginLeft = '4px';
+            iconSpan.innerHTML = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle'});
+
+            // Append icon to value span
+            valueSpan.appendChild(iconSpan);
+          }
+        }
       });
 
-      // Also inject icon in the footer text
+      // Inject icon in the footer text
       const footerIcon = content.parentElement.querySelector('.pf-fairness-icon-inline');
       if (footerIcon) {
         footerIcon.innerHTML = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle'});
@@ -4386,6 +4455,12 @@
         // wizardData is now properly populated by Step 2's saveCalculatorAndContinue()
         // which extracts dates directly from the calculator schedule
 
+        console.log('=== DEBUG: sendInvite - Start ===');
+        console.log('Full wizardData:', JSON.parse(JSON.stringify(wizardData)));
+        console.log('wizardData.dueDate:', wizardData.dueDate);
+        console.log('wizardData.finalDueDate:', wizardData.finalDueDate);
+        console.log('wizardData.firstPaymentDate:', wizardData.firstPaymentDate);
+
         // 1. borrowerEmail - REQUIRED
         const borrowerEmail = wizardData.friendEmail;
 
@@ -4403,6 +4478,7 @@
         // For one-time: dueDate = the single payment date
         // For installments: dueDate = finalDueDate (last payment)
         const dueDate = wizardData.dueDate;
+        console.log('dueDate captured:', dueDate);
 
         // 5. moneySentDate - can be null for "on acceptance"
         const moneySentDate = formatDateISO(wizardData.moneySentDate);
