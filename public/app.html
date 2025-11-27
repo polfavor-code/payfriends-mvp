@@ -776,10 +776,11 @@
 
     /* Next Steps Card */
     .next-steps-card {
-      background: var(--card);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 16px;
-      padding: 24px;
+      background: linear-gradient(135deg, rgba(69, 212, 139, 0.16), rgba(12, 18, 27, 0.95));
+      border-radius: 18px;
+      padding: 28px 28px 24px;
+      border: 1px solid rgba(69, 212, 139, 0.25);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
       margin: 24px 0;
     }
 
@@ -1576,16 +1577,14 @@
 
       <!-- Action buttons -->
       <div class="dashboard-actions">
-        <button onclick="toggleNewAgreement()" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
+        <button onclick="toggleNewAgreement()" class="dashboard-action-button" style="display:flex; align-items:center; gap:8px; padding:12px 20px; font-size:14px">
           <span style="font-size:18px; font-weight:bold">+</span>
           <span>New Loan Agreement</span>
         </button>
-        <a href="/grouptabs">
-          <button class="secondary" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
-            <span style="font-size:18px; font-weight:bold">+</span>
-            <span>New GroupTab</span>
-          </button>
-        </a>
+        <button onclick="window.location.href='/grouptabs'" class="secondary dashboard-action-button" style="display:flex; align-items:center; gap:8px; padding:12px 20px; font-size:14px">
+          <span style="font-size:18px; font-weight:bold">+</span>
+          <span>New GroupTab</span>
+        </button>
       </div>
     </div>
 
@@ -6730,12 +6729,20 @@
       return { isOverdue: false };
     }
 
-    async function detectTasks(agreements, currentUserId) {
+    async function detectTasks(agreements, currentUserId, userProfilePicture) {
       const tasks = [];
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const sevenDaysFromNow = new Date(today);
       sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+      if (!userProfilePicture) {
+        tasks.push({
+          type: 'add-profile-picture',
+          text: 'Add a profile photo to make your loan agreements feel more personal.',
+          action: () => window.location.href = '/app/profile'
+        });
+      }
 
       for (const agreement of agreements) {
         const isLender = agreement.lender_user_id === currentUserId;
@@ -6748,7 +6755,7 @@
             tasks.push({
               type: 'approve-new-agreement',
               text: `Approve new agreement from ${counterpartyName}.`,
-              action: () => window.location.href = `/manage-agreement/${agreement.id}`
+              action: () => window.location.href = `/agreements/${agreement.id}/manage`
             });
           } else {
             tasks.push({
@@ -6764,7 +6771,7 @@
             tasks.push({
               type: 'report-repayment',
               text: 'Report a repayment you received.',
-              action: () => window.location.href = `/manage-agreement/${agreement.id}`
+              action: () => window.location.href = `/agreements/${agreement.id}/manage`
             });
           } else {
             if (agreement.futurePayments && agreement.futurePayments.length > 0) {
@@ -6777,7 +6784,7 @@
                 tasks.push({
                   type: 'make-repayment',
                   text: `Upcoming repayment: ${amount} due on ${formattedDate}.`,
-                  action: () => window.location.href = `/manage-agreement/${agreement.id}`
+                  action: () => window.location.href = `/agreements/${agreement.id}/manage`
                 });
               }
             }
@@ -6831,12 +6838,12 @@
       }
     }
 
-    async function renderNextStepsCard(agreements, currentUserId) {
+    async function renderNextStepsCard(agreements, currentUserId, userProfilePicture) {
       const card = document.getElementById('next-steps-card');
       const content = document.getElementById('next-steps-content');
       if (!card || !content) return;
 
-      const tasks = await detectTasks(agreements, currentUserId);
+      const tasks = await detectTasks(agreements, currentUserId, userProfilePicture);
 
       if (tasks.length === 0) {
         content.innerHTML = `
@@ -6883,7 +6890,7 @@
         if (!data || !data.user) return;
 
         await renderUrgentBanner(agreements, data.user.id);
-        await renderNextStepsCard(agreements, data.user.id);
+        await renderNextStepsCard(agreements, data.user.id, data.user.profilePicture);
       } catch (err) {
         console.error('Error loading dashboard tasks:', err);
       }
