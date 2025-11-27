@@ -1450,6 +1450,11 @@
         </p>
       </div>
 
+      <!-- Tasks section (for initial payment reports) -->
+      <div id="dashboard-tasks" style="margin:24px 0; display:none">
+        <!-- Tasks will be populated by JavaScript -->
+      </div>
+
       <!-- Summary boxes grid (Active and Pending only) -->
       <div class="summary-boxes-grid" id="summary-boxes-grid">
         <!-- Boxes will be populated by JavaScript -->
@@ -5710,6 +5715,9 @@
             } else if (msg.event_type === 'HARDSHIP_RESOLVED') {
               // Repayment issue resolved
               activityText = msg.body;
+            } else if (msg.event_type === 'LENDER_REPORTED_INITIAL_PAYMENT') {
+              // Initial payment reported by lender
+              activityText = msg.body;
             }
 
             // Determine the link URL based on agreement_id and event_type
@@ -6444,6 +6452,33 @@
             const fallbackName = email.includes('@') ? email.split('@')[0] : email;
             const displayName = firstName || fallbackName || 'you';
             greeting.textContent = `Hi ${displayName}, welcome to your dashboard.`;
+          }
+
+          // Populate initial payment tasks
+          const tasksContainer = document.getElementById('dashboard-tasks');
+          if (tasksContainer && data.initialPaymentTasks && data.initialPaymentTasks.length > 0) {
+            const tasksHTML = data.initialPaymentTasks.map(task => {
+              return `
+                <div class="task-card" style="background:rgba(250,204,21,0.08); border:1px solid rgba(250,204,21,0.3); border-radius:12px; padding:20px; margin-bottom:16px">
+                  <div style="display:flex; align-items:flex-start; gap:16px">
+                    <div style="flex:1">
+                      <div style="font-size:16px; font-weight:600; margin-bottom:8px; color:var(--text)">TASK: Make the initial payment</div>
+                      <div style="font-size:14px; line-height:1.6; color:var(--text); opacity:0.9; margin-bottom:12px">
+                        <p style="margin:0 0 8px 0">Because you selected loan start = when the agreement is accepted, the loan officially starts today.</p>
+                        <p style="margin:0">To keep your agreement fair and transparent, please complete your initial payment to ${escapeHTML(task.borrowerFirstName)} today.</p>
+                      </div>
+                      <button onclick="window.location.href='/agreements/${task.agreementId}/report-payment'" style="background:var(--primary); color:var(--primary-text); border:none; padding:10px 18px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s">
+                        Report Payment
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+            tasksContainer.innerHTML = tasksHTML;
+            tasksContainer.style.display = 'block';
+          } else if (tasksContainer) {
+            tasksContainer.style.display = 'none';
           }
 
           // Populate summary boxes (only Active and Pending - no Settled, no GroupTabs here)

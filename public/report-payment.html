@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayFriends — Report Initial Payment</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- App-wide styles -->
+  <link rel="stylesheet" href="/css/app.css" />
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
+  <!-- Centralized currency formatters -->
+  <script src="/js/formatters.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+      --primary: #3ddc97; --primary-text: #0d130f;
+      --danger:#ef4444;
+      --warning:#f97316;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:800px; margin:0 auto; padding:32px 16px;}
+    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
+    h1{margin:0 0 8px 0; font-size:28px}
+    h2{margin:0 0 16px 0; font-size:20px}
+    p{color:var(--muted); line-height:1.6; margin:8px 0}
+    .back-link{display:inline-block; color:var(--accent); text-decoration:none; margin-bottom:24px; font-size:14px}
+    .back-link:hover{text-decoration:underline}
+    .summary-row{display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .summary-row:last-child{border-bottom:none}
+    .summary-label{color:var(--muted); font-weight:500; font-size:14px}
+    .summary-value{color:var(--text); font-weight:600; font-size:14px}
+    .form-group{margin:24px 0}
+    .form-label{display:block; color:var(--text); font-weight:600; margin-bottom:8px; font-size:14px}
+    .form-help{color:var(--muted); font-size:13px; margin-top:4px}
+    select{width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px; cursor:pointer}
+    select:focus{outline:none; border-color:var(--accent); background:var(--bg)}
+    select:hover{background:var(--card)}
+    .file-input-wrapper{position:relative; overflow:hidden; display:inline-block; width:100%}
+    .file-input-wrapper input[type=file]{font-size:100px; position:absolute; left:0; top:0; opacity:0; cursor:pointer}
+    .file-input-label{display:block; padding:12px; border:2px dashed rgba(255,255,255,0.15); border-radius:8px; text-align:center; color:var(--muted); font-size:14px; cursor:pointer; transition:all 0.2s}
+    .file-input-label:hover{border-color:var(--accent); background:rgba(61,220,151,0.05)}
+    .file-input-label.has-file{border-color:var(--accent); border-style:solid; background:rgba(61,220,151,0.08); color:var(--accent)}
+    .info-box{background:rgba(100,100,100,0.15); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:16px; margin:24px 0}
+    .info-box-title{font-weight:600; margin-bottom:8px; font-size:14px; color:var(--text)}
+    .info-box-content{font-size:13px; line-height:1.6; color:var(--muted)}
+    .info-box-content p{margin:0 0 8px 0}
+    .info-box-content p:last-child{margin:0}
+    button{padding:14px 24px; border-radius:10px; border:0; background:var(--accent); color:var(--primary-text); font-weight:700; cursor:pointer; font-size:15px; width:100%; transition:all 0.2s}
+    button:hover{filter:brightness(1.1)}
+    button:disabled{opacity:0.5; cursor:not-allowed}
+    button.secondary{background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-top:12px}
+    button.secondary:hover{background:rgba(255,255,255,0.05)}
+    .status-message{padding:12px; border-radius:8px; margin:16px 0; font-size:14px; display:none}
+    .status-message.error{background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#ff6b6b}
+    .status-message.success{background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.3); color:var(--accent)}
+    .hidden{display:none}
+    .loading-overlay{position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:9999}
+    .loading-overlay.active{display:flex}
+    .spinner{width:40px; height:40px; border:4px solid rgba(255,255,255,0.1); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div id="header-container"></div>
+
+  <div class="container">
+    <a href="/app" class="back-link">&lt; Back to Dashboard</a>
+
+    <h1>Report Initial Payment</h1>
+    <p style="color:var(--muted); font-size:15px; margin-bottom:24px">Record that you've made the initial payment for this loan agreement.</p>
+
+    <div id="status-message" class="status-message"></div>
+
+    <!-- Agreement Summary Card -->
+    <div class="card">
+      <h2>Agreement Summary</h2>
+      <div id="agreement-summary">
+        <div class="summary-row">
+          <span class="summary-label">Borrower</span>
+          <span class="summary-value" id="borrower-name">Loading...</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Amount due now</span>
+          <span class="summary-value" id="amount-due">Loading...</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Loan start date</span>
+          <span class="summary-value" id="loan-start-date">Today (agreement accepted)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Report Form -->
+    <div class="card">
+      <h2>Payment Details</h2>
+      <form id="payment-report-form">
+        <div class="form-group">
+          <label class="form-label" for="payment-method">How did you pay? (optional)</label>
+          <select id="payment-method" name="paymentMethod">
+            <option value="">Select payment method</option>
+            <option value="bank_transfer">Bank transfer</option>
+            <option value="cash">Cash</option>
+            <option value="crypto">Crypto</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="proof-upload">Upload proof of payment (optional)</label>
+          <div class="file-input-wrapper">
+            <input type="file" id="proof-upload" name="proof" accept="image/*,application/pdf" />
+            <label for="proof-upload" class="file-input-label" id="file-label">
+              Click to select a file (JPG, PNG, or PDF)
+            </label>
+          </div>
+          <p class="form-help">Supported formats: JPG, PNG, PDF (max 10MB)</p>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-title">Info</div>
+          <div class="info-box-content">
+            <p>Uploading proof is optional but highly recommended.</p>
+            <p>It will only be visible to you and the borrower.</p>
+            <p>PayFriends will never share this information with any third parties.</p>
+          </div>
+        </div>
+
+        <button type="submit" id="submit-button">Save Payment Report</button>
+        <button type="button" class="secondary" onclick="window.location.href='/app'">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <script>
+    // Helper function to escape HTML
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Get agreement ID from URL
+    const pathParts = window.location.pathname.split('/');
+    const agreementId = pathParts[2]; // /agreements/:id/report-payment
+
+    let agreementData = null;
+
+    // Load agreement data
+    async function loadAgreement() {
+      try {
+        const response = await fetch(`/api/agreements/${agreementId}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            showError('Agreement not found');
+            setTimeout(() => window.location.href = '/app', 2000);
+            return;
+          }
+          throw new Error('Failed to load agreement');
+        }
+
+        const result = await response.json();
+        agreementData = result.agreement;
+
+        // Populate summary
+        const borrowerName = agreementData.borrower_full_name || agreementData.friend_first_name || agreementData.borrower_email;
+        document.getElementById('borrower-name').textContent = borrowerName;
+        document.getElementById('amount-due').textContent = formatCurrency0(agreementData.amount_cents);
+
+        // Check if this agreement requires initial payment report
+        if (agreementData.money_sent_date !== 'on-acceptance') {
+          showError('This agreement does not require an initial payment report');
+          setTimeout(() => window.location.href = `/agreements/${agreementId}/manage`, 2000);
+          return;
+        }
+
+        // Check if user is the lender
+        const userResponse = await fetch('/api/user');
+        const userData = await userResponse.json();
+        if (agreementData.lender_user_id !== userData.id) {
+          showError('Only the lender can report the initial payment');
+          setTimeout(() => window.location.href = '/app', 2000);
+          return;
+        }
+
+        // Check if payment has already been reported
+        const reportResponse = await fetch(`/api/agreements/${agreementId}/initial-payment-report`);
+        if (reportResponse.ok) {
+          const reportResult = await reportResponse.json();
+          if (reportResult.paymentReport && reportResult.paymentReport.isCompleted) {
+            showError('The initial payment has already been reported');
+            setTimeout(() => window.location.href = `/agreements/${agreementId}/manage`, 2000);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading agreement:', error);
+        showError('Error loading agreement. Please try again.');
+      }
+    }
+
+    // Handle file input change
+    document.getElementById('proof-upload').addEventListener('change', function(e) {
+      const fileLabel = document.getElementById('file-label');
+      if (this.files && this.files[0]) {
+        const fileName = this.files[0].name;
+        const fileSize = (this.files[0].size / 1024 / 1024).toFixed(2); // MB
+        fileLabel.textContent = `${fileName} (${fileSize} MB)`;
+        fileLabel.classList.add('has-file');
+      } else {
+        fileLabel.textContent = 'Click to select a file (JPG, PNG, or PDF)';
+        fileLabel.classList.remove('has-file');
+      }
+    });
+
+    // Handle form submission
+    document.getElementById('payment-report-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const submitButton = document.getElementById('submit-button');
+      const loadingOverlay = document.getElementById('loading-overlay');
+
+      // Disable submit button
+      submitButton.disabled = true;
+      loadingOverlay.classList.add('active');
+
+      try {
+        // Prepare form data
+        const formData = new FormData();
+
+        const paymentMethod = document.getElementById('payment-method').value;
+        if (paymentMethod) {
+          formData.append('paymentMethod', paymentMethod);
+        }
+
+        const proofFile = document.getElementById('proof-upload').files[0];
+        if (proofFile) {
+          // Validate file size (max 10MB)
+          if (proofFile.size > 10 * 1024 * 1024) {
+            showError('File size must be less than 10MB');
+            submitButton.disabled = false;
+            loadingOverlay.classList.remove('active');
+            return;
+          }
+          formData.append('proof', proofFile);
+        }
+
+        // Submit the form
+        const response = await fetch(`/api/agreements/${agreementId}/report-initial-payment`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          showSuccess('Payment report saved successfully!');
+          setTimeout(() => {
+            window.location.href = '/app';
+          }, 1500);
+        } else {
+          showError(result.error || 'Failed to save payment report');
+          submitButton.disabled = false;
+          loadingOverlay.classList.remove('active');
+        }
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        showError('Error submitting form. Please try again.');
+        submitButton.disabled = false;
+        loadingOverlay.classList.remove('active');
+      }
+    });
+
+    function showError(message) {
+      const statusMessage = document.getElementById('status-message');
+      statusMessage.textContent = message;
+      statusMessage.className = 'status-message error';
+      statusMessage.style.display = 'block';
+      setTimeout(() => {
+        statusMessage.style.display = 'none';
+      }, 5000);
+    }
+
+    function showSuccess(message) {
+      const statusMessage = document.getElementById('status-message');
+      statusMessage.textContent = message;
+      statusMessage.className = 'status-message success';
+      statusMessage.style.display = 'block';
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      await PayFriendsHeader.initialize({
+        hasActivitySection: true
+      });
+      await loadAgreement();
+    });
+  </script>
+</body>
+</html>

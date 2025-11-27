@@ -149,6 +149,22 @@ db.exec(`
     FOREIGN KEY (agreement_id) REFERENCES agreements(id),
     FOREIGN KEY (recorded_by_user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS initial_payment_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agreement_id INTEGER NOT NULL,
+    lender_user_id INTEGER NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    payment_method TEXT,
+    proof_file_path TEXT,
+    proof_original_name TEXT,
+    proof_mime_type TEXT,
+    reported_at TEXT,
+    is_completed INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (agreement_id) REFERENCES agreements(id),
+    FOREIGN KEY (lender_user_id) REFERENCES users(id)
+  );
 `);
 
 // Add proof of payment columns if they don't exist (for existing databases)
@@ -3817,6 +3833,199 @@ app.post('/api/agreements/:id/renegotiation/respond-counter-values', requireAuth
   }
 });
 
+// Get initial payment report for an agreement
+app.get('/api/agreements/:id/initial-payment-report', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get agreement and verify user has access
+    const agreement = db.prepare(`
+      SELECT a.* FROM agreements a
+      WHERE a.id = ? AND (a.lender_user_id = ? OR a.borrower_user_id = ?)
+    `).get(id, req.user.id, req.user.id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found' });
+    }
+
+    // Get the initial payment report if it exists
+    const paymentReport = db.prepare(`
+      SELECT * FROM initial_payment_reports
+      WHERE agreement_id = ?
+    `).get(id);
+
+    if (!paymentReport) {
+      return res.json({ success: true, paymentReport: null });
+    }
+
+    res.json({
+      success: true,
+      paymentReport: {
+        id: paymentReport.id,
+        agreementId: paymentReport.agreement_id,
+        amountCents: paymentReport.amount_cents,
+        paymentMethod: paymentReport.payment_method,
+        reportedAt: paymentReport.reported_at,
+        isCompleted: paymentReport.is_completed === 1,
+        hasProof: !!paymentReport.proof_file_path,
+        proofOriginalName: paymentReport.proof_original_name
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching initial payment report:', err);
+    res.status(500).json({ error: 'Server error fetching initial payment report' });
+  }
+});
+
+// Get proof file for initial payment report
+app.get('/api/initial-payment-reports/:id/proof', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Get the payment report and verify access
+    const paymentReport = db.prepare(`
+      SELECT ipr.*, a.lender_user_id, a.borrower_user_id
+      FROM initial_payment_reports ipr
+      JOIN agreements a ON ipr.agreement_id = a.id
+      WHERE ipr.id = ?
+    `).get(id);
+
+    if (!paymentReport) {
+      return res.status(404).json({ error: 'Payment report not found' });
+    }
+
+    // Verify user is either lender or borrower
+    if (req.user.id !== paymentReport.lender_user_id && req.user.id !== paymentReport.borrower_user_id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    if (!paymentReport.proof_file_path) {
+      return res.status(404).json({ error: 'No proof file found' });
+    }
+
+    const filePath = path.join(__dirname, 'uploads', 'payments', paymentReport.proof_file_path);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Proof file not found on server' });
+    }
+
+    // Set content type based on mime type
+    if (paymentReport.proof_mime_type) {
+      res.setHeader('Content-Type', paymentReport.proof_mime_type);
+    }
+
+    // Set content disposition for download
+    res.setHeader('Content-Disposition', `inline; filename="${paymentReport.proof_original_name || 'proof.jpg'}"`);
+
+    res.sendFile(filePath);
+  } catch (err) {
+    console.error('Error fetching proof file:', err);
+    res.status(500).json({ error: 'Server error fetching proof file' });
+  }
+});
+
+// Submit initial payment report for 'on-acceptance' agreements
+app.post('/api/agreements/:id/report-initial-payment', requireAuth, upload.single('proof'), (req, res) => {
+  const { id } = req.params;
+  const { paymentMethod } = req.body || {};
+
+  try {
+    // Get agreement and verify user is the lender
+    const agreement = db.prepare(`
+      SELECT a.*,
+        u_lender.full_name as lender_full_name,
+        u_lender.email as lender_email,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email,
+        u_borrower.id as borrower_id
+      FROM agreements a
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      WHERE a.id = ? AND a.lender_user_id = ?
+    `).get(id, req.user.id);
+
+    if (!agreement) {
+      return res.status(404).json({ error: 'Agreement not found or you are not the lender' });
+    }
+
+    // Verify this is an 'on-acceptance' agreement
+    if (agreement.money_sent_date !== 'on-acceptance') {
+      return res.status(400).json({ error: 'This agreement does not require an initial payment report' });
+    }
+
+    // Verify agreement is active
+    if (agreement.status !== 'active') {
+      return res.status(400).json({ error: 'Agreement must be active to report initial payment' });
+    }
+
+    // Get the initial payment report
+    const paymentReport = db.prepare(`
+      SELECT * FROM initial_payment_reports
+      WHERE agreement_id = ? AND lender_user_id = ?
+    `).get(id, req.user.id);
+
+    if (!paymentReport) {
+      return res.status(404).json({ error: 'No initial payment report found for this agreement' });
+    }
+
+    if (paymentReport.is_completed) {
+      return res.status(400).json({ error: 'Initial payment has already been reported' });
+    }
+
+    const now = new Date().toISOString();
+
+    // Handle proof file upload if present
+    let proofFilePath = null;
+    let proofOriginalName = null;
+    let proofMimeType = null;
+
+    if (req.file) {
+      proofFilePath = req.file.filename;
+      proofOriginalName = req.file.originalname;
+      proofMimeType = req.file.mimetype;
+    }
+
+    // Update the payment report
+    db.prepare(`
+      UPDATE initial_payment_reports
+      SET payment_method = ?,
+          proof_file_path = ?,
+          proof_original_name = ?,
+          proof_mime_type = ?,
+          reported_at = ?,
+          is_completed = 1
+      WHERE id = ?
+    `).run(
+      paymentMethod || null,
+      proofFilePath,
+      proofOriginalName,
+      proofMimeType,
+      now,
+      paymentReport.id
+    );
+
+    // Create activity message for borrower
+    const lenderFirstName = (agreement.lender_full_name || '').split(' ')[0] || 'Lender';
+
+    db.prepare(`
+      INSERT INTO messages (user_id, agreement_id, subject, body, created_at, event_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      agreement.borrower_id,
+      id,
+      'Initial payment reported',
+      `${lenderFirstName} reported the initial payment for your loan agreement.`,
+      now,
+      'LENDER_REPORTED_INITIAL_PAYMENT'
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error reporting initial payment:', err);
+    res.status(500).json({ error: 'Server error reporting initial payment' });
+  }
+});
+
 // Create a payment for an agreement
 app.post('/api/agreements/:id/payments', requireAuth, upload.single('proof'), (req, res) => {
   const { id } = req.params;
@@ -4561,6 +4770,25 @@ app.post('/api/invites/:token/accept', requireAuth, (req, res) => {
       'AGREEMENT_ACCEPTED'
     );
 
+    // If loan start mode is 'on-acceptance', create initial payment report task for lender
+    if (invite.money_sent_date === 'on-acceptance') {
+      db.prepare(`
+        INSERT INTO initial_payment_reports (
+          agreement_id,
+          lender_user_id,
+          amount_cents,
+          created_at,
+          is_completed
+        )
+        VALUES (?, ?, ?, ?, 0)
+      `).run(
+        invite.agreement_id,
+        invite.lender_user_id,
+        invite.amount_cents,
+        now
+      );
+    }
+
     res.json({ success: true, agreementId: invite.agreement_id });
   } catch (err) {
     console.error('Error accepting invite:', err);
@@ -4697,6 +4925,38 @@ app.get('/app', (req, res) => {
     // Take first 3 agreements for summary (already enriched)
     const agreementsSummary = agreements.slice(0, 3);
 
+    // Fetch pending initial payment reports (for lenders with 'on-acceptance' agreements)
+    const pendingPaymentReports = db.prepare(`
+      SELECT ipr.*,
+        a.money_sent_date,
+        a.status as agreement_status,
+        a.amount_cents,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email
+      FROM initial_payment_reports ipr
+      JOIN agreements a ON ipr.agreement_id = a.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      WHERE ipr.lender_user_id = ?
+        AND ipr.is_completed = 0
+        AND a.status = 'active'
+        AND a.money_sent_date = 'on-acceptance'
+      ORDER BY ipr.created_at ASC
+    `).all(req.user.id);
+
+    // Transform to tasks with borrower first name
+    const initialPaymentTasks = pendingPaymentReports.map(report => {
+      const borrowerFirstName = report.borrower_full_name
+        ? report.borrower_full_name.split(' ')[0]
+        : report.borrower_email.split('@')[0];
+
+      return {
+        agreementId: report.agreement_id,
+        borrowerFirstName,
+        borrowerFullName: report.borrower_full_name,
+        amountCents: report.amount_cents
+      };
+    });
+
     // Read the HTML template
     const htmlPath = path.join(__dirname, 'public', 'app.html');
     let html = fs.readFileSync(htmlPath, 'utf8');
@@ -4718,6 +4978,7 @@ app.get('/app', (req, res) => {
         totalGroupTabs
       },
       agreementsSummary,
+      initialPaymentTasks,
       hasAnyAgreements: totalAgreements > 0,
       hasAnyGroupTabs: totalGroupTabs > 0,
       isZeroState: totalAgreements === 0 && totalGroupTabs === 0
@@ -4889,6 +5150,14 @@ app.get('/agreements/:id/manage', (req, res) => {
     return res.redirect('/');
   }
   res.sendFile(path.join(__dirname, 'public', 'review-details.html'));
+});
+
+// Report initial payment (logged-in lender only)
+app.get('/agreements/:id/report-payment', (req, res) => {
+  if (!req.user) {
+    return res.redirect('/');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'report-payment.html'));
 });
 
 // Legacy redirect: /view → /manage

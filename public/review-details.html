@@ -545,6 +545,14 @@
         </div>
       </div>
 
+      <!-- Initial Payment Status (only shown for on-acceptance agreements) -->
+      <div id="initial-payment-card" class="hidden" style="margin:16px 0">
+        <h3 style="margin:0 0 16px 0; font-size:16px">Initial Payment</h3>
+        <div id="initial-payment-content">
+          <!-- Populated dynamically by JavaScript -->
+        </div>
+      </div>
+
       <!-- Fairness Between Friends (collapsible) -->
       <div id="fairness-card" style="margin:16px 0">
         <button onclick="toggleReviewSection('fairness-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
@@ -2372,6 +2380,7 @@
       populateInterestCalcDetail();
       populatePaymentsAndRemindersDetail();
       populatePaymentMethodsDetail();
+      populateInitialPaymentDetail();
       populateShareDetail();
     }
 
@@ -4930,6 +4939,92 @@
 
       // Hide the separate payment methods section - now integrated into Repayment details & reminders
       card.classList.add('hidden');
+    }
+
+    // Populate initial payment detail (only for on-acceptance agreements)
+    async function populateInitialPaymentDetail() {
+      const card = document.getElementById('initial-payment-card');
+      const content = document.getElementById('initial-payment-content');
+
+      // Only show for on-acceptance agreements
+      if (agreement.money_sent_date !== 'on-acceptance') {
+        card.classList.add('hidden');
+        return;
+      }
+
+      // Only show if agreement is active or settled
+      if (agreement.status !== 'active' && agreement.status !== 'settled') {
+        card.classList.add('hidden');
+        return;
+      }
+
+      try {
+        // Fetch initial payment report
+        const response = await fetch(`/api/agreements/${agreementId}/initial-payment-report`);
+        if (!response.ok) {
+          card.classList.add('hidden');
+          return;
+        }
+
+        const result = await response.json();
+        const report = result.paymentReport;
+
+        if (!report) {
+          card.classList.add('hidden');
+          return;
+        }
+
+        // Show the card
+        card.classList.remove('hidden');
+
+        let html = '';
+
+        if (report.isCompleted) {
+          // Payment has been reported
+          html += '<div style="padding:12px; background:rgba(61,220,151,0.08); border:1px solid rgba(61,220,151,0.2); border-radius:8px">';
+          html += '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px">';
+          html += '<span style="color:var(--accent); font-weight:600; font-size:14px">Payment completed</span>';
+          html += '</div>';
+
+          if (report.paymentMethod) {
+            const methodDisplay = {
+              'bank_transfer': 'Bank transfer',
+              'cash': 'Cash',
+              'crypto': 'Crypto',
+              'other': 'Other'
+            }[report.paymentMethod] || report.paymentMethod;
+
+            html += '<div style="color:var(--muted); font-size:13px; margin-bottom:6px">Payment method: ' + escapeHTML(methodDisplay) + '</div>';
+          }
+
+          if (report.hasProof) {
+            html += '<a href="/api/initial-payment-reports/' + report.id + '/proof" target="_blank" style="color:var(--accent); font-size:13px; text-decoration:none">';
+            html += 'View proof of payment →';
+            html += '</a>';
+          }
+
+          html += '</div>';
+        } else {
+          // Payment not yet reported - show for lender only
+          const isLender = agreement.lender_user_id === currentUser.id;
+          if (isLender) {
+            html += '<div style="padding:12px; background:rgba(250,204,21,0.08); border:1px solid rgba(250,204,21,0.3); border-radius:8px">';
+            html += '<div style="color:var(--muted); font-size:14px; margin-bottom:12px">You have not yet reported the initial payment for this agreement.</div>';
+            html += '<a href="/agreements/' + agreementId + '/report-payment" style="display:inline-block; padding:10px 16px; background:var(--accent); color:var(--primary-text); border-radius:8px; text-decoration:none; font-weight:600; font-size:14px">Report Payment</a>';
+            html += '</div>';
+          } else {
+            // Borrower sees that payment is not yet reported
+            html += '<div style="padding:12px; background:rgba(100,100,100,0.08); border:1px solid rgba(255,255,255,0.1); border-radius:8px">';
+            html += '<div style="color:var(--muted); font-size:14px">The lender has not yet reported the initial payment.</div>';
+            html += '</div>';
+          }
+        }
+
+        content.innerHTML = html;
+      } catch (error) {
+        console.error('Error loading initial payment report:', error);
+        card.classList.add('hidden');
+      }
     }
 
     // Populate share detail (lender only, for pending agreements)
