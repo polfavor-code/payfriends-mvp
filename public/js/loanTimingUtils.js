@@ -90,9 +90,18 @@
     let loanStartType, loanStartDate, loanStartOption;
 
     if (!moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance') {
-      loanStartType = 'WHEN_AGREEMENT_ACCEPTED';
-      loanStartDate = null;
-      loanStartOption = 'upon_acceptance';
+      // Check if we have accepted_at as actual start date (for active agreements)
+      if ((agreement.status === 'active' || agreement.status === 'settled') && agreement.accepted_at) {
+        // Use accepted_at date (extract date part from ISO timestamp)
+        const acceptedDate = agreement.accepted_at.split('T')[0];
+        loanStartType = 'ON_SPECIFIC_DATE';
+        loanStartDate = acceptedDate;
+        loanStartOption = 'upon_acceptance';
+      } else {
+        loanStartType = 'WHEN_AGREEMENT_ACCEPTED';
+        loanStartDate = null;
+        loanStartOption = 'upon_acceptance';
+      }
     } else {
       loanStartType = 'ON_SPECIFIC_DATE';
       loanStartDate = moneySentDate;
@@ -145,6 +154,11 @@
    */
   function getLoanStartDisplay(config, agreementStatus, acceptedAt) {
     if (config.loanStartType === 'WHEN_AGREEMENT_ACCEPTED') {
+      // If agreement is active/settled and we have an acceptance date, show it
+      if ((agreementStatus === 'active' || agreementStatus === 'settled') && acceptedAt) {
+        return formatDate(acceptedAt);
+      }
+      // Otherwise show placeholder text for pending agreements
       return 'When agreement is accepted';
     }
 

@@ -365,6 +365,13 @@ try {
   // Migration already done or error, ignore
 }
 
+// Add accepted_at column to agreements table
+try {
+  db.exec(`ALTER TABLE agreements ADD COLUMN accepted_at TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // --- multer setup for file uploads ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -1341,7 +1348,7 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       u_borrower.full_name as borrower_full_name,
       u_borrower.email as borrower_email,
       u_borrower.profile_picture as borrower_profile_picture,
-      invite.accepted_at as accepted_at
+      COALESCE(a.accepted_at, invite.accepted_at) as accepted_at
     FROM agreements a
     LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
     LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
@@ -2370,11 +2377,14 @@ app.get('/api/agreements/:id', requireAuth, (req, res) => {
 
     console.log('[Agreement API] Agreement found - lender_public_id:', agreement.lender_public_id, 'borrower_public_id:', agreement.borrower_public_id);
 
-    // Get invite accepted_at timestamp
-    const invite = db.prepare(`
-      SELECT accepted_at FROM agreement_invites WHERE agreement_id = ? ORDER BY created_at DESC LIMIT 1
-    `).get(id);
-    const acceptedAt = invite ? invite.accepted_at : null;
+    // Get accepted_at timestamp (prefer from agreements table, fallback to invites)
+    let acceptedAt = agreement.accepted_at;
+    if (!acceptedAt) {
+      const invite = db.prepare(`
+        SELECT accepted_at FROM agreement_invites WHERE agreement_id = ? ORDER BY created_at DESC LIMIT 1
+      `).get(id);
+      acceptedAt = invite ? invite.accepted_at : null;
+    }
 
     // Add payment totals and calculate outstanding with dynamic interest
     const totals = getPaymentTotals(id);
@@ -2432,13 +2442,31 @@ app.post('/api/agreements/:id/accept', requireAuth, (req, res) => {
     }
 
     const now = new Date().toISOString();
+    const nowDate = now.split('T')[0]; // YYYY-MM-DD format
 
-    // Update agreement status
-    db.prepare(`
-      UPDATE agreements
-      SET status = 'active'
-      WHERE id = ?
-    `).run(id);
+    // Check if money_sent_date needs to be updated
+    const moneySentDate = agreement.money_sent_date;
+    const shouldUpdateMoneySentDate = !moneySentDate ||
+                                       moneySentDate === 'on-acceptance' ||
+                                       moneySentDate === 'upon agreement acceptance';
+
+    // Update agreement status and dates
+    if (shouldUpdateMoneySentDate) {
+      db.prepare(`
+        UPDATE agreements
+        SET status = 'active',
+            accepted_at = ?,
+            money_sent_date = ?
+        WHERE id = ?
+      `).run(now, nowDate, id);
+    } else {
+      db.prepare(`
+        UPDATE agreements
+        SET status = 'active',
+            accepted_at = ?
+        WHERE id = ?
+      `).run(now, id);
+    }
 
     // Create activity messages for both parties
     const borrowerName = req.user.full_name || agreement.friend_first_name || req.user.email;
@@ -4528,13 +4556,35 @@ app.post('/api/invites/:token/accept', requireAuth, (req, res) => {
     }
 
     const now = new Date().toISOString();
+    const nowDate = now.split('T')[0]; // YYYY-MM-DD format
 
-    // Update agreement status and borrower_user_id
-    db.prepare(`
-      UPDATE agreements
-      SET status = 'active', borrower_user_id = ?, fairness_accepted = ?
-      WHERE id = ?
-    `).run(req.user.id, fairnessAccepted ? 1 : 0, invite.agreement_id);
+    // Check if money_sent_date needs to be updated
+    const moneySentDate = invite.money_sent_date;
+    const shouldUpdateMoneySentDate = !moneySentDate ||
+                                       moneySentDate === 'on-acceptance' ||
+                                       moneySentDate === 'upon agreement acceptance';
+
+    // Update agreement status, borrower_user_id, and dates
+    if (shouldUpdateMoneySentDate) {
+      db.prepare(`
+        UPDATE agreements
+        SET status = 'active',
+            borrower_user_id = ?,
+            fairness_accepted = ?,
+            accepted_at = ?,
+            money_sent_date = ?
+        WHERE id = ?
+      `).run(req.user.id, fairnessAccepted ? 1 : 0, now, nowDate, invite.agreement_id);
+    } else {
+      db.prepare(`
+        UPDATE agreements
+        SET status = 'active',
+            borrower_user_id = ?,
+            fairness_accepted = ?,
+            accepted_at = ?
+        WHERE id = ?
+      `).run(req.user.id, fairnessAccepted ? 1 : 0, now, invite.agreement_id);
+    }
 
     // Mark invite as accepted
     db.prepare(`
