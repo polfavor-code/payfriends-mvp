@@ -107,10 +107,17 @@ const SUMMARY_ORDER_ONETIME = [
  */
 function getFullRepaymentDueDateDisplay(wizardData) {
   // Check if loan start is "Upon agreement acceptance"
-  const isLoanStartUponAcceptance = wizardData.moneySentDate === 'on-acceptance' || wizardData.moneySentOption === 'on-acceptance';
+  // Support both 'on-acceptance' (from backend) and 'upon_acceptance' (from wizard)
+  const isLoanStartUponAcceptance =
+    wizardData.moneySentDate === 'on-acceptance' ||
+    wizardData.moneySentDate === 'upon_acceptance' ||
+    wizardData.moneySentOption === 'on-acceptance' ||
+    wizardData.moneySentOption === 'upon_acceptance';
 
-  // Check if due date option is a relative period (not "pick_date")
-  const isRelativeDueDate = wizardData.oneTimeDueOption && wizardData.oneTimeDueOption !== 'pick_date';
+  // Check if due date option is a relative period (not "pick_date" or "pick-date")
+  const isRelativeDueDate = wizardData.oneTimeDueOption &&
+    wizardData.oneTimeDueOption !== 'pick_date' &&
+    wizardData.oneTimeDueOption !== 'pick-date';
 
   // If loan start is "upon acceptance" AND due date is relative, show relative text
   if (isLoanStartUponAcceptance && isRelativeDueDate) {

@@ -2189,6 +2189,20 @@
         document.getElementById('repayment-type-onetime-row').style.display = 'flex';
 
         // 9. Full repayment due date
+        // Check if we should show relative or concrete date
+        // Support both 'on-acceptance' (from backend) and 'upon_acceptance' (from wizard)
+        const isLoanStartUponAcceptance =
+          agreement.money_sent_date === 'on-acceptance' ||
+          agreement.money_sent_date === 'upon_acceptance';
+        const isRelativeDueDate =
+          agreement.one_time_due_option &&
+          agreement.one_time_due_option !== 'pick_date' &&
+          agreement.one_time_due_option !== 'pick-date';
+
+        if (isLoanStartUponAcceptance && isRelativeDueDate) {
+          // Show relative description
+          document.getElementById('full-due-display').textContent = getRelativeDueDateText(agreement.one_time_due_option);
+          document.getElementById('full-due-countdown').textContent = '';
         // Check if this is a "when accepted" pending loan
         const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
         const isWhenAccepted = !moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance';
