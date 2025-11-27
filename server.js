@@ -501,6 +501,120 @@ function getPaymentTotals(agreementId) {
   };
 }
 
+/**
+ * Enrich a raw agreement with display-friendly fields for UI
+ * This is the single source of truth for agreement display data
+ * Used by /api/agreements, /app dashboard, and wizard Step 5
+ */
+function enrichAgreementForDisplay(agreement, currentUserId) {
+  const totals = getPaymentTotals(agreement.id);
+  const isLender = agreement.lender_user_id === currentUserId;
+
+  // Determine counterparty name and role
+  let counterpartyName;
+  let roleLabel;
+
+  if (isLender) {
+    counterpartyName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+    roleLabel = 'You lent';
+  } else {
+    counterpartyName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
+    roleLabel = 'You borrowed';
+  }
+
+  // Calculate outstanding using dynamic interest
+  const interestInfo = getAgreementInterestInfo(agreement, new Date());
+  const totalDueCentsToday = interestInfo.total_due_cents;
+  const plannedTotalCents = interestInfo.planned_total_due_cents;
+
+  let outstandingCents = totalDueCentsToday - totals.total_paid_cents;
+  if (outstandingCents < 0) outstandingCents = 0;
+
+  // Format amounts
+  const outstandingFormatted = formatCurrency0(outstandingCents);
+  const totalFormatted = formatCurrency0(plannedTotalCents);
+
+  // Calculate next payment date label
+  let nextPaymentLabel = null;
+  if (agreement.status === 'active' || agreement.status === 'pending') {
+    if (agreement.repayment_type === 'one_time') {
+      // For one-time: show due date
+      const dueDate = new Date(agreement.due_date);
+      nextPaymentLabel = formatDateShort(dueDate);
+    } else if (agreement.repayment_type === 'installments' && agreement.first_payment_date) {
+      // For installments: show first payment date if not yet paid
+      // TODO: Calculate actual next unpaid installment date
+      const firstPayment = new Date(agreement.first_payment_date);
+      nextPaymentLabel = formatDateShort(firstPayment);
+    }
+  } else if (agreement.status === 'settled') {
+    nextPaymentLabel = 'Paid off';
+  }
+
+  // Check for open hardship requests
+  const hasOpenDifficulty = db.prepare(`
+    SELECT COUNT(*) as count
+    FROM hardship_requests
+    WHERE agreement_id = ?
+  `).get(agreement.id).count > 0;
+
+  // Check for pending payments that need lender confirmation
+  const hasPendingPaymentToConfirm = isLender && db.prepare(`
+    SELECT COUNT(*) as count
+    FROM payments
+    WHERE agreement_id = ? AND status = 'pending'
+  `).get(agreement.id).count > 0;
+
+  // Return enriched agreement
+  return {
+    ...agreement,
+    // Core identifiers
+    id: agreement.id,
+    status: agreement.status,
+
+    // Display fields
+    counterpartyName,
+    roleLabel,
+    statusLabel: agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1),
+
+    // Amounts (in cents for calculation, formatted for display)
+    outstandingCents,
+    outstandingFormatted,
+    totalCents: plannedTotalCents,
+    totalFormatted,
+    totalPaidCents: totals.total_paid_cents,
+
+    // Dates
+    nextPaymentLabel,
+
+    // Flags
+    isLender,
+    hasOpenDifficulty,
+    hasPendingPaymentToConfirm,
+
+    // Profile pictures
+    counterpartyProfilePictureUrl: isLender ? agreement.borrower_profile_picture : agreement.lender_profile_picture,
+
+    // Currency
+    currency: '€'
+  };
+}
+
+/**
+ * Format a date as short locale string (e.g., "26 Nov 2026")
+ */
+function formatDateShort(date) {
+  if (!date) return null;
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return null;
+
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
 // get the total amount due for an agreement (principal + interest if available)
 // DEPRECATED: Use getAgreementInterestInfo instead for dynamic interest calculation
 function getAgreementTotalDueCents(agreement) {
@@ -4448,13 +4562,15 @@ app.get('/app', (req, res) => {
     // Auto-link any pending agreements for this user
     autoLinkPendingAgreements(req.user.id, req.user.email, req.user.full_name);
 
-    // Fetch agreements
-    const agreements = db.prepare(`
+    // Fetch agreements with all necessary joins
+    const rawAgreements = db.prepare(`
       SELECT a.*,
         u_lender.full_name as lender_full_name,
         u_lender.email as lender_email,
+        u_lender.profile_picture as lender_profile_picture,
         u_borrower.full_name as borrower_full_name,
         u_borrower.email as borrower_email,
+        u_borrower.profile_picture as borrower_profile_picture,
         invite.accepted_at as accepted_at
       FROM agreements a
       LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
@@ -4464,7 +4580,10 @@ app.get('/app', (req, res) => {
       ORDER BY created_at DESC
     `).all(req.user.id, req.user.id);
 
-    // Calculate stats
+    // Enrich all agreements using shared helper (single source of truth)
+    const agreements = rawAgreements.map(a => enrichAgreementForDisplay(a, req.user.id));
+
+    // Calculate stats from enriched agreements
     const totalAgreements = agreements.length;
     const totalPendingAgreements = agreements.filter(a => a.status === 'pending').length;
     const totalActiveAgreements = agreements.filter(a => a.status === 'active').length;
@@ -4475,27 +4594,8 @@ app.get('/app', (req, res) => {
     const groupTabs = [];
     const totalGroupTabs = groupTabs.length;
 
-    // Prepare agreements summary (first 3) with counterparty info
-    const agreementsSummary = agreements.slice(0, 3).map(agreement => {
-      const isLender = agreement.lender_user_id === req.user.id;
-      const counterpartyName = isLender
-        ? (agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email)
-        : (agreement.lender_full_name || agreement.lender_name || agreement.lender_email);
-
-      const totals = getPaymentTotals(agreement.id);
-      const outstandingAmountCents = totals.principal_remaining + totals.interest_remaining;
-
-      return {
-        id: agreement.id,
-        counterpartyName,
-        status: agreement.status,
-        statusLabel: agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1),
-        outstandingAmountCents,
-        outstandingAmountFormatted: formatCurrency0(outstandingAmountCents),
-        currency: '€',
-        nextPaymentLabel: null // TODO: calculate next payment date
-      };
-    });
+    // Take first 3 agreements for summary (already enriched)
+    const agreementsSummary = agreements.slice(0, 3);
 
     // Read the HTML template
     const htmlPath = path.join(__dirname, 'public', 'app.html');

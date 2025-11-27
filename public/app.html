@@ -806,14 +806,38 @@
     }
 
     .agreement-summary-left {
-      flex: 1;
-      min-width: 0;
+      flex: 0 0 auto;
+      min-width: 120px;
     }
 
     .agreement-summary-name {
       font-weight: 600;
       font-size: 15px;
-      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .agreement-summary-role {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .agreement-summary-middle {
+      flex: 1;
+      min-width: 0;
+      padding: 0 16px;
+    }
+
+    .agreement-summary-amount {
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 1.3;
+    }
+
+    .agreement-summary-next {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
     }
 
     .agreement-summary-description {
@@ -829,12 +853,6 @@
       align-items: center;
       gap: 12px;
       flex-shrink: 0;
-    }
-
-    .agreement-summary-amount {
-      font-weight: 600;
-      font-size: 15px;
-      text-align: right;
     }
 
     .dashboard-actions {
@@ -867,6 +885,11 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
+      }
+
+      .agreement-summary-middle {
+        padding: 0;
+        width: 100%;
       }
 
       .agreement-summary-right {
@@ -5553,23 +5576,28 @@
       }
 
       const items = agreementsSummary.slice(0, 3).map(agreement => {
-        // Use the correct field names from backend
+        // Use enriched fields from backend (enrichAgreementForDisplay)
         const name = agreement.counterpartyName || 'Unknown';
-        const amount = agreement.outstandingAmountFormatted || '€0,00';
+        const roleLabel = agreement.roleLabel || ''; // "You lent" or "You borrowed"
+        const outstandingFormatted = agreement.outstandingFormatted || '0';
+        const totalFormatted = agreement.totalFormatted || '0';
         const currency = agreement.currency || '€';
         const statusText = agreement.statusLabel || 'Pending';
         const status = agreement.status || 'pending';
         const statusClass = `status-badge ${status}`;
-        const nextPayment = agreement.nextPaymentLabel || '';
+        const nextPayment = agreement.nextPaymentLabel || null;
 
         return `
           <li class="agreement-summary-item">
             <div class="agreement-summary-left">
               <div class="agreement-summary-name">${escapeHTML(name)}</div>
-              ${nextPayment ? `<div class="agreement-summary-next" style="font-size:13px; color:var(--muted); margin-top:4px">Next: ${escapeHTML(nextPayment)}</div>` : ''}
+              ${roleLabel ? `<div class="agreement-summary-role" style="font-size:12px; color:var(--muted); margin-top:2px">${escapeHTML(roleLabel)}</div>` : ''}
+            </div>
+            <div class="agreement-summary-middle">
+              <div class="agreement-summary-amount">${currency}${outstandingFormatted} / ${currency}${totalFormatted}</div>
+              ${nextPayment ? `<div class="agreement-summary-next" style="font-size:12px; color:var(--muted); margin-top:4px">Next payment: ${escapeHTML(nextPayment)}</div>` : ''}
             </div>
             <div class="agreement-summary-right">
-              <div class="agreement-summary-amount">${currency}${amount}</div>
               <span class="${statusClass}">${statusText}</span>
             </div>
           </li>
