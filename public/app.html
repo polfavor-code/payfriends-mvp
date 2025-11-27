@@ -746,6 +746,97 @@
       text-decoration: underline;
     }
 
+    /* Urgent Overdue Banner */
+    .urgent-overdue-banner {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-top: 3px solid var(--warning);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 24px 0;
+    }
+
+    .urgent-overdue-banner.borrower-late {
+      border-top-color: var(--danger);
+    }
+
+    .urgent-banner-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+      color: var(--text);
+    }
+
+    .urgent-banner-body {
+      font-size: 15px;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* Next Steps Card */
+    .next-steps-card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+
+    .next-steps-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 20px 0;
+      color: var(--text);
+    }
+
+    .next-steps-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .next-steps-task {
+      padding: 14px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    .next-steps-task:last-child {
+      border-bottom: none;
+    }
+
+    .next-steps-task:hover {
+      opacity: 0.8;
+    }
+
+    .next-steps-task-icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: transparent;
+    }
+
+    .next-steps-task-text {
+      flex: 1;
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .next-steps-empty {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      margin: 0;
+    }
+
     .dashboard-status-row {
       display: flex;
       gap: 16px;
@@ -1448,6 +1539,19 @@
         <p class="dashboard-intro-link" style="margin-top:24px">
           <a href="/features" style="font-size:16px">See how PayFriends works →</a>
         </p>
+      </div>
+
+      <!-- Urgent Overdue Banner -->
+      <div id="urgent-overdue-banner" class="urgent-overdue-banner" style="display:none">
+        <!-- Banner will be populated by JavaScript -->
+      </div>
+
+      <!-- Next Steps Card -->
+      <div id="next-steps-card" class="next-steps-card" style="display:none">
+        <h2 class="next-steps-title">Next steps</h2>
+        <div id="next-steps-content" class="next-steps-content">
+          <!-- Tasks will be populated by JavaScript -->
+        </div>
       </div>
 
       <!-- Summary boxes grid (Active and Pending only) -->
@@ -6565,6 +6669,8 @@
             grouptabsContainer.innerHTML = grouptabBox;
             grouptabsContainer.style.display = 'block';
           }
+
+          loadDashboardTasks();
         }
       }
     }
@@ -6578,6 +6684,209 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    async function detectOverduePayments(agreements, currentUserId) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      for (const agreement of agreements) {
+        if (agreement.status !== 'active') continue;
+
+        const isLender = agreement.lender_user_id === currentUserId;
+        const counterpartyName = isLender
+          ? (agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email)
+          : (agreement.lender_full_name || agreement.lender_name || agreement.lender_email);
+
+        if (agreement.futurePayments && agreement.futurePayments.length > 0) {
+          for (const payment of agreement.futurePayments) {
+            const paymentDate = new Date(payment.date);
+            if (paymentDate < today) {
+              return {
+                isOverdue: true,
+                isLender: isLender,
+                counterpartyName: counterpartyName,
+                dueDate: payment.date,
+                dueDateFormatted: window.formatFinancialDate ? window.formatFinancialDate(payment.date) : payment.date
+              };
+            }
+          }
+        }
+
+        if (agreement.repayment_type === 'one_time' && agreement.due_date) {
+          const dueDate = new Date(agreement.due_date);
+          if (dueDate < today) {
+            return {
+              isOverdue: true,
+              isLender: isLender,
+              counterpartyName: counterpartyName,
+              dueDate: agreement.due_date,
+              dueDateFormatted: window.formatFinancialDate ? window.formatFinancialDate(agreement.due_date) : agreement.due_date
+            };
+          }
+        }
+      }
+
+      return { isOverdue: false };
+    }
+
+    async function detectTasks(agreements, currentUserId) {
+      const tasks = [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const sevenDaysFromNow = new Date(today);
+      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+      for (const agreement of agreements) {
+        const isLender = agreement.lender_user_id === currentUserId;
+        const counterpartyName = isLender
+          ? (agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email)
+          : (agreement.lender_full_name || agreement.lender_name || agreement.lender_email);
+
+        if (agreement.status === 'pending') {
+          if (isLender) {
+            tasks.push({
+              type: 'approve-new-agreement',
+              text: `Approve new agreement from ${counterpartyName}.`,
+              action: () => window.location.href = `/manage-agreement/${agreement.id}`
+            });
+          } else {
+            tasks.push({
+              type: 'approve-agreement',
+              text: `Approve agreement sent by ${counterpartyName}.`,
+              action: () => window.location.href = `/review/${agreement.invite_token || agreement.id}`
+            });
+          }
+        }
+
+        if (agreement.status === 'active') {
+          if (isLender) {
+            tasks.push({
+              type: 'report-repayment',
+              text: 'Report a repayment you received.',
+              action: () => window.location.href = `/manage-agreement/${agreement.id}`
+            });
+          } else {
+            if (agreement.futurePayments && agreement.futurePayments.length > 0) {
+              const nextPayment = agreement.futurePayments[0];
+              const nextPaymentDate = new Date(nextPayment.date);
+
+              if (nextPaymentDate >= today && nextPaymentDate <= sevenDaysFromNow) {
+                const formattedDate = window.formatFinancialDate ? window.formatFinancialDate(nextPayment.date) : nextPayment.date;
+                const amount = nextPayment.amountFormatted;
+                tasks.push({
+                  type: 'make-repayment',
+                  text: `Upcoming repayment: ${amount} due on ${formattedDate}.`,
+                  action: () => window.location.href = `/manage-agreement/${agreement.id}`
+                });
+              }
+            }
+          }
+        }
+      }
+
+      const uniqueTasks = [];
+      const seenTypes = new Set();
+
+      for (const task of tasks) {
+        if (task.type === 'report-repayment') {
+          if (!seenTypes.has('report-repayment')) {
+            uniqueTasks.push(task);
+            seenTypes.add('report-repayment');
+          }
+        } else {
+          uniqueTasks.push(task);
+        }
+      }
+
+      return uniqueTasks;
+    }
+
+    async function renderUrgentBanner(agreements, currentUserId) {
+      const banner = document.getElementById('urgent-overdue-banner');
+      if (!banner) return;
+
+      const overdueInfo = await detectOverduePayments(agreements, currentUserId);
+
+      if (overdueInfo.isOverdue) {
+        const isBorrowerLate = !overdueInfo.isLender;
+        banner.className = 'urgent-overdue-banner' + (isBorrowerLate ? ' borrower-late' : '');
+
+        let title, body;
+        if (isBorrowerLate) {
+          title = 'Payment overdue';
+          body = `Your repayment to ${escapeHTML(overdueInfo.counterpartyName)} was due on ${escapeHTML(overdueInfo.dueDateFormatted)}. Please make the payment or update the status.`;
+        } else {
+          title = 'Borrower late payment';
+          body = `${escapeHTML(overdueInfo.counterpartyName)}'s repayment due on ${escapeHTML(overdueInfo.dueDateFormatted)} is overdue. They will be reminded automatically.`;
+        }
+
+        banner.innerHTML = `
+          <h3 class="urgent-banner-title">${title}</h3>
+          <p class="urgent-banner-body">${body}</p>
+        `;
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+
+    async function renderNextStepsCard(agreements, currentUserId) {
+      const card = document.getElementById('next-steps-card');
+      const content = document.getElementById('next-steps-content');
+      if (!card || !content) return;
+
+      const tasks = await detectTasks(agreements, currentUserId);
+
+      if (tasks.length === 0) {
+        content.innerHTML = `
+          <p class="next-steps-empty">Everything is up to date. We'll notify you if anything needs your attention.</p>
+        `;
+        card.style.display = 'block';
+      } else {
+        const maxVisibleTasks = 6;
+        const visibleTasks = tasks.slice(0, maxVisibleTasks);
+
+        content.innerHTML = '';
+
+        visibleTasks.forEach(task => {
+          const taskElement = document.createElement('div');
+          taskElement.className = 'next-steps-task';
+          taskElement.onclick = task.action;
+
+          const iconElement = document.createElement('div');
+          iconElement.className = 'next-steps-task-icon';
+
+          const textElement = document.createElement('div');
+          textElement.className = 'next-steps-task-text';
+          textElement.textContent = task.text;
+
+          taskElement.appendChild(iconElement);
+          taskElement.appendChild(textElement);
+          content.appendChild(taskElement);
+        });
+
+        card.style.display = 'block';
+      }
+    }
+
+    async function loadDashboardTasks() {
+      try {
+        const res = await fetch('/api/agreements');
+        if (!res.ok) {
+          console.error('Failed to load agreements for tasks');
+          return;
+        }
+
+        const agreements = await res.json();
+        const data = window.__DASHBOARD_DATA__;
+        if (!data || !data.user) return;
+
+        await renderUrgentBanner(agreements, data.user.id);
+        await renderNextStepsCard(agreements, data.user.id);
+      } catch (err) {
+        console.error('Error loading dashboard tasks:', err);
+      }
     }
 
     // Data injection placeholder - backend will inject window.__DASHBOARD_DATA__ here
