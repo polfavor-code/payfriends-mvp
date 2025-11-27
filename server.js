@@ -538,6 +538,8 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
   // Calculate next payment amount and date label
   let nextPaymentLabel = null;
   let nextPaymentAmountFormatted = null;
+  let nextPaymentDate = null;
+  let nextPaymentAmountCents = null;
 
   if (agreement.status === 'active' || agreement.status === 'pending') {
     if (agreement.repayment_type === 'one_time') {
@@ -545,22 +547,69 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
       const dueDate = new Date(agreement.due_date);
       nextPaymentLabel = formatDateShort(dueDate);
       nextPaymentAmountFormatted = totalToRepayFormatted;
+      nextPaymentDate = agreement.due_date;
+      nextPaymentAmountCents = plannedTotalCents;
     } else if (agreement.repayment_type === 'installments' && agreement.first_payment_date) {
       // For installments: show first payment date and installment amount
       // TODO: Calculate actual next unpaid installment date and amount
       const firstPayment = new Date(agreement.first_payment_date);
       nextPaymentLabel = formatDateShort(firstPayment);
+      nextPaymentDate = agreement.first_payment_date;
       // Use installment amount if available, otherwise divide total by number of installments
       if (agreement.installment_amount) {
-        nextPaymentAmountFormatted = formatCurrency0(Math.round(agreement.installment_amount * 100));
+        const amountCents = Math.round(agreement.installment_amount * 100);
+        nextPaymentAmountFormatted = formatCurrency0(amountCents);
+        nextPaymentAmountCents = amountCents;
       } else if (agreement.installment_count && agreement.installment_count > 0) {
         const perInstallment = Math.round(plannedTotalCents / agreement.installment_count);
         nextPaymentAmountFormatted = formatCurrency0(perInstallment);
+        nextPaymentAmountCents = perInstallment;
       }
     }
   } else if (agreement.status === 'settled') {
     nextPaymentLabel = 'Paid off';
     nextPaymentAmountFormatted = null;
+  }
+
+  // Generate full repayment schedule for timeline (only for active agreements)
+  let futurePayments = [];
+  if (agreement.status === 'active' && agreement.accepted_at) {
+    try {
+      const { generateRepaymentSchedule } = require('./lib/repayments/repaymentSchedule.js');
+
+      const loanStartDate = agreement.money_sent_date || agreement.accepted_at;
+      const config = {
+        principal: agreement.amount_cents,
+        annualInterestRate: agreement.interest_rate || 0,
+        repaymentType: agreement.repayment_type || 'one_time',
+        numInstallments: agreement.installment_count || 1,
+        paymentFrequency: agreement.payment_frequency || 'once',
+        loanStartMode: 'fixed_date',
+        loanStartDate: loanStartDate,
+        firstPaymentOffsetDays: agreement.first_payment_offset_days || 0,
+        context: {
+          preview: false,
+          agreementStatus: 'active',
+          hasRealStartDate: true
+        }
+      };
+
+      const schedule = generateRepaymentSchedule(config);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Filter to future payments only
+      futurePayments = schedule.rows
+        .filter(row => row.date && new Date(row.date) >= today)
+        .map(row => ({
+          date: row.date.toISOString().split('T')[0],
+          dateLabel: row.dateLabel,
+          amountCents: row.totalPayment,
+          amountFormatted: formatCurrency0(row.totalPayment)
+        }));
+    } catch (err) {
+      console.error('Error generating repayment schedule for agreement', agreement.id, err);
+    }
   }
 
   // Generate avatar initials and color
@@ -607,6 +656,11 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
     // Next payment info
     nextPaymentLabel,          // "27 Nov 2026" or "Paid off"
     nextPaymentAmountFormatted, // "€ 6.300" - amount of next payment
+    nextPaymentDate,           // ISO date string
+    nextPaymentAmountCents,    // cents value
+
+    // Full repayment schedule (future payments only)
+    futurePayments,
 
     // Avatar info
     avatarInitials: initials,  // "BO"
