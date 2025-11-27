@@ -6267,7 +6267,10 @@
         itemsHtml = displayItems.map(item => {
           let avatarHtml = '';
           if (item.avatarUrl) {
-            avatarHtml = `<img src="${escapeHTML(item.avatarUrl)}" alt="${escapeHTML(item.name)}">`;
+            const fallbackInitials = escapeHTML(item.avatarInitials || '?');
+            const fallbackColorClass = item.avatarColorClass || 'color-1';
+            avatarHtml = `<img src="${escapeHTML(item.avatarUrl)}" alt="${escapeHTML(item.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+<div class="user-avatar-initials ${fallbackColorClass}" style="display:none">${fallbackInitials}</div>`;
           } else if (item.avatarInitials) {
             const colorClass = item.avatarColorClass || 'color-1';
             avatarHtml = `<div class="user-avatar-initials ${colorClass}">${escapeHTML(item.avatarInitials)}</div>`;
@@ -6355,37 +6358,8 @@
     }
 
     // Helper: Render repayment timeline with incoming and outgoing payments
-    function renderRepaymentTimeline(activeAgreements, currentUserId) {
-      if (!activeAgreements || activeAgreements.length === 0) {
-        return '';
-      }
-
-      // Collect all future repayments from active agreements using full schedule data
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const allEvents = [];
-      activeAgreements.forEach(agreement => {
-        const isLender = agreement.isLender;
-        const direction = isLender ? 'incoming' : 'outgoing';
-
-        // Use the futurePayments array from the agreement
-        if (agreement.futurePayments && agreement.futurePayments.length > 0) {
-          agreement.futurePayments.forEach(payment => {
-            const paymentDate = new Date(payment.date);
-            allEvents.push({
-              date: paymentDate,
-              dateStr: payment.date,
-              counterparty: agreement.counterpartyName,
-              amount: payment.amountFormatted,
-              amountCents: payment.amountCents,
-              direction: direction
-            });
-          });
-        }
-      });
-
-      if (allEvents.length === 0) {
+    function renderRepaymentTimeline(timelineEvents) {
+      if (!timelineEvents || timelineEvents.length === 0) {
         return `
           <div class="timeline-header">
             <div>
@@ -6398,6 +6372,19 @@
           </div>
         `;
       }
+
+      // Convert timeline events to the format expected by the rendering code
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const allEvents = timelineEvents.map(event => ({
+        date: new Date(event.date),
+        dateStr: event.date,
+        counterparty: event.counterpartyName,
+        amount: event.amountFormatted,
+        amountCents: event.amountCents,
+        direction: event.direction
+      }));
 
       // Sort by date
       allEvents.sort((a, b) => a.date - b.date);
@@ -6637,14 +6624,13 @@
 
           // Populate repayment timeline
           const timelineContainer = document.getElementById('timeline-container');
-          if (timelineContainer && data.agreementsSummary && data.user) {
-            const activeAgreements = data.agreementsSummary.filter(a => a.status === 'active');
-
-            if (activeAgreements.length > 0) {
-              timelineContainer.innerHTML = renderRepaymentTimeline(activeAgreements, data.user.id);
+          if (timelineContainer && data.timelineEvents) {
+            if (data.timelineEvents.length > 0) {
+              timelineContainer.innerHTML = renderRepaymentTimeline(data.timelineEvents);
               timelineContainer.style.display = 'block';
             } else {
-              timelineContainer.style.display = 'none';
+              timelineContainer.innerHTML = renderRepaymentTimeline([]);
+              timelineContainer.style.display = 'block';
             }
           }
 
@@ -6761,7 +6747,7 @@
             tasks.push({
               type: 'approve-agreement',
               text: `Approve agreement sent by ${counterpartyName}.`,
-              action: () => window.location.href = `/review/${agreement.invite_token || agreement.id}`
+              action: () => window.location.href = `/agreements/${agreement.id}/review`
             });
           }
         }

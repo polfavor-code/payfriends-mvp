@@ -4697,6 +4697,26 @@ app.get('/app', (req, res) => {
     // Take first 3 agreements for summary (already enriched)
     const agreementsSummary = agreements.slice(0, 3);
 
+    // Collect timeline events from ALL active agreements (not just first 3)
+    const timelineEvents = [];
+    const activeAgreements = agreements.filter(a => a.status === 'active');
+    activeAgreements.forEach(agreement => {
+      if (agreement.futurePayments && agreement.futurePayments.length > 0) {
+        const isLender = agreement.lender_user_id === req.user.id;
+        const direction = isLender ? 'incoming' : 'outgoing';
+        agreement.futurePayments.forEach(payment => {
+          timelineEvents.push({
+            date: payment.date,
+            dateLabel: payment.dateLabel,
+            amountCents: payment.amountCents,
+            amountFormatted: payment.amountFormatted,
+            counterpartyName: agreement.counterpartyName,
+            direction: direction
+          });
+        });
+      }
+    });
+
     // Read the HTML template
     const htmlPath = path.join(__dirname, 'public', 'app.html');
     let html = fs.readFileSync(htmlPath, 'utf8');
@@ -4719,6 +4739,7 @@ app.get('/app', (req, res) => {
         totalGroupTabs
       },
       agreementsSummary,
+      timelineEvents,
       hasAnyAgreements: totalAgreements > 0,
       hasAnyGroupTabs: totalGroupTabs > 0,
       isZeroState: totalAgreements === 0 && totalGroupTabs === 0
