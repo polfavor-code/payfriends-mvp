@@ -2140,18 +2140,10 @@
         document.getElementById(`step-indicator-${i}`).classList.add('completed');
       }
 
-      // Show/hide wizard agreements summary (only on step 5)
+      // Hide wizard agreements summary on all steps
       const wizardSummary = document.getElementById('wizard-agreements-summary');
       if (wizardSummary) {
-        if (step === 5) {
-          wizardSummary.style.display = 'block';
-          // Populate with latest data
-          if (window.__DASHBOARD_DATA__ && window.__DASHBOARD_DATA__.agreementsSummary) {
-            renderAgreementsSummaryInContainer('wizard-agreements-list', window.__DASHBOARD_DATA__.agreementsSummary);
-          }
-        } else {
-          wizardSummary.style.display = 'none';
-        }
+        wizardSummary.style.display = 'none';
       }
 
       // Special handling for step 1: ensure borrower fields visibility is correct
@@ -5442,6 +5434,14 @@
     function createAnotherAgreement() {
       resetWizard();
       goToStep(1);
+
+      // Scroll to the top of the wizard
+      const newAgreementSection = document.getElementById('new-agreement-section');
+      if (newAgreementSection) {
+        setTimeout(() => {
+          newAgreementSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
     }
 
     function resetWizard() {
