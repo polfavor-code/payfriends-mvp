@@ -1671,7 +1671,7 @@
         </div>
 
         <!-- Require proof of repayment -->
-        <div style="margin:24px 0 48px 0">
+        <div id="proof-required-container" style="margin:24px 0 48px 0">
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
             <label class="toggle-switch">
               <input type="checkbox" id="proof-required" checked />
@@ -2167,6 +2167,7 @@
       // Special handling for step 3: initialize reminder mode highlight
       if (step === 3) {
         toggleReminderMode();
+        updateProofRequirementVisibility();
       }
 
       // Apply read-only mode if agreement has been sent
@@ -4729,6 +4730,9 @@
       // Show/hide detail fields based on selection
       togglePaymentMethodDetails();
 
+      // Show/hide "Require proof of repayment" toggle based on selected methods
+      updateProofRequirementVisibility();
+
       // Clear any error messages
       document.getElementById('step3-status').textContent = '';
     }
@@ -4739,6 +4743,24 @@
         card.classList.add('selected');
       } else {
         card.classList.remove('selected');
+      }
+    }
+
+    // Update visibility of "Require proof of repayment" toggle
+    // Hide when ONLY cash is selected, show otherwise
+    function updateProofRequirementVisibility() {
+      const selectedMethods = Array.from(document.querySelectorAll('.payment-method-checkbox:checked')).map(cb => cb.value);
+      const proofContainer = document.getElementById('proof-required-container');
+
+      if (!proofContainer) return;
+
+      // Hide if ONLY cash is selected (cash is checked AND no other methods are checked)
+      const onlyCashSelected = selectedMethods.length === 1 && selectedMethods[0] === 'cash';
+
+      if (onlyCashSelected) {
+        proofContainer.style.display = 'none';
+      } else {
+        proofContainer.style.display = 'block';
       }
     }
 
@@ -5042,13 +5064,16 @@
         </div>
       </div>`;
 
-      // Proof required
-      html += `<div class="summary-grid-row">
-        <label class="summary-grid-label">Require proof of repayment:</label>
-        <div class="summary-grid-value">
-          <div style="color:var(--muted); font-size:13px; line-height:1.5">${wizardData.proofRequired ? 'Yes — The borrower will be asked to upload proof for each repayment, such as a photo, screenshot or PDF of the transfer or receipt.' : 'No — The borrower can report repayments without uploading proof.'}</div>
-        </div>
-      </div>`;
+      // Proof required - only show if NOT only cash
+      const onlyCashSelected = methods.length === 1 && methods[0] === 'cash';
+      if (!onlyCashSelected) {
+        html += `<div class="summary-grid-row">
+          <label class="summary-grid-label">Require proof of repayment:</label>
+          <div class="summary-grid-value">
+            <div style="color:var(--muted); font-size:13px; line-height:1.5">${wizardData.proofRequired ? 'Yes — The borrower will be asked to upload proof for each repayment, such as a photo, screenshot or PDF of the transfer or receipt.' : 'No — The borrower can report repayments without uploading proof.'}</div>
+          </div>
+        </div>`;
+      }
 
       // Reminder schedule (merged mode and schedule into one line)
       let reminderScheduleText = '';
