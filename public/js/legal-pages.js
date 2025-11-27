@@ -27,7 +27,10 @@
         .legal-row { margin: 20px 0; }
       </style>
 
-      <h1 class="legal-page-title">Legal Information</h1>
+      <div class="page-header-row">
+        <h1 class="page-title">Legal & About</h1>
+        <a href="/app" class="back-to-dashboard">&larr; Back to dashboard</a>
+      </div>
 
       <div class="legal-card">
         <h2 class="legal-section-title">About PayFriends</h2>
