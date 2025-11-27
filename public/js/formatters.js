@@ -130,12 +130,23 @@ function formatDateWithCountdown(isoDate, locale = 'en-GB') {
  */
 function getRelativeDueDateText(oneTimeDueOption) {
   const mapping = {
-    'in_1_week': '1 week after loan start date',
-    'in_1_month': '1 month after loan start date',
-    'in_3_months': '3 months after loan start date',
-    'in_6_months': '6 months after loan start date',
-    'in_1_year': '1 year after loan start date',
-    'in_1_years': '1 year after loan start date' // Handle both variants
+    // Backend format (with underscores and 'in_' prefix)
+    'in_1_week': '1 week after loan start',
+    'in_1_month': '1 month after loan start',
+    'in_3_months': '3 months after loan start',
+    'in_6_months': '6 months after loan start',
+    'in_1_year': '1 year after loan start',
+    'in_1_years': '1 year after loan start', // Handle both variants
+    'in_2_years': '2 years after loan start',
+    'in_3_years': '3 years after loan start',
+    // Wizard format (with hyphens)
+    '1-week': '1 week after loan start',
+    '1-month': '1 month after loan start',
+    '3-months': '3 months after loan start',
+    '6-months': '6 months after loan start',
+    '1-year': '1 year after loan start',
+    '2-years': '2 years after loan start',
+    '3-years': '3 years after loan start'
   };
   return mapping[oneTimeDueOption] || '—';
 }
