@@ -721,6 +721,29 @@
       margin: 0;
     }
 
+    .dashboard-intro {
+      color: var(--muted);
+      font-size: 15px;
+      margin: 0 0 8px 0;
+      line-height: 1.5;
+    }
+
+    .dashboard-intro-link {
+      margin: 0;
+    }
+
+    .dashboard-intro-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 15px;
+      transition: opacity 0.15s ease;
+    }
+
+    .dashboard-intro-link a:hover {
+      opacity: 0.8;
+      text-decoration: underline;
+    }
+
     .dashboard-status-row {
       display: flex;
       gap: 16px;
@@ -986,7 +1009,10 @@
       <!-- Greeting and status chips -->
       <div class="dashboard-header">
         <h1 id="dashboard-greeting">Hi, welcome to your dashboard.</h1>
-        <p>Here is your overview.</p>
+        <p class="dashboard-intro">Money between friends can get messy. We keep it smooth, simple, and drama-free.</p>
+        <p class="dashboard-intro-link">
+          <a href="/features">See how PayFriends works →</a>
+        </p>
       </div>
 
       <div class="dashboard-status-row" id="dashboard-status-row">
