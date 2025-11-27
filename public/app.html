@@ -1406,9 +1406,9 @@
 
     .speech-balloon {
       position: absolute;
-      top: 20px;
+      top: 35px;
       right: 20px;
-      max-width: 420px;
+      max-width: 340px;
       background: var(--card);
       border: 1px solid rgba(61, 220, 151, 0.3);
       border-radius: 16px;
@@ -6616,15 +6616,13 @@
             welcomeHeading.textContent = `Welcome, ${displayName}`;
           }
 
-          // Show speech balloon if user has no profile photo AND no agreements
+          // Show speech balloon if user has no profile photo
           const speechBalloon = document.getElementById('welcome-speech-balloon');
-          if (speechBalloon && data.user && data.stats) {
+          if (speechBalloon && data.user) {
             const hasProfilePhoto = data.user.profile_picture_url && data.user.profile_picture_url.trim() !== '';
-            const hasNoActiveAgreements = (data.stats.totalActiveAgreements || 0) === 0;
-            const hasNoPendingAgreements = (data.stats.totalPendingAgreements || 0) === 0;
 
-            // Show balloon only when user has no agreements and no profile photo
-            if (!hasProfilePhoto && hasNoActiveAgreements && hasNoPendingAgreements) {
+            // Show balloon only when user has no profile photo
+            if (!hasProfilePhoto) {
               speechBalloon.style.display = 'block';
             } else {
               speechBalloon.style.display = 'none';
