@@ -253,3 +253,31 @@
     width: 180px;
   }
 }
+
+/* Page header row - shared across all subpages */
+.page-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 24px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.back-to-dashboard {
+  font-size: 14px;
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.back-to-dashboard:hover {
+  text-decoration: underline;
+  opacity: 1;
+}

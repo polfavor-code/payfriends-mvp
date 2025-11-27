@@ -80,7 +80,10 @@
         .phone-error { color: #ff6b6b; font-size: 13px; margin-top: 4px; display: none; }
       </style>
 
-      <h1 class="profile-page-title">My Profile</h1>
+      <div class="page-header-row">
+        <h1 class="page-title">My Profile</h1>
+        <a href="/app" class="back-to-dashboard">&larr; Back to dashboard</a>
+      </div>
 
       <section class="profile-card">
         <h2 class="profile-section-title">Profile Information</h2>
@@ -477,7 +480,10 @@
         .link-button { background: none; border: 0; padding: 0; margin-left: 4px; color: var(--accent); cursor: pointer; font: inherit; text-decoration: underline; }
       </style>
 
-      <h1 class="settings-page-title">Settings</h1>
+      <div class="page-header-row">
+        <h1 class="page-title">Settings</h1>
+        <a href="/app" class="back-to-dashboard">&larr; Back to dashboard</a>
+      </div>
 
       <!-- App Preferences -->
       <div class="settings-card">
@@ -671,8 +677,10 @@
         .disabled-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.3); border-radius: 16px; pointer-events: none; }
       </style>
 
-      <h1 class="security-page-title">Security</h1>
-      <p class="security-page-subtitle">Manage your account security settings.</p>
+      <div class="page-header-row">
+        <h1 class="page-title">Security</h1>
+        <a href="/app" class="back-to-dashboard">&larr; Back to dashboard</a>
+      </div>
 
       <!-- Change Password Card -->
       <div class="security-card">
