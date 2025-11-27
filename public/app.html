@@ -1392,15 +1392,27 @@
       position: relative;
     }
 
+    /* Adjust mascot position in zero state to align with CTA button */
+    .dashboard-hero-zero .dashboard-hero-mascot {
+      align-items: flex-start;
+      margin-top: 80px;
+    }
+
+    /* Enlarge CTA button in zero state */
+    .dashboard-hero-zero .dashboard-hero__actions button.primary-button {
+      font-size: 16px;
+      padding: 14px 24px;
+    }
+
     .speech-balloon {
       position: absolute;
-      top: 20px;
+      top: -60px;
       right: 20px;
-      max-width: 320px;
+      max-width: 420px;
       background: var(--card);
       border: 1px solid rgba(61, 220, 151, 0.3);
       border-radius: 16px;
-      padding: 20px;
+      padding: 24px 28px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4),
                   0 0 0 1px rgba(61, 220, 151, 0.1),
                   0 0 20px rgba(61, 220, 151, 0.15);
@@ -1441,31 +1453,37 @@
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin: 0 0 12px 0;
+      margin: 0 0 14px 0;
     }
 
-    .speech-balloon-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .speech-balloon-item {
+    .speech-balloon-content {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
+      gap: 14px;
+    }
+
+    .speech-balloon-icon-circle {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+
+    .speech-balloon-camera-icon {
+      color: #0d130f;
+    }
+
+    .speech-balloon-text {
+      flex: 1;
       font-size: 14px;
       line-height: 1.5;
       color: var(--text);
-    }
-
-    .speech-balloon-icon {
-      flex-shrink: 0;
-      width: 18px;
-      height: 18px;
-      margin-top: 2px;
-      color: var(--accent);
-      font-size: 16px;
+      margin: 0;
     }
 
     /* Responsive adjustments */
@@ -1487,6 +1505,7 @@
     @media (max-width: 900px) {
       .speech-balloon {
         margin: 0 0 20px 0;
+        padding: 20px 24px;
       }
     }
   </style>
@@ -1513,13 +1532,16 @@
     <section class="dashboard-hero dashboard-hero-zero" id="dashboard-hero-zero" style="display:none">
       <!-- Speech Balloon (onboarding task) -->
       <div class="speech-balloon" id="welcome-speech-balloon" style="display:none">
-        <h3 class="speech-balloon-title">Pending tasks</h3>
-        <ul class="speech-balloon-list">
-          <li class="speech-balloon-item">
-            <span class="speech-balloon-icon">📸</span>
-            <span>Add a profile photo to make sending requests to friends more personal.</span>
-          </li>
-        </ul>
+        <h3 class="speech-balloon-title">What's next?</h3>
+        <div class="speech-balloon-content">
+          <div class="speech-balloon-icon-circle">
+            <svg class="speech-balloon-camera-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+          </div>
+          <p class="speech-balloon-text">Please add a profile photo to make sending requests to friends more personal.</p>
+        </div>
       </div>
 
       <div class="dashboard-hero-inner">
@@ -6534,15 +6556,21 @@
             const firstName = fullName.trim().split(/\s+/)[0] || '';
             const email = data.user.email || '';
             const fallbackName = email.includes('@') ? email.split('@')[0] : email;
-            const displayName = firstName || fallbackName || 'there';
+            let displayName = firstName || fallbackName || 'there';
+            // Capitalize first letter
+            displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
             welcomeHeading.textContent = `Welcome, ${displayName}`;
           }
 
-          // Show speech balloon if user has no profile photo
+          // Show speech balloon if user has no profile photo AND no agreements
           const speechBalloon = document.getElementById('welcome-speech-balloon');
-          if (speechBalloon && data.user) {
+          if (speechBalloon && data.user && data.stats) {
             const hasProfilePhoto = data.user.profile_picture_url && data.user.profile_picture_url.trim() !== '';
-            if (!hasProfilePhoto) {
+            const hasNoActiveAgreements = (data.stats.totalActiveAgreements || 0) === 0;
+            const hasNoPendingAgreements = (data.stats.totalPendingAgreements || 0) === 0;
+
+            // Show balloon only when user has no agreements and no profile photo
+            if (!hasProfilePhoto && hasNoActiveAgreements && hasNoPendingAgreements) {
               speechBalloon.style.display = 'block';
             } else {
               speechBalloon.style.display = 'none';
