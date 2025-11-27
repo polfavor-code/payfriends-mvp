@@ -616,14 +616,25 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
   const initials = getInitials(counterpartyName);
   const colorClass = getColorClassFromName(counterpartyName);
 
-  // Get counterparty profile picture
-  const counterpartyProfilePictureUrl = isLender ? agreement.borrower_profile_picture : agreement.lender_profile_picture;
+  // Get counterparty profile picture and user ID
+  const counterpartyUserId = isLender ? agreement.borrower_user_id : agreement.lender_user_id;
+  const counterpartyProfilePicture = isLender ? agreement.borrower_profile_picture : agreement.lender_profile_picture;
+  const counterpartyProfilePictureUrl = counterpartyProfilePicture && counterpartyUserId
+    ? `/api/profile/picture/${counterpartyUserId}`
+    : null;
 
   // Check for open hardship requests
   const hasOpenDifficulty = db.prepare(`
     SELECT COUNT(*) as count
     FROM hardship_requests
     WHERE agreement_id = ?
+  `).get(agreement.id).count > 0;
+
+  // Check for open renegotiation requests
+  const hasOpenRenegotiation = db.prepare(`
+    SELECT COUNT(*) as count
+    FROM renegotiation_requests
+    WHERE agreement_id = ? AND status = 'open'
   `).get(agreement.id).count > 0;
 
   // Check for pending payments that need lender confirmation
@@ -670,6 +681,7 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
     // Flags
     isLender,
     hasOpenDifficulty,
+    hasOpenRenegotiation,
     hasPendingPaymentToConfirm
   };
 }
@@ -4707,7 +4719,8 @@ app.get('/app', (req, res) => {
         id: req.user.id,
         email: req.user.email,
         fullName: req.user.full_name,
-        firstName: req.user.full_name ? req.user.full_name.split(' ')[0] : req.user.email.split('@')[0]
+        firstName: req.user.full_name ? req.user.full_name.split(' ')[0] : req.user.email.split('@')[0],
+        profile_picture_url: req.user.profile_picture ? `/api/profile/picture/${req.user.id}` : null
       },
       stats: {
         totalAgreements,

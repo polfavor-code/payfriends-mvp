@@ -1386,6 +1386,174 @@
         flex-wrap: wrap;
       }
     }
+
+    /* Speech Balloon Component (Welcome Screen Only) */
+    .dashboard-hero-zero {
+      position: relative;
+    }
+
+    /* Adjust mascot position in zero state to align with CTA button */
+    .dashboard-hero-zero .dashboard-hero-mascot {
+      align-items: flex-start;
+      margin-top: 80px;
+    }
+
+    /* Enlarge CTA button in zero state */
+    .dashboard-hero-zero .dashboard-hero__actions button.primary-button {
+      font-size: 16px;
+      padding: 14px 24px;
+    }
+
+    .speech-balloon {
+      position: absolute;
+      top: 35px;
+      right: 20px;
+      max-width: 340px;
+      background: var(--card);
+      border: 1px solid rgba(61, 220, 151, 0.3);
+      border-radius: 16px;
+      padding: 18px 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4),
+                  0 0 0 1px rgba(61, 220, 151, 0.1),
+                  0 0 20px rgba(61, 220, 151, 0.15);
+      z-index: 5;
+    }
+
+    /* Speech balloon tail (pointing to mascot) with green border */
+    .speech-balloon::before {
+      content: '';
+      position: absolute;
+      bottom: -16px;
+      right: 60px;
+      width: 0;
+      height: 0;
+      border-left: 16px solid transparent;
+      border-right: 16px solid transparent;
+      border-top: 16px solid rgba(61, 220, 151, 0.3);
+      z-index: 0;
+    }
+
+    .speech-balloon::after {
+      content: '';
+      position: absolute;
+      bottom: -14px;
+      right: 62px;
+      width: 0;
+      height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 14px solid var(--card);
+      z-index: 1;
+    }
+
+    .speech-balloon-text {
+      font-size: 17px;
+      line-height: 1.5;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .speech-balloon-text a {
+      color: inherit;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .speech-balloon-text a:hover {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1100px) {
+      .speech-balloon {
+        position: relative;
+        top: auto;
+        right: auto;
+        max-width: 100%;
+        margin: 0 0 24px 0;
+      }
+
+      .speech-balloon::before,
+      .speech-balloon::after {
+        display: none;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .speech-balloon {
+        margin: 0 0 20px 0;
+        padding: 16px 20px;
+      }
+    }
+
+    /* Dashboard Pending Tasks Banner (matching features.html header card) */
+    .dashboard-pending-tasks {
+      background: linear-gradient(135deg, rgba(69, 212, 139, 0.16), rgba(12, 18, 27, 0.95));
+      border-radius: 18px;
+      padding: 28px 28px 24px;
+      border: 1px solid rgba(69, 212, 139, 0.25);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+      margin: 28px 0;
+    }
+
+    .dashboard-pending-tasks h2 {
+      font-size: 1.8rem;
+      margin: 0 0 0.75rem;
+      font-weight: 700;
+    }
+
+    .pending-tasks-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .pending-task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .pending-task-icon {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    .pending-task-icon svg {
+      color: #0d130f;
+    }
+
+    .pending-task-text {
+      flex: 1;
+      font-size: 0.96rem;
+      color: #d2deec;
+      margin: 0;
+      padding-top: 4px;
+    }
+
+    .pending-task-text a {
+      color: #d2deec;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .pending-task-text a:hover {
+      color: var(--accent);
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -1408,6 +1576,13 @@
 
     <!-- Zero-state hero (shown when user has no agreements) -->
     <section class="dashboard-hero dashboard-hero-zero" id="dashboard-hero-zero" style="display:none">
+      <!-- Speech Balloon (onboarding task) -->
+      <div class="speech-balloon" id="welcome-speech-balloon" style="display:none">
+        <p class="speech-balloon-text">
+          <a href="#" onclick="navigateToProfile(event)">Please add a profile photo to make sending requests to friends more personal.</a>
+        </p>
+      </div>
+
       <div class="dashboard-hero-inner">
         <div class="dashboard-hero-text">
           <h1 class="dashboard-hero__title" id="welcome-heading-zero">Welcome</h1>
@@ -1448,6 +1623,14 @@
         <p class="dashboard-intro-link" style="margin-top:24px">
           <a href="/features" style="font-size:16px">See how PayFriends works →</a>
         </p>
+      </div>
+
+      <!-- Pending Tasks Banner (matching features.html style) -->
+      <div class="dashboard-pending-tasks" id="dashboard-pending-tasks" style="display:none">
+        <h2>Pending tasks</h2>
+        <ul class="pending-tasks-list" id="pending-tasks-list">
+          <!-- Tasks will be populated by JavaScript -->
+        </ul>
       </div>
 
       <!-- Summary boxes grid (Active and Pending only) -->
@@ -5583,6 +5766,13 @@
       }
     }
 
+    function navigateToProfile(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      window.location.href = '/app/profile';
+    }
+
     function closeNewAgreement() {
       const newAgreementSection = document.getElementById('new-agreement-section');
       const zeroState = document.getElementById('dashboard-hero-zero');
@@ -6420,8 +6610,23 @@
             const firstName = fullName.trim().split(/\s+/)[0] || '';
             const email = data.user.email || '';
             const fallbackName = email.includes('@') ? email.split('@')[0] : email;
-            const displayName = firstName || fallbackName || 'there';
+            let displayName = firstName || fallbackName || 'there';
+            // Capitalize first letter
+            displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
             welcomeHeading.textContent = `Welcome, ${displayName}`;
+          }
+
+          // Show speech balloon if user has no profile photo
+          const speechBalloon = document.getElementById('welcome-speech-balloon');
+          if (speechBalloon && data.user) {
+            const hasProfilePhoto = data.user.profile_picture_url && data.user.profile_picture_url.trim() !== '';
+
+            // Show balloon only when user has no profile photo
+            if (!hasProfilePhoto) {
+              speechBalloon.style.display = 'block';
+            } else {
+              speechBalloon.style.display = 'none';
+            }
           }
         }
         if (dashboardMain) {
@@ -6488,6 +6693,95 @@
             ));
 
             summaryGrid.innerHTML = boxes.join('');
+          }
+
+          // Populate Pending Tasks Banner
+          const pendingTasksBox = document.getElementById('dashboard-pending-tasks');
+          const pendingTasksList = document.getElementById('pending-tasks-list');
+          if (pendingTasksBox && pendingTasksList && data.user) {
+            const tasks = [];
+
+            // Task 1: Add profile photo if missing
+            const hasProfilePhoto = data.user.profile_picture_url && data.user.profile_picture_url.trim() !== '';
+            if (!hasProfilePhoto) {
+              tasks.push({
+                type: 'profile_photo',
+                text: 'Add a profile photo to make sending requests to friends more personal.',
+                link: '/app/profile'
+              });
+            }
+
+            // Process all agreements for various pending tasks
+            if (data.agreementsSummary) {
+              data.agreementsSummary.forEach(agreement => {
+
+                // Task 2: Pending loan agreement awaiting borrower approval
+                if (agreement.status === 'pending' && !agreement.isLender) {
+                  tasks.push({
+                    type: 'approval',
+                    text: `Approve new loan agreement from ${agreement.counterpartyName}.`,
+                    link: `/agreements/${agreement.id}/review`,
+                    agreementId: agreement.id
+                  });
+                }
+
+                // Task 3: Borrower reported payment - lender must confirm
+                if (agreement.isLender && agreement.hasPendingPaymentToConfirm) {
+                  tasks.push({
+                    type: 'payment_review',
+                    text: `Review a reported payment from ${agreement.counterpartyName}.`,
+                    link: `/agreements/${agreement.id}/manage`,
+                    agreementId: agreement.id
+                  });
+                }
+
+                // Task 4: Borrower reported payment issues - lender must respond
+                if (agreement.isLender && agreement.has_repayment_issue) {
+                  tasks.push({
+                    type: 'payment_issue',
+                    text: `Respond to a payment issue reported by ${agreement.counterpartyName}.`,
+                    link: `/agreements/${agreement.id}/manage`,
+                    agreementId: agreement.id
+                  });
+                }
+
+                // Task 5: Open renegotiation - borrower may need to review lender's response
+                if (agreement.hasOpenRenegotiation && !agreement.isLender) {
+                  // Borrower: may need to review lender's counteroffer or response to renegotiation
+                  tasks.push({
+                    type: 'counteroffer',
+                    text: `Review a counteroffer for your loan agreement from ${agreement.counterpartyName}.`,
+                    link: `/agreements/${agreement.id}/manage`,
+                    agreementId: agreement.id
+                  });
+                }
+              });
+            }
+
+            // Show or hide the box based on tasks
+            if (tasks.length > 0) {
+              const tasksHtml = tasks.map(task => {
+                const iconSvg = task.type === 'profile_photo'
+                  ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>'
+                  : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+                return `
+                  <li class="pending-task-item">
+                    <div class="pending-task-icon">
+                      ${iconSvg}
+                    </div>
+                    <p class="pending-task-text">
+                      <a href="${escapeHTML(task.link)}">${escapeHTML(task.text)}</a>
+                    </p>
+                  </li>
+                `;
+              }).join('');
+
+              pendingTasksList.innerHTML = tasksHtml;
+              pendingTasksBox.style.display = 'block';
+            } else {
+              pendingTasksBox.style.display = 'none';
+            }
           }
 
           // Populate progress rings (separate for lender and borrower)
