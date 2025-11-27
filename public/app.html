@@ -1406,13 +1406,13 @@
 
     .speech-balloon {
       position: absolute;
-      top: 50px;
+      top: 20px;
       right: 20px;
       max-width: 420px;
       background: var(--card);
       border: 1px solid rgba(61, 220, 151, 0.3);
       border-radius: 16px;
-      padding: 24px 28px;
+      padding: 18px 24px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4),
                   0 0 0 1px rgba(61, 220, 151, 0.1),
                   0 0 20px rgba(61, 220, 151, 0.15);
@@ -1446,40 +1446,8 @@
       z-index: 1;
     }
 
-    .speech-balloon-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin: 0 0 14px 0;
-    }
-
-    .speech-balloon-content {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-    }
-
-    .speech-balloon-icon-circle {
-      flex-shrink: 0;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 2px;
-    }
-
-    .speech-balloon-camera-icon {
-      color: #0d130f;
-    }
-
     .speech-balloon-text {
-      flex: 1;
-      font-size: 15.5px;
+      font-size: 17px;
       line-height: 1.5;
       color: var(--text);
       margin: 0;
@@ -1516,7 +1484,7 @@
     @media (max-width: 900px) {
       .speech-balloon {
         margin: 0 0 20px 0;
-        padding: 20px 24px;
+        padding: 16px 20px;
       }
     }
 
@@ -1610,18 +1578,9 @@
     <section class="dashboard-hero dashboard-hero-zero" id="dashboard-hero-zero" style="display:none">
       <!-- Speech Balloon (onboarding task) -->
       <div class="speech-balloon" id="welcome-speech-balloon" style="display:none">
-        <h3 class="speech-balloon-title">What's next?</h3>
-        <div class="speech-balloon-content">
-          <div class="speech-balloon-icon-circle">
-            <svg class="speech-balloon-camera-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-              <circle cx="12" cy="13" r="4"></circle>
-            </svg>
-          </div>
-          <p class="speech-balloon-text">
-            <a href="#" onclick="navigateToProfile(event)">Please add a profile photo to make sending requests to friends more personal.</a>
-          </p>
-        </div>
+        <p class="speech-balloon-text">
+          <a href="#" onclick="navigateToProfile(event)">Please add a profile photo to make sending requests to friends more personal.</a>
+        </p>
       </div>
 
       <div class="dashboard-hero-inner">
