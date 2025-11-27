@@ -530,26 +530,45 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
   let outstandingCents = totalDueCentsToday - totals.total_paid_cents;
   if (outstandingCents < 0) outstandingCents = 0;
 
-  // Format amounts
+  // Format amounts (formatCurrency0 returns "€ 6.000" with symbol)
+  const principalFormatted = formatCurrency0(agreement.amount_cents);
+  const totalToRepayFormatted = formatCurrency0(plannedTotalCents);
   const outstandingFormatted = formatCurrency0(outstandingCents);
-  const totalFormatted = formatCurrency0(plannedTotalCents);
 
-  // Calculate next payment date label
+  // Calculate next payment amount and date label
   let nextPaymentLabel = null;
+  let nextPaymentAmountFormatted = null;
+
   if (agreement.status === 'active' || agreement.status === 'pending') {
     if (agreement.repayment_type === 'one_time') {
-      // For one-time: show due date
+      // For one-time: show full total due and due date
       const dueDate = new Date(agreement.due_date);
       nextPaymentLabel = formatDateShort(dueDate);
+      nextPaymentAmountFormatted = totalToRepayFormatted;
     } else if (agreement.repayment_type === 'installments' && agreement.first_payment_date) {
-      // For installments: show first payment date if not yet paid
-      // TODO: Calculate actual next unpaid installment date
+      // For installments: show first payment date and installment amount
+      // TODO: Calculate actual next unpaid installment date and amount
       const firstPayment = new Date(agreement.first_payment_date);
       nextPaymentLabel = formatDateShort(firstPayment);
+      // Use installment amount if available, otherwise divide total by number of installments
+      if (agreement.installment_amount) {
+        nextPaymentAmountFormatted = formatCurrency0(Math.round(agreement.installment_amount * 100));
+      } else if (agreement.installment_count && agreement.installment_count > 0) {
+        const perInstallment = Math.round(plannedTotalCents / agreement.installment_count);
+        nextPaymentAmountFormatted = formatCurrency0(perInstallment);
+      }
     }
   } else if (agreement.status === 'settled') {
     nextPaymentLabel = 'Paid off';
+    nextPaymentAmountFormatted = null;
   }
+
+  // Generate avatar initials and color
+  const initials = getInitials(counterpartyName);
+  const colorClass = getColorClassFromName(counterpartyName);
+
+  // Get counterparty profile picture
+  const counterpartyProfilePictureUrl = isLender ? agreement.borrower_profile_picture : agreement.lender_profile_picture;
 
   // Check for open hardship requests
   const hasOpenDifficulty = db.prepare(`
@@ -577,27 +596,54 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
     roleLabel,
     statusLabel: agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1),
 
-    // Amounts (in cents for calculation, formatted for display)
-    outstandingCents,
-    outstandingFormatted,
+    // Amounts (formatted strings already include € symbol)
+    principalFormatted,        // "€ 6.000" - base loan amount
+    totalToRepayFormatted,     // "€ 6.300" - total with interest
+    outstandingFormatted,      // "€ 6.300" - what's left to pay (after payments)
+    outstandingCents,          // cents value for calculations
     totalCents: plannedTotalCents,
-    totalFormatted,
     totalPaidCents: totals.total_paid_cents,
 
-    // Dates
-    nextPaymentLabel,
+    // Next payment info
+    nextPaymentLabel,          // "27 Nov 2026" or "Paid off"
+    nextPaymentAmountFormatted, // "€ 6.300" - amount of next payment
+
+    // Avatar info
+    avatarInitials: initials,  // "BO"
+    avatarColorClass: colorClass, // "color-1" etc
+    avatarUrl: counterpartyProfilePictureUrl, // URL or null
 
     // Flags
     isLender,
     hasOpenDifficulty,
-    hasPendingPaymentToConfirm,
-
-    // Profile pictures
-    counterpartyProfilePictureUrl: isLender ? agreement.borrower_profile_picture : agreement.lender_profile_picture,
-
-    // Currency
-    currency: '€'
+    hasPendingPaymentToConfirm
   };
+}
+
+/**
+ * Get initials from a name (e.g., "Alex Smith" -> "AS", "Alex" -> "A")
+ */
+function getInitials(name) {
+  if (!name || typeof name !== 'string') return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+/**
+ * Get consistent color class based on name hash
+ */
+function getColorClassFromName(name) {
+  if (!name) return 'color-1';
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colorIndex = (Math.abs(hash) % 7) + 1; // 1-7
+  return `color-${colorIndex}`;
 }
 
 /**

@@ -807,7 +807,15 @@
 
     .agreement-summary-left {
       flex: 0 0 auto;
-      min-width: 120px;
+      min-width: 160px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .agreement-summary-text {
+      flex: 1;
+      min-width: 0;
     }
 
     .agreement-summary-name {
@@ -820,6 +828,29 @@
       color: var(--muted);
       font-size: 12px;
       margin-top: 2px;
+    }
+
+    .user-avatar-small {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .user-avatar-small .user-avatar-initials {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
     }
 
     .agreement-summary-middle {
@@ -5579,23 +5610,52 @@
         // Use enriched fields from backend (enrichAgreementForDisplay)
         const name = agreement.counterpartyName || 'Unknown';
         const roleLabel = agreement.roleLabel || ''; // "You lent" or "You borrowed"
-        const outstandingFormatted = agreement.outstandingFormatted || '0';
-        const totalFormatted = agreement.totalFormatted || '0';
-        const currency = agreement.currency || '€';
+
+        // Formatted amounts already include € symbol (e.g., "€ 6.000")
+        const principalFormatted = agreement.principalFormatted || '€ 0';
+        const totalToRepayFormatted = agreement.totalToRepayFormatted || '€ 0';
+
         const statusText = agreement.statusLabel || 'Pending';
         const status = agreement.status || 'pending';
         const statusClass = `status-badge ${status}`;
-        const nextPayment = agreement.nextPaymentLabel || null;
+
+        // Next payment info
+        const nextPaymentDate = agreement.nextPaymentLabel || null;
+        const nextPaymentAmount = agreement.nextPaymentAmountFormatted || null;
+
+        // Avatar info
+        const avatarUrl = agreement.avatarUrl || null;
+        const avatarInitials = agreement.avatarInitials || '?';
+        const avatarColorClass = agreement.avatarColorClass || 'color-1';
+
+        // Build avatar HTML
+        let avatarHtml = '';
+        if (avatarUrl) {
+          avatarHtml = `<img src="${escapeHTML(avatarUrl)}" alt="${escapeHTML(name)}" class="user-avatar-image">`;
+        } else {
+          avatarHtml = `<div class="user-avatar-initials ${avatarColorClass}">${escapeHTML(avatarInitials)}</div>`;
+        }
+
+        // Build next payment line
+        let nextPaymentHtml = '';
+        if (nextPaymentDate && nextPaymentAmount) {
+          nextPaymentHtml = `<div class="agreement-summary-next" style="font-size:12px; color:var(--muted); margin-top:4px">Next payment: ${escapeHTML(nextPaymentAmount)} on ${escapeHTML(nextPaymentDate)}</div>`;
+        } else if (nextPaymentDate) {
+          nextPaymentHtml = `<div class="agreement-summary-next" style="font-size:12px; color:var(--muted); margin-top:4px">Next payment: ${escapeHTML(nextPaymentDate)}</div>`;
+        }
 
         return `
           <li class="agreement-summary-item">
             <div class="agreement-summary-left">
-              <div class="agreement-summary-name">${escapeHTML(name)}</div>
-              ${roleLabel ? `<div class="agreement-summary-role" style="font-size:12px; color:var(--muted); margin-top:2px">${escapeHTML(roleLabel)}</div>` : ''}
+              <div class="user-avatar user-avatar-small size-small">${avatarHtml}</div>
+              <div class="agreement-summary-text">
+                <div class="agreement-summary-name">${escapeHTML(name)}</div>
+                ${roleLabel ? `<div class="agreement-summary-role" style="font-size:12px; color:var(--muted); margin-top:2px">${escapeHTML(roleLabel)}</div>` : ''}
+              </div>
             </div>
             <div class="agreement-summary-middle">
-              <div class="agreement-summary-amount">${currency}${outstandingFormatted} / ${currency}${totalFormatted}</div>
-              ${nextPayment ? `<div class="agreement-summary-next" style="font-size:12px; color:var(--muted); margin-top:4px">Next payment: ${escapeHTML(nextPayment)}</div>` : ''}
+              <div class="agreement-summary-amount">${principalFormatted} / ${totalToRepayFormatted}</div>
+              ${nextPaymentHtml}
             </div>
             <div class="agreement-summary-right">
               <span class="${statusClass}">${statusText}</span>
