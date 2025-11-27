@@ -60,7 +60,10 @@ function formatDueDate(agreement, isLender) {
 
   const dueTimestamp = new Date(dueDateStr);
   const now = new Date();
-  const diffDays = Math.floor((dueTimestamp - now) / (1000 * 60 * 60 * 24));
+  // Set both to midnight for accurate day comparison
+  dueTimestamp.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((dueTimestamp - now) / (1000 * 60 * 60 * 24));
 
   // Format date
   const dateStr = dueTimestamp.toLocaleDateString('en-GB', {

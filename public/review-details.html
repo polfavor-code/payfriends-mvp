@@ -841,7 +841,7 @@
       <p id="error-message">Unable to load agreement details.</p>
       <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap">
         <button id="retry-load-btn" onclick="retryLoad()" style="padding:10px 20px; background:var(--accent); color:#0d130f; border:none; border-radius:10px; font-weight:600; cursor:pointer; font-size:14px">Retry</button>
-        <a href="/app" style="display:inline-block; padding:10px 20px; background:#374151; color:#cbd5e1; border-radius:10px; text-decoration:none; font-weight:600">Return to My agreements</a>
+        <a href="/agreements" style="display:inline-block; padding:10px 20px; background:#374151; color:#cbd5e1; border-radius:10px; text-decoration:none; font-weight:600; font-size:16px">Return to My agreements</a>
       </div>
     </div>
   </div>
@@ -2063,8 +2063,15 @@
       // 4. Amount
       document.getElementById('amount-display').textContent = amount;
 
-      // 5. Money transfer date (use backend-derived display value)
-      document.getElementById('money-sent-display').textContent = agreement.loan_start_date_display || 'To be confirmed';
+      // 5. Money transfer date (use proper loan start label logic)
+      const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+      let loanStartLabel;
+      if (!moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance') {
+        loanStartLabel = 'When agreement is accepted';
+      } else {
+        loanStartLabel = formatFinancialDate(moneySentDate);
+      }
+      document.getElementById('money-sent-display').textContent = loanStartLabel;
       document.getElementById('money-sent-row').style.display = 'flex';
 
       // 6. Loan duration (hide for one-time loans, show for installments)
