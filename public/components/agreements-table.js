@@ -62,7 +62,47 @@ function formatDueDate(agreement, isLender) {
     }
   }
 
-  // For all other cases, show concrete date with countdown
+  // Get next payment info using unified helper
+  const nextPayment = typeof getNextPayment !== 'undefined' && agreement.status === 'active'
+    ? getNextPayment(agreement)
+    : null;
+
+  // For active agreements, show next payment amount + date
+  if (nextPayment) {
+    const amountFormatted = formatCurrency0(nextPayment.amountCents);
+    const dueTimestamp = new Date(nextPayment.dueDate);
+    const dateStr = dueTimestamp.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+
+    const diffDays = nextPayment.daysLeft;
+    let className = '';
+    let countdownText = '';
+
+    if (diffDays < 0) {
+      className = 'due-date-overdue';
+      countdownText = `${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''} overdue`;
+    } else if (diffDays === 0) {
+      className = 'due-date-today';
+      countdownText = 'Due today';
+    } else if (diffDays <= 7) {
+      className = 'due-date-soon';
+      countdownText = `${diffDays} day${diffDays !== 1 ? 's' : ''} left`;
+    } else {
+      className = 'due-date-upcoming';
+      countdownText = `${diffDays} days left`;
+    }
+
+    // Format: "€ 6.300 on 28 Nov 2026 (365 days left)"
+    const displayText = countdownText
+      ? `${amountFormatted} on ${dateStr} (${countdownText})`
+      : `${amountFormatted} on ${dateStr}`;
+    return `<div class="${className}" style="white-space:nowrap">${displayText}</div>`;
+  }
+
+  // For pending/other cases, show just the final due date with countdown
   if (!agreement.due_date && !agreement.final_due_date) {
     return '—';
   }
@@ -75,11 +115,9 @@ function formatDueDate(agreement, isLender) {
   if (!dueDateStr) return '—';
 
   const dueTimestamp = new Date(dueDateStr);
-  const now = new Date();
-  // Set both to midnight for accurate day comparison
-  dueTimestamp.setHours(0, 0, 0, 0);
-  now.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((dueTimestamp - now) / (1000 * 60 * 60 * 24));
+  const diffDays = typeof getDaysLeft !== 'undefined'
+    ? getDaysLeft(dueDateStr)
+    : Math.round((dueTimestamp - new Date()) / (1000 * 60 * 60 * 24));
 
   // Format date
   const dateStr = dueTimestamp.toLocaleDateString('en-GB', {

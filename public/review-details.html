@@ -1003,8 +1003,7 @@
         const { renderPageTopbar } = await import('/components/page-topbar.js');
         const topbar = renderPageTopbar({
           title: 'Review agreement',
-          subtitle: description,
-          href: '/app'
+          subtitle: description
         });
 
         // Clear and append the top bar
@@ -1065,7 +1064,6 @@
         const topbar = renderPageTopbar({
           title: 'Manage agreement',
           subtitle: `${description} — ${borrowerName}`,
-          href: '/app',
           statusBadge: {
             text: statusLabel,
             style: statusBadgeStyle
@@ -2109,23 +2107,25 @@
         document.getElementById('installment-plan-display').textContent = installmentPlan;
         document.getElementById('installment-plan-row').style.display = 'flex';
 
-        // 9. Interest rate (with total interest if > 0)
+        // 9. Interest rate (with total interest if > 0) - use unified calculation
         if (hasInterest) {
           const interestRate = agreement.interest_rate;
-          const totalInterestCents = Math.round((agreement.total_interest || 0) * 100);
-          const totalInterest = formatCurrency2(totalInterestCents);
+          const loanTotals = typeof computeLoanTotals !== 'undefined'
+            ? computeLoanTotals(agreement)
+            : { totalInterestCents: Math.round((agreement.total_interest || 0) * 100), totalToRepayCents: Math.round((agreement.total_repay_amount || 0) * 100) || agreement.amount_cents };
+          const totalInterest = formatCurrency2(loanTotals.totalInterestCents);
           document.getElementById('interest-rate-display').textContent = `${interestRate}% per year (total interest: ${totalInterest})`;
           document.getElementById('interest-rate-row').style.display = 'flex';
         } else {
           document.getElementById('interest-rate-row').style.display = 'none';
         }
 
-        // 10. Total to repay
+        // 10. Total to repay (use unified calculation)
         if (hasInterest) {
-          const totalRepayCents = agreement.total_repay_amount
-            ? Math.round(agreement.total_repay_amount * 100)
-            : agreement.amount_cents;
-          const totalRepay = formatCurrency2(totalRepayCents);
+          const loanTotals = typeof computeLoanTotals !== 'undefined'
+            ? computeLoanTotals(agreement)
+            : { totalToRepayCents: Math.round((agreement.total_repay_amount || 0) * 100) || agreement.amount_cents };
+          const totalRepay = formatCurrency2(loanTotals.totalToRepayCents);
           document.getElementById('total-repay-display').textContent = totalRepay;
           document.getElementById('total-repay-row').style.display = 'flex';
         } else {
@@ -2158,23 +2158,25 @@
         document.getElementById('onetime-spacer-after').style.display = 'none';
       } else {
         // ONE-TIME PAYMENT PATH
-        // 6. Interest rate (with total interest if > 0)
+        // 6. Interest rate (with total interest if > 0) - use unified calculation
         if (hasInterest) {
           const interestRate = agreement.interest_rate;
-          const totalInterestCents = Math.round((agreement.total_interest || 0) * 100);
-          const totalInterest = formatCurrency2(totalInterestCents);
+          const loanTotals = typeof computeLoanTotals !== 'undefined'
+            ? computeLoanTotals(agreement)
+            : { totalInterestCents: Math.round((agreement.total_interest || 0) * 100), totalToRepayCents: Math.round((agreement.total_repay_amount || 0) * 100) || agreement.amount_cents };
+          const totalInterest = formatCurrency2(loanTotals.totalInterestCents);
           document.getElementById('interest-rate-display').textContent = `${interestRate}% per year (total interest: ${totalInterest})`;
           document.getElementById('interest-rate-row').style.display = 'flex';
         } else {
           document.getElementById('interest-rate-row').style.display = 'none';
         }
 
-        // 7. Total to repay
+        // 7. Total to repay (use unified calculation)
         if (hasInterest) {
-          const totalRepayCents = agreement.total_repay_amount
-            ? Math.round(agreement.total_repay_amount * 100)
-            : agreement.amount_cents;
-          const totalRepay = formatCurrency2(totalRepayCents);
+          const loanTotals = typeof computeLoanTotals !== 'undefined'
+            ? computeLoanTotals(agreement)
+            : { totalToRepayCents: Math.round((agreement.total_repay_amount || 0) * 100) || agreement.amount_cents };
+          const totalRepay = formatCurrency2(loanTotals.totalToRepayCents);
           document.getElementById('total-repay-display').textContent = totalRepay;
           document.getElementById('total-repay-row').style.display = 'flex';
         } else {
@@ -4923,12 +4925,12 @@
             }
           }, 100);
         } else {
-          html += '<div style="color:var(--muted); font-size:14px">Unable to load share information.</div></div>';
+          html += '<div style="color:var(--muted); font-size:14px">Unable to load share information.</div>';
           content.innerHTML = html;
         }
       } catch (err) {
         console.error('Error loading invite:', err);
-        html += '<div style="color:var(--muted); font-size:14px">Unable to load share information.</div></div>';
+        html += '<div style="color:var(--muted); font-size:14px">Unable to load share information.</div>';
         content.innerHTML = html;
       }
     }

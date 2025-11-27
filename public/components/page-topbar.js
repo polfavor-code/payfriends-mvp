@@ -8,13 +8,13 @@
  * @param {Object} options
  * @param {string} options.title - Main title (e.g., "Manage agreement")
  * @param {string} [options.subtitle] - Optional subtitle (e.g., "For new bicycle — Bob")
- * @param {string} [options.href="/app"] - Return link destination
+ * @param {string} [options.href="/agreements"] - Return link destination
  * @param {Object} [options.statusBadge] - Optional status badge config
  * @param {string} [options.statusBadge.text] - Badge text
  * @param {string} [options.statusBadge.className] - Badge CSS classes
  * @returns {HTMLElement} The top bar container element
  */
-export function renderPageTopbar({ title, subtitle, href = "/app", statusBadge }) {
+export function renderPageTopbar({ title, subtitle, href = "/agreements", statusBadge }) {
   const container = document.createElement("div");
   container.className = "page-topbar-container";
   container.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 0; margin-bottom: 16px;";
@@ -73,6 +73,7 @@ export function renderPageTopbar({ title, subtitle, href = "/app", statusBadge }
     background: var(--accent);
     color: #0d130f;
     font-weight: 700;
+    font-size: 14px;
     text-decoration: none;
     transition: filter 0.2s ease;
     border: none;
@@ -91,7 +92,7 @@ export function renderPageTopbar({ title, subtitle, href = "/app", statusBadge }
   icon.appendChild(path);
 
   const text = document.createElement("span");
-  text.textContent = "Return to My agreements";
+  text.textContent = "Return to Loan Agreements";
 
   returnButton.appendChild(icon);
   returnButton.appendChild(text);
