@@ -13,6 +13,8 @@
   <script src="/js/header.js"></script>
   <!-- Centralized currency formatters -->
   <script src="/js/formatters.js"></script>
+  <!-- Loan timing utilities (single source of truth for timing config) -->
+  <script src="/js/loanTimingUtils.js"></script>
   <!-- Derived field utilities -->
   <script src="/js/derived-fields.js"></script>
   <!-- Fairness icon component -->
@@ -974,22 +976,45 @@
       } else {
         if (agreement.due_date) {
           // Check if we should show relative or concrete date
-          // Support both 'on-acceptance' (from backend) and 'upon_acceptance' (from wizard)
-          const isLoanStartUponAcceptance =
-            agreement.money_sent_date === 'on-acceptance' ||
-            agreement.money_sent_date === 'upon_acceptance';
-          const isRelativeDueDate =
-            agreement.one_time_due_option &&
-            agreement.one_time_due_option !== 'pick_date' &&
-            agreement.one_time_due_option !== 'pick-date';
-
+          // Use timing config for consistent display
           let dueDateDisplay;
-          if (isLoanStartUponAcceptance && isRelativeDueDate) {
-            // Show relative description
-            dueDateDisplay = getRelativeDueDateText(agreement.one_time_due_option);
+          if (typeof window.buildLoanTimingConfigFromAgreement !== 'undefined' &&
+              typeof window.getFullRepaymentDueDisplay !== 'undefined') {
+            try {
+              const timingConfig = window.buildLoanTimingConfigFromAgreement(agreement);
+              dueDateDisplay = window.getFullRepaymentDueDisplay(timingConfig, agreement.status, agreement.accepted_at);
+            } catch (err) {
+              console.error('Error building timing config for full repayment due:', err);
+              // Fallback to old logic
+              const isLoanStartUponAcceptance =
+                agreement.money_sent_date === 'on-acceptance' ||
+                agreement.money_sent_date === 'upon_acceptance';
+              const isRelativeDueDate =
+                agreement.one_time_due_option &&
+                agreement.one_time_due_option !== 'pick_date' &&
+                agreement.one_time_due_option !== 'pick-date';
+
+              if (isLoanStartUponAcceptance && isRelativeDueDate) {
+                dueDateDisplay = getRelativeDueDateText(agreement.one_time_due_option);
+              } else {
+                dueDateDisplay = formatDateWithCountdown(agreement.due_date);
+              }
+            }
           } else {
-            // Show concrete date with countdown
-            dueDateDisplay = formatDateWithCountdown(agreement.due_date);
+            // Fallback if timing utils not available
+            const isLoanStartUponAcceptance =
+              agreement.money_sent_date === 'on-acceptance' ||
+              agreement.money_sent_date === 'upon_acceptance';
+            const isRelativeDueDate =
+              agreement.one_time_due_option &&
+              agreement.one_time_due_option !== 'pick_date' &&
+              agreement.one_time_due_option !== 'pick-date';
+
+            if (isLoanStartUponAcceptance && isRelativeDueDate) {
+              dueDateDisplay = getRelativeDueDateText(agreement.one_time_due_option);
+            } else {
+              dueDateDisplay = formatDateWithCountdown(agreement.due_date);
+            }
           }
 
           addTerm('Full repayment due', dueDateDisplay);

@@ -106,25 +106,30 @@ const SUMMARY_ORDER_ONETIME = [
  * @returns {string} Formatted due date or relative description
  */
 function getFullRepaymentDueDateDisplay(wizardData) {
-  // Check if loan start is "Upon agreement acceptance"
-  // Support both 'on-acceptance' (from backend) and 'upon_acceptance' (from wizard)
+  // USE LOAN TIMING CONFIG (Single Source of Truth)
+  const timingConfig = wizardData.loanTimingConfig || null;
+
+  if (timingConfig && window.getFullRepaymentDueDisplay) {
+    // Use timing helper for consistent display
+    // Agreement is pending during wizard, no acceptedAt yet
+    return window.getFullRepaymentDueDisplay(timingConfig, 'pending', null);
+  }
+
+  // Fallback to old logic if timing config not available
   const isLoanStartUponAcceptance =
     wizardData.moneySentDate === 'on-acceptance' ||
     wizardData.moneySentDate === 'upon_acceptance' ||
     wizardData.moneySentOption === 'on-acceptance' ||
     wizardData.moneySentOption === 'upon_acceptance';
 
-  // Check if due date option is a relative period (not "pick_date" or "pick-date")
   const isRelativeDueDate = wizardData.oneTimeDueOption &&
     wizardData.oneTimeDueOption !== 'pick_date' &&
     wizardData.oneTimeDueOption !== 'pick-date';
 
-  // If loan start is "upon acceptance" AND due date is relative, show relative text
   if (isLoanStartUponAcceptance && isRelativeDueDate) {
     return getRelativeDueDateText(wizardData.oneTimeDueOption);
   }
 
-  // Otherwise, show concrete date with countdown
   return wizardData.dueDate ? formatDateWithCountdown(wizardData.dueDate) : '';
 }
 
@@ -141,27 +146,36 @@ function buildSummaryDataMap(wizardData, currentUser) {
   const summary = wizardData.calculatedSummary || {};
   const schedule = wizardData.calculatedSchedule || {};
 
-  // Format money transfer date
+  // USE LOAN TIMING CONFIG (Single Source of Truth)
+  // Agreement is always pending during the wizard, so status is 'pending' and acceptedAt is null
+  const timingConfig = wizardData.loanTimingConfig || null;
   let moneyTransferDate;
-  if (wizardData.moneySentOption === 'on-acceptance' || wizardData.moneySentOption === 'upon_acceptance') {
-    moneyTransferDate = 'When agreement is accepted';
-  } else if (wizardData.moneySentOption === 'today') {
-    moneyTransferDate = 'Today';
-  } else if (wizardData.moneySentOption === 'tomorrow') {
-    moneyTransferDate = 'Tomorrow';
-  } else if (wizardData.moneySentOption === 'in-1-week') {
-    moneyTransferDate = 'In 1 week';
-  } else if (wizardData.moneySentOption === 'in-1-month') {
-    moneyTransferDate = 'In 1 month';
-  } else if (wizardData.moneySentDate && wizardData.moneySentDate !== 'on-acceptance') {
-    const date = new Date(wizardData.moneySentDate);
-    if (!isNaN(date.getTime())) {
-      moneyTransferDate = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  if (timingConfig && window.getLoanStartDisplay) {
+    // Use timing helper for consistent display
+    moneyTransferDate = window.getLoanStartDisplay(timingConfig, 'pending', null);
+  } else {
+    // Fallback to old logic if timing config not available
+    if (wizardData.moneySentOption === 'on-acceptance' || wizardData.moneySentOption === 'upon_acceptance') {
+      moneyTransferDate = 'When agreement is accepted';
+    } else if (wizardData.moneySentOption === 'today') {
+      moneyTransferDate = 'Today';
+    } else if (wizardData.moneySentOption === 'tomorrow') {
+      moneyTransferDate = 'Tomorrow';
+    } else if (wizardData.moneySentOption === 'in-1-week') {
+      moneyTransferDate = 'In 1 week';
+    } else if (wizardData.moneySentOption === 'in-1-month') {
+      moneyTransferDate = 'In 1 month';
+    } else if (wizardData.moneySentDate && wizardData.moneySentDate !== 'on-acceptance') {
+      const date = new Date(wizardData.moneySentDate);
+      if (!isNaN(date.getTime())) {
+        moneyTransferDate = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      } else {
+        moneyTransferDate = 'When agreement is accepted';
+      }
     } else {
       moneyTransferDate = 'When agreement is accepted';
     }
-  } else {
-    moneyTransferDate = 'When agreement is accepted';
   }
 
   // Format loan duration - use calculated value from Step 2

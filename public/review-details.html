@@ -16,6 +16,8 @@
   <script src="/js/header.js"></script>
   <!-- Centralized currency formatters -->
   <script src="/js/formatters.js"></script>
+  <!-- Loan timing utilities (single source of truth for timing config) -->
+  <script src="/js/loanTimingUtils.js"></script>
   <!-- Derived field utilities -->
   <script src="/js/derived-fields.js"></script>
   <!-- Renegotiation module -->
@@ -2062,13 +2064,31 @@
       // 4. Amount
       document.getElementById('amount-display').textContent = amount;
 
-      // 5. Money transfer date (use proper loan start label logic)
-      const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+      // 5. Money transfer date (use timing config for consistent display)
       let loanStartLabel;
-      if (!moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance') {
-        loanStartLabel = 'When agreement is accepted';
+      if (typeof window.buildLoanTimingConfigFromAgreement !== 'undefined' &&
+          typeof window.getLoanStartDisplay !== 'undefined') {
+        try {
+          const timingConfig = window.buildLoanTimingConfigFromAgreement(agreement);
+          loanStartLabel = window.getLoanStartDisplay(timingConfig, agreement.status, agreement.accepted_at);
+        } catch (err) {
+          console.error('Error building timing config for loan start:', err);
+          // Fallback to old logic
+          const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+          if (!moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance') {
+            loanStartLabel = 'When agreement is accepted';
+          } else {
+            loanStartLabel = formatFinancialDate(moneySentDate);
+          }
+        }
       } else {
-        loanStartLabel = formatFinancialDate(moneySentDate);
+        // Fallback to old logic if timing utils not available
+        const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+        if (!moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance') {
+          loanStartLabel = 'When agreement is accepted';
+        } else {
+          loanStartLabel = formatFinancialDate(moneySentDate);
+        }
       }
       document.getElementById('money-sent-display').textContent = loanStartLabel;
       document.getElementById('money-sent-row').style.display = 'flex';
@@ -2190,55 +2210,100 @@
         document.getElementById('repayment-type-onetime-display').textContent = 'One-time payment';
         document.getElementById('repayment-type-onetime-row').style.display = 'flex';
 
-        // 9. Full repayment due date
-        // Check if we should show relative or concrete date
-        // Support both 'on-acceptance' (from backend) and 'upon_acceptance' (from wizard)
-        const isLoanStartUponAcceptance =
-          agreement.money_sent_date === 'on-acceptance' ||
-          agreement.money_sent_date === 'upon_acceptance';
-        const isRelativeDueDate =
-          agreement.one_time_due_option &&
-          agreement.one_time_due_option !== 'pick_date' &&
-          agreement.one_time_due_option !== 'pick-date';
+        // 9. Full repayment due date (use timing config for consistent display)
+        let fullDueDateText, showCountdown;
 
-        if (isLoanStartUponAcceptance && isRelativeDueDate) {
-          // Show relative description
-          document.getElementById('full-due-display').textContent = getRelativeDueDateText(agreement.one_time_due_option);
-          document.getElementById('full-due-countdown').textContent = '';
-        // Check if this is a "when accepted" pending loan
-        const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
-        const isWhenAccepted = !moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance';
+        if (typeof window.buildLoanTimingConfigFromAgreement !== 'undefined' &&
+            typeof window.getFullRepaymentDueDisplay !== 'undefined') {
+          try {
+            const timingConfig = window.buildLoanTimingConfigFromAgreement(agreement);
+            fullDueDateText = window.getFullRepaymentDueDisplay(timingConfig, agreement.status, agreement.accepted_at);
 
-        if (isWhenAccepted && agreement.status === 'pending') {
-          // Show relative description without countdown for pending "when accepted" loans
-          const relativeDueLabel = typeof getRelativeDueDateLabel !== 'undefined'
-            ? getRelativeDueDateLabel(agreement)
-            : (agreement.one_time_due_option ? getRelativeDueDateText(agreement.one_time_due_option) : null);
+            // Only show countdown for active/settled agreements with concrete dates
+            showCountdown = (agreement.status === 'active' || agreement.status === 'settled') &&
+                           !fullDueDateText.includes('after loan start');
 
-          if (relativeDueLabel) {
-            // Case A: Show relative label like "1 year after agreement is accepted"
-            document.getElementById('full-due-display').textContent = relativeDueLabel;
-            document.getElementById('full-due-countdown').textContent = '';
-          } else {
-            // Fallback: If no relative label, show concrete date without countdown
-            const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-            document.getElementById('full-due-display').textContent = dueDate;
-            document.getElementById('full-due-countdown').textContent = '';
+            document.getElementById('full-due-display').textContent = fullDueDateText;
+
+            if (showCountdown && agreement.due_date) {
+              // Add countdown using unified getDaysLeft function
+              const daysLeft = typeof getDaysLeft !== 'undefined'
+                ? getDaysLeft(agreement.due_date)
+                : Math.round((new Date(agreement.due_date) - new Date()) / (1000 * 60 * 60 * 24));
+
+              if (daysLeft >= 0) {
+                document.getElementById('full-due-countdown').textContent = `(in ${daysLeft} days)`;
+              } else {
+                document.getElementById('full-due-countdown').textContent = `(${Math.abs(daysLeft)} days overdue)`;
+              }
+            } else {
+              document.getElementById('full-due-countdown').textContent = '';
+            }
+          } catch (err) {
+            console.error('Error building timing config for full repayment due:', err);
+            // Fallback to old logic
+            const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+            const isWhenAccepted = !moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance';
+
+            if (isWhenAccepted && agreement.status === 'pending') {
+              const relativeDueLabel = typeof getRelativeDueDateLabel !== 'undefined'
+                ? getRelativeDueDateLabel(agreement)
+                : (agreement.one_time_due_option ? getRelativeDueDateText(agreement.one_time_due_option) : null);
+
+              if (relativeDueLabel) {
+                document.getElementById('full-due-display').textContent = relativeDueLabel;
+                document.getElementById('full-due-countdown').textContent = '';
+              } else {
+                const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                document.getElementById('full-due-display').textContent = dueDate;
+                document.getElementById('full-due-countdown').textContent = '';
+              }
+            } else {
+              const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+              document.getElementById('full-due-display').textContent = dueDate;
+
+              const daysLeft = typeof getDaysLeft !== 'undefined'
+                ? getDaysLeft(agreement.due_date)
+                : Math.round((new Date(agreement.due_date) - new Date()) / (1000 * 60 * 60 * 24));
+
+              if (daysLeft >= 0) {
+                document.getElementById('full-due-countdown').textContent = `(in ${daysLeft} days)`;
+              } else {
+                document.getElementById('full-due-countdown').textContent = `(${Math.abs(daysLeft)} days overdue)`;
+              }
+            }
           }
         } else {
-          // Case B: Show concrete date with countdown using unified getDaysLeft function
-          const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-          document.getElementById('full-due-display').textContent = dueDate;
+          // Fallback if timing utils not available
+          const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+          const isWhenAccepted = !moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance';
 
-          // Add countdown using unified getDaysLeft function
-          const daysLeft = typeof getDaysLeft !== 'undefined'
-            ? getDaysLeft(agreement.due_date)
-            : Math.round((new Date(agreement.due_date) - new Date()) / (1000 * 60 * 60 * 24));
+          if (isWhenAccepted && agreement.status === 'pending') {
+            const relativeDueLabel = typeof getRelativeDueDateLabel !== 'undefined'
+              ? getRelativeDueDateLabel(agreement)
+              : (agreement.one_time_due_option ? getRelativeDueDateText(agreement.one_time_due_option) : null);
 
-          if (daysLeft >= 0) {
-            document.getElementById('full-due-countdown').textContent = `(in ${daysLeft} days)`;
+            if (relativeDueLabel) {
+              document.getElementById('full-due-display').textContent = relativeDueLabel;
+              document.getElementById('full-due-countdown').textContent = '';
+            } else {
+              const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+              document.getElementById('full-due-display').textContent = dueDate;
+              document.getElementById('full-due-countdown').textContent = '';
+            }
           } else {
-            document.getElementById('full-due-countdown').textContent = `(${Math.abs(daysLeft)} days overdue)`;
+            const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            document.getElementById('full-due-display').textContent = dueDate;
+
+            const daysLeft = typeof getDaysLeft !== 'undefined'
+              ? getDaysLeft(agreement.due_date)
+              : Math.round((new Date(agreement.due_date) - new Date()) / (1000 * 60 * 60 * 24));
+
+            if (daysLeft >= 0) {
+              document.getElementById('full-due-countdown').textContent = `(in ${daysLeft} days)`;
+            } else {
+              document.getElementById('full-due-countdown').textContent = `(${Math.abs(daysLeft)} days overdue)`;
+            }
           }
         }
         document.getElementById('full-due-row').style.display = 'flex';

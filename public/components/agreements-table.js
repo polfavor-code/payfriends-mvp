@@ -47,18 +47,34 @@ function formatDueDate(agreement, isLender) {
     return '<span class="due-date-settled">—</span>';
   }
 
-  // Check if this is a "when accepted" pending loan
-  const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
-  const isWhenAccepted = !moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance';
+  // For pending agreements, use timing config to show relative labels
+  if (agreement.status === 'pending') {
+    // Build timing config from agreement data and use timing helper
+    if (typeof window.buildLoanTimingConfigFromAgreement !== 'undefined' &&
+        typeof window.getFullRepaymentDueDisplay !== 'undefined') {
+      try {
+        const timingConfig = window.buildLoanTimingConfigFromAgreement(agreement);
+        const dueText = window.getFullRepaymentDueDisplay(timingConfig, 'pending', null);
+        if (dueText && dueText !== 'To be confirmed') {
+          return `<div class="due-date-upcoming" style="white-space:nowrap">${dueText}</div>`;
+        }
+      } catch (err) {
+        console.error('Error building timing config for pending agreement:', err);
+      }
+    }
 
-  if (isWhenAccepted && agreement.status === 'pending') {
-    // Show relative label for "when accepted" pending loans
-    const relativeLabel = typeof getRelativeDueDateLabel !== 'undefined'
-      ? getRelativeDueDateLabel(agreement)
-      : null;
+    // Fallback to old logic
+    const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+    const isWhenAccepted = !moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance';
 
-    if (relativeLabel) {
-      return `<div class="due-date-upcoming" style="white-space:nowrap">${relativeLabel}</div>`;
+    if (isWhenAccepted) {
+      const relativeLabel = typeof getRelativeDueDateLabel !== 'undefined'
+        ? getRelativeDueDateLabel(agreement)
+        : null;
+
+      if (relativeLabel) {
+        return `<div class="due-date-upcoming" style="white-space:nowrap">${relativeLabel}</div>`;
+      }
     }
   }
 
