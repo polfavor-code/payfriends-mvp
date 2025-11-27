@@ -1732,7 +1732,7 @@
           </label>
         </div>
 
-        <!-- Worst-case scenario (only shown for loans >= 6000 EUR) -->
+        <!-- Worst-case scenario (only shown for loans >= 3000 EUR) -->
         <div id="worst-case-scenario-container" style="margin:48px 0 24px 0">
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
             <label class="toggle-switch">
@@ -1934,9 +1934,9 @@
       agreementSent: false
     };
 
-    // Worst case scenario is only shown for loans from 6,000 EUR and higher,
+    // Worst case scenario is only shown for loans from 3,000 EUR and higher,
     // since debt collectors and legal escalation rarely make sense below this amount.
-    const WORST_CASE_MIN_AMOUNT_EUR = 6000;
+    const WORST_CASE_MIN_AMOUNT_EUR = 3000;
 
     // Currency formatters are loaded from /js/formatters.js
     // - formatCurrency0(cents) - for My Agreements table (no decimals, nl-NL locale)
@@ -4616,7 +4616,7 @@
 
       wizardData.proofRequired = document.getElementById('proof-required').checked;
 
-      // Only include debt collection clause if amount is >= 6000 EUR
+      // Only include debt collection clause if amount is >= 3000 EUR
       const amountEur = wizardData.amount || 0;
       if (amountEur >= WORST_CASE_MIN_AMOUNT_EUR) {
         wizardData.debtCollectionClause = document.getElementById('debt-collection-clause').checked;
@@ -5308,7 +5308,7 @@
           reminderMode: wizardData.reminderMode || 'auto',
           reminderOffsets: wizardData.reminderOffsets,
           proofRequired: wizardData.proofRequired !== undefined ? wizardData.proofRequired : true,
-          // Only include debt collection clause if amount >= 6000 EUR
+          // Only include debt collection clause if amount >= 3000 EUR
           debtCollectionClause: (amountValue >= WORST_CASE_MIN_AMOUNT_EUR) ? wizardData.debtCollectionClause : false
         };
 
