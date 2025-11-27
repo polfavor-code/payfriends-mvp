@@ -573,6 +573,7 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
 
   // Generate full repayment schedule for timeline (only for active agreements)
   let futurePayments = [];
+  let loanTransferEvent = null;
   if (agreement.status === 'active' && agreement.accepted_at) {
     try {
       const { generateRepaymentSchedule } = require('./lib/repayments/repaymentSchedule.js');
@@ -607,6 +608,18 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
           amountCents: row.totalPayment,
           amountFormatted: formatCurrency0(row.totalPayment)
         }));
+
+      // Add loan transfer event (when money is sent from lender to borrower)
+      const transferDate = new Date(loanStartDate);
+      transferDate.setHours(0, 0, 0, 0);
+
+      loanTransferEvent = {
+        date: transferDate.toISOString().split('T')[0],
+        dateLabel: formatDateShort(transferDate),
+        amountCents: agreement.amount_cents,
+        amountFormatted: formatCurrency0(agreement.amount_cents),
+        type: 'loan_transfer'
+      };
     } catch (err) {
       console.error('Error generating repayment schedule for agreement', agreement.id, err);
     }
@@ -661,6 +674,7 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
 
     // Full repayment schedule (future payments only)
     futurePayments,
+    loanTransferEvent,  // Loan transfer event (money sent from lender to borrower)
 
     // Avatar info
     avatarInitials: initials,  // "BO"

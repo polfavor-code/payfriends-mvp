@@ -1158,7 +1158,7 @@
       line-height: 1.5;
     }
 
-    /* Money Timeline */
+    /* Money Roadmap */
     .timeline-container {
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.06);
@@ -6264,9 +6264,24 @@
       const allEvents = [];
       activeAgreements.forEach(agreement => {
         const isLender = agreement.isLender;
-        const direction = isLender ? 'incoming' : 'outgoing';
 
-        // Use the futurePayments array from the agreement
+        // Add loan transfer event (when money is sent from lender to borrower)
+        if (agreement.loanTransferEvent) {
+          const transferDate = new Date(agreement.loanTransferEvent.date);
+          const transferDirection = isLender ? 'outgoing' : 'incoming';
+          allEvents.push({
+            date: transferDate,
+            dateStr: agreement.loanTransferEvent.date,
+            counterparty: agreement.counterpartyName,
+            amount: agreement.loanTransferEvent.amountFormatted,
+            amountCents: agreement.loanTransferEvent.amountCents,
+            direction: transferDirection,
+            type: 'loan_transfer'
+          });
+        }
+
+        // Add repayment events (when borrower pays back to lender)
+        const repaymentDirection = isLender ? 'incoming' : 'outgoing';
         if (agreement.futurePayments && agreement.futurePayments.length > 0) {
           agreement.futurePayments.forEach(payment => {
             const paymentDate = new Date(payment.date);
@@ -6276,7 +6291,8 @@
               counterparty: agreement.counterpartyName,
               amount: payment.amountFormatted,
               amountCents: payment.amountCents,
-              direction: direction
+              direction: repaymentDirection,
+              type: 'repayment'
             });
           });
         }
@@ -6286,8 +6302,8 @@
         return `
           <div class="timeline-header">
             <div>
-              <h3 class="timeline-title">Money timeline</h3>
-              <p class="timeline-subtitle">All incoming and outgoing repayments on one horizontal line.</p>
+              <h3 class="timeline-title">Money Roadmap</h3>
+              <p class="timeline-subtitle">All incoming and outgoing repayments combined in one timeline.</p>
             </div>
           </div>
           <div style="padding:32px; text-align:center; color:var(--muted); font-style:italic">
@@ -6366,8 +6382,8 @@
       return `
         <div class="timeline-header">
           <div>
-            <h3 class="timeline-title">Money timeline</h3>
-            <p class="timeline-subtitle">All incoming and outgoing repayments on one horizontal line.</p>
+            <h3 class="timeline-title">Money Roadmap</h3>
+            <p class="timeline-subtitle">All incoming and outgoing repayments combined in one timeline.</p>
           </div>
           <div class="timeline-zoom-controls">
             <button class="timeline-zoom-btn active" onclick="setTimelineZoom('auto')">Auto</button>
