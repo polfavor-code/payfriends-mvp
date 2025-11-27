@@ -245,6 +245,54 @@ function getLoanStartLabel(agreement) {
   return formatFinancialDate(moneySentDate);
 }
 
+/**
+ * Get relative due date label for "when accepted" pending loans
+ * @param {Object} agreement - Agreement object
+ * @returns {string|null} Relative label like "1 year after agreement is accepted", or null if not applicable
+ */
+function getRelativeDueDateLabel(agreement) {
+  const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+  const isWhenAccepted = !moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance';
+
+  if (!isWhenAccepted || agreement.status !== 'pending') {
+    return null;
+  }
+
+  // Check if we have a relative due date option
+  if (agreement.one_time_due_option) {
+    const mapping = {
+      'in_1_week': '1 week after agreement is accepted',
+      'in_1_month': '1 month after agreement is accepted',
+      'in_3_months': '3 months after agreement is accepted',
+      'in_6_months': '6 months after agreement is accepted',
+      'in_1_year': '1 year after agreement is accepted',
+      'in_1_years': '1 year after agreement is accepted'
+    };
+    return mapping[agreement.one_time_due_option] || null;
+  }
+
+  return null;
+}
+
+/**
+ * Get loan duration label for display
+ * @param {Object} agreement - Agreement object
+ * @returns {string|null} Duration label like "1 year after agreement is accepted" or null
+ */
+function getLoanDurationLabel(agreement) {
+  const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+  const isWhenAccepted = !moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance';
+
+  if (isWhenAccepted && agreement.status === 'pending') {
+    // For pending "when accepted" loans, return relative duration
+    return getRelativeDueDateLabel(agreement);
+  }
+
+  // For active loans with real dates, we can calculate actual duration if needed
+  // For now, return null and let the calling code handle it
+  return null;
+}
+
 // Export for browser use
 if (typeof window !== 'undefined') {
   window.computeLoanTotals = computeLoanTotals;
@@ -252,4 +300,6 @@ if (typeof window !== 'undefined') {
   window.getNextPayment = getNextPayment;
   window.getOutstandingAndTotal = getOutstandingAndTotal;
   window.getLoanStartLabel = getLoanStartLabel;
+  window.getRelativeDueDateLabel = getRelativeDueDateLabel;
+  window.getLoanDurationLabel = getLoanDurationLabel;
 }
