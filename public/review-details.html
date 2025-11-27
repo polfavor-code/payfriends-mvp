@@ -2199,11 +2199,17 @@
             : (agreement.one_time_due_option ? getRelativeDueDateText(agreement.one_time_due_option) : null);
 
           if (relativeDueLabel) {
+            // Case A: Show relative label like "1 year after agreement is accepted"
             document.getElementById('full-due-display').textContent = relativeDueLabel;
+            document.getElementById('full-due-countdown').textContent = '';
+          } else {
+            // Fallback: If no relative label, show concrete date without countdown
+            const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            document.getElementById('full-due-display').textContent = dueDate;
             document.getElementById('full-due-countdown').textContent = '';
           }
         } else {
-          // Show concrete date with countdown using unified getDaysLeft function
+          // Case B: Show concrete date with countdown using unified getDaysLeft function
           const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
           document.getElementById('full-due-display').textContent = dueDate;
 
