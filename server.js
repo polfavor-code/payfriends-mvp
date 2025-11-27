@@ -501,6 +501,166 @@ function getPaymentTotals(agreementId) {
   };
 }
 
+/**
+ * Enrich a raw agreement with display-friendly fields for UI
+ * This is the single source of truth for agreement display data
+ * Used by /api/agreements, /app dashboard, and wizard Step 5
+ */
+function enrichAgreementForDisplay(agreement, currentUserId) {
+  const totals = getPaymentTotals(agreement.id);
+  const isLender = agreement.lender_user_id === currentUserId;
+
+  // Determine counterparty name and role
+  let counterpartyName;
+  let roleLabel;
+
+  if (isLender) {
+    counterpartyName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+    roleLabel = 'You lent';
+  } else {
+    counterpartyName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
+    roleLabel = 'You borrowed';
+  }
+
+  // Calculate outstanding using dynamic interest
+  const interestInfo = getAgreementInterestInfo(agreement, new Date());
+  const totalDueCentsToday = interestInfo.total_due_cents;
+  const plannedTotalCents = interestInfo.planned_total_due_cents;
+
+  let outstandingCents = totalDueCentsToday - totals.total_paid_cents;
+  if (outstandingCents < 0) outstandingCents = 0;
+
+  // Format amounts (formatCurrency0 returns "€ 6.000" with symbol)
+  const principalFormatted = formatCurrency0(agreement.amount_cents);
+  const totalToRepayFormatted = formatCurrency0(plannedTotalCents);
+  const outstandingFormatted = formatCurrency0(outstandingCents);
+
+  // Calculate next payment amount and date label
+  let nextPaymentLabel = null;
+  let nextPaymentAmountFormatted = null;
+
+  if (agreement.status === 'active' || agreement.status === 'pending') {
+    if (agreement.repayment_type === 'one_time') {
+      // For one-time: show full total due and due date
+      const dueDate = new Date(agreement.due_date);
+      nextPaymentLabel = formatDateShort(dueDate);
+      nextPaymentAmountFormatted = totalToRepayFormatted;
+    } else if (agreement.repayment_type === 'installments' && agreement.first_payment_date) {
+      // For installments: show first payment date and installment amount
+      // TODO: Calculate actual next unpaid installment date and amount
+      const firstPayment = new Date(agreement.first_payment_date);
+      nextPaymentLabel = formatDateShort(firstPayment);
+      // Use installment amount if available, otherwise divide total by number of installments
+      if (agreement.installment_amount) {
+        nextPaymentAmountFormatted = formatCurrency0(Math.round(agreement.installment_amount * 100));
+      } else if (agreement.installment_count && agreement.installment_count > 0) {
+        const perInstallment = Math.round(plannedTotalCents / agreement.installment_count);
+        nextPaymentAmountFormatted = formatCurrency0(perInstallment);
+      }
+    }
+  } else if (agreement.status === 'settled') {
+    nextPaymentLabel = 'Paid off';
+    nextPaymentAmountFormatted = null;
+  }
+
+  // Generate avatar initials and color
+  const initials = getInitials(counterpartyName);
+  const colorClass = getColorClassFromName(counterpartyName);
+
+  // Get counterparty profile picture
+  const counterpartyProfilePictureUrl = isLender ? agreement.borrower_profile_picture : agreement.lender_profile_picture;
+
+  // Check for open hardship requests
+  const hasOpenDifficulty = db.prepare(`
+    SELECT COUNT(*) as count
+    FROM hardship_requests
+    WHERE agreement_id = ?
+  `).get(agreement.id).count > 0;
+
+  // Check for pending payments that need lender confirmation
+  const hasPendingPaymentToConfirm = isLender && db.prepare(`
+    SELECT COUNT(*) as count
+    FROM payments
+    WHERE agreement_id = ? AND status = 'pending'
+  `).get(agreement.id).count > 0;
+
+  // Return enriched agreement
+  return {
+    ...agreement,
+    // Core identifiers
+    id: agreement.id,
+    status: agreement.status,
+
+    // Display fields
+    counterpartyName,
+    roleLabel,
+    statusLabel: agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1),
+
+    // Amounts (formatted strings already include € symbol)
+    principalFormatted,        // "€ 6.000" - base loan amount
+    totalToRepayFormatted,     // "€ 6.300" - total with interest
+    outstandingFormatted,      // "€ 6.300" - what's left to pay (after payments)
+    outstandingCents,          // cents value for calculations
+    totalCents: plannedTotalCents,
+    totalPaidCents: totals.total_paid_cents,
+
+    // Next payment info
+    nextPaymentLabel,          // "27 Nov 2026" or "Paid off"
+    nextPaymentAmountFormatted, // "€ 6.300" - amount of next payment
+
+    // Avatar info
+    avatarInitials: initials,  // "BO"
+    avatarColorClass: colorClass, // "color-1" etc
+    avatarUrl: counterpartyProfilePictureUrl, // URL or null
+
+    // Flags
+    isLender,
+    hasOpenDifficulty,
+    hasPendingPaymentToConfirm
+  };
+}
+
+/**
+ * Get initials from a name (e.g., "Alex Smith" -> "AS", "Alex" -> "A")
+ */
+function getInitials(name) {
+  if (!name || typeof name !== 'string') return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+/**
+ * Get consistent color class based on name hash
+ */
+function getColorClassFromName(name) {
+  if (!name) return 'color-1';
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colorIndex = (Math.abs(hash) % 7) + 1; // 1-7
+  return `color-${colorIndex}`;
+}
+
+/**
+ * Format a date as short locale string (e.g., "26 Nov 2026")
+ */
+function formatDateShort(date) {
+  if (!date) return null;
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return null;
+
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
 // get the total amount due for an agreement (principal + interest if available)
 // DEPRECATED: Use getAgreementInterestInfo instead for dynamic interest calculation
 function getAgreementTotalDueCents(agreement) {
@@ -4440,10 +4600,82 @@ app.get('/', (req, res) => {
 
 // App: serve app page if authenticated, else redirect to /
 app.get('/app', (req, res) => {
-  if (req.user) {
-    res.sendFile(path.join(__dirname, 'public', 'app.html'));
-  } else {
-    res.redirect('/');
+  if (!req.user) {
+    return res.redirect('/');
+  }
+
+  try {
+    // Auto-link any pending agreements for this user
+    autoLinkPendingAgreements(req.user.id, req.user.email, req.user.full_name);
+
+    // Fetch agreements with all necessary joins
+    const rawAgreements = db.prepare(`
+      SELECT a.*,
+        u_lender.full_name as lender_full_name,
+        u_lender.email as lender_email,
+        u_lender.profile_picture as lender_profile_picture,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email,
+        u_borrower.profile_picture as borrower_profile_picture,
+        invite.accepted_at as accepted_at
+      FROM agreements a
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      LEFT JOIN agreement_invites invite ON a.id = invite.agreement_id
+      WHERE lender_user_id = ? OR borrower_user_id = ?
+      ORDER BY created_at DESC
+    `).all(req.user.id, req.user.id);
+
+    // Enrich all agreements using shared helper (single source of truth)
+    const agreements = rawAgreements.map(a => enrichAgreementForDisplay(a, req.user.id));
+
+    // Calculate stats from enriched agreements
+    const totalAgreements = agreements.length;
+    const totalPendingAgreements = agreements.filter(a => a.status === 'pending').length;
+    const totalActiveAgreements = agreements.filter(a => a.status === 'active').length;
+    const totalSettledAgreements = agreements.filter(a => a.status === 'settled').length;
+    const totalOverdueAgreements = 0; // TODO: implement overdue tracking
+
+    // GroupTabs not yet implemented, use empty array
+    const groupTabs = [];
+    const totalGroupTabs = groupTabs.length;
+
+    // Take first 3 agreements for summary (already enriched)
+    const agreementsSummary = agreements.slice(0, 3);
+
+    // Read the HTML template
+    const htmlPath = path.join(__dirname, 'public', 'app.html');
+    let html = fs.readFileSync(htmlPath, 'utf8');
+
+    // Inject dashboard data as JSON
+    const dashboardData = JSON.stringify({
+      user: {
+        id: req.user.id,
+        email: req.user.email,
+        fullName: req.user.full_name,
+        firstName: req.user.full_name ? req.user.full_name.split(' ')[0] : req.user.email.split('@')[0]
+      },
+      stats: {
+        totalAgreements,
+        totalPendingAgreements,
+        totalActiveAgreements,
+        totalSettledAgreements,
+        totalOverdueAgreements,
+        totalGroupTabs
+      },
+      agreementsSummary,
+      hasAnyAgreements: totalAgreements > 0,
+      hasAnyGroupTabs: totalGroupTabs > 0,
+      isZeroState: totalAgreements === 0 && totalGroupTabs === 0
+    });
+
+    // Replace the placeholder with actual data
+    html = html.replace('/*DASHBOARD_DATA_INJECTION*/', `window.__DASHBOARD_DATA__ = ${dashboardData};`);
+
+    res.send(html);
+  } catch (err) {
+    console.error('Error loading dashboard:', err);
+    res.status(500).send('Error loading dashboard');
   }
 });
 
