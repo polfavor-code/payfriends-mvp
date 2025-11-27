@@ -1010,6 +1010,14 @@
       flex-wrap: wrap;
     }
 
+    .dashboard-action-button {
+      box-shadow: 0 0 20px rgba(61, 220, 151, 0.3);
+    }
+
+    .dashboard-action-button:hover {
+      box-shadow: 0 0 25px rgba(61, 220, 151, 0.4);
+    }
+
     .dashboard-placeholder {
       color: var(--muted);
       font-size: 14px;
@@ -1549,7 +1557,7 @@
 
       <!-- Next Steps Card -->
       <div id="next-steps-card" class="next-steps-card" style="display:none">
-        <h2 class="next-steps-title">Next steps</h2>
+        <h2 class="next-steps-title">Pending tasks</h2>
         <div id="next-steps-content" class="next-steps-content">
           <!-- Tasks will be populated by JavaScript -->
         </div>
@@ -6363,7 +6371,7 @@
         return `
           <div class="timeline-header">
             <div>
-              <h3 class="timeline-title">Money timeline</h3>
+              <h3 class="timeline-title">Money Roadmap</h3>
               <p class="timeline-subtitle">All incoming and outgoing repayments on one horizontal line.</p>
             </div>
           </div>
@@ -6456,7 +6464,7 @@
       return `
         <div class="timeline-header">
           <div>
-            <h3 class="timeline-title">Money timeline</h3>
+            <h3 class="timeline-title">Money Roadmap</h3>
             <p class="timeline-subtitle">All incoming and outgoing repayments on one horizontal line.</p>
           </div>
           <div class="timeline-zoom-controls">
@@ -6532,7 +6540,9 @@
             const firstName = fullName.trim().split(/\s+/)[0] || '';
             const email = data.user.email || '';
             const fallbackName = email.includes('@') ? email.split('@')[0] : email;
-            const displayName = firstName || fallbackName || 'you';
+            let displayName = firstName || fallbackName || 'you';
+            // Capitalize first letter of the name
+            displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
             greeting.textContent = `Hi ${displayName}, welcome to your dashboard.`;
           }
 
@@ -6545,7 +6555,7 @@
             const activeAgreements = data.agreementsSummary.filter(a => a.status === 'active');
             const pendingAgreements = data.agreementsSummary.filter(a => a.status === 'pending');
 
-            // Box 1: Active Agreements
+            // Box 1: Active Loan Agreements
             const activeItems = activeAgreements.map(a => ({
               name: a.counterpartyName,
               detail: a.outstandingFormatted || '€ 0',
@@ -6554,14 +6564,14 @@
               avatarColorClass: a.avatarColorClass
             }));
             boxes.push(renderSummaryBox(
-              'Active Agreements',
+              'Active Loan Agreements',
               data.stats.totalActiveAgreements || 0,
               activeItems,
               '/agreements?status=active',
               { showPreviews: true }
             ));
 
-            // Box 2: Pending Agreements
+            // Box 2: Pending Loan Agreements
             const pendingItems = pendingAgreements.map(a => ({
               name: a.counterpartyName,
               detail: 'Awaiting approval',
@@ -6570,7 +6580,7 @@
               avatarColorClass: a.avatarColorClass
             }));
             boxes.push(renderSummaryBox(
-              'Pending Agreements',
+              'Pending Loan Agreements',
               data.stats.totalPendingAgreements || 0,
               pendingItems,
               '/agreements?status=pending',
@@ -6725,7 +6735,7 @@
       if (!userProfilePicture) {
         tasks.push({
           type: 'add-profile-picture',
-          text: 'Add a profile photo to make your loan agreements feel more personal.',
+          text: 'Add a profile photo to make sending requests to friends more personal.',
           action: () => window.location.href = '/app/profile'
         });
       }
@@ -6737,13 +6747,8 @@
           : (agreement.lender_full_name || agreement.lender_name || agreement.lender_email);
 
         if (agreement.status === 'pending') {
-          if (isLender) {
-            tasks.push({
-              type: 'approve-new-agreement',
-              text: `Approve new agreement from ${counterpartyName}.`,
-              action: () => window.location.href = `/agreements/${agreement.id}/manage`
-            });
-          } else {
+          // Only borrowers need to approve agreements
+          if (!isLender) {
             tasks.push({
               type: 'approve-agreement',
               text: `Approve agreement sent by ${counterpartyName}.`,
