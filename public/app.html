@@ -6713,16 +6713,47 @@
               });
             }
 
-            // Task 2: Pending agreements awaiting borrower approval
+            // Process all agreements for various pending tasks
             if (data.agreementsSummary) {
-              const pendingAgreements = data.agreementsSummary.filter(a => a.status === 'pending');
-              pendingAgreements.forEach(agreement => {
-                // Only show approval task if current user is the borrower
-                if (!agreement.isLender) {
+              data.agreementsSummary.forEach(agreement => {
+
+                // Task 2: Pending loan agreement awaiting borrower approval
+                if (agreement.status === 'pending' && !agreement.isLender) {
                   tasks.push({
                     type: 'approval',
-                    text: `Approve new agreement from ${agreement.counterpartyName}.`,
-                    link: `/review/${agreement.inviteToken}`,
+                    text: `Approve new loan agreement from ${agreement.counterpartyName}.`,
+                    link: `/agreements/${agreement.id}/review`,
+                    agreementId: agreement.id
+                  });
+                }
+
+                // Task 3: Borrower reported payment - lender must confirm
+                if (agreement.isLender && agreement.hasPendingPaymentToConfirm) {
+                  tasks.push({
+                    type: 'payment_review',
+                    text: `Review a reported payment from ${agreement.counterpartyName}.`,
+                    link: `/agreements/${agreement.id}/manage`,
+                    agreementId: agreement.id
+                  });
+                }
+
+                // Task 4: Borrower reported payment issues - lender must respond
+                if (agreement.isLender && agreement.has_repayment_issue) {
+                  tasks.push({
+                    type: 'payment_issue',
+                    text: `Respond to a payment issue reported by ${agreement.counterpartyName}.`,
+                    link: `/agreements/${agreement.id}/manage`,
+                    agreementId: agreement.id
+                  });
+                }
+
+                // Task 5: Open renegotiation - borrower may need to review lender's response
+                if (agreement.hasOpenRenegotiation && !agreement.isLender) {
+                  // Borrower: may need to review lender's counteroffer or response to renegotiation
+                  tasks.push({
+                    type: 'counteroffer',
+                    text: `Review a counteroffer for your loan agreement from ${agreement.counterpartyName}.`,
+                    link: `/agreements/${agreement.id}/manage`,
                     agreementId: agreement.id
                   });
                 }

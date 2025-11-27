@@ -626,6 +626,13 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
     WHERE agreement_id = ?
   `).get(agreement.id).count > 0;
 
+  // Check for open renegotiation requests
+  const hasOpenRenegotiation = db.prepare(`
+    SELECT COUNT(*) as count
+    FROM renegotiation_requests
+    WHERE agreement_id = ? AND status = 'open'
+  `).get(agreement.id).count > 0;
+
   // Check for pending payments that need lender confirmation
   const hasPendingPaymentToConfirm = isLender && db.prepare(`
     SELECT COUNT(*) as count
@@ -670,6 +677,7 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
     // Flags
     isLender,
     hasOpenDifficulty,
+    hasOpenRenegotiation,
     hasPendingPaymentToConfirm
   };
 }
