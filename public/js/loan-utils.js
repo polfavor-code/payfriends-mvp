@@ -303,3 +303,17 @@ if (typeof window !== 'undefined') {
   window.getRelativeDueDateLabel = getRelativeDueDateLabel;
   window.getLoanDurationLabel = getLoanDurationLabel;
 }
+
+// Export for Node.js testing
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    computeLoanTotals,
+    getDaysLeft,
+    getNextPayment,
+    getOutstandingAndTotal,
+    getLoanStartLabel,
+    getRelativeDueDateLabel,
+    getLoanDurationLabel,
+    buildPaymentDatesFromAgreement
+  };
+}
