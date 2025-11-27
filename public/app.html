@@ -16,6 +16,8 @@
   <script src="/js/phone-input.js"></script>
   <!-- Centralized currency formatters -->
   <script src="/js/formatters.js"></script>
+  <!-- Loan timing utilities (single source of truth for timing config) -->
+  <script src="/js/loanTimingUtils.js"></script>
   <!-- Summary block component -->
   <script src="/components/summary-block.js"></script>
   <!-- Fairness icon component -->
@@ -3746,6 +3748,15 @@
       // Store schedule and summary for later use
       wizardData.calculatedSchedule = wizardCalculatorSchedule;
       wizardData.calculatedSummary = wizardCalculatorSummary;
+
+      // Build and store loan timing configuration (single source of truth)
+      wizardData.loanTimingConfig = window.buildLoanTimingConfigFromForm({
+        moneySentOption: loanStartMode,
+        moneySentDate: loanStartDate,
+        oneTimeDueOption: firstPaymentDue,
+        firstPaymentOption: firstPaymentDue,
+        dueDate: firstPaymentDate || null
+      });
 
       // Extract actual dates from calculator schedule rows
       // The calculator produces exact dates in the schedule, use those as the source of truth
