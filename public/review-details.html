@@ -841,6 +841,7 @@
       <p id="error-message">Unable to load agreement details.</p>
       <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap">
         <button id="retry-load-btn" onclick="retryLoad()" style="padding:10px 20px; background:var(--accent); color:#0d130f; border:none; border-radius:10px; font-weight:600; cursor:pointer; font-size:14px">Retry</button>
+        <a href="/agreements" style="display:inline-block; padding:10px 20px; background:#374151; color:#cbd5e1; border-radius:10px; text-decoration:none; font-weight:600; font-size:16px">← Return to Loan Agreements</a>
         <a href="/app" style="display:inline-block; padding:10px 20px; background:#374151; color:#cbd5e1; border-radius:10px; text-decoration:none; font-weight:600">Return to Dashboard</a>
       </div>
     </div>
@@ -2063,8 +2064,15 @@
       // 4. Amount
       document.getElementById('amount-display').textContent = amount;
 
-      // 5. Money transfer date (use backend-derived display value)
-      document.getElementById('money-sent-display').textContent = agreement.loan_start_date_display || 'To be confirmed';
+      // 5. Money transfer date (use proper loan start label logic)
+      const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+      let loanStartLabel;
+      if (!moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance') {
+        loanStartLabel = 'When agreement is accepted';
+      } else {
+        loanStartLabel = formatFinancialDate(moneySentDate);
+      }
+      document.getElementById('money-sent-display').textContent = loanStartLabel;
       document.getElementById('money-sent-row').style.display = 'flex';
 
       // 6. Loan duration (hide for one-time loans, show for installments)
@@ -2181,19 +2189,41 @@
         document.getElementById('repayment-type-onetime-row').style.display = 'flex';
 
         // 9. Full repayment due date
-        // Check if we should show relative or concrete date
-        const isLoanStartUponAcceptance = agreement.money_sent_date === 'on-acceptance';
-        const isRelativeDueDate = agreement.one_time_due_option && agreement.one_time_due_option !== 'pick_date';
+        // Check if this is a "when accepted" pending loan
+        const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+        const isWhenAccepted = !moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance';
 
-        if (isLoanStartUponAcceptance && isRelativeDueDate) {
-          // Show relative description
-          document.getElementById('full-due-display').textContent = getRelativeDueDateText(agreement.one_time_due_option);
-          document.getElementById('full-due-countdown').textContent = '';
+        if (isWhenAccepted && agreement.status === 'pending') {
+          // Show relative description without countdown for pending "when accepted" loans
+          const relativeDueLabel = typeof getRelativeDueDateLabel !== 'undefined'
+            ? getRelativeDueDateLabel(agreement)
+            : (agreement.one_time_due_option ? getRelativeDueDateText(agreement.one_time_due_option) : null);
+
+          if (relativeDueLabel) {
+            // Case A: Show relative label like "1 year after agreement is accepted"
+            document.getElementById('full-due-display').textContent = relativeDueLabel;
+            document.getElementById('full-due-countdown').textContent = '';
+          } else {
+            // Fallback: If no relative label, show concrete date without countdown
+            const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            document.getElementById('full-due-display').textContent = dueDate;
+            document.getElementById('full-due-countdown').textContent = '';
+          }
         } else {
-          // Show concrete date with countdown
+          // Case B: Show concrete date with countdown using unified getDaysLeft function
           const dueDate = new Date(agreement.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
           document.getElementById('full-due-display').textContent = dueDate;
-          document.getElementById('full-due-countdown').textContent = getDueDateCountdown(agreement.due_date);
+
+          // Add countdown using unified getDaysLeft function
+          const daysLeft = typeof getDaysLeft !== 'undefined'
+            ? getDaysLeft(agreement.due_date)
+            : Math.round((new Date(agreement.due_date) - new Date()) / (1000 * 60 * 60 * 24));
+
+          if (daysLeft >= 0) {
+            document.getElementById('full-due-countdown').textContent = `(in ${daysLeft} days)`;
+          } else {
+            document.getElementById('full-due-countdown').textContent = `(${Math.abs(daysLeft)} days overdue)`;
+          }
         }
         document.getElementById('full-due-row').style.display = 'flex';
 
@@ -4333,6 +4363,26 @@
 
       let html = `<p style="margin:0 0 12px 0; font-size:14px">At ${agreement.interest_rate}% interest per year over ${termText}, total interest is about ${totalInterest} and total to repay is ${totalRepay}.</p>`;
 
+      // Add loan start and loan duration labels for "when accepted" pending loans
+      const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+      const isWhenAccepted = !moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance';
+
+      if (isWhenAccepted && agreement.status === 'pending') {
+        const loanStartLabel = typeof getLoanStartLabel !== 'undefined'
+          ? getLoanStartLabel(agreement)
+          : 'When agreement is accepted';
+        const loanDurationLabel = typeof getLoanDurationLabel !== 'undefined'
+          ? getLoanDurationLabel(agreement)
+          : null;
+
+        html += `<div style="margin:0 0 16px 0; padding:12px; background:rgba(61,220,151,0.06); border:1px solid rgba(61,220,151,0.2); border-radius:8px">`;
+        html += `<div style="display:flex; margin-bottom:8px"><span style="color:var(--muted); width:120px">Loan start:</span><span style="color:var(--accent); font-weight:500">${loanStartLabel}</span></div>`;
+        if (loanDurationLabel) {
+          html += `<div style="display:flex"><span style="color:var(--muted); width:120px">Loan duration:</span><span style="color:var(--accent); font-weight:500">${loanDurationLabel}</span></div>`;
+        }
+        html += `</div>`;
+      }
+
       // Add detailed breakdown table for installments
       if (agreement.repayment_type === 'installments' && agreement.installment_count) {
         const schedule = calculateAmortizationSchedule();
@@ -4991,6 +5041,8 @@
 
   <!-- Shared Schedule Calculation Utility -->
   <script src="/js/schedule.js"></script>
+  <!-- Unified loan calculation utilities -->
+  <script src="/js/loan-utils.js"></script>
 
   <!-- Shared Agreements Table Component -->
   <script src="/components/agreements-table.js"></script>

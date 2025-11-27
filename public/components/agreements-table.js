@@ -47,6 +47,22 @@ function formatDueDate(agreement, isLender) {
     return '<span class="due-date-settled">—</span>';
   }
 
+  // Check if this is a "when accepted" pending loan
+  const moneySentDate = agreement.money_sent_date || agreement.money_transfer_date;
+  const isWhenAccepted = !moneySentDate || moneySentDate === 'on-acceptance' || moneySentDate === 'upon agreement acceptance';
+
+  if (isWhenAccepted && agreement.status === 'pending') {
+    // Show relative label for "when accepted" pending loans
+    const relativeLabel = typeof getRelativeDueDateLabel !== 'undefined'
+      ? getRelativeDueDateLabel(agreement)
+      : null;
+
+    if (relativeLabel) {
+      return `<div class="due-date-upcoming" style="white-space:nowrap">${relativeLabel}</div>`;
+    }
+  }
+
+  // For all other cases, show concrete date with countdown
   if (!agreement.due_date && !agreement.final_due_date) {
     return '—';
   }
@@ -60,7 +76,10 @@ function formatDueDate(agreement, isLender) {
 
   const dueTimestamp = new Date(dueDateStr);
   const now = new Date();
-  const diffDays = Math.floor((dueTimestamp - now) / (1000 * 60 * 60 * 24));
+  // Set both to midnight for accurate day comparison
+  dueTimestamp.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((dueTimestamp - now) / (1000 * 60 * 60 * 24));
 
   // Format date
   const dateStr = dueTimestamp.toLocaleDateString('en-GB', {
@@ -291,21 +310,16 @@ function renderAgreementsTable(agreements, currentUser, currentFilter = 'all', c
     // Get description or show fallback
     const description = agreement.description || '<span style="color:var(--muted); font-style:italic">(No description)</span>';
 
-    // Calculate outstanding and total due (including interest if available)
-    // Use formatCurrency0 for compact display (no decimals, nl-NL locale: € 3.000)
-    const outstandingCents = agreement.outstanding_cents || 0;
-    const outstanding = formatCurrency0(outstandingCents);
+    // Calculate outstanding and total due using unified calculation
+    // Use getOutstandingAndTotal from loan-utils.js for consistency
+    const outstandingAndTotal = typeof getOutstandingAndTotal !== 'undefined'
+      ? getOutstandingAndTotal(agreement)
+      : { outstandingCents: agreement.outstanding_cents || 0, totalToRepayCents: agreement.amount_cents };
 
-    // For dynamic interest (one-time loans), use planned_total_cents if available
-    // Otherwise use total_repay_amount, or fall back to principal
-    let totalDueCents;
-    if (agreement.planned_total_cents !== undefined) {
-      totalDueCents = agreement.planned_total_cents;
-    } else if (agreement.total_repay_amount != null) {
-      totalDueCents = Math.round(agreement.total_repay_amount * 100);
-    } else {
-      totalDueCents = agreement.amount_cents;
-    }
+    const outstandingCents = outstandingAndTotal.outstandingCents;
+    const totalDueCents = outstandingAndTotal.totalToRepayCents;
+
+    const outstanding = formatCurrency0(outstandingCents);
     const totalDue = formatCurrency0(totalDueCents);
 
     // Show principal as tooltip when interest is present
