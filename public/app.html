@@ -1519,6 +1519,73 @@
         padding: 20px 24px;
       }
     }
+
+    /* Dashboard Pending Tasks Banner (matching features.html header card) */
+    .dashboard-pending-tasks {
+      background: linear-gradient(135deg, rgba(69, 212, 139, 0.16), rgba(12, 18, 27, 0.95));
+      border-radius: 18px;
+      padding: 28px 28px 24px;
+      border: 1px solid rgba(69, 212, 139, 0.25);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+      margin: 28px 0;
+    }
+
+    .dashboard-pending-tasks h2 {
+      font-size: 1.8rem;
+      margin: 0 0 0.75rem;
+      font-weight: 700;
+    }
+
+    .pending-tasks-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .pending-task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .pending-task-icon {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    .pending-task-icon svg {
+      color: #0d130f;
+    }
+
+    .pending-task-text {
+      flex: 1;
+      font-size: 0.96rem;
+      color: #d2deec;
+      margin: 0;
+      padding-top: 4px;
+    }
+
+    .pending-task-text a {
+      color: #d2deec;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .pending-task-text a:hover {
+      color: var(--accent);
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -1597,6 +1664,14 @@
         <p class="dashboard-intro-link" style="margin-top:24px">
           <a href="/features" style="font-size:16px">See how PayFriends works →</a>
         </p>
+      </div>
+
+      <!-- Pending Tasks Banner (matching features.html style) -->
+      <div class="dashboard-pending-tasks" id="dashboard-pending-tasks" style="display:none">
+        <h2>Pending tasks</h2>
+        <ul class="pending-tasks-list" id="pending-tasks-list">
+          <!-- Tasks will be populated by JavaScript -->
+        </ul>
       </div>
 
       <!-- Summary boxes grid (Active and Pending only) -->
@@ -6661,6 +6736,64 @@
             ));
 
             summaryGrid.innerHTML = boxes.join('');
+          }
+
+          // Populate Pending Tasks Banner
+          const pendingTasksBox = document.getElementById('dashboard-pending-tasks');
+          const pendingTasksList = document.getElementById('pending-tasks-list');
+          if (pendingTasksBox && pendingTasksList && data.user) {
+            const tasks = [];
+
+            // Task 1: Add profile photo if missing
+            const hasProfilePhoto = data.user.profile_picture_url && data.user.profile_picture_url.trim() !== '';
+            if (!hasProfilePhoto) {
+              tasks.push({
+                type: 'profile_photo',
+                text: 'Add a profile photo to make sending requests to friends more personal.',
+                link: '/app/profile'
+              });
+            }
+
+            // Task 2: Pending agreements awaiting borrower approval
+            if (data.agreementsSummary) {
+              const pendingAgreements = data.agreementsSummary.filter(a => a.status === 'pending');
+              pendingAgreements.forEach(agreement => {
+                // Only show approval task if current user is the borrower
+                if (!agreement.isLender) {
+                  tasks.push({
+                    type: 'approval',
+                    text: `Approve new agreement from ${agreement.counterpartyName}.`,
+                    link: `/review/${agreement.inviteToken}`,
+                    agreementId: agreement.id
+                  });
+                }
+              });
+            }
+
+            // Show or hide the box based on tasks
+            if (tasks.length > 0) {
+              const tasksHtml = tasks.map(task => {
+                const iconSvg = task.type === 'profile_photo'
+                  ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>'
+                  : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+                return `
+                  <li class="pending-task-item">
+                    <div class="pending-task-icon">
+                      ${iconSvg}
+                    </div>
+                    <p class="pending-task-text">
+                      <a href="${escapeHTML(task.link)}">${escapeHTML(task.text)}</a>
+                    </p>
+                  </li>
+                `;
+              }).join('');
+
+              pendingTasksList.innerHTML = tasksHtml;
+              pendingTasksBox.style.display = 'block';
+            } else {
+              pendingTasksBox.style.display = 'none';
+            }
           }
 
           // Populate progress rings (separate for lender and borrower)
