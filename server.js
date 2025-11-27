@@ -4707,7 +4707,9 @@ app.get('/app', (req, res) => {
         id: req.user.id,
         email: req.user.email,
         fullName: req.user.full_name,
-        firstName: req.user.full_name ? req.user.full_name.split(' ')[0] : req.user.email.split('@')[0]
+        firstName: req.user.full_name ? req.user.full_name.split(' ')[0] : req.user.email.split('@')[0],
+        profilePicture: req.user.profile_picture,
+        hasProfilePicture: !!req.user.profile_picture
       },
       stats: {
         totalAgreements,

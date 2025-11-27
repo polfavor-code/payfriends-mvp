@@ -1076,6 +1076,55 @@
       text-align: center;
     }
 
+    /* Pending Tasks Box */
+    .pending-tasks-box {
+      background: rgba(61, 220, 151, 0.05);
+      border: 1px solid rgba(61, 220, 151, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .pending-tasks-header {
+      margin-bottom: 16px;
+    }
+
+    .pending-tasks-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .pending-tasks-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pending-task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    .pending-task-icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+    }
+
+    .pending-task-text {
+      flex: 1;
+    }
+
     /* Progress Rings */
     .progress-circle-container {
       background: var(--card);
@@ -1425,6 +1474,16 @@
               See all features and how we work our magic
             </a>
           </p>
+
+          <!-- Pending tasks box -->
+          <div id="pending-tasks-zero" class="pending-tasks-box" style="display:none">
+            <div class="pending-tasks-header">
+              <h3 class="pending-tasks-title">Pending tasks</h3>
+            </div>
+            <ul class="pending-tasks-list" id="pending-tasks-list-zero">
+              <!-- Tasks will be populated by JavaScript -->
+            </ul>
+          </div>
 
           <div class="dashboard-hero__actions">
             <button onclick="startNewAgreementFromWelcome()" class="primary-button">
@@ -6420,8 +6479,38 @@
             const firstName = fullName.trim().split(/\s+/)[0] || '';
             const email = data.user.email || '';
             const fallbackName = email.includes('@') ? email.split('@')[0] : email;
-            const displayName = firstName || fallbackName || 'there';
+            let displayName = firstName || fallbackName || 'there';
+            // Capitalize first letter
+            displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
             welcomeHeading.textContent = `Welcome, ${displayName}`;
+          }
+
+          // Populate pending tasks
+          const pendingTasksBox = document.getElementById('pending-tasks-zero');
+          const pendingTasksList = document.getElementById('pending-tasks-list-zero');
+          if (pendingTasksBox && pendingTasksList && data.user) {
+            const tasks = [];
+
+            // Check if user has a profile photo
+            if (!data.user.hasProfilePicture) {
+              tasks.push({
+                icon: '📷',
+                text: 'Add a profile photo to make sending requests to friends more personal.'
+              });
+            }
+
+            // Show the box if there are tasks
+            if (tasks.length > 0) {
+              pendingTasksList.innerHTML = tasks.map(task => `
+                <li class="pending-task-item">
+                  <span class="pending-task-icon">${task.icon}</span>
+                  <span class="pending-task-text">${escapeHTML(task.text)}</span>
+                </li>
+              `).join('');
+              pendingTasksBox.style.display = 'block';
+            } else {
+              pendingTasksBox.style.display = 'none';
+            }
           }
         }
         if (dashboardMain) {
