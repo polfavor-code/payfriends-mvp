@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quasar Dropdown Height Demo</title>
+  <title>Quasar Dropdown Height Control</title>
 
   <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/quasar@2.12.0/dist/quasar.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/quasar@2/dist/quasar.prod.css" rel="stylesheet">
 
   <style>
     body {
@@ -26,6 +26,7 @@
       color: #00ff00;
       text-align: center;
       margin-bottom: 30px;
+      font-size: 2.5em;
     }
 
     .alert {
@@ -35,6 +36,7 @@
       margin: 20px 0;
       text-align: center;
       font-weight: bold;
+      font-size: 18px;
     }
 
     .success {
@@ -45,6 +47,7 @@
       margin: 20px 0;
       text-align: center;
       font-weight: bold;
+      font-size: 18px;
     }
 
     .grid {
@@ -68,6 +71,7 @@
     .card h2 {
       color: #00ff00;
       margin: 0 0 20px 0;
+      font-size: 1.5em;
     }
 
     .card.bad h2 {
@@ -82,6 +86,7 @@
       display: inline-block;
       margin-bottom: 20px;
       font-weight: bold;
+      font-size: 14px;
     }
 
     .card.bad .label {
@@ -93,6 +98,7 @@
       color: #aaa;
       margin-bottom: 30px;
       line-height: 1.6;
+      font-size: 14px;
     }
 
     .code {
@@ -102,9 +108,10 @@
       border-radius: 4px;
       margin-top: 20px;
       font-family: monospace;
-      font-size: 13px;
+      font-size: 12px;
       color: #0f0;
       overflow-x: auto;
+      line-height: 1.6;
     }
 
     .solution {
@@ -119,13 +126,7 @@
       color: #ffaa00;
       text-align: center;
       margin-bottom: 30px;
-    }
-
-    #loading {
-      text-align: center;
-      padding: 40px;
-      color: #ffaa00;
-      font-size: 18px;
+      font-size: 2em;
     }
   </style>
 </head>
@@ -133,9 +134,7 @@
   <div class="container">
     <h1>🎯 Quasar Dropdown Height Control</h1>
 
-    <div id="loading">Loading Vue and Quasar... Please wait...</div>
-
-    <div id="q-app" style="display: none;">
+    <div id="q-app">
       <div class="alert">
         YOUR DEVELOPER IS WRONG! Click each dropdown below to see the difference.
       </div>
@@ -146,26 +145,26 @@
           <h2>✅ SHORT (6 items)</h2>
           <div class="label">MOBILE SOLUTION</div>
           <p class="description">
-            Uses <strong>options-dense</strong> and <strong>max-height="6"</strong><br>
-            Shows only 6 items - perfect for mobile!
+            Uses <strong>menu-props maxHeight: 180px</strong><br>
+            Shows only ~6 items - perfect for mobile!
           </p>
 
           <q-select
+            v-model="timeShort"
+            :options="timeOptions"
+            label="Select time"
             filled
-            v-model="short"
-            :options="times"
-            label="Click me - only 6 items visible"
             dark
             options-dense
-            color="green"
-            max-height="6"
+            :menu-props="{ maxHeight: '180px' }"
           />
 
           <div class="code">
 &lt;q-select<br>
 &nbsp;&nbsp;v-model="time"<br>
 &nbsp;&nbsp;:options="times"<br>
-&nbsp;&nbsp;<span style="color:#ffff00">max-height="6"</span><br>
+&nbsp;&nbsp;<span style="color:#ffff00">:menu-props="{ maxHeight: '180px' }"</span><br>
+&nbsp;&nbsp;filled<br>
 &nbsp;&nbsp;options-dense<br>
 /&gt;
           </div>
@@ -176,55 +175,55 @@
           <h2>✅ MEDIUM (10 items)</h2>
           <div class="label">TABLET SOLUTION</div>
           <p class="description">
-            Uses <strong>options-dense</strong> and <strong>max-height="10"</strong><br>
-            Shows 10 items - good for tablets!
+            Uses <strong>menu-props maxHeight: 280px</strong><br>
+            Shows ~10 items - good for tablets!
           </p>
 
           <q-select
+            v-model="timeMedium"
+            :options="timeOptions"
+            label="Select time"
             filled
-            v-model="medium"
-            :options="times"
-            label="Click me - 10 items visible"
             dark
             options-dense
-            color="green"
-            max-height="10"
+            :menu-props="{ maxHeight: '280px' }"
           />
 
           <div class="code">
 &lt;q-select<br>
 &nbsp;&nbsp;v-model="time"<br>
 &nbsp;&nbsp;:options="times"<br>
-&nbsp;&nbsp;<span style="color:#ffff00">max-height="10"</span><br>
+&nbsp;&nbsp;<span style="color:#ffff00">:menu-props="{ maxHeight: '280px' }"</span><br>
+&nbsp;&nbsp;filled<br>
 &nbsp;&nbsp;options-dense<br>
 /&gt;
           </div>
         </div>
 
-        <!-- LONG DROPDOWN -->
+        <!-- UNLIMITED DROPDOWN -->
         <div class="card bad">
           <h2>❌ UNLIMITED</h2>
           <div class="label">YOUR PROBLEM</div>
           <p class="description">
-            <strong>NO max-height limit!</strong><br>
+            <strong>NO menu-props limit!</strong><br>
             Shows all 48 items - clutters screen!
           </p>
 
           <q-select
+            v-model="timeUnlimited"
+            :options="timeOptions"
+            label="Select time"
             filled
-            v-model="long"
-            :options="times"
-            label="Click me - HUGE list!"
             dark
             options-dense
-            color="red"
           />
 
           <div class="code">
 &lt;q-select<br>
 &nbsp;&nbsp;v-model="time"<br>
 &nbsp;&nbsp;:options="times"<br>
-&nbsp;&nbsp;<span style="color:#ff4444">/* NO max-height! */</span><br>
+&nbsp;&nbsp;<span style="color:#ff4444">/* NO menu-props! */</span><br>
+&nbsp;&nbsp;filled<br>
 &nbsp;&nbsp;options-dense<br>
 /&gt;
           </div>
@@ -232,7 +231,7 @@
       </div>
 
       <div class="success">
-        ✅ THE FIX: Add max-height="6" to your q-select!
+        ✅ THE FIX: Add :menu-props="{ maxHeight: '180px' }" to your q-select!
       </div>
 
       <div class="solution">
@@ -251,85 +250,63 @@
 &nbsp;&nbsp;v-model="guestlistRegistrationEnd"<br>
 &nbsp;&nbsp;:options="timeOptions"<br>
 &nbsp;&nbsp;label="Select time"<br>
-&nbsp;&nbsp;<span style="color:#ffff00">max-height="6"</span>  <span style="color:#888">&lt;-- ADD THIS!</span><br>
+&nbsp;&nbsp;<span style="color:#ffff00">:menu-props="{ maxHeight: '180px' }"</span>  <span style="color:#888">&lt;-- ADD THIS!</span><br>
 /&gt;
         </div>
 
         <p style="color:#fff; margin-top:30px; line-height:1.8">
-          <strong style="color:#ffff00">The "max-height" prop:</strong><br>
-          • Limits number of visible items<br>
-          • Value is item count (not pixels!)<br>
-          • Users can scroll to see more<br>
-          • For mobile: use 6-8<br>
-          • For desktop: use 10-15<br>
+          <strong style="color:#ffff00">The "menu-props" approach:</strong><br>
+          • Limits dropdown menu height in pixels<br>
+          • Users can scroll to see more items<br>
+          • For mobile: use 150-200px<br>
+          • For desktop: use 250-350px<br>
         </p>
       </div>
 
       <div style="background:#2a2a2a; border:2px solid #00ff00; padding:40px; border-radius:8px; text-align:center">
-        <h2 style="color:#00ff00">✅ PROOF COMPLETE</h2>
-        <p style="color:#fff; font-size:20px">
+        <h2 style="color:#00ff00; margin-bottom:20px">✅ PROOF COMPLETE</h2>
+        <p style="color:#fff; font-size:20px; line-height:1.8">
           Your developer was wrong.<br>
-          <strong style="color:#ffff00">Fix time: 10 seconds</strong>
+          <strong style="color:#ffff00; font-size:24px">Fix time: 10 seconds</strong>
         </p>
       </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/quasar@2.12.0/dist/quasar.umd.prod.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/quasar@2/dist/quasar.umd.prod.js"></script>
 
   <script>
-    // Wait for libraries to load
-    window.addEventListener('load', function() {
-      if (!window.Vue || !window.Quasar) {
-        document.getElementById('loading').innerHTML = '❌ ERROR: Vue or Quasar failed to load from CDN.<br>Check your internet connection.';
-        return;
+    const { createApp, ref } = Vue;
+    const { Quasar } = window;
+
+    const app = createApp({
+      setup() {
+        // Generate time options for full day in 30 minute steps
+        const timeOptions = [];
+        for (let h = 0; h < 24; h++) {
+          for (let m = 0; m < 60; m += 30) {
+            const hh = String(h).padStart(2, '0');
+            const mm = String(m).padStart(2, '0');
+            timeOptions.push(`${hh}:${mm}`);
+          }
+        }
+
+        const timeShort = ref(null);
+        const timeMedium = ref(null);
+        const timeUnlimited = ref(null);
+
+        return {
+          timeOptions,
+          timeShort,
+          timeMedium,
+          timeUnlimited
+        };
       }
-
-      const { createApp } = Vue;
-
-      // Generate time options
-      const times = [];
-      for (let h = 0; h < 24; h++) {
-        for (let m = 0; m < 60; m += 30) {
-          const hh = String(h).padStart(2, '0');
-          const mm = String(m).padStart(2, '0');
-          times.push(`${hh}:${mm}`);
-        }
-      }
-
-      const app = createApp({
-        data() {
-          return {
-            short: null,
-            medium: null,
-            long: null,
-            times: times
-          };
-        },
-        mounted() {
-          console.log('✅ Demo loaded successfully!');
-          console.log('📊 Time options:', this.times.length);
-          console.log('');
-          console.log('🎯 CLICK THE DROPDOWNS:');
-          console.log('1. SHORT - max-height="6" (6 items)');
-          console.log('2. MEDIUM - max-height="10" (10 items)');
-          console.log('3. LONG - NO LIMIT (48 items - PROBLEM!)');
-        }
-      });
-
-      app.use(Quasar.Quasar, {
-        config: {
-          dark: true
-        }
-      });
-
-      app.mount('#q-app');
-
-      // Hide loading, show app
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('q-app').style.display = 'block';
     });
+
+    app.use(Quasar);
+    app.mount('#q-app');
   </script>
 </body>
 </html>
