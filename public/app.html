@@ -1526,8 +1526,16 @@
             </a>
           </p>
 
+          <!-- Pending tasks block for welcome screen -->
+          <div id="next-steps-card-zero" class="next-steps-card" style="display:none; margin-top:24px">
+            <h2 class="next-steps-title">Pending tasks</h2>
+            <div id="next-steps-content-zero" class="next-steps-content">
+              <!-- Tasks will be populated by JavaScript -->
+            </div>
+          </div>
+
           <div class="dashboard-hero__actions">
-            <button onclick="startNewAgreementFromWelcome()" class="primary-button">
+            <button onclick="startNewAgreementFromWelcome()" class="primary-button dashboard-action-button">
               + New Loan Agreement
             </button>
           </div>
@@ -6518,9 +6526,14 @@
             const firstName = fullName.trim().split(/\s+/)[0] || '';
             const email = data.user.email || '';
             const fallbackName = email.includes('@') ? email.split('@')[0] : email;
-            const displayName = firstName || fallbackName || 'there';
+            let displayName = firstName || fallbackName || 'there';
+            // Capitalize first letter of the name
+            displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
             welcomeHeading.textContent = `Welcome, ${displayName}`;
           }
+
+          // Load pending tasks for welcome screen
+          loadDashboardTasksForZeroState();
         }
         if (dashboardMain) {
           dashboardMain.style.display = 'none';
@@ -6884,6 +6897,63 @@
         await renderNextStepsCard(agreements, data.user.id, data.user.profilePicture);
       } catch (err) {
         console.error('Error loading dashboard tasks:', err);
+      }
+    }
+
+    async function loadDashboardTasksForZeroState() {
+      try {
+        const res = await fetch('/api/agreements');
+        if (!res.ok) {
+          console.error('Failed to load agreements for tasks');
+          return;
+        }
+
+        const agreements = await res.json();
+        const data = window.__DASHBOARD_DATA__;
+        if (!data || !data.user) return;
+
+        // Render tasks to the zero state card
+        await renderNextStepsCardForZeroState(agreements, data.user.id, data.user.profilePicture);
+      } catch (err) {
+        console.error('Error loading dashboard tasks for zero state:', err);
+      }
+    }
+
+    async function renderNextStepsCardForZeroState(agreements, currentUserId, userProfilePicture) {
+      const card = document.getElementById('next-steps-card-zero');
+      const content = document.getElementById('next-steps-content-zero');
+      if (!card || !content) return;
+
+      const tasks = await detectTasks(agreements, currentUserId, userProfilePicture);
+
+      // For zero state, always show the card if there are any tasks (including profile photo)
+      if (tasks.length > 0) {
+        const maxVisibleTasks = 6;
+        const visibleTasks = tasks.slice(0, maxVisibleTasks);
+
+        content.innerHTML = '';
+
+        visibleTasks.forEach(task => {
+          const taskElement = document.createElement('div');
+          taskElement.className = 'next-steps-task';
+          taskElement.onclick = task.action;
+
+          const iconElement = document.createElement('div');
+          iconElement.className = 'next-steps-task-icon';
+
+          const textElement = document.createElement('div');
+          textElement.className = 'next-steps-task-text';
+          textElement.textContent = task.text;
+
+          taskElement.appendChild(iconElement);
+          taskElement.appendChild(textElement);
+          content.appendChild(taskElement);
+        });
+
+        card.style.display = 'block';
+      } else {
+        // Even if no tasks, don't show the card on zero state
+        card.style.display = 'none';
       }
     }
 
