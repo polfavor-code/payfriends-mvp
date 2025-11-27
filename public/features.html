@@ -51,43 +51,47 @@
       max-width: 720px;
     }
 
-    .features-header-meta {
+    .hero-cta-row {
+      margin-top: 16px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 1.25rem;
-      gap: 12px;
       flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
     }
 
-    .features-tagline {
+    .btn-primary {
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 0;
+      background: var(--accent);
+      color: #0d130f;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: filter 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.06);
+    }
+
+    .hero-secondary-link {
       font-size: 0.9rem;
       color: var(--muted);
-    }
-
-    .features-cta {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .features-cta a.primary-button {
       text-decoration: none;
     }
 
-    .features-cta-link {
-      font-size: 0.86rem;
-      color: var(--muted);
-    }
-
-    .features-cta-link a {
+    .hero-secondary-link:hover {
       color: var(--accent);
-      font-weight: 500;
-      text-decoration: none;
+      text-decoration: underline;
     }
 
-    .features-cta-link a:hover {
-      text-decoration: underline;
+    @media (max-width: 640px) {
+      .hero-cta-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
 
     .features-grid {
@@ -139,20 +143,25 @@
     }
 
     .feature-icon {
-      width: 28px;
-      height: 28px;
+      width: 40px;
+      height: 40px;
       border-radius: 999px;
-      background: rgba(69, 212, 139, 0.12);
-      border: 1px solid rgba(69, 212, 139, 0.65);
+      background: rgba(61, 220, 151, 0.08);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      margin-bottom: 12px;
     }
 
-    .feature-icon span {
-      font-size: 16px;
-      color: var(--accent);
+    .feature-icon-svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .feature-title {
@@ -174,14 +183,26 @@
       z-index: 1;
       align-self: flex-start;
       margin-top: 4px;
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      padding: 4px 9px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
       border-radius: 999px;
-      background: rgba(11, 164, 97, 0.08);
-      color: #8be9b3;
-      border: 1px solid rgba(69, 212, 139, 0.45);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(61, 220, 151, 0.08);
+      color: var(--accent);
+    }
+
+    .feature-tag-icon svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--accent);
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     @media (max-width: 720px) {
@@ -202,19 +223,13 @@
         Set up a plan once, then let us track the numbers, the reminders and the fairness for both sides.
       </p>
 
-      <div class="features-header-meta">
-        <div class="features-tagline">
-          Built for real friendships, shared trips, long term loans and everything in between.
-        </div>
-        <div class="features-cta">
-          <a href="/app" class="primary-button">
-            + New Loan Agreement
-          </a>
-          <div class="features-cta-link">
-            Already have an agreement running?
-            <a href="/app">Go back to your dashboard</a>
-          </div>
-        </div>
+      <div class="hero-cta-row">
+        <a href="/app.html" class="btn-primary">
+          + New Loan Agreement
+        </a>
+        <a href="/app.html" class="hero-secondary-link">
+          Go back to your dashboard
+        </a>
       </div>
     </section>
 
@@ -222,91 +237,181 @@
       <!-- Card 1 -->
       <article class="feature-card">
         <div class="feature-card-header">
-          <div class="feature-icon"><span>✓</span></div>
+          <div class="feature-icon">
+            <svg class="feature-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="4" x2="9" y2="7"></line>
+              <line x1="15" y1="4" x2="15" y2="7"></line>
+              <polyline points="9 14 11 16 15 12"></polyline>
+            </svg>
+          </div>
           <h2 class="feature-title">Clear repayment plans you both agree on</h2>
         </div>
         <p class="feature-body">
           Set loan amounts, start dates and repayment schedules in a few clicks.
           Both sides see the same plan so expectations are clear from day one.
         </p>
-        <div class="feature-tag">Clarity</div>
+        <div class="feature-tag">
+          <span class="feature-tag-icon">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 8.5 L6.5 12 13 4" />
+            </svg>
+          </span>
+          <span class="feature-tag-label">Clarity</span>
+        </div>
       </article>
 
       <!-- Card 2 -->
       <article class="feature-card">
         <div class="feature-card-header">
-          <div class="feature-icon"><span>✓</span></div>
+          <div class="feature-icon">
+            <svg class="feature-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+          </div>
           <h2 class="feature-title">Smart reminders that never feel like chasing</h2>
         </div>
         <p class="feature-body">
           PayFriends sends gentle reminders when payments are due so it never has to come from the lender personally.
           You keep the friendship, we handle the nudges.
         </p>
-        <div class="feature-tag">Reminders</div>
+        <div class="feature-tag">
+          <span class="feature-tag-icon">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 8.5 L6.5 12 13 4" />
+            </svg>
+          </span>
+          <span class="feature-tag-label">Reminders</span>
+        </div>
       </article>
 
       <!-- Card 3 -->
       <article class="feature-card">
         <div class="feature-card-header">
-          <div class="feature-icon"><span>✓</span></div>
+          <div class="feature-icon">
+            <svg class="feature-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <line x1="12" y1="3" x2="12" y2="9"></line>
+              <path d="M5 9l7-7 7 7"></path>
+              <path d="M16 12h5l-2 5h-3z"></path>
+              <path d="M3 12h5l2 5H7z"></path>
+              <line x1="12" y1="9" x2="12" y2="21"></line>
+            </svg>
+          </div>
           <h2 class="feature-title">Fair interest for early, late or different payments</h2>
         </div>
         <p class="feature-body">
           When someone pays early, late or a different amount, we recalculate the interest automatically so both sides stay treated fairly.
         </p>
-        <div class="feature-tag">Fairness</div>
+        <div class="feature-tag">
+          <span class="feature-tag-icon">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 8.5 L6.5 12 13 4" />
+            </svg>
+          </span>
+          <span class="feature-tag-label">Fairness</span>
+        </div>
       </article>
 
       <!-- Card 4 -->
       <article class="feature-card">
         <div class="feature-card-header">
-          <div class="feature-icon"><span>✓</span></div>
+          <div class="feature-icon">
+            <svg class="feature-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21.5 2v6h-6"></path>
+              <path d="M2.5 22v-6h6"></path>
+              <path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8"></path>
+              <path d="M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16"></path>
+            </svg>
+          </div>
           <h2 class="feature-title">Future instalments adjust automatically</h2>
         </div>
         <p class="feature-body">
           If a payment changes, the system updates the remaining schedule for you.
           No spreadsheets or manual math, just a clean new plan ready to go.
         </p>
-        <div class="feature-tag">Automation</div>
+        <div class="feature-tag">
+          <span class="feature-tag-icon">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 8.5 L6.5 12 13 4" />
+            </svg>
+          </span>
+          <span class="feature-tag-label">Automation</span>
+        </div>
       </article>
 
       <!-- Card 5 -->
       <article class="feature-card">
         <div class="feature-card-header">
-          <div class="feature-icon"><span>✓</span></div>
+          <div class="feature-icon">
+            <svg class="feature-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
           <h2 class="feature-title">Live outstanding balance to the cent</h2>
         </div>
         <p class="feature-body">
           See at any moment who owes what, including interest and upcoming payments.
           The balance updates in real time after every payment that is logged.
         </p>
-        <div class="feature-tag">Live balance</div>
+        <div class="feature-tag">
+          <span class="feature-tag-icon">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 8.5 L6.5 12 13 4" />
+            </svg>
+          </span>
+          <span class="feature-tag-label">Live balance</span>
+        </div>
       </article>
 
       <!-- Card 6 -->
       <article class="feature-card">
         <div class="feature-card-header">
-          <div class="feature-icon"><span>✓</span></div>
+          <div class="feature-icon">
+            <svg class="feature-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </div>
           <h2 class="feature-title">Support when someone is struggling to pay</h2>
         </div>
         <p class="feature-body">
           If life gets in the way, you can easily suggest a new plan with smaller or fewer payments.
           PayFriends helps you keep things fair without breaking the relationship.
         </p>
-        <div class="feature-tag">Flexible plans</div>
+        <div class="feature-tag">
+          <span class="feature-tag-icon">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 8.5 L6.5 12 13 4" />
+            </svg>
+          </span>
+          <span class="feature-tag-label">Flexible plans</span>
+        </div>
       </article>
 
       <!-- Card 7 -->
       <article class="feature-card">
         <div class="feature-card-header">
-          <div class="feature-icon"><span>✓</span></div>
+          <div class="feature-icon">
+            <svg class="feature-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
           <h2 class="feature-title">Clean history and timelines for full transparency</h2>
         </div>
         <p class="feature-body">
           Every payment, change and agreement update is stored in one place.
           Both sides can always see the full story, from day one until the final cent is repaid.
         </p>
-        <div class="feature-tag">Transparency</div>
+        <div class="feature-tag">
+          <span class="feature-tag-icon">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 8.5 L6.5 12 13 4" />
+            </svg>
+          </span>
+          <span class="feature-tag-label">Transparency</span>
+        </div>
       </article>
     </section>
   </div>
