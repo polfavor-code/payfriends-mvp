@@ -706,18 +706,18 @@
     }
 
     .dashboard-header {
-      margin-bottom: 32px;
+      margin-bottom: 40px;
     }
 
     .dashboard-header h1 {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 700;
-      margin: 0 0 8px 0;
+      margin: 0 0 12px 0;
     }
 
     .dashboard-header p {
       color: var(--muted);
-      font-size: 15px;
+      font-size: 17px;
       margin: 0;
     }
 
@@ -1074,7 +1074,7 @@
       text-align: center;
     }
 
-    /* Progress Circle */
+    /* Progress Rings */
     .progress-circle-container {
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.06);
@@ -1088,49 +1088,75 @@
     }
 
     .progress-circle-title {
-      font-size: 16px;
+      font-size: 20px;
       font-weight: 600;
-      margin-bottom: 24px;
+      margin: 0 0 8px 0;
       color: var(--text);
     }
 
-    .progress-circle-svg {
-      width: 200px;
-      height: 200px;
+    .progress-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 32px 0;
+      text-align: center;
+    }
+
+    .progress-rings-grid {
+      display: flex;
+      gap: 48px;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .progress-rings-grid.one-ring {
+      gap: 0;
+    }
+
+    .progress-ring-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 0 0 auto;
+    }
+
+    .progress-ring-label {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .progress-ring-svg {
+      width: 160px;
+      height: 160px;
     }
 
     .progress-circle-bg {
       fill: none;
       stroke: rgba(255, 255, 255, 0.08);
-      stroke-width: 12;
+      stroke-width: 10;
     }
 
     .progress-circle-fill {
       fill: none;
       stroke: var(--accent);
-      stroke-width: 12;
+      stroke-width: 10;
       stroke-linecap: round;
       transition: stroke-dashoffset 0.5s ease;
     }
 
-    .progress-circle-text {
-      text-align: center;
-      margin-top: 16px;
-    }
-
-    .progress-circle-percentage {
-      font-size: 32px;
-      font-weight: 700;
-      color: var(--accent);
-    }
-
-    .progress-circle-label {
-      font-size: 14px;
+    .progress-ring-text {
+      font-size: 13px;
       color: var(--muted);
-      margin-top: 4px;
+      margin-top: 16px;
+      text-align: center;
+      max-width: 240px;
+      line-height: 1.5;
     }
 
-    /* Repayment Timeline */
+    /* Money Timeline */
     .timeline-container {
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.06);
@@ -1147,15 +1173,16 @@
     }
 
     .timeline-title {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 600;
       color: var(--text);
+      margin: 0;
     }
 
     .timeline-subtitle {
       font-size: 13px;
       color: var(--muted);
-      margin-bottom: 24px;
+      margin: 4px 0 24px 0;
     }
 
     .timeline-zoom-controls {
@@ -1227,20 +1254,39 @@
       position: absolute;
       top: 50%;
       transform: translate(-50%, -50%);
-      width: 14px;
-      height: 14px;
-      background: #3d7bdc;
-      border: 3px solid var(--card);
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
       cursor: pointer;
       transition: all 0.2s;
       z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timeline-dot-incoming {
+      background: var(--accent);
+      border: 3px solid var(--card);
+    }
+
+    .timeline-dot-outgoing {
+      background: #fb923c;
+      border: 3px solid var(--card);
     }
 
     .timeline-dot:hover {
-      width: 18px;
-      height: 18px;
-      background: var(--accent);
+      width: 24px;
+      height: 24px;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    .timeline-dot-marker {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0d130f;
+      line-height: 1;
+      pointer-events: none;
     }
 
     .timeline-dot-label {
@@ -1248,7 +1294,7 @@
       top: 100%;
       left: 50%;
       transform: translateX(-50%);
-      margin-top: 12px;
+      margin-top: 16px;
       font-size: 11px;
       color: var(--muted);
       white-space: nowrap;
@@ -1402,19 +1448,24 @@
         </p>
       </div>
 
-      <!-- Summary boxes grid -->
+      <!-- Summary boxes grid (Active and Pending only) -->
       <div class="summary-boxes-grid" id="summary-boxes-grid">
         <!-- Boxes will be populated by JavaScript -->
       </div>
 
-      <!-- Progress circle -->
+      <!-- Repayment Progress (one or two rings) -->
       <div class="progress-circle-container" id="progress-circle-container" style="display:none">
-        <!-- Progress circle will be populated by JavaScript -->
+        <!-- Progress rings will be populated by JavaScript -->
       </div>
 
-      <!-- Repayment timeline -->
+      <!-- Money Timeline -->
       <div class="timeline-container" id="timeline-container" style="display:none">
         <!-- Timeline will be populated by JavaScript -->
+      </div>
+
+      <!-- Active GroupTabs (appears after timeline) -->
+      <div id="grouptabs-container" style="display:none">
+        <!-- GroupTabs box will be populated by JavaScript -->
       </div>
 
       <!-- Action buttons -->
@@ -6139,71 +6190,93 @@
       `;
     }
 
-    // Helper: Render progress circle
-    function renderProgressCircle(repaidCents, totalCents) {
-      if (!totalCents || totalCents === 0) {
+    // Helper: Render progress rings (one or two based on user role)
+    function renderProgressRings(data) {
+      const { hasLent, lentTotal, lentReceived, hasBorrowed, borrowedTotal, borrowedRepaid } = data;
+
+      if (!hasLent && !hasBorrowed) {
         return '';
       }
 
-      const percentage = Math.min(100, Math.round((repaidCents / totalCents) * 100));
-      const radius = 88;
+      const radius = 70;
       const circumference = 2 * Math.PI * radius;
-      const offset = circumference - (percentage / 100) * circumference;
 
-      // Use formatCurrency0 for display
-      const repaidFormatted = window.formatCurrency0 ? window.formatCurrency0(repaidCents) : `€${(repaidCents / 100).toFixed(0)}`;
-      const totalFormatted = window.formatCurrency0 ? window.formatCurrency0(totalCents) : `€${(totalCents / 100).toFixed(0)}`;
+      function createRing(label, received, total, color = 'var(--accent)') {
+        const percentage = Math.min(100, Math.round((received / total) * 100));
+        const offset = circumference - (percentage / 100) * circumference;
+        const receivedFormatted = window.formatCurrency0 ? window.formatCurrency0(received) : `€${(received / 100).toFixed(0)}`;
+        const totalFormatted = window.formatCurrency0 ? window.formatCurrency0(total) : `€${(total / 100).toFixed(0)}`;
+
+        return `
+          <div class="progress-ring-item">
+            <div class="progress-ring-label">${escapeHTML(label)}</div>
+            <svg class="progress-ring-svg" viewBox="0 0 160 160">
+              <circle class="progress-circle-bg" cx="80" cy="80" r="${radius}"></circle>
+              <circle class="progress-circle-fill" cx="80" cy="80" r="${radius}"
+                style="stroke-dasharray: ${circumference}; stroke-dashoffset: ${offset}; stroke: ${color};"
+                transform="rotate(-90 80 80)"></circle>
+              <text x="80" y="75" text-anchor="middle" font-size="28" font-weight="700" fill="${color}">${percentage}%</text>
+              <text x="80" y="95" text-anchor="middle" font-size="11" fill="var(--muted)">repaid</text>
+            </svg>
+            <div class="progress-ring-text">${receivedFormatted} of ${totalFormatted} ${label === 'You lent' ? 'you lent has been repaid to you' : 'you borrowed has been repaid by you'}.</div>
+          </div>
+        `;
+      }
+
+      let ringsHtml = '';
+      if (hasLent) {
+        ringsHtml += createRing('You lent', lentReceived, lentTotal, 'var(--accent)');
+      }
+      if (hasBorrowed) {
+        ringsHtml += createRing('You borrowed', borrowedRepaid, borrowedTotal, 'var(--accent)');
+      }
 
       return `
         <h3 class="progress-circle-title">Repayment Progress</h3>
-        <svg class="progress-circle-svg" viewBox="0 0 200 200">
-          <circle class="progress-circle-bg" cx="100" cy="100" r="${radius}"></circle>
-          <circle class="progress-circle-fill" cx="100" cy="100" r="${radius}"
-            style="stroke-dasharray: ${circumference}; stroke-dashoffset: ${offset};"
-            transform="rotate(-90 100 100)"></circle>
-          <text x="100" y="95" text-anchor="middle" font-size="36" font-weight="700" fill="var(--accent)">${percentage}%</text>
-          <text x="100" y="115" text-anchor="middle" font-size="12" fill="var(--muted)">repaid</text>
-        </svg>
-        <div class="progress-circle-text">
-          <div class="progress-circle-label">${repaidFormatted} of ${totalFormatted}</div>
+        <p class="progress-subtitle">Based on all your active loan agreements.</p>
+        <div class="progress-rings-grid ${hasLent && hasBorrowed ? 'two-rings' : 'one-ring'}">
+          ${ringsHtml}
         </div>
       `;
     }
 
-    // Helper: Render repayment timeline
-    function renderRepaymentTimeline(activeAgreements) {
+    // Helper: Render repayment timeline with incoming and outgoing payments
+    function renderRepaymentTimeline(activeAgreements, currentUserId) {
       if (!activeAgreements || activeAgreements.length === 0) {
         return '';
       }
 
-      // Collect all future repayments from active agreements
+      // Collect all future repayments from active agreements using full schedule data
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const allRepayments = [];
+      const allEvents = [];
       activeAgreements.forEach(agreement => {
-        // For now, use next payment info as a placeholder
-        // In the real implementation, you'd fetch the full repayment schedule for each agreement
-        if (agreement.nextPaymentDate && agreement.nextPaymentAmountFormatted) {
-          const paymentDate = new Date(agreement.nextPaymentDate);
-          if (paymentDate >= today) {
-            allRepayments.push({
+        const isLender = agreement.isLender;
+        const direction = isLender ? 'incoming' : 'outgoing';
+
+        // Use the futurePayments array from the agreement
+        if (agreement.futurePayments && agreement.futurePayments.length > 0) {
+          agreement.futurePayments.forEach(payment => {
+            const paymentDate = new Date(payment.date);
+            allEvents.push({
               date: paymentDate,
-              dateStr: agreement.nextPaymentDate,
-              name: agreement.counterpartyName,
-              amount: agreement.nextPaymentAmountFormatted,
-              amountCents: agreement.nextPaymentAmountCents || 0
+              dateStr: payment.date,
+              counterparty: agreement.counterpartyName,
+              amount: payment.amountFormatted,
+              amountCents: payment.amountCents,
+              direction: direction
             });
-          }
+          });
         }
       });
 
-      if (allRepayments.length === 0) {
+      if (allEvents.length === 0) {
         return `
           <div class="timeline-header">
             <div>
-              <h3 class="timeline-title">Repayment timeline</h3>
-              <p class="timeline-subtitle">All your loan repayments on one horizontal line.</p>
+              <h3 class="timeline-title">Money timeline</h3>
+              <p class="timeline-subtitle">All incoming and outgoing repayments on one horizontal line.</p>
             </div>
           </div>
           <div style="padding:32px; text-align:center; color:var(--muted); font-style:italic">
@@ -6213,45 +6286,62 @@
       }
 
       // Sort by date
-      allRepayments.sort((a, b) => a.date - b.date);
+      allEvents.sort((a, b) => a.date - b.date);
 
       // Calculate timeline range
-      const minDate = allRepayments[0].date;
-      const maxDate = allRepayments[allRepayments.length - 1].date;
+      const minDate = allEvents[0].date;
+      const maxDate = allEvents[allEvents.length - 1].date;
       const timeRange = maxDate - minDate;
-      const todayPosition = timeRange > 0 ? ((today - minDate) / timeRange) * 100 : 0;
+      const todayPosition = timeRange > 0 ? ((today - minDate) / timeRange) * 100 : 50;
 
-      // Build timeline dots
-      const dotsHtml = allRepayments.map(payment => {
-        const position = timeRange > 0 ? ((payment.date - minDate) / timeRange) * 100 : 50;
-        const daysUntil = Math.ceil((payment.date - today) / (1000 * 60 * 60 * 24));
-        const daysText = daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `In ${daysUntil} days`;
+      // Build timeline dots with direction indicators
+      const dotsHtml = allEvents.map(event => {
+        const position = timeRange > 0 ? ((event.date - minDate) / timeRange) * 100 : 50;
+        const daysUntil = Math.ceil((event.date - today) / (1000 * 60 * 60 * 24));
+        const daysText = daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : daysUntil > 0 ? `In ${daysUntil} days` : `${Math.abs(daysUntil)} days ago`;
 
-        // Format date as short version (e.g., "Jan 15")
+        // Format date as short version (e.g., "28 Nov")
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const shortDate = `${monthNames[payment.date.getMonth()]} ${payment.date.getDate()}`;
+        const shortDate = `${event.date.getDate()} ${monthNames[event.date.getMonth()]}`;
+
+        // Determine dot style based on direction
+        const dotClass = event.direction === 'incoming' ? 'timeline-dot-incoming' : 'timeline-dot-outgoing';
+        const sign = event.direction === 'incoming' ? '+' : '−';
+        const directionLabel = event.direction === 'incoming' ? 'Incoming from' : 'Outgoing to';
 
         return `
-          <div class="timeline-dot" style="left:${position}%">
-            <div class="timeline-tooltip">${escapeHTML(payment.name)} • ${escapeHTML(payment.amount)} • ${daysText}</div>
+          <div class="timeline-dot ${dotClass}" style="left:${position}%">
+            <div class="timeline-tooltip">${directionLabel} ${escapeHTML(event.counterparty)} • ${sign}${escapeHTML(event.amount)} • ${daysText}</div>
+            <div class="timeline-dot-marker">${sign}</div>
             <div class="timeline-dot-label">
-              <div class="timeline-dot-amount">${escapeHTML(payment.amount)}</div>
+              <div class="timeline-dot-amount">${escapeHTML(event.amount)}</div>
               <div class="timeline-dot-date">${shortDate}</div>
             </div>
           </div>
         `;
       }).join('');
 
-      // Find next payment
-      const nextPayment = allRepayments.find(p => p.date >= today);
-      let nextPaymentHtml = '';
-      if (nextPayment) {
-        const daysUntil = Math.ceil((nextPayment.date - today) / (1000 * 60 * 60 * 24));
-        const dateText = daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : `in ${daysUntil} days`;
-        nextPaymentHtml = `
+      // Find next money movement (soonest future event)
+      const nextEvent = allEvents.find(e => e.date >= today);
+      let nextEventHtml = '';
+      if (nextEvent) {
+        const daysUntil = Math.ceil((nextEvent.date - today) / (1000 * 60 * 60 * 24));
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const fullDate = `${nextEvent.date.getDate()} ${monthNames[nextEvent.date.getMonth()]} ${nextEvent.date.getFullYear()}`;
+        const sign = nextEvent.direction === 'incoming' ? '+' : '−';
+        const directionLabel = nextEvent.direction === 'incoming' ? `Incoming from ${nextEvent.counterparty}` : `Outgoing to ${nextEvent.counterparty}`;
+
+        nextEventHtml = `
           <div class="next-payment-panel">
-            <div class="next-payment-label">Next Payment</div>
-            <div class="next-payment-text">${escapeHTML(nextPayment.name)} · ${escapeHTML(nextPayment.amount)} ${dateText}</div>
+            <div class="next-payment-label">Next money movement</div>
+            <div class="next-payment-text">${escapeHTML(directionLabel)} · ${sign}${escapeHTML(nextEvent.amount)} on ${fullDate}</div>
+          </div>
+        `;
+      } else {
+        nextEventHtml = `
+          <div class="next-payment-panel">
+            <div class="next-payment-label">Next money movement</div>
+            <div class="next-payment-text" style="color:var(--muted)">No upcoming repayments</div>
           </div>
         `;
       }
@@ -6265,8 +6355,8 @@
       return `
         <div class="timeline-header">
           <div>
-            <h3 class="timeline-title">Repayment timeline</h3>
-            <p class="timeline-subtitle">All your loan repayments on one horizontal line.</p>
+            <h3 class="timeline-title">Money timeline</h3>
+            <p class="timeline-subtitle">All incoming and outgoing repayments on one horizontal line.</p>
           </div>
           <div class="timeline-zoom-controls">
             <button class="timeline-zoom-btn active" onclick="setTimelineZoom('auto')">Auto</button>
@@ -6281,7 +6371,7 @@
             ${dotsHtml}
           </div>
         </div>
-        ${nextPaymentHtml}
+        ${nextEventHtml}
       `;
     }
 
@@ -6345,7 +6435,7 @@
             greeting.textContent = `Hi ${displayName}, welcome to your dashboard.`;
           }
 
-          // Populate summary boxes
+          // Populate summary boxes (only Active and Pending - no Settled, no GroupTabs here)
           const summaryGrid = document.getElementById('summary-boxes-grid');
           if (summaryGrid && data.stats && data.agreementsSummary) {
             const boxes = [];
@@ -6353,7 +6443,6 @@
             // Filter agreements by status
             const activeAgreements = data.agreementsSummary.filter(a => a.status === 'active');
             const pendingAgreements = data.agreementsSummary.filter(a => a.status === 'pending');
-            const settledAgreements = data.agreementsSummary.filter(a => a.status === 'settled');
 
             // Box 1: Active Agreements
             const activeItems = activeAgreements.map(a => ({
@@ -6387,50 +6476,42 @@
               { showPreviews: true }
             ));
 
-            // Box 3: Settled Agreements
-            boxes.push(renderSummaryBox(
-              'Settled Agreements',
-              data.stats.totalSettledAgreements || 0,
-              [],
-              '/agreements?status=settled',
-              { showPreviews: false }
-            ));
-
-            // Box 4: Active GroupTabs (placeholder)
-            const grouptabCount = data.stats.totalGroupTabs || 0;
-            const grouptabItems = grouptabCount > 0 ? [{
-              name: 'GroupTab Feature',
-              detail: '€ 0 total',
-              icon: 'GT',
-              avatarColorClass: 'color-6'
-            }] : [];
-            boxes.push(renderSummaryBox(
-              'Active GroupTabs',
-              grouptabCount,
-              grouptabItems,
-              '/grouptabs',
-              { showPreviews: true, emptyMessage: 'Coming soon' }
-            ));
-
             summaryGrid.innerHTML = boxes.join('');
           }
 
-          // Populate progress circle (only for active agreements)
+          // Populate progress rings (separate for lender and borrower)
           const progressContainer = document.getElementById('progress-circle-container');
-          if (progressContainer && data.agreementsSummary) {
+          if (progressContainer && data.agreementsSummary && data.user) {
             const activeAgreements = data.agreementsSummary.filter(a => a.status === 'active');
 
             if (activeAgreements.length > 0) {
-              let totalCents = 0;
-              let totalPaidCents = 0;
+              let lentTotal = 0;
+              let lentReceived = 0;
+              let borrowedTotal = 0;
+              let borrowedRepaid = 0;
 
               activeAgreements.forEach(a => {
-                totalCents += a.totalCents || 0;
-                totalPaidCents += a.totalPaidCents || 0;
+                if (a.isLender) {
+                  lentTotal += a.totalCents || 0;
+                  lentReceived += a.totalPaidCents || 0;
+                } else {
+                  borrowedTotal += a.totalCents || 0;
+                  borrowedRepaid += a.totalPaidCents || 0;
+                }
               });
 
-              if (totalCents > 0) {
-                progressContainer.innerHTML = renderProgressCircle(totalPaidCents, totalCents);
+              const hasLent = lentTotal > 0;
+              const hasBorrowed = borrowedTotal > 0;
+
+              if (hasLent || hasBorrowed) {
+                progressContainer.innerHTML = renderProgressRings({
+                  hasLent,
+                  lentTotal,
+                  lentReceived,
+                  hasBorrowed,
+                  borrowedTotal,
+                  borrowedRepaid
+                });
                 progressContainer.style.display = 'flex';
               } else {
                 progressContainer.style.display = 'none';
@@ -6442,15 +6523,36 @@
 
           // Populate repayment timeline
           const timelineContainer = document.getElementById('timeline-container');
-          if (timelineContainer && data.agreementsSummary) {
+          if (timelineContainer && data.agreementsSummary && data.user) {
             const activeAgreements = data.agreementsSummary.filter(a => a.status === 'active');
 
             if (activeAgreements.length > 0) {
-              timelineContainer.innerHTML = renderRepaymentTimeline(activeAgreements);
+              timelineContainer.innerHTML = renderRepaymentTimeline(activeAgreements, data.user.id);
               timelineContainer.style.display = 'block';
             } else {
               timelineContainer.style.display = 'none';
             }
+          }
+
+          // Populate Active GroupTabs box (appears after timeline)
+          const grouptabsContainer = document.getElementById('grouptabs-container');
+          if (grouptabsContainer && data.stats) {
+            const grouptabCount = data.stats.totalGroupTabs || 0;
+            const grouptabItems = grouptabCount > 0 ? [{
+              name: 'GroupTab Feature',
+              detail: '€ 0 total',
+              icon: 'GT',
+              avatarColorClass: 'color-6'
+            }] : [];
+            const grouptabBox = renderSummaryBox(
+              'Active GroupTabs',
+              grouptabCount,
+              grouptabItems,
+              '/grouptabs',
+              { showPreviews: true, emptyMessage: 'Coming soon' }
+            );
+            grouptabsContainer.innerHTML = grouptabBox;
+            grouptabsContainer.style.display = 'block';
           }
         }
       }
