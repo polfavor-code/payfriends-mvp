@@ -1,0 +1,46 @@
+<style>
+  /* Shared layout styles for consistent footer positioning across all pages */
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Main content containers should fill available vertical space */
+  body > .container,
+  body > main.container,
+  body > .page {
+    flex: 1 0 auto;
+    width: 100%;
+  }
+
+  /* Global footer styles */
+  .payfriends-global-footer {
+    flex-shrink: 0;
+    text-align: center;
+    padding: 12px 16px 12px;
+    margin-top: auto;
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.5;
+    width: 100%;
+  }
+
+  .payfriends-global-footer-text {
+    margin: 0;
+    opacity: 0.85;
+  }
+
+  /* Ensure footer doesn't overlap with sticky elements */
+  .payfriends-global-footer-spacer {
+    height: 0;
+    clear: both;
+  }
+</style>
+
+<footer class="payfriends-global-footer">
+  <div class="payfriends-global-footer-spacer"></div>
+  <p class="payfriends-global-footer-text">
+    &copy; <span id="payfriends-footer-year"></span> PayFriends &mdash; Because friendships are priceless&hellip; but your money isn't.
+  </p>
+</footer>

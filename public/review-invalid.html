@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends — Invalid Invite</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Shared footer component -->
+  <script src="/js/footer.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
     }
     *{box-sizing:border-box}
-    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); display:flex; align-items:center; justify-content:center; min-height:100vh;}
-    .container{max-width:500px; padding:32px;}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); display:flex; flex-direction:column; align-items:center; min-height:100vh;}
+    .container{flex:1; max-width:500px; padding:32px; display:flex; align-items:center; justify-content:center;}
     .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:32px; text-align:center;}
     h1{margin:0 0 16px 0; font-size:24px;}
     p{color:var(--muted); line-height:1.6; margin:16px 0;}
@@ -27,5 +29,12 @@
       <a href="/" class="back-link">Go to Login</a>
     </div>
   </div>
+
+  <script>
+    // Initialize footer
+    if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+      window.PayFriendsFooter.initialize();
+    }
+  </script>
 </body>
 </html>

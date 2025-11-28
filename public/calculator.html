@@ -368,6 +368,8 @@
   <!-- Load dependencies -->
   <script src="/js/formatters.js"></script>
   <script src="/components/fairness-icon.js"></script>
+  <!-- Shared footer component -->
+  <script src="/js/footer.js"></script>
 
   <!-- Load shared calculator engine -->
   <script src="/js/loanCalculatorEngine.js"></script>
@@ -989,6 +991,11 @@
       document.addEventListener('DOMContentLoaded', initializeCalculator);
     } else {
       initializeCalculator();
+    }
+
+    // Initialize footer
+    if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+      window.PayFriendsFooter.initialize();
     }
   </script>
 </body>

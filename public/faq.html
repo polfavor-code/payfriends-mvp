@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="/css/app.css" />
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
+  <!-- Shared footer component -->
+  <script src="/js/footer.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -721,6 +723,11 @@
     // Initialize header
     if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
       window.PayFriendsHeader.initialize({ hasActivitySection: false });
+    }
+
+    // Initialize footer
+    if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+      window.PayFriendsFooter.initialize();
     }
 
     // FAQ accordion functionality
