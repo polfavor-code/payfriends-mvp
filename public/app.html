@@ -6740,7 +6740,9 @@
                   const borrowerFirstName = agreement.counterpartyName.split(' ')[0];
                   tasks.push({
                     type: 'initial_payment',
-                    text: `Make the initial payment to ${borrowerFirstName} (loan starts today).`,
+                    title: 'TASK: Make the initial payment',
+                    text: `Because you selected loan start = when the agreement is accepted, the loan officially starts today.\nTo keep your agreement fair and transparent, please complete your initial payment to ${borrowerFirstName} today.`,
+                    buttonText: 'Report Payment',
                     link: `/agreements/${agreement.id}/report-payment`,
                     agreementId: agreement.id
                   });
@@ -6776,6 +6778,26 @@
                   ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>'
                   : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
 
+                // For tasks with a title and button (like initial payment)
+                if (task.title && task.buttonText) {
+                  const textLines = task.text.split('\n').map(line => `<p style="margin:4px 0; color:#d2deec; font-size:14px">${escapeHTML(line)}</p>`).join('');
+                  return `
+                    <li class="pending-task-item" style="flex-direction:column; align-items:flex-start; padding:16px; background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px">
+                      <div style="display:flex; align-items:flex-start; gap:14px; width:100%">
+                        <div class="pending-task-icon">
+                          ${iconSvg}
+                        </div>
+                        <div style="flex:1">
+                          <h3 style="margin:0 0 8px 0; font-size:16px; font-weight:600; color:var(--accent)">${escapeHTML(task.title)}</h3>
+                          ${textLines}
+                        </div>
+                      </div>
+                      <button onclick="window.location.href='${escapeHTML(task.link)}'" style="margin-top:12px; padding:10px 18px; border-radius:8px; border:0; background:var(--accent); color:#0d130f; font-weight:600; cursor:pointer; font-size:14px; width:100%" onmouseover="this.style.filter='brightness(1.06)'" onmouseout="this.style.filter='brightness(1)'">${escapeHTML(task.buttonText)}</button>
+                    </li>
+                  `;
+                }
+
+                // For simple tasks (like profile photo)
                 return `
                   <li class="pending-task-item">
                     <div class="pending-task-icon">

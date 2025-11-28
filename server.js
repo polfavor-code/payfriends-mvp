@@ -1435,12 +1435,29 @@ app.get('/api/agreements', requireAuth, (req, res) => {
     `).get(agreement.id).count > 0;
 
     // Check for pending initial payment report (lender needs to report)
-    // Only show this task if user is lender AND agreement is active AND report is not completed
-    const needsInitialPaymentReport = isLender && agreement.status === 'active' && db.prepare(`
-      SELECT COUNT(*) as count
-      FROM initial_payment_reports
-      WHERE agreement_id = ? AND is_completed = 0
-    `).get(agreement.id).count > 0;
+    // Only show this task if:
+    // - User is lender
+    // - Agreement is active
+    // - Loan start is "upon acceptance" (money_sent_date is on-acceptance or matches accepted_at)
+    // - No completed report exists (either no row OR is_completed = 0)
+    let needsInitialPaymentReport = false;
+    if (isLender && agreement.status === 'active') {
+      const moneySentDate = agreement.money_sent_date;
+      const acceptedDate = agreement.accepted_at ? agreement.accepted_at.split('T')[0] : null;
+      const isUponAcceptance = moneySentDate === 'on-acceptance' ||
+                               moneySentDate === 'upon agreement acceptance' ||
+                               (acceptedDate && moneySentDate === acceptedDate);
+
+      if (isUponAcceptance) {
+        // Check if there's a completed report
+        const report = db.prepare(`
+          SELECT is_completed FROM initial_payment_reports WHERE agreement_id = ?
+        `).get(agreement.id);
+
+        // Show task if no report exists OR report exists but not completed
+        needsInitialPaymentReport = !report || report.is_completed === 0;
+      }
+    }
 
     // Calculate outstanding based on dynamic interest
     const interestInfo = getAgreementInterestInfo(agreement, new Date());
