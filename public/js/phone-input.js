@@ -374,7 +374,7 @@ class PhoneInput {
   }
 
   detectAndSetCountry(fullNumber) {
-    // Try to match the dial code
+    // Try to match the dial code (allows user to type +31 to switch to Netherlands, etc.)
     const sortedCountries = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
 
     for (const country of sortedCountries) {
@@ -386,6 +386,7 @@ class PhoneInput {
         const localPart = fullNumber.substring(country.dialCode.length).replace(/\D/g, '');
         this.elements.localInput.value = localPart;
         this.updateFullNumber();
+        this._triggerValidationChange();
         return;
       }
     }
@@ -394,6 +395,7 @@ class PhoneInput {
     const digitsOnly = fullNumber.replace(/\D/g, '');
     this.elements.localInput.value = digitsOnly;
     this.updateFullNumber();
+    this._triggerValidationChange();
   }
 
   updateFullNumber() {
