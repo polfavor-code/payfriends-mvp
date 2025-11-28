@@ -40,16 +40,21 @@ test.describe('File Upload', () => {
         fs.writeFileSync(testFilePath, 'Test payment receipt\nAmount: €500\nDate: ' + new Date().toISOString());
 
         try {
+            console.log('Step 6: Uploading file...');
             // Step 6: Upload file
-            const fileInput = page.locator('#inline-payment-proof, input[type="file"]');
+            const fileInput = page.locator('#inline-payment-proof');
             await fileInput.setInputFiles(testFilePath);
+            console.log('File set in input');
 
             // Verify file was selected
-            const fileName = await page.locator('.filename, [data-filename]').textContent().catch(() => '');
+            const fileNameEl = page.locator('#inline-payment-proof-filename');
+            await expect(fileNameEl).toBeVisible();
+            const fileName = await fileNameEl.textContent();
             console.log(`Selected file: ${fileName}`);
 
             // Step 7: Verify submit button is present and enabled
-            const submitButton = page.locator('button:has-text("Report"), button[type="submit"]');
+            console.log('Step 7: Verifying submit button...');
+            const submitButton = page.locator('#inline-payment-submit');
             await expect(submitButton).toBeVisible();
             const isEnabled = await submitButton.isEnabled();
 
