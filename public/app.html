@@ -1670,17 +1670,6 @@
 
     <!-- Wizard for creating agreements -->
     <div id="new-agreement-section" class="hidden">
-      <!-- Agreements summary (shown on Step 5) -->
-      <div id="wizard-agreements-summary" class="dashboard-section" style="display:none; margin-bottom:24px">
-        <div class="dashboard-section-header">
-          <h2>Your Loan Agreements</h2>
-          <a href="/agreements">View all loan agreements →</a>
-        </div>
-        <ul class="dashboard-agreements-summary" id="wizard-agreements-list">
-          <!-- Agreements will be populated by JavaScript -->
-        </ul>
-      </div>
-
       <!-- Header: title + back link on same row -->
       <div class="new-agreement-header">
         <h1 class="new-agreement-title">New Loan Agreement</h1>
@@ -2043,7 +2032,6 @@
 
         <!-- Wizard navigation footer -->
         <div class="wizard-footer">
-          <button class="secondary" onclick="createAnotherAgreement()">Create another agreement</button>
           <button class="wizard-next" onclick="goToDashboard()">Done, return to dashboard</button>
         </div>
 
