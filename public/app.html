@@ -368,6 +368,19 @@
     /* Phone hint for friendly feedback while typing */
     .phone-hint{color:var(--muted);font-size:13px;margin-top:4px}
     .phone-hint.valid{color:var(--accent)}
+    /* Phone validation icon (checkmark inside input) */
+    .phone-input-row{position:relative}
+    .phone-valid-icon{
+      position:absolute;
+      right:12px;
+      top:50%;
+      transform:translateY(-50%);
+      color:var(--accent);
+      font-size:18px;
+      display:none;
+      pointer-events:none;
+    }
+    .phone-valid-icon.show{display:block}
 
     /* Summary grid layout for Step 4 - COMPACT STYLING TO MATCH STEP 2 */
     .summary-grid{
@@ -1738,6 +1751,7 @@
                 <span class="phone-prefix"></span>
                 <input type="tel" class="phone-number-input" placeholder="612345678" />
                 <input type="hidden" id="agreement-phone" name="agreement-phone" class="phone-number-full" />
+                <span id="agreement-phone-valid-icon" class="phone-valid-icon">✓</span>
               </div>
               <div class="phone-dropdown">
                 <input type="text" class="phone-dropdown-search" placeholder="Search country or code…" />
@@ -6968,22 +6982,22 @@
       // - While typing under limit: show nothing
       // - While typing OVER limit: show error immediately
       // - On blur with too few digits: show error
-      // - When valid: show green success message
+      // - When valid: show green checkmark inside input
       if (agreementPhoneInput) {
         agreementPhoneInput.onValidationChange((isValid, errorMessage, typingHint, eventType) => {
           const phoneError = document.getElementById('agreement-phone-error');
           const phoneHint = document.getElementById('agreement-phone-hint');
+          const validIcon = document.getElementById('agreement-phone-valid-icon');
 
           if (isValid) {
-            // Valid: show green success, hide error
-            if (phoneHint) {
-              phoneHint.textContent = typingHint.text;
-              phoneHint.className = 'phone-hint valid';
-            }
+            // Valid: show green checkmark inside input, hide error
+            if (validIcon) validIcon.classList.add('show');
+            if (phoneHint) phoneHint.textContent = '';
             if (phoneError) phoneError.style.display = 'none';
             agreementPhoneInput.setInvalid(false);
           } else if (typingHint.isTooLong) {
             // Too many digits: show error immediately while typing
+            if (validIcon) validIcon.classList.remove('show');
             if (phoneHint) phoneHint.textContent = '';
             if (phoneError) {
               phoneError.textContent = errorMessage;
@@ -6992,6 +7006,7 @@
             agreementPhoneInput.setInvalid(true);
           } else if (eventType === 'blur' && typingHint.currentDigits > 0) {
             // Blur with too few digits: show error
+            if (validIcon) validIcon.classList.remove('show');
             if (phoneHint) phoneHint.textContent = '';
             if (phoneError) {
               phoneError.textContent = errorMessage;
@@ -7000,6 +7015,7 @@
             agreementPhoneInput.setInvalid(true);
           } else {
             // Typing under limit: show nothing, hide error
+            if (validIcon) validIcon.classList.remove('show');
             if (phoneHint) phoneHint.textContent = '';
             if (phoneError) phoneError.style.display = 'none';
             agreementPhoneInput.setInvalid(false);

@@ -546,17 +546,9 @@ class PhoneInput {
         if (example) {
           expectedDigits = example.nationalNumber.length;
         }
-        // Check if number is too long using isPossible
-        const number = this.getNumber();
-        if (number && number !== this.selectedCountry.dialCode) {
-          const phoneNumber = libphonenumber.parsePhoneNumberFromString(number, countryCode);
-          if (phoneNumber && !phoneNumber.isPossible()) {
-            // isPossible returns false for both too short and too long
-            // If we have more digits than expected, it's too long
-            if (expectedDigits && currentDigits > expectedDigits) {
-              isTooLong = true;
-            }
-          }
+        // Simple check: if we have more digits than the example, it's too long
+        if (expectedDigits && currentDigits > expectedDigits) {
+          isTooLong = true;
         }
       } catch (e) {
         // Some countries may not have examples
