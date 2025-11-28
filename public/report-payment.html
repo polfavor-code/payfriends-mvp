@@ -210,6 +210,7 @@
         }
 
         const agreement = await response.json();
+        console.log('[Report Payment] Agreement data:', agreement);
 
         // Verify current user is the lender
         if (agreement.lender_user_id !== currentUser.id) {
@@ -229,6 +230,10 @@
         const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
         const borrowerFirstName = borrowerName ? borrowerName.split(' ')[0] : '';
 
+        console.log('[Report Payment] Borrower name:', borrowerName);
+        console.log('[Report Payment] Description:', agreement.description);
+        console.log('[Report Payment] Amount cents:', agreement.amount_cents);
+
         document.getElementById('borrower-name').textContent = borrowerName || '-';
         document.getElementById('borrower-first-name').textContent = borrowerFirstName || 'the borrower';
         document.getElementById('agreement-description').textContent = agreement.description || 'Loan agreement';
@@ -246,8 +251,9 @@
           }
         }
       } catch (err) {
-        console.error('Error loading agreement:', err);
-        document.getElementById('status-message').textContent = 'Error loading agreement data.';
+        console.error('[Report Payment] Error loading agreement:', err);
+        console.error('[Report Payment] Error stack:', err.stack);
+        document.getElementById('status-message').textContent = 'Error loading agreement data: ' + err.message;
         document.getElementById('status-message').className = 'status error';
       }
     }
