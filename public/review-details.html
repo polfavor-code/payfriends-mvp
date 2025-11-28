@@ -1324,14 +1324,24 @@
           });
         }
 
-        // Set proof requirement based on agreement
+        // Detect if this is a cash-only agreement
+        const isCashOnly = allowedMethods.length === 1 && allowedMethods[0] === 'cash';
+
+        // Set proof requirement based on agreement and payment method
         const proofInput = document.getElementById('inline-payment-proof');
         const proofLabel = document.getElementById('inline-payment-proof-label');
+        const proofSection = document.getElementById('inline-payment-proof-section');
 
-        if (agreement.proof_required) {
+        if (isCashOnly) {
+          // Cash-only agreements: hide proof section entirely
+          proofSection.style.display = 'none';
+          proofInput.required = false;
+        } else if (agreement.proof_required) {
+          proofSection.style.display = 'block';
           proofLabel.textContent = 'Proof of repayment*';
           proofInput.required = true;
         } else {
+          proofSection.style.display = 'block';
           proofLabel.textContent = 'Proof of repayment (optional)';
           proofInput.required = false;
         }
@@ -1870,8 +1880,9 @@
         return;
       }
 
-      // Validate proof of repayment if required
-      if (agreement.proof_required && !proofFile) {
+      // Validate proof of repayment if required (skip for cash-only agreements)
+      const isCashOnlyPayment = method === 'cash' && agreement.payment_preference_method === 'cash';
+      if (agreement.proof_required && !proofFile && !isCashOnlyPayment) {
         status.textContent = 'This agreement requires proof of repayment. Please upload a screenshot, photo, or document.';
         status.className = 'status error';
         return;
@@ -4129,15 +4140,22 @@
         formHeader.textContent = 'Report a payment';
         formSubtitle.textContent = `Confirm your payment to ${lenderName}.`;
         submitBtn.textContent = 'Report Payment';
-        // Show proof upload for borrowers
-        proofSection.style.display = 'block';
 
-        // Set proof requirement based on agreement
-        if (agreement.proof_required) {
+        // Detect if this is a cash-only agreement
+        const isCashOnly = allowedMethods.length === 1 && allowedMethods[0] === 'cash';
+
+        // Set proof requirement based on agreement and payment method
+        if (isCashOnly) {
+          // Cash-only agreements: hide proof section entirely
+          proofSection.style.display = 'none';
+          proofInput.required = false;
+        } else if (agreement.proof_required) {
+          proofSection.style.display = 'block';
           proofLabel.textContent = 'Proof of repayment*';
           proofHelper.textContent = 'Upload a screenshot, photo or PDF that shows this repayment.';
           proofInput.required = true;
         } else {
+          proofSection.style.display = 'block';
           proofLabel.textContent = 'Proof of repayment (optional)';
           proofHelper.textContent = 'Upload a screenshot, photo or PDF of your repayment if you have it.';
           proofInput.required = false;
@@ -4255,9 +4273,10 @@
         return;
       }
 
-      // Validate proof of repayment if required
+      // Validate proof of repayment if required (skip for cash-only agreements)
       const isBorrower = agreement.borrower_user_id === currentUser.id;
-      if (isBorrower && agreement.proof_required && !proofFile) {
+      const isCashOnlyPayment = method === 'cash' && agreement.payment_preference_method === 'cash';
+      if (isBorrower && agreement.proof_required && !proofFile && !isCashOnlyPayment) {
         status.textContent = 'This agreement requires proof of repayment. Please upload a screenshot, photo or PDF of the repayment.';
         status.className = 'status error';
         return;

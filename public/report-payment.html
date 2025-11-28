@@ -239,6 +239,20 @@
         document.getElementById('agreement-description').textContent = agreement.description || 'Loan agreement';
         document.getElementById('amount-due').textContent = formatCurrency0(agreement.amount_cents);
 
+        // Detect if this is a cash-only agreement
+        const allowedMethods = agreement.payment_preference_method
+          ? agreement.payment_preference_method.split(',').map(m => m.trim())
+          : [];
+        const isCashOnly = allowedMethods.length === 1 && allowedMethods[0] === 'cash';
+
+        // Hide proof section for cash-only agreements
+        if (isCashOnly) {
+          const proofFormGroup = document.querySelector('#proof-file').closest('.form-group');
+          if (proofFormGroup) {
+            proofFormGroup.style.display = 'none';
+          }
+        }
+
         // Check if already reported
         const reportResponse = await fetch(`/api/agreements/${agreementId}/initial-payment-report`);
         if (reportResponse.ok) {
