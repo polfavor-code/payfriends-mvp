@@ -171,6 +171,23 @@
         if (phoneToDisplay && phoneInput) {
           phoneInput.setNumber(phoneToDisplay);
         }
+
+        // Register validation change callback for real-time feedback
+        // Uses country-specific validation from libphonenumber-js (shared logic)
+        if (phoneInput) {
+          phoneInput.onValidationChange((isValid, errorMessage) => {
+            const phoneError = document.getElementById('phone-error');
+            if (phoneError && phoneError.style.display === 'block') {
+              // Only update if error is currently shown (don't show error while user is typing)
+              if (isValid) {
+                phoneError.style.display = 'none';
+                phoneInput.setInvalid(false);
+              } else {
+                phoneError.textContent = errorMessage;
+              }
+            }
+          });
+        }
       } catch (err) {
         console.error('Error loading profile:', err);
         window.location.href = '/';
@@ -326,9 +343,14 @@
           return;
         }
 
-        // Validate phone number
+        // Validate phone number using country-specific rules from libphonenumber-js
+        // The validation logic is shared via phone-input.js component
         if (!phoneInput || !phoneInput.isValidNumber()) {
-          if (phoneError) phoneError.style.display = 'block';
+          if (phoneError) {
+            // Show dynamic error message with country name
+            phoneError.textContent = phoneInput ? phoneInput.getValidationError() : 'Please enter a valid phone number.';
+            phoneError.style.display = 'block';
+          }
           if (phoneInput) {
             phoneInput.setInvalid(true);
           }

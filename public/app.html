@@ -6,6 +6,8 @@
   <title>PayFriends — My Agreements</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <!-- Phone number validation library (country-specific validation rules) -->
+  <script src="https://cdn.jsdelivr.net/npm/libphonenumber-js@1.11/bundle/libphonenumber-js.min.js"></script>
   <!-- Shared control styles -->
   <link rel="stylesheet" href="/css/shared-controls.css" />
   <!-- App-wide styles -->
@@ -2536,8 +2538,13 @@
         return false;
       }
 
-      // Validate phone number
+      // Validate phone number using country-specific rules from libphonenumber-js
+      // The validation logic is shared via phone-input.js component
       if (!agreementPhoneInput || !agreementPhoneInput.isValidNumber()) {
+        // Show dynamic error message with country name
+        phoneError.textContent = agreementPhoneInput
+          ? agreementPhoneInput.getValidationError()
+          : 'Please enter a valid phone number.';
         phoneError.style.display = 'block';
         if (agreementPhoneInput) {
           agreementPhoneInput.setInvalid(true);
@@ -6951,6 +6958,23 @@
       // Phone input is auto-initialized by PhoneInputManager
       // Get reference to the instance
       agreementPhoneInput = window.PhoneInputManager.getInstance('agreement-phone');
+
+      // Register validation change callback for real-time feedback
+      // Uses country-specific validation from libphonenumber-js (shared logic)
+      if (agreementPhoneInput) {
+        agreementPhoneInput.onValidationChange((isValid, errorMessage) => {
+          const phoneError = document.getElementById('agreement-phone-error');
+          if (phoneError && phoneError.style.display === 'block') {
+            // Only update if error is currently shown (don't show error while user is typing)
+            if (isValid) {
+              phoneError.style.display = 'none';
+              agreementPhoneInput.setInvalid(false);
+            } else {
+              phoneError.textContent = errorMessage;
+            }
+          }
+        });
+      }
 
       // Initialize payment method cards
       setupPaymentMethodCards();

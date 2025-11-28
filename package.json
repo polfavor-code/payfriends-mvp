@@ -20,5 +20,8 @@
     "express": "^5.1.0",
     "morgan": "^1.10.1",
     "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "libphonenumber-js": "^1.12.29"
   }
 }
