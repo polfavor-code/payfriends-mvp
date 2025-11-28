@@ -217,7 +217,7 @@
 
     /* Custom Phone Input Widget */
     .phone-input-wrapper{position:relative}
-    .phone-input-row{display:flex;gap:8px;align-items:stretch}
+    .phone-input-row{display:flex;gap:8px;align-items:stretch;position:relative}
 
     /* Country button */
     .phone-country-button{
@@ -245,6 +245,9 @@
     /* Prefix input - editable country code field */
     .phone-prefix-input{
       width:65px;
+      min-width:65px;
+      max-width:65px;
+      flex-shrink:0;
       padding:12px 8px;
       background:#10151d;
       border:1px solid rgba(255,255,255,0.12);
@@ -373,7 +376,6 @@
     .phone-hint{color:var(--muted);font-size:13px;margin-top:4px}
     .phone-hint.valid{color:var(--accent)}
     /* Phone validation icon (checkmark inside input) */
-    .phone-input-row{position:relative}
     .phone-valid-icon{
       position:absolute;
       right:12px;
