@@ -237,3 +237,17 @@ if (typeof window !== 'undefined') {
   window.formatTimestamp = formatTimestamp;
   window.formatFinancialDate = formatFinancialDate;
 }
+
+// ES6 module exports for modules that use import
+export {
+  formatCurrency0,
+  formatCurrency2,
+  formatEuro0,
+  formatEuro2,
+  formatDate,
+  getDueDateCountdown,
+  formatDateWithCountdown,
+  getRelativeDueDateText,
+  formatTimestamp,
+  formatFinancialDate
+};
