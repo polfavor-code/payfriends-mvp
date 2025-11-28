@@ -2712,9 +2712,9 @@
       }
       addTerm('Reminders', reminderDescription);
 
-      // Worst case scenario (only if enabled)
+      // Automatic third-party handling (only if enabled)
       if (agreement.debt_collection_clause) {
-        addTerm('Worst case scenario', 'If you do not repay in time and ignore reminders or cannot agree a new plan, PayFriends will hand the case to an independent debt collector.');
+        addTerm('If the loan is not repaid', 'PayFriends will automatically transfer the case to an independent collection partner 90 days after the full loan was supposed to be repaid if no repayment or new plan is agreed.');
       }
 
       termsContainer.innerHTML = termsHTML;
@@ -4676,11 +4676,12 @@
         </div>`;
       }
 
-      // Worst case scenario (debt collection clause) - only show if enabled
+      // Automatic third-party handling - only show if enabled
       if (agreement.debt_collection_clause) {
         html += `<div>
-          <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>
-          <div style="color:var(--muted); font-size:14px; line-height:1.5">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</div>
+          <div style="font-weight:600; margin-bottom:6px; font-size:14px">If the loan is not repaid:</div>
+          <div style="color:var(--muted); font-size:14px; line-height:1.5; margin-bottom:6px">If the borrower fails to repay and no new repayment plan is agreed, or if reminders do not lead to any action, PayFriends will automatically transfer the case to an independent collection partner 90 days after the full loan was supposed to be repaid. This process is fully automatic and no longer in the lender's hands. PayFriends initiates the transfer, not the lender. This keeps the friendship out of the conflict, and all collection costs are for the borrower.</div>
+          <div style="color:var(--muted); font-size:12px; font-style:italic">Auto-escalation happens 90 days after the full loan's repayment date if it is still unpaid and no new repayment plan was agreed.</div>
         </div>`;
       }
 

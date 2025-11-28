@@ -285,7 +285,7 @@ function buildSummaryDataMap(wizardData, currentUser) {
     repaymentMethods: methodsText,
     requireProof: wizardData.proofRequired ? 'Yes — Borrower must upload proof (photo, screenshot, or PDF) with each payment' : null,
     reminders: remindersText,
-    worstCase: wizardData.debtCollectionClause ? 'Enabled — If borrower does not repay or propose a new plan, case may be handed to independent debt collector' : null
+    thirdPartyHandling: wizardData.debtCollectionClause ? 'Enabled — Automatic third-party handling after 90 days if loan is not repaid and no new plan is agreed' : null
   };
 }
 

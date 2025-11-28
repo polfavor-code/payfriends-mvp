@@ -1544,9 +1544,9 @@ app.post('/api/agreements', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Amount must be a positive number.' });
   }
 
-  // Worst case scenario (debt collection clause) is only allowed for loans >= 3000 EUR (300000 cents)
-  const WORST_CASE_MIN_AMOUNT_CENTS = 300000; // 3000 EUR
-  if (debtCollectionClause && amountCents < WORST_CASE_MIN_AMOUNT_CENTS) {
+  // Automatic third-party handling is only allowed for loans >= 3000 EUR (300000 cents)
+  const THIRD_PARTY_MIN_AMOUNT_CENTS = 300000; // 3000 EUR
+  if (debtCollectionClause && amountCents < THIRD_PARTY_MIN_AMOUNT_CENTS) {
     // Silently ignore the flag for small loans instead of rejecting the request
     debtCollectionClause = false;
   }
