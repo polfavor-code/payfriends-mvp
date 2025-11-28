@@ -696,11 +696,11 @@
       html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Reminder mode:</div>`;
       html += `<div style="color:var(--muted); font-size:13px">${agreement.reminder_mode === 'auto' ? 'Auto (recommended)' : 'Custom schedule'}</div></div>`;
 
-      // Automatic third-party handling (only show if enabled)
+      // Non-payment escalation (only show if enabled)
       if (agreement.debt_collection_clause) {
-        html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">If the loan is not repaid:</div>`;
-        html += `<div style="color:var(--muted); font-size:13px; line-height:1.6; margin-bottom:6px">If the borrower fails to repay and no new repayment plan is agreed, or if reminders do not lead to any action, PayFriends will automatically transfer the case to an independent collection partner 90 days after the full loan was supposed to be repaid. This process is fully automatic and no longer in the lender's hands. PayFriends initiates the transfer, not the lender. This keeps the friendship out of the conflict, and all collection costs are for the borrower.</div>`;
-        html += `<div style="color:var(--muted); font-size:12px; font-style:italic">Auto-escalation happens 90 days after the full loan's repayment date if it is still unpaid and no new repayment plan was agreed.</div>`;
+        html += `<div><div style="font-weight:600; margin-bottom:4px; font-size:14px">Non-payment escalation:</div>`;
+        html += `<div style="color:var(--muted); font-size:13px; line-height:1.6; margin-bottom:8px">PayFriends may automatically hand over the loan to an independent collection partner if repayment fails, keeping the lender out of the conflict. All collection costs are for the borrower.</div>`;
+        html += `<div style="color:var(--muted); font-size:13px; line-height:1.6">Escalation only occurs when 90 days have passed since the final repayment date, the loan still remains unpaid, and no new repayment plan was agreed inside PayFriends.</div>`;
         html += `</div>`;
       }
 
@@ -1054,9 +1054,9 @@
       }
       addTerm('Reminders', reminderMode);
 
-      // Automatic third-party handling (only if enabled)
+      // Non-payment escalation (only if enabled)
       if (agreement.debt_collection_clause) {
-        addTerm('If the loan is not repaid', 'PayFriends will automatically transfer the case to an independent collection partner 90 days after the full loan was supposed to be repaid if no repayment or new plan is agreed.');
+        addTerm('Non-payment escalation', 'PayFriends may automatically hand over the loan to an independent collection partner if repayment fails. Escalation only occurs when 90 days have passed since the final repayment date, the loan still remains unpaid, and no new repayment plan was agreed inside PayFriends.');
       }
 
       termsContainer.innerHTML = termsHTML;

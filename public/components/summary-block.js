@@ -285,7 +285,7 @@ function buildSummaryDataMap(wizardData, currentUser) {
     repaymentMethods: methodsText,
     requireProof: wizardData.proofRequired ? 'Yes — Borrower must upload proof (photo, screenshot, or PDF) with each payment' : null,
     reminders: remindersText,
-    thirdPartyHandling: wizardData.debtCollectionClause ? 'Enabled — Automatic third-party handling after 90 days if loan is not repaid and no new plan is agreed' : null
+    nonPaymentEscalation: wizardData.debtCollectionClause ? 'Enabled — PayFriends may automatically hand over the loan to an independent collection partner if repayment fails. Escalation only occurs when 90 days have passed since the final repayment date, the loan still remains unpaid, and no new repayment plan was agreed inside PayFriends.' : null
   };
 }
 
