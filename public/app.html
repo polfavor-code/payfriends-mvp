@@ -6713,19 +6713,8 @@
 
             // Process all agreements for various pending tasks (not just the first 3)
             const allAgreements = data.agreements || data.agreementsSummary || [];
-            console.log('[PENDING TASKS DEBUG] Total agreements:', allAgreements.length);
-            console.log('[PENDING TASKS DEBUG] All agreements:', allAgreements);
             if (allAgreements.length > 0) {
               allAgreements.forEach(agreement => {
-                console.log('[PENDING TASKS DEBUG] Checking agreement:', {
-                  id: agreement.id,
-                  counterpartyName: agreement.counterpartyName,
-                  status: agreement.status,
-                  isLender: agreement.isLender,
-                  needsInitialPaymentReport: agreement.needsInitialPaymentReport,
-                  money_sent_date: agreement.money_sent_date,
-                  accepted_at: agreement.accepted_at
-                });
 
                 // Task 2: Pending loan agreement awaiting borrower approval
                 if (agreement.status === 'pending' && !agreement.isLender) {

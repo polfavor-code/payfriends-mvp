@@ -708,26 +708,14 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
                              moneySentDate === 'upon agreement acceptance' ||
                              (acceptedDate && moneySentDate === acceptedDate);
 
-    console.log(`[ENRICH DEBUG] Agreement ${agreement.id}:`, {
-      isLender,
-      status: agreement.status,
-      moneySentDate,
-      acceptedDate,
-      isUponAcceptance
-    });
-
     if (isUponAcceptance) {
       // Check if there's a completed report
       const report = db.prepare(`
         SELECT is_completed FROM initial_payment_reports WHERE agreement_id = ?
       `).get(agreement.id);
 
-      console.log(`[ENRICH DEBUG] Agreement ${agreement.id} report:`, report);
-
       // Show task if no report exists OR report exists but not completed
       needsInitialPaymentReport = !report || report.is_completed === 0;
-
-      console.log(`[ENRICH DEBUG] Agreement ${agreement.id} needsInitialPaymentReport:`, needsInitialPaymentReport);
     }
   }
 
@@ -5054,7 +5042,7 @@ app.get('/app', (req, res) => {
         u_borrower.full_name as borrower_full_name,
         u_borrower.email as borrower_email,
         u_borrower.profile_picture as borrower_profile_picture,
-        invite.accepted_at as accepted_at
+        COALESCE(a.accepted_at, invite.accepted_at) as accepted_at
       FROM agreements a
       LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
       LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
