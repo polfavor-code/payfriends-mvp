@@ -17,15 +17,16 @@
     body{
       margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
       background:var(--bg); color:var(--text);
-      min-height:100vh; display:flex; align-items:flex-start; justify-content:center;
+      min-height:100vh; display:flex; flex-direction:column; align-items:center;
     }
     .page{
-      width:100%; max-width:1280px; padding:80px 16px 32px;
+      flex:1; width:100%; max-width:1280px; padding:80px 16px 32px;
       display:flex; flex-direction:column; gap:40px; align-items:center;
+      justify-content:center;
     }
     @media (min-width:900px){
       .page{
-        flex-direction:row; align-items:flex-start; justify-content:space-between;
+        flex-direction:row; align-items:center; justify-content:space-between;
         gap:64px; padding:96px 32px 64px;
       }
     }
@@ -90,7 +91,7 @@
 
     /* Mobile hero stack */
     @media (max-width:899px){
-      .page{padding:48px 16px 32px; gap:28px}
+      .page{padding:48px 16px 32px; gap:28px; justify-content:flex-start}
       .hero h1{font-size:28px; text-align:center}
       .hero-row{flex-direction:column; align-items:center; gap:16px}
       .hero img.hero-logo{width:120px}
