@@ -78,6 +78,11 @@
         .profile-status.error { color: #ff6b6b; }
         .profile-status.success { color: var(--accent); }
         .phone-error { color: #ff6b6b; font-size: 13px; margin-top: 4px; display: none; }
+        .phone-hint { color: var(--muted); font-size: 13px; margin-top: 4px; }
+        .phone-hint.valid { color: var(--accent); }
+        .phone-input-row { position: relative; }
+        .phone-valid-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 18px; display: none; pointer-events: none; }
+        .phone-valid-icon.show { display: block; }
       </style>
 
       <div class="page-header-row">
@@ -110,15 +115,17 @@
             <div class="phone-input-wrapper" data-phone-id="phone-number">
               <div class="phone-input-row">
                 <button type="button" class="phone-country-button"></button>
-                <span class="phone-prefix"></span>
+                <input type="text" class="phone-prefix-input" />
                 <input type="tel" class="phone-number-input" placeholder="612345678" />
                 <input type="hidden" id="phone-number" name="phone-number" class="phone-number-full" />
+                <span id="phone-valid-icon" class="phone-valid-icon">✓</span>
               </div>
               <div class="phone-dropdown">
                 <input type="text" class="phone-dropdown-search" placeholder="Search country or code…" />
                 <div class="phone-country-list"></div>
               </div>
             </div>
+            <div id="phone-hint" class="phone-hint"></div>
             <div id="phone-error" class="phone-error">Please enter a valid phone number.</div>
           </div>
           <button type="submit" class="profile-button">Save Changes</button>
@@ -170,6 +177,52 @@
         const phoneToDisplay = currentUser.phone_number || currentUser.invitePhoneFallback || '';
         if (phoneToDisplay && phoneInput) {
           phoneInput.setNumber(phoneToDisplay);
+        }
+
+        // Register validation change callback for real-time feedback
+        // Uses country-specific validation from libphonenumber-js (shared logic)
+        // - While typing under limit: show nothing
+        // - While typing OVER limit: show error immediately
+        // - On blur with too few digits: show error
+        // - When valid: show green checkmark inside input
+        if (phoneInput) {
+          phoneInput.onValidationChange((isValid, errorMessage, typingHint, eventType) => {
+            const phoneError = document.getElementById('phone-error');
+            const phoneHint = document.getElementById('phone-hint');
+            const validIcon = document.getElementById('phone-valid-icon');
+
+            if (isValid) {
+              // Valid: show green checkmark inside input, hide error
+              if (validIcon) validIcon.classList.add('show');
+              if (phoneHint) phoneHint.textContent = '';
+              if (phoneError) phoneError.style.display = 'none';
+              phoneInput.setInvalid(false);
+            } else if (typingHint.isTooLong) {
+              // Too many digits: show error immediately while typing
+              if (validIcon) validIcon.classList.remove('show');
+              if (phoneHint) phoneHint.textContent = '';
+              if (phoneError) {
+                phoneError.textContent = errorMessage;
+                phoneError.style.display = 'block';
+              }
+              phoneInput.setInvalid(true);
+            } else if (eventType === 'blur' && typingHint.currentDigits > 0) {
+              // Blur with too few digits: show error
+              if (validIcon) validIcon.classList.remove('show');
+              if (phoneHint) phoneHint.textContent = '';
+              if (phoneError) {
+                phoneError.textContent = errorMessage;
+                phoneError.style.display = 'block';
+              }
+              phoneInput.setInvalid(true);
+            } else {
+              // Typing under limit: show nothing, hide error
+              if (validIcon) validIcon.classList.remove('show');
+              if (phoneHint) phoneHint.textContent = '';
+              if (phoneError) phoneError.style.display = 'none';
+              phoneInput.setInvalid(false);
+            }
+          });
         }
       } catch (err) {
         console.error('Error loading profile:', err);
@@ -326,9 +379,14 @@
           return;
         }
 
-        // Validate phone number
+        // Validate phone number using country-specific rules from libphonenumber-js
+        // The validation logic is shared via phone-input.js component
         if (!phoneInput || !phoneInput.isValidNumber()) {
-          if (phoneError) phoneError.style.display = 'block';
+          if (phoneError) {
+            // Show dynamic error message with country name
+            phoneError.textContent = phoneInput ? phoneInput.getValidationError() : 'Please enter a valid phone number.';
+            phoneError.style.display = 'block';
+          }
           if (phoneInput) {
             phoneInput.setInvalid(true);
           }

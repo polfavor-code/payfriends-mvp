@@ -6,6 +6,8 @@
   <title>PayFriends — My Agreements</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <!-- Phone number validation library (country-specific validation rules) -->
+  <script src="https://cdn.jsdelivr.net/npm/libphonenumber-js@1.11/bundle/libphonenumber-js.min.js"></script>
   <!-- Shared control styles -->
   <link rel="stylesheet" href="/css/shared-controls.css" />
   <!-- App-wide styles -->
@@ -215,7 +217,7 @@
 
     /* Custom Phone Input Widget */
     .phone-input-wrapper{position:relative}
-    .phone-input-row{display:flex;gap:8px;align-items:stretch}
+    .phone-input-row{display:flex;gap:8px;align-items:stretch;position:relative}
 
     /* Country button */
     .phone-country-button{
@@ -240,17 +242,24 @@
     .phone-country-name{flex:1}
     .phone-caret{font-size:10px;color:var(--muted)}
 
-    /* Prefix display */
-    .phone-prefix{
-      display:flex;align-items:center;
-      padding:0 12px;
+    /* Prefix input - editable country code field */
+    .phone-prefix-input{
+      width:65px;
+      min-width:65px;
+      max-width:65px;
+      flex-shrink:0;
+      padding:12px 8px;
       background:#10151d;
       border:1px solid rgba(255,255,255,0.12);
       border-radius:10px;
-      color:var(--muted);
+      color:var(--text);
       font-size:15px;
-      min-width:60px;
-      justify-content:center;
+      text-align:center;
+      font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+    }
+    .phone-prefix-input:focus{
+      outline:none;
+      border-color:var(--accent);
     }
 
     /* Local number input */
@@ -363,6 +372,21 @@
 
     /* Phone error message */
     .phone-error{color:#ff6b6b;font-size:13px;margin-top:4px;display:none}
+    /* Phone hint for friendly feedback while typing */
+    .phone-hint{color:var(--muted);font-size:13px;margin-top:4px}
+    .phone-hint.valid{color:var(--accent)}
+    /* Phone validation icon (checkmark inside input) */
+    .phone-valid-icon{
+      position:absolute;
+      right:12px;
+      top:50%;
+      transform:translateY(-50%);
+      color:var(--accent);
+      font-size:18px;
+      display:none;
+      pointer-events:none;
+    }
+    .phone-valid-icon.show{display:block}
 
     /* Summary grid layout for Step 4 - COMPACT STYLING TO MATCH STEP 2 */
     .summary-grid{
@@ -1730,15 +1754,17 @@
             <div class="phone-input-wrapper" data-phone-id="agreement-phone">
               <div class="phone-input-row">
                 <button type="button" class="phone-country-button"></button>
-                <span class="phone-prefix"></span>
+                <input type="text" class="phone-prefix-input" />
                 <input type="tel" class="phone-number-input" placeholder="612345678" />
                 <input type="hidden" id="agreement-phone" name="agreement-phone" class="phone-number-full" />
+                <span id="agreement-phone-valid-icon" class="phone-valid-icon">✓</span>
               </div>
               <div class="phone-dropdown">
                 <input type="text" class="phone-dropdown-search" placeholder="Search country or code…" />
                 <div class="phone-country-list"></div>
               </div>
             </div>
+            <div id="agreement-phone-hint" class="phone-hint"></div>
             <div id="agreement-phone-error" class="phone-error">Please enter a valid phone number.</div>
           </div>
           <p style="color:rgba(255,255,255,0.5); font-size:13px; margin:-6px 0 12px 172px">Borrower's phone number is required to send reminders.</p>
@@ -2536,8 +2562,13 @@
         return false;
       }
 
-      // Validate phone number
+      // Validate phone number using country-specific rules from libphonenumber-js
+      // The validation logic is shared via phone-input.js component
       if (!agreementPhoneInput || !agreementPhoneInput.isValidNumber()) {
+        // Show dynamic error message with country name
+        phoneError.textContent = agreementPhoneInput
+          ? agreementPhoneInput.getValidationError()
+          : 'Please enter a valid phone number.';
         phoneError.style.display = 'block';
         if (agreementPhoneInput) {
           agreementPhoneInput.setInvalid(true);
@@ -6951,6 +6982,52 @@
       // Phone input is auto-initialized by PhoneInputManager
       // Get reference to the instance
       agreementPhoneInput = window.PhoneInputManager.getInstance('agreement-phone');
+
+      // Register validation change callback for real-time feedback
+      // Uses country-specific validation from libphonenumber-js (shared logic)
+      // - While typing under limit: show nothing
+      // - While typing OVER limit: show error immediately
+      // - On blur with too few digits: show error
+      // - When valid: show green checkmark inside input
+      if (agreementPhoneInput) {
+        agreementPhoneInput.onValidationChange((isValid, errorMessage, typingHint, eventType) => {
+          const phoneError = document.getElementById('agreement-phone-error');
+          const phoneHint = document.getElementById('agreement-phone-hint');
+          const validIcon = document.getElementById('agreement-phone-valid-icon');
+
+          if (isValid) {
+            // Valid: show green checkmark inside input, hide error
+            if (validIcon) validIcon.classList.add('show');
+            if (phoneHint) phoneHint.textContent = '';
+            if (phoneError) phoneError.style.display = 'none';
+            agreementPhoneInput.setInvalid(false);
+          } else if (typingHint.isTooLong) {
+            // Too many digits: show error immediately while typing
+            if (validIcon) validIcon.classList.remove('show');
+            if (phoneHint) phoneHint.textContent = '';
+            if (phoneError) {
+              phoneError.textContent = errorMessage;
+              phoneError.style.display = 'block';
+            }
+            agreementPhoneInput.setInvalid(true);
+          } else if (eventType === 'blur' && typingHint.currentDigits > 0) {
+            // Blur with too few digits: show error
+            if (validIcon) validIcon.classList.remove('show');
+            if (phoneHint) phoneHint.textContent = '';
+            if (phoneError) {
+              phoneError.textContent = errorMessage;
+              phoneError.style.display = 'block';
+            }
+            agreementPhoneInput.setInvalid(true);
+          } else {
+            // Typing under limit: show nothing, hide error
+            if (validIcon) validIcon.classList.remove('show');
+            if (phoneHint) phoneHint.textContent = '';
+            if (phoneError) phoneError.style.display = 'none';
+            agreementPhoneInput.setInvalid(false);
+          }
+        });
+      }
 
       // Initialize payment method cards
       setupPaymentMethodCards();

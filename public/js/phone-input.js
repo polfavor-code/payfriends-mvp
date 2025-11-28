@@ -1,6 +1,9 @@
 /**
  * PayFriends Custom Phone Input Component
  * A clean, dark-themed phone number input with country selection
+ *
+ * Phone validation uses libphonenumber-js for country-specific validation rules.
+ * Both the Profile page and Wizard Step 1 share this component and its validation logic.
  */
 
 const COUNTRIES = [
@@ -214,7 +217,7 @@ class PhoneInput {
   init() {
     // Find or create elements
     this.elements.countryButton = this.container.querySelector('.phone-country-button');
-    this.elements.prefix = this.container.querySelector('.phone-prefix');
+    this.elements.prefixInput = this.container.querySelector('.phone-prefix-input');
     this.elements.localInput = this.container.querySelector('.phone-number-input');
     this.elements.fullInput = this.container.querySelector('.phone-number-full');
     this.elements.dropdown = this.container.querySelector('.phone-dropdown');
@@ -247,9 +250,19 @@ class PhoneInput {
       this.filterCountries(e.target.value);
     });
 
-    // Local number input
+    // Prefix input - allow typing country code directly (e.g., +31 switches to Netherlands)
+    this.elements.prefixInput.addEventListener('input', (e) => {
+      this.handlePrefixInput(e);
+    });
+
+    // Local number input - validate on every keystroke
     this.elements.localInput.addEventListener('input', (e) => {
       this.handleLocalInput(e);
+    });
+
+    // Blur event - show validation error when user leaves the field
+    this.elements.localInput.addEventListener('blur', () => {
+      this._triggerValidationChange('blur');
     });
 
     // Close dropdown when clicking outside
@@ -329,6 +342,9 @@ class PhoneInput {
     this.selectedCountry = country;
     this.updateCountryDisplay();
     this.updateFullNumber();
+
+    // Revalidate with the new country (same digits may now be valid/invalid)
+    this._triggerValidationChange();
   }
 
   updateCountryDisplay() {
@@ -339,8 +355,17 @@ class PhoneInput {
       <span class="phone-caret">▼</span>
     `;
 
-    // Update prefix
-    this.elements.prefix.textContent = this.selectedCountry.dialCode;
+    // Update prefix input value
+    this.elements.prefixInput.value = this.selectedCountry.dialCode;
+  }
+
+  updateCountryButton() {
+    // Only update the button, not the prefix input (user may be typing in prefix)
+    this.elements.countryButton.innerHTML = `
+      <span class="phone-country-flag">${this.selectedCountry.flag}</span>
+      <span class="phone-country-name">${this.selectedCountry.name}</span>
+      <span class="phone-caret">▼</span>
+    `;
   }
 
   handleLocalInput(e) {
@@ -352,15 +377,65 @@ class PhoneInput {
       return;
     }
 
-    // Strip non-digits from local input
+    // Strip non-digits from local input (handles pasting with spaces, dashes, etc.)
     const digitsOnly = value.replace(/\D/g, '');
     e.target.value = digitsOnly;
 
     this.updateFullNumber();
+
+    // Trigger validation change callback if registered
+    this._triggerValidationChange();
+  }
+
+  handlePrefixInput(e) {
+    let value = e.target.value;
+
+    // Ensure it starts with +
+    if (!value.startsWith('+')) {
+      value = '+' + value.replace(/[^0-9]/g, '');
+      e.target.value = value;
+    } else {
+      // Keep + and only digits after
+      value = '+' + value.substring(1).replace(/[^0-9]/g, '');
+      e.target.value = value;
+    }
+
+    // Try to match a country by dial code
+    const sortedCountries = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
+
+    for (const country of sortedCountries) {
+      if (value === country.dialCode) {
+        // Exact match - switch to this country
+        this.selectedCountry = country;
+        this.updateCountryButton();
+        this.updateFullNumber();
+        this._triggerValidationChange();
+        return;
+      }
+    }
+
+    // If the typed value is longer than any dial code and matches, switch country
+    for (const country of sortedCountries) {
+      if (value.startsWith(country.dialCode) && value.length > country.dialCode.length) {
+        // User typed extra digits - move them to local input
+        const localPart = value.substring(country.dialCode.length);
+        this.selectedCountry = country;
+        this.updateCountryButton();
+        e.target.value = country.dialCode;
+        this.elements.localInput.value = localPart + this.elements.localInput.value;
+        this.elements.localInput.focus();
+        this.updateFullNumber();
+        this._triggerValidationChange();
+        return;
+      }
+    }
+
+    // No match yet - just update the full number with current prefix
+    this.updateFullNumber();
   }
 
   detectAndSetCountry(fullNumber) {
-    // Try to match the dial code
+    // Try to match the dial code (allows user to type +31 to switch to Netherlands, etc.)
     const sortedCountries = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
 
     for (const country of sortedCountries) {
@@ -372,6 +447,7 @@ class PhoneInput {
         const localPart = fullNumber.substring(country.dialCode.length).replace(/\D/g, '');
         this.elements.localInput.value = localPart;
         this.updateFullNumber();
+        this._triggerValidationChange();
         return;
       }
     }
@@ -380,11 +456,13 @@ class PhoneInput {
     const digitsOnly = fullNumber.replace(/\D/g, '');
     this.elements.localInput.value = digitsOnly;
     this.updateFullNumber();
+    this._triggerValidationChange();
   }
 
   updateFullNumber() {
     const localDigits = this.elements.localInput.value.replace(/\D/g, '');
-    const fullNumber = localDigits ? `${this.selectedCountry.dialCode}${localDigits}` : '';
+    const prefix = this.elements.prefixInput.value || this.selectedCountry.dialCode;
+    const fullNumber = localDigits ? `${prefix}${localDigits}` : '';
     this.elements.fullInput.value = fullNumber;
   }
 
@@ -415,10 +493,149 @@ class PhoneInput {
     return this.elements.fullInput.value;
   }
 
+  /**
+   * Validates the phone number using country-specific rules from libphonenumber-js.
+   * This is the single source of truth for phone validation across the app.
+   * @returns {boolean} true if the phone number is valid for the selected country
+   */
   isValidNumber() {
     const number = this.getNumber();
-    // Basic validation: must have a dial code and at least one digit
+    const countryCode = this.selectedCountry.code;
+
+    // Empty number is not valid
+    if (!number || number === this.selectedCountry.dialCode) {
+      return false;
+    }
+
+    // Use libphonenumber-js if available for country-specific validation
+    if (typeof libphonenumber !== 'undefined') {
+      try {
+        const phoneNumber = libphonenumber.parsePhoneNumberFromString(number, countryCode);
+        if (phoneNumber) {
+          return phoneNumber.isValid();
+        }
+        return false;
+      } catch (e) {
+        console.warn('Phone validation error:', e);
+        return false;
+      }
+    }
+
+    // Fallback: basic validation if library not loaded
     return number.startsWith('+') && number.length > this.selectedCountry.dialCode.length;
+  }
+
+  /**
+   * Returns a validation error message for the current phone number.
+   * Uses the country name dynamically to provide clear feedback.
+   * @returns {string|null} Error message if invalid, null if valid
+   */
+  getValidationError() {
+    const number = this.getNumber();
+    const countryCode = this.selectedCountry.code;
+    const countryName = this.selectedCountry.name;
+
+    // Empty number
+    if (!number || number === this.selectedCountry.dialCode) {
+      return `Please enter a phone number for ${countryName}.`;
+    }
+
+    // Use libphonenumber-js if available
+    if (typeof libphonenumber !== 'undefined') {
+      try {
+        const phoneNumber = libphonenumber.parsePhoneNumberFromString(number, countryCode);
+
+        if (!phoneNumber) {
+          return `Please enter a valid phone number for ${countryName}.`;
+        }
+
+        if (!phoneNumber.isValid()) {
+          // Check if it's a length issue
+          if (!phoneNumber.isPossible()) {
+            const nationalNumber = this.elements.localInput.value.replace(/\D/g, '');
+            // Try to give more specific feedback
+            return `Please enter a valid phone number for ${countryName}. Check the number of digits.`;
+          }
+          return `Please enter a valid phone number for ${countryName}.`;
+        }
+
+        return null; // Valid
+      } catch (e) {
+        return `Please enter a valid phone number for ${countryName}.`;
+      }
+    }
+
+    // Fallback validation
+    if (!number.startsWith('+') || number.length <= this.selectedCountry.dialCode.length) {
+      return `Please enter a valid phone number for ${countryName}.`;
+    }
+
+    return null;
+  }
+
+  /**
+   * Returns the selected country's code (e.g., 'NL', 'AD', 'US')
+   * @returns {string} ISO 3166-1 alpha-2 country code
+   */
+  getCountryCode() {
+    return this.selectedCountry.code;
+  }
+
+  /**
+   * Returns the selected country's name
+   * @returns {string} Country name
+   */
+  getCountryName() {
+    return this.selectedCountry.name;
+  }
+
+  /**
+   * Returns a friendly typing hint showing digit progress.
+   * Used to provide positive feedback while user is typing.
+   * @returns {{ text: string, isValid: boolean, isTooLong: boolean, currentDigits: number, expectedDigits: number|null }}
+   */
+  getTypingHint() {
+    const currentDigits = this.elements.localInput.value.replace(/\D/g, '').length;
+    const countryCode = this.selectedCountry.code;
+    const countryName = this.selectedCountry.name;
+    const isValid = this.isValidNumber();
+
+    // Try to get expected digit count from libphonenumber-js
+    let expectedDigits = null;
+    let isTooLong = false;
+
+    if (typeof libphonenumber !== 'undefined') {
+      try {
+        const example = libphonenumber.getExampleNumber(countryCode);
+        if (example) {
+          expectedDigits = example.nationalNumber.length;
+        }
+        // Simple check: if we have more digits than the example, it's too long
+        if (expectedDigits && currentDigits > expectedDigits) {
+          isTooLong = true;
+        }
+      } catch (e) {
+        // Some countries may not have examples
+      }
+    }
+
+    if (isValid) {
+      return {
+        text: `Valid ${countryName} number`,
+        isValid: true,
+        isTooLong: false,
+        currentDigits,
+        expectedDigits
+      };
+    }
+
+    return {
+      text: `Please enter a valid phone number for ${countryName}. Check the number of digits.`,
+      isValid: false,
+      isTooLong,
+      currentDigits,
+      expectedDigits
+    };
   }
 
   setInvalid(invalid) {
@@ -426,6 +643,30 @@ class PhoneInput {
       this.elements.localInput.classList.add('phone-input-invalid');
     } else {
       this.elements.localInput.classList.remove('phone-input-invalid');
+    }
+  }
+
+  /**
+   * Registers a callback to be called when validation state changes.
+   * Useful for updating error messages dynamically as the user types.
+   * @param {function} callback - Called with (isValid, errorMessage, typingHint, eventType)
+   * eventType is 'input' for typing or 'blur' for leaving the field
+   */
+  onValidationChange(callback) {
+    this.validationCallback = callback;
+  }
+
+  /**
+   * Triggers validation and calls the registered callback if any.
+   * @param {string} eventType - 'input' for typing, 'blur' for leaving field
+   * @private
+   */
+  _triggerValidationChange(eventType = 'input') {
+    if (this.validationCallback) {
+      const isValid = this.isValidNumber();
+      const errorMessage = isValid ? null : this.getValidationError();
+      const typingHint = this.getTypingHint();
+      this.validationCallback(isValid, errorMessage, typingHint, eventType);
     }
   }
 }
