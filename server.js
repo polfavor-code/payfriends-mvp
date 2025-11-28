@@ -708,14 +708,26 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
                              moneySentDate === 'upon agreement acceptance' ||
                              (acceptedDate && moneySentDate === acceptedDate);
 
+    console.log(`[ENRICH DEBUG] Agreement ${agreement.id}:`, {
+      isLender,
+      status: agreement.status,
+      moneySentDate,
+      acceptedDate,
+      isUponAcceptance
+    });
+
     if (isUponAcceptance) {
       // Check if there's a completed report
       const report = db.prepare(`
         SELECT is_completed FROM initial_payment_reports WHERE agreement_id = ?
       `).get(agreement.id);
 
+      console.log(`[ENRICH DEBUG] Agreement ${agreement.id} report:`, report);
+
       // Show task if no report exists OR report exists but not completed
       needsInitialPaymentReport = !report || report.is_completed === 0;
+
+      console.log(`[ENRICH DEBUG] Agreement ${agreement.id} needsInitialPaymentReport:`, needsInitialPaymentReport);
     }
   }
 
