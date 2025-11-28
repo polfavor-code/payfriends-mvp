@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="/css/app.css" />
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
+  <!-- Shared footer component -->
+  <script src="/js/footer.js"></script>
   <!-- Centralized currency formatters -->
   <script src="/js/formatters.js"></script>
   <style>
@@ -143,6 +145,11 @@
     // Initialize header
     if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
       window.PayFriendsHeader.initialize({ hasActivitySection: false });
+    }
+
+    // Initialize footer
+    if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+      window.PayFriendsFooter.initialize();
     }
 
     // Get friend public ID from URL path

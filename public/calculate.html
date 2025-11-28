@@ -480,7 +480,14 @@ Click "Calculate schedule" to see calculation details...
   </div>
 
   <script src="/js/formatters.js"></script>
+  <!-- Shared footer component -->
+  <script src="/js/footer.js"></script>
   <script>
+    // Initialize footer
+    if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+      window.PayFriendsFooter.initialize();
+    }
+
     // Calculator Playground Logic - Single Source of Truth
     // This generateRepaymentSchedule function can be reused across wizard, manage, and review pages
 

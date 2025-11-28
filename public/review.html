@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="/css/app.css" />
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
+  <!-- Shared footer component -->
+  <script src="/js/footer.js"></script>
   <!-- Centralized currency formatters -->
   <script src="/js/formatters.js"></script>
   <!-- Loan timing utilities (single source of truth for timing config) -->
@@ -333,6 +335,11 @@
   </div>
 
   <script>
+    // Initialize footer
+    if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+      window.PayFriendsFooter.initialize();
+    }
+
     let inviteData = null;
     let currentUser = null;
     const urlParams = new URLSearchParams(window.location.search);

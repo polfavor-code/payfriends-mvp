@@ -14,6 +14,8 @@
   <link rel="stylesheet" href="/css/app.css" />
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
+  <!-- Shared footer component -->
+  <script src="/js/footer.js"></script>
   <!-- Phone input component -->
   <script src="/js/phone-input.js"></script>
   <!-- Centralized currency formatters -->
@@ -6959,6 +6961,10 @@
         await PayFriendsHeader.initialize({
           hasActivitySection: false
         });
+        // Initialize footer
+        if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+          window.PayFriendsFooter.initialize();
+        }
         return; // Don't initialize the app content
       }
 
@@ -6969,6 +6975,10 @@
         await PayFriendsHeader.initialize({
           hasActivitySection: false
         });
+        // Initialize footer
+        if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+          window.PayFriendsFooter.initialize();
+        }
         return; // Don't initialize the app content
       }
 
@@ -6978,6 +6988,11 @@
         hasActivitySection: true,
         onActivityClick: toggleActivity
       });
+
+      // Initialize footer
+      if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+        window.PayFriendsFooter.initialize();
+      }
 
       // Phone input is auto-initialized by PhoneInputManager
       // Get reference to the instance

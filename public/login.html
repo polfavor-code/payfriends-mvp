@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PayFriends &mdash; Login</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Shared footer component -->
+  <script src="/js/footer.js"></script>
   <style>
     :root{
       --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
@@ -355,6 +357,11 @@
         status.className = 'status error';
       }
     });
+
+    // Initialize footer
+    if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+      window.PayFriendsFooter.initialize();
+    }
   </script>
 </body>
 </html>

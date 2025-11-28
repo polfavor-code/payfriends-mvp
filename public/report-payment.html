@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="/css/app.css" />
   <!-- Shared header component -->
   <script src="/js/header.js"></script>
+  <!-- Shared footer component -->
+  <script src="/js/footer.js"></script>
   <!-- Centralized currency formatters -->
   <script src="/js/formatters.js"></script>
   <style>
@@ -184,6 +186,11 @@
 
   <script type="module">
     import { formatCurrency0 } from '/js/formatters.js';
+
+    // Initialize footer
+    if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+      window.PayFriendsFooter.initialize();
+    }
 
     // Get agreement ID from URL
     const pathParts = window.location.pathname.split('/');
