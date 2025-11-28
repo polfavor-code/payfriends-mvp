@@ -20,13 +20,10 @@
 
       const footerHTML = await response.text();
 
-      // Find the container to append footer to (prefer main container, fallback to body)
-      const container = document.querySelector('main.container') ||
-                        document.querySelector('.container') ||
-                        document.body;
-
-      // Append footer at the end of the container
-      container.insertAdjacentHTML('beforeend', footerHTML);
+      // Always append footer to body for consistent positioning
+      // The footer CSS makes body a flex column container, so footer
+      // will always appear at the bottom of the viewport
+      document.body.insertAdjacentHTML('beforeend', footerHTML);
 
       // Set the dynamic year
       const yearSpan = document.getElementById('payfriends-footer-year');
