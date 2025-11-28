@@ -1843,7 +1843,7 @@
         </div>
 
         <!-- Require proof of repayment -->
-        <div style="margin:24px 0 48px 0">
+        <div id="proof-required-section" style="margin:24px 0 48px 0">
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
             <label class="toggle-switch">
               <input type="checkbox" id="proof-required" checked />
@@ -4854,6 +4854,19 @@
       } else {
         otherDetails.classList.add('hidden');
         document.getElementById('other-payment-description').value = '';
+      }
+
+      // Hide "Require proof of repayment" section if ONLY Cash is selected
+      const selectedMethods = Array.from(document.querySelectorAll('.payment-method-checkbox:checked')).map(cb => cb.value);
+      const isCashOnly = selectedMethods.length === 1 && selectedMethods[0] === 'cash';
+      const proofRequiredSection = document.getElementById('proof-required-section');
+
+      if (isCashOnly) {
+        proofRequiredSection.style.display = 'none';
+        // Uncheck the proof requirement when hiding
+        document.getElementById('proof-required').checked = false;
+      } else {
+        proofRequiredSection.style.display = 'block';
       }
     }
 
