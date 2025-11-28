@@ -1904,16 +1904,18 @@
           </label>
         </div>
 
-        <!-- Worst-case scenario (only shown for loans >= 3000 EUR) -->
-        <div id="worst-case-scenario-container" style="margin:48px 0 24px 0">
+        <!-- Non-payment escalation (only shown for loans >= 3000 EUR) -->
+        <div id="third-party-handling-container" style="margin:48px 0 24px 0">
+          <h4 style="margin:0 0 8px 0; font-size:16px">Non-payment escalation</h4>
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
             <label class="toggle-switch">
               <input type="checkbox" id="debt-collection-clause" checked />
               <span class="toggle-slider"></span>
             </label>
-            <h4 style="margin:0; font-size:16px">Worst case scenario</h4>
+            <span style="font-size:14px; font-weight:500">Allow automatic third-party handling</span>
           </div>
-          <p style="color:var(--muted); font-size:13px; margin:0; line-height:1.5">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</p>
+          <p style="color:var(--muted); font-size:13px; margin:0 0 12px 0; line-height:1.5">PayFriends may automatically hand over the loan to an independent collection partner if repayment fails, keeping the lender out of the conflict. All collection costs are for the borrower.</p>
+          <p style="color:var(--muted); font-size:13px; margin:0; line-height:1.5">Escalation only occurs when 90 days have passed since the final repayment date, the loan still remains unpaid, and no new repayment plan was agreed inside PayFriends.</p>
         </div>
 
         <!-- Wizard navigation footer -->
@@ -2105,9 +2107,9 @@
       agreementSent: false
     };
 
-    // Worst case scenario is only shown for loans from 3,000 EUR and higher,
-    // since debt collectors and legal escalation rarely make sense below this amount.
-    const WORST_CASE_MIN_AMOUNT_EUR = 3000;
+    // Automatic third-party handling is only available for loans from 3,000 EUR and higher,
+    // since collection and legal escalation rarely make sense below this amount.
+    const THIRD_PARTY_MIN_AMOUNT_EUR = 3000;
 
     // Currency formatters are loaded from /js/formatters.js
     // - formatCurrency0(cents) - for My Agreements table (no decimals, nl-NL locale)
@@ -2335,10 +2337,10 @@
         initializeWizardCalculator();
       }
 
-      // Special handling for step 3: initialize reminder mode highlight and update worst case visibility
+      // Special handling for step 3: initialize reminder mode highlight and update third-party handling visibility
       if (step === 3) {
         toggleReminderMode();
-        updateWorstCaseVisibility();
+        updateThirdPartyHandlingVisibility();
       }
 
       // Apply read-only mode if agreement has been sent
@@ -2838,13 +2840,13 @@
         updateOneTimeEstimate();
       }
 
-      // Also update worst case scenario visibility whenever amount changes
-      updateWorstCaseVisibility();
+      // Also update third-party handling visibility whenever amount changes
+      updateThirdPartyHandlingVisibility();
     }
 
-    // Update visibility of worst case scenario option based on loan amount
-    function updateWorstCaseVisibility() {
-      const container = document.getElementById('worst-case-scenario-container');
+    // Update visibility of automatic third-party handling option based on loan amount
+    function updateThirdPartyHandlingVisibility() {
+      const container = document.getElementById('third-party-handling-container');
       const checkbox = document.getElementById('debt-collection-clause');
 
       if (!container) return;
@@ -2852,9 +2854,9 @@
       // Get amount from wizardData (already stored in euros from previous steps)
       const amountEur = wizardData.amount || 0;
 
-      const showWorstCase = amountEur >= WORST_CASE_MIN_AMOUNT_EUR;
+      const showThirdParty = amountEur >= THIRD_PARTY_MIN_AMOUNT_EUR;
 
-      if (showWorstCase) {
+      if (showThirdParty) {
         container.style.display = '';
         // Default to checked (enabled) when shown
         if (checkbox) {
@@ -2862,7 +2864,7 @@
         }
       } else {
         container.style.display = 'none';
-        // Uncheck the checkbox when hidden
+        // Uncheck the checkbox when hidden to ensure backend doesn't receive it
         if (checkbox) {
           checkbox.checked = false;
         }
@@ -4682,8 +4684,8 @@
 
       goToStep(3);
 
-      // Update worst case scenario visibility based on loan amount
-      updateWorstCaseVisibility();
+      // Update third-party handling visibility based on loan amount
+      updateThirdPartyHandlingVisibility();
     }
 
     // Navigate to summary
@@ -4788,11 +4790,12 @@
 
       wizardData.proofRequired = document.getElementById('proof-required').checked;
 
-      // Only include debt collection clause if amount is >= 3000 EUR
+      // Only include automatic third-party handling if amount is >= 3000 EUR
       const amountEur = wizardData.amount || 0;
-      if (amountEur >= WORST_CASE_MIN_AMOUNT_EUR) {
+      if (amountEur >= THIRD_PARTY_MIN_AMOUNT_EUR) {
         wizardData.debtCollectionClause = document.getElementById('debt-collection-clause').checked;
       } else {
+        // Force to false for loans below threshold
         wizardData.debtCollectionClause = false;
       }
 
@@ -5262,12 +5265,13 @@
         </div>
       </div>`;
 
-      // Worst case scenario (only show if enabled)
+      // Non-payment escalation (only show if enabled)
       if (wizardData.debtCollectionClause) {
         html += `<div class="summary-grid-row items-start">
-          <label class="summary-grid-label">Worst case scenario:</label>
+          <label class="summary-grid-label">Non-payment escalation:</label>
           <div class="summary-grid-value">
-            <div style="color:var(--muted); font-size:13px; line-height:1.6">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</div>
+            <div style="color:var(--muted); font-size:13px; line-height:1.6; margin-bottom:6px">PayFriends may automatically hand over the loan to an independent collection partner if repayment fails, keeping the lender out of the conflict. All collection costs are for the borrower.</div>
+            <div style="color:var(--muted); font-size:13px; line-height:1.6">Escalation only occurs when 90 days have passed since the final repayment date, the loan still remains unpaid, and no new repayment plan was agreed inside PayFriends.</div>
           </div>
         </div>`;
       }
@@ -5333,8 +5337,8 @@
       html += `</div>`;
 
       html += `<div>`;
-      html += `<div style="font-weight:600; font-size:14px; margin-bottom:4px">Worst case scenario:</div>`;
-      html += `<div style="color:var(--muted); font-size:13px; line-height:1.5">${wizardData.debtCollectionClause ? 'Enabled — If the borrower does not repay, does not propose a new plan, or cannot reach an agreement with the lender, both parties agree that the case may be handed over to an independent debt collector registered in accordance with local law. Any collection fees are for the borrower\'s account.' : 'Disabled — Debt collection clause not enabled.'}</div>`;
+      html += `<div style="font-weight:600; font-size:14px; margin-bottom:4px">Non-payment escalation:</div>`;
+      html += `<div style="color:var(--muted); font-size:13px; line-height:1.5">${wizardData.debtCollectionClause ? 'Enabled — PayFriends may automatically hand over the loan to an independent collection partner if repayment fails, keeping the lender out of the conflict. Escalation only occurs when 90 days have passed since the final repayment date, the loan still remains unpaid, and no new repayment plan was agreed inside PayFriends.' : 'Disabled'}</div>`;
       html += `</div>`;
 
       content.innerHTML = html;
@@ -5496,8 +5500,8 @@
           reminderMode: wizardData.reminderMode || 'auto',
           reminderOffsets: wizardData.reminderOffsets,
           proofRequired: wizardData.proofRequired !== undefined ? wizardData.proofRequired : true,
-          // Only include debt collection clause if amount >= 6000 EUR
-          debtCollectionClause: (amountValue >= WORST_CASE_MIN_AMOUNT_EUR) ? wizardData.debtCollectionClause : false
+          // Only include automatic third-party handling if amount >= 3000 EUR
+          debtCollectionClause: (amountValue >= THIRD_PARTY_MIN_AMOUNT_EUR) ? wizardData.debtCollectionClause : false
         };
 
         // Add installment-specific fields if applicable

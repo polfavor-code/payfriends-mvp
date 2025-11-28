@@ -2712,9 +2712,9 @@
       }
       addTerm('Reminders', reminderDescription);
 
-      // Worst case scenario (only if enabled)
+      // Non-payment escalation (only if enabled)
       if (agreement.debt_collection_clause) {
-        addTerm('Worst case scenario', 'If you do not repay in time and ignore reminders or cannot agree a new plan, PayFriends will hand the case to an independent debt collector.');
+        addTerm('Non-payment escalation', 'PayFriends may automatically hand over the loan to an independent collection partner if repayment fails. Escalation only occurs when 90 days have passed since the final repayment date, the loan still remains unpaid, and no new repayment plan was agreed inside PayFriends.');
       }
 
       termsContainer.innerHTML = termsHTML;
@@ -4676,11 +4676,12 @@
         </div>`;
       }
 
-      // Worst case scenario (debt collection clause) - only show if enabled
+      // Non-payment escalation - only show if enabled
       if (agreement.debt_collection_clause) {
         html += `<div>
-          <div style="font-weight:600; margin-bottom:6px; font-size:14px">Worst case scenario:</div>
-          <div style="color:var(--muted); font-size:14px; line-height:1.5">If the borrower does not repay in time and ignores reminders or cannot agree a new plan with the lender, PayFriends will hand the case to an independent debt collector. Once this happens, the lender is no longer involved in collection — the third party handles it, and any collection fees are for the borrower's account.</div>
+          <div style="font-weight:600; margin-bottom:6px; font-size:14px">Non-payment escalation:</div>
+          <div style="color:var(--muted); font-size:14px; line-height:1.5; margin-bottom:8px">PayFriends may automatically hand over the loan to an independent collection partner if repayment fails, keeping the lender out of the conflict. All collection costs are for the borrower.</div>
+          <div style="color:var(--muted); font-size:14px; line-height:1.5">Escalation only occurs when 90 days have passed since the final repayment date, the loan still remains unpaid, and no new repayment plan was agreed inside PayFriends.</div>
         </div>`;
       }
 
