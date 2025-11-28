@@ -4860,13 +4860,16 @@
       const selectedMethods = Array.from(document.querySelectorAll('.payment-method-checkbox:checked')).map(cb => cb.value);
       const isCashOnly = selectedMethods.length === 1 && selectedMethods[0] === 'cash';
       const proofRequiredSection = document.getElementById('proof-required-section');
+      const proofRequiredCheckbox = document.getElementById('proof-required');
 
       if (isCashOnly) {
         proofRequiredSection.style.display = 'none';
         // Uncheck the proof requirement when hiding
-        document.getElementById('proof-required').checked = false;
+        proofRequiredCheckbox.checked = false;
       } else {
         proofRequiredSection.style.display = 'block';
+        // Re-enable the proof requirement when showing (restore default state)
+        proofRequiredCheckbox.checked = true;
       }
     }
 
