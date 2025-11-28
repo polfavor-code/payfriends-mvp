@@ -250,9 +250,14 @@ class PhoneInput {
       this.filterCountries(e.target.value);
     });
 
-    // Local number input
+    // Local number input - validate on every keystroke
     this.elements.localInput.addEventListener('input', (e) => {
       this.handleLocalInput(e);
+    });
+
+    // Blur event - show validation error when user leaves the field
+    this.elements.localInput.addEventListener('blur', () => {
+      this._triggerValidationChange();
     });
 
     // Close dropdown when clicking outside

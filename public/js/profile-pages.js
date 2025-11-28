@@ -177,13 +177,19 @@
         if (phoneInput) {
           phoneInput.onValidationChange((isValid, errorMessage) => {
             const phoneError = document.getElementById('phone-error');
-            if (phoneError && phoneError.style.display === 'block') {
-              // Only update if error is currently shown (don't show error while user is typing)
+            const localInput = phoneInput.elements.localInput;
+            const hasContent = localInput && localInput.value.length > 0;
+
+            if (phoneError) {
               if (isValid) {
+                // Clear error when valid
                 phoneError.style.display = 'none';
                 phoneInput.setInvalid(false);
-              } else {
+              } else if (hasContent) {
+                // Show error immediately when invalid and user has typed something
                 phoneError.textContent = errorMessage;
+                phoneError.style.display = 'block';
+                phoneInput.setInvalid(true);
               }
             }
           });

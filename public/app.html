@@ -6964,13 +6964,19 @@
       if (agreementPhoneInput) {
         agreementPhoneInput.onValidationChange((isValid, errorMessage) => {
           const phoneError = document.getElementById('agreement-phone-error');
-          if (phoneError && phoneError.style.display === 'block') {
-            // Only update if error is currently shown (don't show error while user is typing)
+          const localInput = agreementPhoneInput.elements.localInput;
+          const hasContent = localInput && localInput.value.length > 0;
+
+          if (phoneError) {
             if (isValid) {
+              // Clear error when valid
               phoneError.style.display = 'none';
               agreementPhoneInput.setInvalid(false);
-            } else {
+            } else if (hasContent) {
+              // Show error immediately when invalid and user has typed something
               phoneError.textContent = errorMessage;
+              phoneError.style.display = 'block';
+              agreementPhoneInput.setInvalid(true);
             }
           }
         });
