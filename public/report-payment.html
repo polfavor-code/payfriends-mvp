@@ -193,19 +193,17 @@
       window.location.href = '/app';
     }
 
-    // Check auth
-    async function checkAuth() {
-      const response = await fetch('/api/user');
-      if (!response.ok) {
-        window.location.href = '/login.html';
-        return null;
-      }
-      return await response.json();
-    }
-
     // Load agreement data
     async function loadAgreement() {
       try {
+        // Get current user first
+        const userResponse = await fetch('/api/user');
+        if (!userResponse.ok) {
+          window.location.href = '/login.html';
+          return;
+        }
+        const currentUser = await userResponse.json();
+
         const response = await fetch(`/api/agreements/${agreementId}`);
         if (!response.ok) {
           throw new Error('Failed to load agreement');
@@ -213,19 +211,26 @@
 
         const agreement = await response.json();
 
+        // Verify current user is the lender
+        if (agreement.lender_user_id !== currentUser.id) {
+          alert('Only the lender can report the initial payment.');
+          window.location.href = '/app';
+          return;
+        }
+
         // Verify this is a valid agreement for initial payment report
-        if (!agreement.lender_user_id || agreement.status !== 'active') {
+        if (agreement.status !== 'active') {
           alert('This agreement is not eligible for initial payment reporting.');
           window.location.href = '/app';
           return;
         }
 
-        // Populate agreement summary
-        const borrowerName = agreement.friend_first_name || agreement.borrower_email;
-        const borrowerFirstName = borrowerName.split(' ')[0];
+        // Populate agreement summary (use same fallback pattern as review-details.html)
+        const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+        const borrowerFirstName = borrowerName ? borrowerName.split(' ')[0] : '';
 
-        document.getElementById('borrower-name').textContent = borrowerName;
-        document.getElementById('borrower-first-name').textContent = borrowerFirstName;
+        document.getElementById('borrower-name').textContent = borrowerName || '-';
+        document.getElementById('borrower-first-name').textContent = borrowerFirstName || 'the borrower';
         document.getElementById('agreement-description').textContent = agreement.description || 'Loan agreement';
         document.getElementById('amount-due').textContent = formatCurrency0(agreement.amount_cents);
 
@@ -299,10 +304,7 @@
 
     // Initialize page
     (async () => {
-      const user = await checkAuth();
-      if (user) {
-        await loadAgreement();
-      }
+      await loadAgreement();
     })();
   </script>
 </body>
