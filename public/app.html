@@ -2335,9 +2335,10 @@
         initializeWizardCalculator();
       }
 
-      // Special handling for step 3: initialize reminder mode highlight
+      // Special handling for step 3: initialize reminder mode highlight and update worst case visibility
       if (step === 3) {
         toggleReminderMode();
+        updateWorstCaseVisibility();
       }
 
       // Apply read-only mode if agreement has been sent
@@ -2843,19 +2844,15 @@
 
     // Update visibility of worst case scenario option based on loan amount
     function updateWorstCaseVisibility() {
-      const amountInput = document.getElementById('amount');
-      if (!amountInput) return;
-
-      const amountValue = amountInput.value;
-      const cleanAmount = amountValue.replace(/[.,]/g, '');
-      const amountNum = parseFloat(cleanAmount) || 0;
-
       const container = document.getElementById('worst-case-scenario-container');
       const checkbox = document.getElementById('debt-collection-clause');
 
       if (!container) return;
 
-      const showWorstCase = amountNum >= WORST_CASE_MIN_AMOUNT_EUR;
+      // Get amount from wizardData (already stored in euros from previous steps)
+      const amountEur = wizardData.amount || 0;
+
+      const showWorstCase = amountEur >= WORST_CASE_MIN_AMOUNT_EUR;
 
       if (showWorstCase) {
         container.style.display = '';
