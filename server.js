@@ -694,6 +694,31 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
     WHERE agreement_id = ? AND status = 'pending'
   `).get(agreement.id).count > 0;
 
+  // Check for pending initial payment report (lender needs to report)
+  // Only show this task if:
+  // - User is lender
+  // - Agreement is active
+  // - Loan start is "upon acceptance" (money_sent_date is on-acceptance or matches accepted_at)
+  // - No completed report exists (either no row OR is_completed = 0)
+  let needsInitialPaymentReport = false;
+  if (isLender && agreement.status === 'active') {
+    const moneySentDate = agreement.money_sent_date;
+    const acceptedDate = agreement.accepted_at ? agreement.accepted_at.split('T')[0] : null;
+    const isUponAcceptance = moneySentDate === 'on-acceptance' ||
+                             moneySentDate === 'upon agreement acceptance' ||
+                             (acceptedDate && moneySentDate === acceptedDate);
+
+    if (isUponAcceptance) {
+      // Check if there's a completed report
+      const report = db.prepare(`
+        SELECT is_completed FROM initial_payment_reports WHERE agreement_id = ?
+      `).get(agreement.id);
+
+      // Show task if no report exists OR report exists but not completed
+      needsInitialPaymentReport = !report || report.is_completed === 0;
+    }
+  }
+
   // Return enriched agreement
   return {
     ...agreement,
@@ -732,7 +757,8 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
     isLender,
     hasOpenDifficulty,
     hasOpenRenegotiation,
-    hasPendingPaymentToConfirm
+    hasPendingPaymentToConfirm,
+    needsInitialPaymentReport
   };
 }
 
@@ -1479,6 +1505,7 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       hasOpenDifficulty,
       hasPendingPaymentToConfirm,
       needsInitialPaymentReport,
+      isLender,
       // Include accepted_at to identify agreements cancelled before approval
       accepted_at: agreement.accepted_at
     };
@@ -5038,7 +5065,7 @@ app.get('/app', (req, res) => {
     const groupTabs = [];
     const totalGroupTabs = groupTabs.length;
 
-    // Take first 3 agreements for summary (already enriched)
+    // Take first 3 agreements for summary display (already enriched)
     const agreementsSummary = agreements.slice(0, 3);
 
     // Read the HTML template
@@ -5063,6 +5090,7 @@ app.get('/app', (req, res) => {
         totalGroupTabs
       },
       agreementsSummary,
+      agreements, // Include ALL agreements for pending tasks checking
       hasAnyAgreements: totalAgreements > 0,
       hasAnyGroupTabs: totalGroupTabs > 0,
       isZeroState: totalAgreements === 0 && totalGroupTabs === 0

@@ -6711,9 +6711,10 @@
               });
             }
 
-            // Process all agreements for various pending tasks
-            if (data.agreementsSummary) {
-              data.agreementsSummary.forEach(agreement => {
+            // Process all agreements for various pending tasks (not just the first 3)
+            const allAgreements = data.agreements || data.agreementsSummary || [];
+            if (allAgreements.length > 0) {
+              allAgreements.forEach(agreement => {
 
                 // Task 2: Pending loan agreement awaiting borrower approval
                 if (agreement.status === 'pending' && !agreement.isLender) {
