@@ -211,19 +211,13 @@
 
         const agreement = await response.json();
         console.log('[Report Payment] Agreement data:', agreement);
-        console.log('[Report Payment] Current user ID:', currentUser.id);
-        console.log('[Report Payment] Agreement lender_user_id:', agreement.lender_user_id);
-        console.log('[Report Payment] Is lender?', agreement.lender_user_id === currentUser.id);
 
         // Verify current user is the lender
         if (agreement.lender_user_id !== currentUser.id) {
-          console.error('[Report Payment] LENDER CHECK FAILED - Current user is not the lender');
           alert('Only the lender can report the initial payment.');
           window.location.href = '/app';
           return;
         }
-
-        console.log('[Report Payment] Lender check passed, populating data...');
 
         // Verify this is a valid agreement for initial payment report
         if (agreement.status !== 'active') {
