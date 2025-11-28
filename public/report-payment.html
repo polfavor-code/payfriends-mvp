@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayFriends — Report Payment</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <!-- App-wide styles -->
+  <link rel="stylesheet" href="/css/app.css" />
+  <!-- Shared header component -->
+  <script src="/js/header.js"></script>
+  <!-- Centralized currency formatters -->
+  <script src="/js/formatters.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); padding:32px 16px;}
+    .container{max-width:1200px; margin:0 auto;}
+    .container-narrow{max-width:700px; margin:0 auto;}
+    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
+    h1{margin:0 0 8px 0; font-size:28px}
+    h2{margin:0 0 16px 0; font-size:20px}
+    h3{margin:16px 0 12px 0; font-size:18px}
+    p{color:var(--muted); line-height:1.6; margin:8px 0}
+    .detail-row{display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08)}
+    .detail-row:last-child{border-bottom:none}
+    .detail-label{color:var(--muted); font-weight:500}
+    .detail-value{color:var(--text); font-weight:600}
+    .form-group{margin:20px 0}
+    .form-label{display:block; color:var(--text); font-weight:500; margin-bottom:8px; font-size:14px}
+    .form-label-optional{color:var(--muted); font-weight:400; font-size:13px}
+    select, input[type="file"]{
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.08);
+      background:#10151d;
+      color:var(--text);
+      font-size:14px;
+      font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+    }
+    select:focus, input[type="file"]:focus{
+      outline:none;
+      border-color:var(--accent);
+      background:#10151d
+    }
+    select:hover, input[type="file"]:hover{background:#10151d}
+    button{padding:14px 20px; border-radius:10px; border:0; background:var(--accent); color:#0d130f; font-weight:700; cursor:pointer; font-size:15px; width:100%}
+    button:hover{filter:brightness(1.06)}
+    button:disabled{opacity:0.5; cursor:not-allowed}
+    button.secondary{background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-top:8px}
+    button.secondary:hover{background:rgba(255,255,255,0.05)}
+    .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px; text-align:center}
+    .hidden{display:none}
+    .error{color:#ff6b6b}
+    .success{color:var(--accent)}
+    .info-box{
+      background:rgba(160,160,160,0.1);
+      border:1px solid rgba(160,160,160,0.2);
+      border-radius:10px;
+      padding:16px;
+      color:var(--text);
+      font-size:14px;
+      margin:20px 0;
+      line-height:1.6;
+    }
+    .info-box-title{
+      font-weight:600;
+      margin-bottom:8px;
+      color:var(--text);
+    }
+    .info-box ul{
+      margin:8px 0 0 0;
+      padding-left:20px;
+      color:var(--muted);
+    }
+    .info-box li{
+      margin:4px 0;
+    }
+    .task-header{
+      background:rgba(61,220,151,0.08);
+      border:1px solid rgba(61,220,151,0.2);
+      border-radius:10px;
+      padding:16px;
+      margin-bottom:24px;
+    }
+    .task-header h2{
+      margin:0 0 8px 0;
+      color:var(--accent);
+      font-size:18px;
+      font-weight:600;
+    }
+    .task-header p{
+      margin:0;
+      font-size:14px;
+      line-height:1.5;
+    }
+    .back-link{
+      display:inline-block;
+      color:var(--muted);
+      text-decoration:none;
+      margin-bottom:16px;
+      font-size:14px;
+    }
+    .back-link:hover{
+      color:var(--text);
+      text-decoration:underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container-narrow">
+    <a href="/app" class="back-link">← Back to Dashboard</a>
+
+    <div class="card">
+      <div class="task-header">
+        <h2>TASK: Make the initial payment</h2>
+        <p>Because you selected loan start = when the agreement is accepted, the loan officially starts today.</p>
+        <p>To keep your agreement fair and transparent, please complete your initial payment to <span id="borrower-first-name"></span> today.</p>
+      </div>
+
+      <h1>Report Initial Payment</h1>
+
+      <!-- Agreement Summary -->
+      <div style="margin:20px 0">
+        <div class="detail-row">
+          <span class="detail-label">Borrower:</span>
+          <span class="detail-value" id="borrower-name">-</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Agreement:</span>
+          <span class="detail-value" id="agreement-description">-</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Amount due now:</span>
+          <span class="detail-value" id="amount-due">-</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Loan start date:</span>
+          <span class="detail-value">Today (agreement accepted)</span>
+        </div>
+      </div>
+
+      <!-- Payment Report Form -->
+      <form id="payment-report-form">
+        <div class="form-group">
+          <label class="form-label">
+            How did you pay? <span class="form-label-optional">(optional)</span>
+          </label>
+          <select id="payment-method" name="paymentMethod">
+            <option value="">Select payment method</option>
+            <option value="bank_transfer">Bank transfer</option>
+            <option value="cash">Cash</option>
+            <option value="crypto">Crypto</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            Upload proof of payment <span class="form-label-optional">(optional)</span>
+          </label>
+          <input type="file" id="proof-file" name="proof" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" />
+
+          <div class="info-box">
+            <div class="info-box-title">Info</div>
+            <ul>
+              <li>Uploading proof is optional but highly recommended.</li>
+              <li>It will only be visible to you and the borrower.</li>
+              <li>PayFriends will never share this information with any third parties.</li>
+            </ul>
+          </div>
+        </div>
+
+        <button type="submit" id="submit-btn">Save Payment Report</button>
+        <div class="status" id="status-message"></div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { formatCurrency0 } from '/js/formatters.js';
+
+    // Get agreement ID from URL
+    const pathParts = window.location.pathname.split('/');
+    const agreementId = pathParts[2];
+
+    if (!agreementId) {
+      window.location.href = '/app';
+    }
+
+    // Check auth
+    async function checkAuth() {
+      const response = await fetch('/api/user');
+      if (!response.ok) {
+        window.location.href = '/login.html';
+        return null;
+      }
+      return await response.json();
+    }
+
+    // Load agreement data
+    async function loadAgreement() {
+      try {
+        const response = await fetch(`/api/agreements/${agreementId}`);
+        if (!response.ok) {
+          throw new Error('Failed to load agreement');
+        }
+
+        const agreement = await response.json();
+
+        // Verify this is a valid agreement for initial payment report
+        if (!agreement.lender_user_id || agreement.status !== 'active') {
+          alert('This agreement is not eligible for initial payment reporting.');
+          window.location.href = '/app';
+          return;
+        }
+
+        // Populate agreement summary
+        const borrowerName = agreement.friend_first_name || agreement.borrower_email;
+        const borrowerFirstName = borrowerName.split(' ')[0];
+
+        document.getElementById('borrower-name').textContent = borrowerName;
+        document.getElementById('borrower-first-name').textContent = borrowerFirstName;
+        document.getElementById('agreement-description').textContent = agreement.description || 'Loan agreement';
+        document.getElementById('amount-due').textContent = formatCurrency0(agreement.amount_cents);
+
+        // Check if already reported
+        const reportResponse = await fetch(`/api/agreements/${agreementId}/initial-payment-report`);
+        if (reportResponse.ok) {
+          const reportData = await reportResponse.json();
+          if (reportData.data && reportData.data.isCompleted) {
+            // Already reported, redirect to manage page
+            alert('The initial payment has already been reported.');
+            window.location.href = `/agreements/${agreementId}/manage`;
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Error loading agreement:', err);
+        document.getElementById('status-message').textContent = 'Error loading agreement data.';
+        document.getElementById('status-message').className = 'status error';
+      }
+    }
+
+    // Handle form submission
+    document.getElementById('payment-report-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submit-btn');
+      const statusMessage = document.getElementById('status-message');
+
+      submitBtn.disabled = true;
+      statusMessage.textContent = 'Saving...';
+      statusMessage.className = 'status';
+
+      try {
+        const formData = new FormData();
+        const paymentMethod = document.getElementById('payment-method').value;
+        const proofFile = document.getElementById('proof-file').files[0];
+
+        if (paymentMethod) {
+          formData.append('paymentMethod', paymentMethod);
+        }
+
+        if (proofFile) {
+          formData.append('proof', proofFile);
+        }
+
+        const response = await fetch(`/api/agreements/${agreementId}/initial-payment-report`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          statusMessage.textContent = 'Payment report saved successfully!';
+          statusMessage.className = 'status success';
+
+          // Redirect to dashboard after a short delay
+          setTimeout(() => {
+            window.location.href = '/app';
+          }, 1500);
+        } else {
+          throw new Error(result.error || 'Failed to save payment report');
+        }
+      } catch (err) {
+        console.error('Error submitting payment report:', err);
+        statusMessage.textContent = err.message || 'Error saving payment report. Please try again.';
+        statusMessage.className = 'status error';
+        submitBtn.disabled = false;
+      }
+    });
+
+    // Initialize page
+    (async () => {
+      const user = await checkAuth();
+      if (user) {
+        await loadAgreement();
+      }
+    })();
+  </script>
+</body>
+</html>

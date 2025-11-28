@@ -6735,7 +6735,18 @@
                   });
                 }
 
-                // Task 4: Borrower reported payment issues - lender must respond
+                // Task 4: Lender needs to report initial payment (loan start upon acceptance)
+                if (agreement.isLender && agreement.needsInitialPaymentReport) {
+                  const borrowerFirstName = agreement.counterpartyName.split(' ')[0];
+                  tasks.push({
+                    type: 'initial_payment',
+                    text: `Make the initial payment to ${borrowerFirstName} (loan starts today).`,
+                    link: `/agreements/${agreement.id}/report-payment`,
+                    agreementId: agreement.id
+                  });
+                }
+
+                // Task 5: Borrower reported payment issues - lender must respond
                 if (agreement.isLender && agreement.has_repayment_issue) {
                   tasks.push({
                     type: 'payment_issue',
@@ -6745,7 +6756,7 @@
                   });
                 }
 
-                // Task 5: Open renegotiation - borrower may need to review lender's response
+                // Task 6: Open renegotiation - borrower may need to review lender's response
                 if (agreement.hasOpenRenegotiation && !agreement.isLender) {
                   // Borrower: may need to review lender's counteroffer or response to renegotiation
                   tasks.push({
