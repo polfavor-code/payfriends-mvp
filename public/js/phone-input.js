@@ -257,7 +257,7 @@ class PhoneInput {
 
     // Blur event - show validation error when user leaves the field
     this.elements.localInput.addEventListener('blur', () => {
-      this._triggerValidationChange();
+      this._triggerValidationChange('blur');
     });
 
     // Close dropdown when clicking outside
@@ -525,6 +525,74 @@ class PhoneInput {
     return this.selectedCountry.name;
   }
 
+  /**
+   * Returns a friendly typing hint showing digit progress.
+   * Used to provide positive feedback while user is typing.
+   * @returns {{ text: string, isValid: boolean, currentDigits: number, expectedDigits: number|null }}
+   */
+  getTypingHint() {
+    const currentDigits = this.elements.localInput.value.replace(/\D/g, '').length;
+    const countryCode = this.selectedCountry.code;
+    const countryName = this.selectedCountry.name;
+    const isValid = this.isValidNumber();
+
+    // Try to get expected digit count from libphonenumber-js
+    let expectedDigits = null;
+    if (typeof libphonenumber !== 'undefined') {
+      try {
+        const example = libphonenumber.getExampleNumber(countryCode);
+        if (example) {
+          expectedDigits = example.nationalNumber.length;
+        }
+      } catch (e) {
+        // Some countries may not have examples
+      }
+    }
+
+    if (isValid) {
+      return {
+        text: `Valid ${countryName} number`,
+        isValid: true,
+        currentDigits,
+        expectedDigits
+      };
+    }
+
+    if (currentDigits === 0) {
+      if (expectedDigits) {
+        return {
+          text: `${countryName} numbers are typically ${expectedDigits} digits`,
+          isValid: false,
+          currentDigits,
+          expectedDigits
+        };
+      }
+      return {
+        text: `Enter phone number`,
+        isValid: false,
+        currentDigits,
+        expectedDigits
+      };
+    }
+
+    // Show progress while typing
+    if (expectedDigits) {
+      return {
+        text: `${currentDigits} / ${expectedDigits} digits`,
+        isValid: false,
+        currentDigits,
+        expectedDigits
+      };
+    }
+
+    return {
+      text: `${currentDigits} digits entered`,
+      isValid: false,
+      currentDigits,
+      expectedDigits
+    };
+  }
+
   setInvalid(invalid) {
     if (invalid) {
       this.elements.localInput.classList.add('phone-input-invalid');
@@ -536,7 +604,8 @@ class PhoneInput {
   /**
    * Registers a callback to be called when validation state changes.
    * Useful for updating error messages dynamically as the user types.
-   * @param {function} callback - Called with (isValid, errorMessage)
+   * @param {function} callback - Called with (isValid, errorMessage, typingHint, eventType)
+   * eventType is 'input' for typing or 'blur' for leaving the field
    */
   onValidationChange(callback) {
     this.validationCallback = callback;
@@ -544,13 +613,15 @@ class PhoneInput {
 
   /**
    * Triggers validation and calls the registered callback if any.
+   * @param {string} eventType - 'input' for typing, 'blur' for leaving field
    * @private
    */
-  _triggerValidationChange() {
+  _triggerValidationChange(eventType = 'input') {
     if (this.validationCallback) {
       const isValid = this.isValidNumber();
       const errorMessage = isValid ? null : this.getValidationError();
-      this.validationCallback(isValid, errorMessage);
+      const typingHint = this.getTypingHint();
+      this.validationCallback(isValid, errorMessage, typingHint, eventType);
     }
   }
 }

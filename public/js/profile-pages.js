@@ -78,6 +78,8 @@
         .profile-status.error { color: #ff6b6b; }
         .profile-status.success { color: var(--accent); }
         .phone-error { color: #ff6b6b; font-size: 13px; margin-top: 4px; display: none; }
+        .phone-hint { color: var(--muted); font-size: 13px; margin-top: 4px; }
+        .phone-hint.valid { color: var(--accent); }
       </style>
 
       <div class="page-header-row">
@@ -119,6 +121,7 @@
                 <div class="phone-country-list"></div>
               </div>
             </div>
+            <div id="phone-hint" class="phone-hint"></div>
             <div id="phone-error" class="phone-error">Please enter a valid phone number.</div>
           </div>
           <button type="submit" class="profile-button">Save Changes</button>
@@ -174,23 +177,36 @@
 
         // Register validation change callback for real-time feedback
         // Uses country-specific validation from libphonenumber-js (shared logic)
+        // Shows friendly hints while typing, errors only on blur/submit
         if (phoneInput) {
-          phoneInput.onValidationChange((isValid, errorMessage) => {
+          phoneInput.onValidationChange((isValid, errorMessage, typingHint, eventType) => {
             const phoneError = document.getElementById('phone-error');
-            const localInput = phoneInput.elements.localInput;
-            const hasContent = localInput && localInput.value.length > 0;
+            const phoneHint = document.getElementById('phone-hint');
 
-            if (phoneError) {
-              if (isValid) {
-                // Clear error when valid
-                phoneError.style.display = 'none';
-                phoneInput.setInvalid(false);
-              } else if (hasContent) {
-                // Show error immediately when invalid and user has typed something
+            if (isValid) {
+              // Valid: show green success hint, hide error
+              if (phoneHint) {
+                phoneHint.textContent = typingHint.text;
+                phoneHint.className = 'phone-hint valid';
+              }
+              if (phoneError) phoneError.style.display = 'none';
+              phoneInput.setInvalid(false);
+            } else if (eventType === 'blur' && typingHint.currentDigits > 0) {
+              // Blur with invalid content: show error
+              if (phoneHint) phoneHint.textContent = '';
+              if (phoneError) {
                 phoneError.textContent = errorMessage;
                 phoneError.style.display = 'block';
-                phoneInput.setInvalid(true);
               }
+              phoneInput.setInvalid(true);
+            } else {
+              // Typing: show friendly hint, hide error
+              if (phoneHint) {
+                phoneHint.textContent = typingHint.text;
+                phoneHint.className = 'phone-hint';
+              }
+              if (phoneError) phoneError.style.display = 'none';
+              phoneInput.setInvalid(false);
             }
           });
         }
