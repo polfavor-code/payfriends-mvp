@@ -182,7 +182,9 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { formatCurrency0 } from '/js/formatters.js';
+
     // Get agreement ID from URL
     const pathParts = window.location.pathname.split('/');
     const agreementId = pathParts[2];
