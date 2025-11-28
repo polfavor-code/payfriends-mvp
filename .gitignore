@@ -1,6 +1,11 @@
-node_modules
+node_modules/
 data/*.db
 data/*.db-journal
 data/*.db-shm
 data/*.db-wal
 .DS_Store
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/

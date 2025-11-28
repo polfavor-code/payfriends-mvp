@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,7 +21,7 @@
   <script src="/js/formatters.js"></script>
   <!-- Loan timing utilities (single source of truth for timing config) -->
   <script src="/js/loanTimingUtils.js"></script>
-  <!-- Derived field utilities -->
+  <!--- Derived field utilities -->
   <script src="/js/derived-fields.js"></script>
   <!-- Renegotiation module -->
   <script src="/js/renegotiation.js"></script>
@@ -28,205 +29,1115 @@
   <script src="/components/fairness-icon.js"></script>
   <!-- Payment methods display component -->
   <script src="/components/payment-methods-display.js"></script>
+  <!-- Report Payment Component (shared) -->
+  <script src="/js/report-payment-component.js"></script>
   <style>
-    :root{
-      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
-      --danger:#ef4444;
-      --warning:#f97316;
+    :root {
+      --bg: #0e1116;
+      --card: #151a21;
+      --text: #e6eef6;
+      --muted: #a7b0bd;
+      --accent: #3ddc97;
+      --danger: #ef4444;
+      --warning: #f97316;
     }
-    *{box-sizing:border-box}
-    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
-    .container{max-width:1200px; margin:0 auto; padding:32px 16px;}
-    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
-    h1{margin:0 0 8px 0; font-size:24px}
-    h2{margin:0 0 16px 0; font-size:20px}
-    p{color:var(--muted); line-height:1.6; margin:8px 0}
-    .detail-row{display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .detail-row:last-child{border-bottom:none}
-    .detail-label{color:var(--muted); font-weight:500}
-    .detail-value{color:var(--text); font-weight:normal}
-    button{padding:12px 20px; border-radius:10px; border:0; background:var(--accent); color:#0d130f; font-weight:700; cursor:pointer; font-size:14px; width:100%}
-    button:hover{filter:brightness(1.06)}
-    button.secondary{background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-top:8px}
-    button.secondary:hover{background:rgba(255,255,255,0.05)}
-    button.tertiary{background:transparent; border:1px solid rgba(255,255,255,0.10); color:var(--muted); margin-top:8px}
-    button.tertiary:hover{background:rgba(255,255,255,0.03)}
-    button.btn-danger{background:#7a1a1a; border:1px solid #a83232; color:#fff; margin-top:8px}
-    button.btn-danger:hover{background:#8a2020; border-color:#b84444}
-    button.btn-danger:disabled{opacity:0.5; cursor:not-allowed}
-    .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px}
-    .hidden{display:none}
-    .error{color:#ff6b6b}
-    .success{color:var(--accent)}
-    .amount{font-size:32px; font-weight:700; color:var(--accent); text-align:center; margin:16px 0}
-    .note{background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.2); border-radius:8px; padding:12px; color:var(--text); font-size:14px; margin:16px 0}
-    .status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600}
-    .status-badge.pending{background:#f97316; color:#fff}
-    .status-badge.active{background:#22c55e; color:#0d130f}
-    .status-badge.settled{background:#4a4a4a; color:#fff}
-    .status-badge.declined{background:#ff6b6b; color:#fff}
-    .status-badge.cancelled{background:#6c757d; color:#fff}
-    .alert-box{background:rgba(255,165,0,0.1); border:1px solid rgba(255,165,0,0.3); border-radius:8px; padding:12px; color:var(--text); font-size:14px; margin:16px 0}
-    .form-group{margin:20px 0}
-    .form-label{display:block; color:var(--text); font-weight:600; margin-bottom:8px; font-size:14px}
-    .form-radio{display:block; margin:8px 0; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer; transition:background 0.2s}
-    .form-radio:hover{background:rgba(255,255,255,0.03)}
-    .form-radio input{margin-right:8px}
-    .form-radio label{cursor:pointer; color:var(--text); font-size:14px}
-    .form-checkbox{display:block; margin:8px 0; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer; transition:background 0.2s}
-    .form-checkbox:hover{background:rgba(255,255,255,0.03)}
-    .form-checkbox input{margin-right:8px}
-    .form-checkbox label{cursor:pointer; color:var(--text); font-size:14px}
-    textarea{width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px; resize:vertical; min-height:80px}
-    textarea:focus{outline:none; border-color:var(--accent); background:var(--bg)}
-    textarea:hover{background:var(--bg)}
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 16px 0
+    }
+
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 24px
+    }
+
+    h2 {
+      margin: 0 0 16px 0;
+      font-size: 20px
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 8px 0
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .detail-row:last-child {
+      border-bottom: none
+    }
+
+    .detail-label {
+      color: var(--muted);
+      font-weight: 500
+    }
+
+    .detail-value {
+      color: var(--text);
+      font-weight: normal
+    }
+
+    button {
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 0;
+      background: var(--accent);
+      color: #0d130f;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%
+    }
+
+    button:hover {
+      filter: brightness(1.06)
+    }
+
+    button.secondary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text);
+      margin-top: 8px
+    }
+
+    button.secondary:hover {
+      background: rgba(255, 255, 255, 0.05)
+    }
+
+    button.tertiary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      color: var(--muted);
+      margin-top: 8px
+    }
+
+    button.tertiary:hover {
+      background: rgba(255, 255, 255, 0.03)
+    }
+
+    button.btn-danger {
+      background: #7a1a1a;
+      border: 1px solid #a83232;
+      color: #fff;
+      margin-top: 8px
+    }
+
+    button.btn-danger:hover {
+      background: #8a2020;
+      border-color: #b84444
+    }
+
+    button.btn-danger:disabled {
+      opacity: 0.5;
+      cursor: not-allowed
+    }
+
+    .status {
+      color: var(--muted);
+      margin-top: 12px;
+      min-height: 1.2em;
+      font-size: 14px
+    }
+
+    .hidden {
+      display: none
+    }
+
+    .error {
+      color: #ff6b6b
+    }
+
+    .success {
+      color: var(--accent)
+    }
+
+    .amount {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: center;
+      margin: 16px 0
+    }
+
+    .note {
+      background: rgba(61, 220, 151, 0.1);
+      border: 1px solid rgba(61, 220, 151, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--text);
+      font-size: 14px;
+      margin: 16px 0
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600
+    }
+
+    .status-badge.pending {
+      background: #f97316;
+      color: #fff
+    }
+
+    .status-badge.active {
+      background: #22c55e;
+      color: #0d130f
+    }
+
+    .status-badge.settled {
+      background: #4a4a4a;
+      color: #fff
+    }
+
+    .status-badge.declined {
+      background: #ff6b6b;
+      color: #fff
+    }
+
+    .status-badge.cancelled {
+      background: #6c757d;
+      color: #fff
+    }
+
+    .alert-box {
+      background: rgba(255, 165, 0, 0.1);
+      border: 1px solid rgba(255, 165, 0, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--text);
+      font-size: 14px;
+      margin: 16px 0
+    }
+
+    .form-group {
+      margin: 20px 0
+    }
+
+    .form-label {
+      display: block;
+      color: var(--text);
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px
+    }
+
+    .form-radio {
+      display: block;
+      margin: 8px 0;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s
+    }
+
+    .form-radio:hover {
+      background: rgba(255, 255, 255, 0.03)
+    }
+
+    .form-radio input {
+      margin-right: 8px
+    }
+
+    .form-radio label {
+      cursor: pointer;
+      color: var(--text);
+      font-size: 14px
+    }
+
+    .form-checkbox {
+      display: block;
+      margin: 8px 0;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s
+    }
+
+    .form-checkbox:hover {
+      background: rgba(255, 255, 255, 0.03)
+    }
+
+    .form-checkbox input {
+      margin-right: 8px
+    }
+
+    .form-checkbox label {
+      cursor: pointer;
+      color: var(--text);
+      font-size: 14px
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 80px
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--bg)
+    }
+
+    textarea:hover {
+      background: var(--bg)
+    }
+
     textarea:-webkit-autofill,
     textarea:-webkit-autofill:hover,
     textarea:-webkit-autofill:focus,
-    textarea:-webkit-autofill:active{
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:var(--text);
-      transition:background-color 5000s ease-in-out 0s;
-      box-shadow:inset 0 0 20px 20px var(--bg);
+    textarea:-webkit-autofill:active {
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: var(--text);
+      transition: background-color 5000s ease-in-out 0s;
+      box-shadow: inset 0 0 20px 20px var(--bg);
     }
-    textarea::placeholder{color:var(--muted)}
-    input[type="number"]{width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px}
-    input[type="number"]:focus{outline:none; border-color:var(--accent); background:var(--bg)}
-    input[type="number"]:hover{background:var(--bg)}
+
+    textarea::placeholder {
+      color: var(--muted)
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--bg)
+    }
+
+    input[type="number"]:hover {
+      background: var(--bg)
+    }
+
     input[type="number"]:-webkit-autofill,
     input[type="number"]:-webkit-autofill:hover,
     input[type="number"]:-webkit-autofill:focus,
-    input[type="number"]:-webkit-autofill:active{
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:var(--text);
-      transition:background-color 5000s ease-in-out 0s;
-      box-shadow:inset 0 0 20px 20px var(--bg);
+    input[type="number"]:-webkit-autofill:active {
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: var(--text);
+      transition: background-color 5000s ease-in-out 0s;
+      box-shadow: inset 0 0 20px 20px var(--bg);
     }
-    input[type="number"]::placeholder{color:var(--muted)}
-    .summary-box{background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px; padding:20px; margin:20px 0}
-    .summary-item{margin:8px 0; color:var(--text); font-size:14px}
-    .summary-label{color:var(--muted); font-weight:600}
-    button.warning{background:#ff9800; color:#0d130f}
-    button.warning:hover{filter:brightness(1.1)}
-    .payment-item{background:#10151d; border-radius:8px; padding:12px; margin:12px 0; border:1px solid rgba(255,255,255,0.08)}
-    .payment-date{color:var(--muted); font-size:12px}
-    .payment-amount{font-weight:700; color:var(--accent); font-size:16px}
-    .payment-method{color:var(--muted); font-style:italic; font-size:14px}
-    .payment-note{color:var(--text); margin-top:4px; font-size:14px}
-    .payment-recorded-by{color:var(--muted); margin-top:4px; font-size:14px}
-    .payment-meta-line{font-size:14px}
-    .record-payment-btn{background:#3d7bdc; margin-top:0}
-    .record-payment-btn:hover{filter:brightness(1.1)}
-    .next-payment-container{display:grid; grid-template-columns:minmax(0,1fr); gap:16px; align-items:start}
-    .next-payment-info{display:flex; flex-direction:column; gap:4px}
-    .next-payment-actions{display:flex; flex-direction:column; gap:8px; width:100%}
-    @media (min-width: 768px){
-      .next-payment-container{grid-template-columns:minmax(0,1fr) auto; gap:32px; align-items:center}
-      .next-payment-actions{width:auto; min-width:224px}
+
+    input[type="number"]::placeholder {
+      color: var(--muted)
     }
-    select{appearance:none; background-image:url('data:image/svg+xml;utf8,<svg fill="%23a7b0bd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat:no-repeat; background-position:right 8px center}
-    .payment-status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; margin-left:8px}
-    .payment-status-badge.approved{background:#3ddc97; color:#0d130f}
-    .payment-status-badge.pending{background:#ff9800; color:#0d130f}
-    .payment-status-badge.declined{background:#ff6b6b; color:#fff}
-    .payment-approval-buttons{margin-top:8px; display:flex; gap:8px}
-    .payment-approval-buttons button{width:auto; padding:8px 16px; font-size:13px}
-    .secondary-status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; margin-left:8px}
-    .secondary-status-badge.pending-confirmation{background:#f97316; color:#fff}
-    .secondary-status-badge.pending-resolution{background:#dc2626; color:#fff}
-    .hardship-button-spacing{margin-top:20px}
-    .form-section{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:24px}
-    .form-section-title{font-size:16px; font-weight:600; color:var(--text); margin-bottom:12px}
-    #proof-modal-download:hover{background:#3a3a3a; border-color:rgba(255,255,255,0.25)}
-    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .top-header-left{display:flex; align-items:center; gap:12px}
-    .top-header-right{display:flex; gap:12px; align-items:center}
-    .logo-coin{height:54px; width:auto}
-    .top-header-text{display:flex; flex-direction:column; gap:2px}
-    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
-    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
-    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
-    .top-header-user-info{color:var(--text); font-size:14px; line-height:1; white-space:nowrap; display:inline-flex; align-items:center; height:40px}
-    .top-header-actions{display:flex; gap:12px; align-items:center}
-    .inbox-count{color:var(--accent);font-weight:700}
-    .tabs{display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .tab{padding:10px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
-    .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
-    .tab:hover{color:var(--text)}
-    table{width:100%;border-collapse:collapse;margin-top:8px}
-    th,td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; vertical-align:middle}
-    th{color:var(--muted); font-weight:600; font-size:13px}
-    .actions-column{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; width:100%}
-    .actions-column button{flex:0 0 auto; padding:8px 12px; font-size:14px; white-space:nowrap; width:auto}
-    .empty-state{text-align:center; color:var(--muted); padding:32px; font-size:14px}
-    .user-avatar{display:inline-flex; align-items:center; justify-content:center; border-radius:50%; overflow:hidden; flex-shrink:0; vertical-align:middle}
-    .user-avatar.size-small{width:36px; height:36px; min-width:36px; font-size:13px; font-weight:600; line-height:1; letter-spacing:-0.2px}
-    .user-avatar.size-medium{width:48px; height:48px; font-size:18px; font-weight:600}
-    .user-avatar.size-large{width:60px; height:60px; font-size:22px; font-weight:600; margin-right:16px}
-    .user-avatar.size-xl{width:110px; height:110px; font-size:36px; font-weight:600; margin-right:20px}
-    .user-avatar-image{width:100%; height:100%; object-fit:cover}
-    .user-avatar-initials{width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; text-transform:uppercase}
-    .user-avatar-initials.color-1{background:#6366f1}
-    .user-avatar-initials.color-2{background:#8b5cf6}
-    .user-avatar-initials.color-3{background:#ec4899}
-    .user-avatar-initials.color-4{background:#f59e0b}
-    .user-avatar-initials.color-5{background:#10b981}
-    .user-avatar-initials.color-6{background:#3b82f6}
-    .user-avatar-initials.color-7{background:#14b8a6}
+
+    .summary-box {
+      background: rgba(61, 220, 151, 0.05);
+      border: 1px solid rgba(61, 220, 151, 0.15);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0
+    }
+
+    .summary-item {
+      margin: 8px 0;
+      color: var(--text);
+      font-size: 14px
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-weight: 600
+    }
+
+    button.warning {
+      background: #ff9800;
+      color: #0d130f
+    }
+
+    button.warning:hover {
+      filter: brightness(1.1)
+    }
+
+    .payment-item {
+      background: #10151d;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 12px 0;
+      border: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .payment-date {
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .payment-amount {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 16px
+    }
+
+    .payment-method {
+      color: var(--muted);
+      font-style: italic;
+      font-size: 14px
+    }
+
+    .payment-note {
+      color: var(--text);
+      margin-top: 4px;
+      font-size: 14px
+    }
+
+    .payment-recorded-by {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 14px
+    }
+
+    .payment-meta-line {
+      font-size: 14px
+    }
+
+    .record-payment-btn {
+      background: #3d7bdc;
+      margin-top: 0
+    }
+
+    .record-payment-btn:hover {
+      filter: brightness(1.1)
+    }
+
+    .next-payment-container {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+      align-items: start
+    }
+
+    .next-payment-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px
+    }
+
+    .next-payment-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%
+    }
+
+    @media (min-width: 768px) {
+      .next-payment-container {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 32px;
+        align-items: center
+      }
+
+      .next-payment-actions {
+        width: auto;
+        min-width: 224px
+      }
+    }
+
+    select {
+      appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%23a7b0bd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 8px center
+    }
+
+    .payment-status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px
+    }
+
+    .payment-status-badge.approved {
+      background: #3ddc97;
+      color: #0d130f
+    }
+
+    .payment-status-badge.pending {
+      background: #ff9800;
+      color: #0d130f
+    }
+
+    .payment-status-badge.declined {
+      background: #ff6b6b;
+      color: #fff
+    }
+
+    .payment-approval-buttons {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px
+    }
+
+    .payment-approval-buttons button {
+      width: auto;
+      padding: 8px 16px;
+      font-size: 13px
+    }
+
+    .secondary-status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px
+    }
+
+    .secondary-status-badge.pending-confirmation {
+      background: #f97316;
+      color: #fff
+    }
+
+    .secondary-status-badge.pending-resolution {
+      background: #dc2626;
+      color: #fff
+    }
+
+    .hardship-button-spacing {
+      margin-top: 20px
+    }
+
+    .form-section {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px
+    }
+
+    .form-section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 12px
+    }
+
+    #proof-modal-download:hover {
+      background: #3a3a3a;
+      border-color: rgba(255, 255, 255, 0.25)
+    }
+
+    .top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .top-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .top-header-right {
+      display: flex;
+      gap: 12px;
+      align-items: center
+    }
+
+    .logo-coin {
+      height: 54px;
+      width: auto
+    }
+
+    .top-header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px
+    }
+
+    .app-name {
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1.2;
+      margin: 0
+    }
+
+    .user-meta {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.2
+    }
+
+    .app-slogan {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.2;
+      margin-top: 2px
+    }
+
+    .top-header-user-info {
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      height: 40px
+    }
+
+    .top-header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center
+    }
+
+    .inbox-count {
+      color: var(--accent);
+      font-weight: 700
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .tab {
+      padding: 10px 16px;
+      cursor: pointer;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent)
+    }
+
+    .tab:hover {
+      color: var(--text)
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: left;
+      vertical-align: middle
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px
+    }
+
+    .actions-column {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+      width: 100%
+    }
+
+    .actions-column button {
+      flex: 0 0 auto;
+      padding: 8px 12px;
+      font-size: 14px;
+      white-space: nowrap;
+      width: auto
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 32px;
+      font-size: 14px
+    }
+
+    .user-avatar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      vertical-align: middle
+    }
+
+    .user-avatar.size-small {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: -0.2px
+    }
+
+    .user-avatar.size-medium {
+      width: 48px;
+      height: 48px;
+      font-size: 18px;
+      font-weight: 600
+    }
+
+    .user-avatar.size-large {
+      width: 60px;
+      height: 60px;
+      font-size: 22px;
+      font-weight: 600;
+      margin-right: 16px
+    }
+
+    .user-avatar.size-xl {
+      width: 110px;
+      height: 110px;
+      font-size: 36px;
+      font-weight: 600;
+      margin-right: 20px
+    }
+
+    .user-avatar-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover
+    }
+
+    .user-avatar-initials {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      text-transform: uppercase
+    }
+
+    .user-avatar-initials.color-1 {
+      background: #6366f1
+    }
+
+    .user-avatar-initials.color-2 {
+      background: #8b5cf6
+    }
+
+    .user-avatar-initials.color-3 {
+      background: #ec4899
+    }
+
+    .user-avatar-initials.color-4 {
+      background: #f59e0b
+    }
+
+    .user-avatar-initials.color-5 {
+      background: #10b981
+    }
+
+    .user-avatar-initials.color-6 {
+      background: #3b82f6
+    }
+
+    .user-avatar-initials.color-7 {
+      background: #14b8a6
+    }
+
     /* Override avatar margins inside summary section to allow overlap */
     #summary-section #summary-avatar-lender *,
-    #summary-section #summary-avatar-borrower * {margin:0 !important}
-    .counterparty-cell{display:flex; align-items:center; gap:10px}
-    .due-date-overdue{color:#f87171}
-    .due-date-upcoming{color:var(--muted)}
-    .due-date-settled{color:#9ca3af}
-    .status-indicator{width:22px;height:22px;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;margin:0 auto;cursor:help}
-    .status-indicator--active{background:#22c55e}
-    .status-indicator--pending{background:#facc15}
-    .status-indicator--settled{background:#9ca3af}
-    .status-indicator--overdue{background:#f87171}
-    .status-indicator--cancelled{background:#9ca3af}
-    .status-indicator--declined{background:#f87171}
-    .status-dot{display:inline-block; width:16px; height:16px; border-radius:9999px; cursor:help; position:relative}
-    .status-dot--active{background:#22c55e}
-    .status-dot--pending{background:#facc15}
-    .status-dot--settled{background:#9ca3af}
-    .status-dot--overdue{background:#f87171}
-    .status-dot--cancelled{background:#9ca3af}
-    .status-dot--declined{background:#f87171}
-    .status-dot-wrapper{display:inline-flex;align-items:center;justify-content:center;position:relative}
-    .status-dot-wrapper::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.2s ease;border:1px solid rgba(255,255,255,0.1);z-index:1000}
-    .status-dot-wrapper::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1f2937;opacity:0;pointer-events:none;transition:opacity 0.2s ease;z-index:1000}
-    .status-dot-wrapper:hover::after,.status-dot-wrapper:hover::before{opacity:1}
-    .payment-impact-annotation{color:#a7b0bd; font-size:13px; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); line-height:1.6}
-    .payment-impact-badge{display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; margin-left:6px; background:rgba(61,220,151,0.2); color:#3ddc97}
-    .payment-impact-tooltip{position:relative; display:inline-flex; align-items:center; margin-left:4px; cursor:help; color:var(--muted)}
-    .payment-impact-tooltip::after{content:attr(data-tooltip); position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); background:#1f2937; color:#fff; padding:8px 12px; border-radius:6px; font-size:12px; white-space:normal; width:250px; opacity:0; pointer-events:none; transition:opacity 0.2s ease; border:1px solid rgba(255,255,255,0.1); z-index:1000; line-height:1.4}
-    .payment-impact-tooltip::before{content:''; position:absolute; bottom:calc(100% + 2px); left:50%; transform:translateX(-50%); border:4px solid transparent; border-top-color:#1f2937; opacity:0; pointer-events:none; transition:opacity 0.2s ease; z-index:1000}
-    .payment-impact-tooltip:hover::after,.payment-impact-tooltip:hover::before{opacity:1}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    #summary-section #summary-avatar-borrower * {
+      margin: 0 !important
+    }
+
+    .counterparty-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .due-date-overdue {
+      color: #f87171
+    }
+
+    .due-date-upcoming {
+      color: var(--muted)
+    }
+
+    .due-date-settled {
+      color: #9ca3af
+    }
+
+    .status-indicator {
+      width: 22px;
+      height: 22px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      cursor: help
+    }
+
+    .status-indicator--active {
+      background: #22c55e
+    }
+
+    .status-indicator--pending {
+      background: #facc15
+    }
+
+    .status-indicator--settled {
+      background: #9ca3af
+    }
+
+    .status-indicator--overdue {
+      background: #f87171
+    }
+
+    .status-indicator--cancelled {
+      background: #9ca3af
+    }
+
+    .status-indicator--declined {
+      background: #f87171
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 9999px;
+      cursor: help;
+      position: relative
+    }
+
+    .status-dot--active {
+      background: #22c55e
+    }
+
+    .status-dot--pending {
+      background: #facc15
+    }
+
+    .status-dot--settled {
+      background: #9ca3af
+    }
+
+    .status-dot--overdue {
+      background: #f87171
+    }
+
+    .status-dot--cancelled {
+      background: #9ca3af
+    }
+
+    .status-dot--declined {
+      background: #f87171
+    }
+
+    .status-dot-wrapper {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative
+    }
+
+    .status-dot-wrapper::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f2937;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 1000
+    }
+
+    .status-dot-wrapper::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 2px);
+      left: 50%;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: #1f2937;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1000
+    }
+
+    .status-dot-wrapper:hover::after,
+    .status-dot-wrapper:hover::before {
+      opacity: 1
+    }
+
+    .payment-impact-annotation {
+      color: #a7b0bd;
+      font-size: 13px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      line-height: 1.6
+    }
+
+    .payment-impact-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 6px;
+      background: rgba(61, 220, 151, 0.2);
+      color: #3ddc97
+    }
+
+    .payment-impact-tooltip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      margin-left: 4px;
+      cursor: help;
+      color: var(--muted)
+    }
+
+    .payment-impact-tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f2937;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: normal;
+      width: 250px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 1000;
+      line-height: 1.4
+    }
+
+    .payment-impact-tooltip::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 2px);
+      left: 50%;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: #1f2937;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1000
+    }
+
+    .payment-impact-tooltip:hover::after,
+    .payment-impact-tooltip:hover::before {
+      opacity: 1
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
     /* Loan Timeline styles */
-    .timeline-event{margin-bottom:16px; border-left:2px solid rgba(255,255,255,0.1); padding-left:20px; position:relative}
-    .timeline-event::before{content:''; position:absolute; left:-6px; top:4px; width:10px; height:10px; border-radius:50%; background:var(--accent); border:2px solid var(--card)}
-    .timeline-event.timeline-event--issue::before{background:var(--warning)}
-    .timeline-event.timeline-event--resolved::before{background:#22c55e}
-    .timeline-event.timeline-event--settled::before{background:#9ca3af}
-    .timeline-event-header{display:flex; justify-content:space-between; align-items:flex-start; cursor:pointer; padding:8px 12px; border-radius:8px; transition:background 0.2s}
-    .timeline-event-header:hover{background:rgba(255,255,255,0.03)}
-    .timeline-event-title{font-weight:600; color:var(--text); font-size:14px}
-    .timeline-event-date{color:var(--muted); font-size:12px; margin-top:2px}
-    .timeline-event-details{margin-top:12px; padding:12px; background:rgba(255,255,255,0.02); border-radius:8px; border:1px solid rgba(255,255,255,0.06); display:none}
-    .timeline-event-details.expanded{display:block}
-    .timeline-event-details-row{display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04)}
-    .timeline-event-details-row:last-child{border-bottom:none}
-    .timeline-event-label{color:var(--muted); font-size:13px}
-    .timeline-event-value{color:var(--text); font-size:13px; font-weight:500}
-    .timeline-comparison-table{width:100%; border-collapse:collapse; margin-top:8px}
-    .timeline-comparison-table th{text-align:left; padding:8px; font-size:12px; color:var(--muted); font-weight:600; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .timeline-comparison-table td{padding:8px; font-size:13px; border-bottom:1px solid rgba(255,255,255,0.04)}
-    .timeline-comparison-table td:first-child{color:var(--muted)}
-    .timeline-comparison-table td.value-old{color:#f87171}
-    .timeline-comparison-table td.value-new{color:var(--accent)}
+    .timeline-event {
+      margin-bottom: 16px;
+      border-left: 2px solid rgba(255, 255, 255, 0.1);
+      padding-left: 20px;
+      position: relative
+    }
+
+    .timeline-event::before {
+      content: '';
+      position: absolute;
+      left: -6px;
+      top: 4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--card)
+    }
+
+    .timeline-event.timeline-event--issue::before {
+      background: var(--warning)
+    }
+
+    .timeline-event.timeline-event--resolved::before {
+      background: #22c55e
+    }
+
+    .timeline-event.timeline-event--settled::before {
+      background: #9ca3af
+    }
+
+    .timeline-event-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background 0.2s
+    }
+
+    .timeline-event-header:hover {
+      background: rgba(255, 255, 255, 0.03)
+    }
+
+    .timeline-event-title {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 14px
+    }
+
+    .timeline-event-date {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px
+    }
+
+    .timeline-event-details {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      display: none
+    }
+
+    .timeline-event-details.expanded {
+      display: block
+    }
+
+    .timeline-event-details-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04)
+    }
+
+    .timeline-event-details-row:last-child {
+      border-bottom: none
+    }
+
+    .timeline-event-label {
+      color: var(--muted);
+      font-size: 13px
+    }
+
+    .timeline-event-value {
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500
+    }
+
+    .timeline-comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px
+    }
+
+    .timeline-comparison-table th {
+      text-align: left;
+      padding: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .timeline-comparison-table td {
+      padding: 8px;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04)
+    }
+
+    .timeline-comparison-table td:first-child {
+      color: var(--muted)
+    }
+
+    .timeline-comparison-table td.value-old {
+      color: #f87171
+    }
+
+    .timeline-comparison-table td.value-new {
+      color: var(--accent)
+    }
 
     /* Toast notification animations */
     @keyframes slideIn {
@@ -234,26 +1145,37 @@
         transform: translateX(100%);
         opacity: 0;
       }
+
       to {
         transform: translateX(0);
         opacity: 1;
       }
     }
+
     @keyframes slideOut {
       from {
         transform: translateX(0);
         opacity: 1;
       }
+
       to {
         transform: translateX(100%);
         opacity: 0;
       }
     }
+
     @media (max-width: 768px) {
-      .pf-review-modal{max-width:100% !important; width:100% !important; margin:0 !important; border-radius:0 !important; padding:16px !important}
+      .pf-review-modal {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        padding: 16px !important
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <!-- Header will be loaded dynamically by header.js -->
@@ -291,7 +1213,8 @@
         No agreements found for this filter.
       </div>
       <div style="display:flex; justify-content:flex-end; margin-top:16px">
-        <button onclick="window.location.href='/app'" style="display:flex; align-items:center; gap:8px; padding:12px 20px; width:auto">
+        <button onclick="window.location.href='/app'"
+          style="display:flex; align-items:center; gap:8px; padding:12px 20px; width:auto">
           <span style="font-size:18px; font-weight:bold">+</span>
           <span>New Loan Agreement</span>
         </button>
@@ -309,15 +1232,18 @@
     </div>
 
     <!-- Agreement summary block (above details card) -->
-    <div id="summary-section" class="hidden" style="background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px; padding:20px; margin:20px 0; display:flex; align-items:center; gap:16px">
+    <div id="summary-section" class="hidden"
+      style="background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px; padding:20px; margin:20px 0; display:flex; align-items:center; gap:16px">
       <!-- Both avatars: Lender (left) + Borrower (right) with slight overlap -->
       <div style="flex-shrink:0; position:relative; display:flex; align-items:center">
         <div id="summary-avatar-lender" style="position:relative; z-index:10"></div>
         <div id="summary-avatar-borrower" style="position:relative; margin-left:-16px; z-index:20"></div>
       </div>
       <div style="flex:1">
-        <p id="agreement-summary-line1" style="margin:0 0 12px 0; font-size:15px; line-height:1.6; color:var(--accent)"></p>
-        <p id="agreement-summary-line2" style="margin:0 0 12px 0; font-size:15px; line-height:1.6; color:var(--accent)"></p>
+        <p id="agreement-summary-line1" style="margin:0 0 12px 0; font-size:15px; line-height:1.6; color:var(--accent)">
+        </p>
+        <p id="agreement-summary-line2" style="margin:0 0 12px 0; font-size:15px; line-height:1.6; color:var(--accent)">
+        </p>
         <p id="agreement-summary-line3" style="margin:0; font-size:15px; line-height:1.6; color:var(--accent)"></p>
       </div>
     </div>
@@ -328,15 +1254,21 @@
         <!-- LEFT/TOP: Payment info -->
         <div class="next-payment-info">
           <div id="next-payment-label" style="color:var(--muted); font-size:14px">Next payment due</div>
-          <div id="next-payment-amount" style="font-size:28px; font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums"></div>
+          <div id="next-payment-amount"
+            style="font-size:28px; font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums"></div>
           <div id="next-payment-subtitle" style="color:var(--muted); font-size:13px; margin-top:4px"></div>
-          <div id="next-payment-planned" style="color:var(--muted); font-size:13px; margin-top:8px; line-height:1.5"></div>
+          <div id="next-payment-planned" style="color:var(--muted); font-size:13px; margin-top:8px; line-height:1.5">
+          </div>
         </div>
 
         <!-- RIGHT/BOTTOM: Action buttons -->
         <div class="next-payment-actions">
-          <button id="borrower-record-payment-btn" class="record-payment-btn" style="width:100%; font-weight:500; white-space:nowrap" aria-label="Report a payment">Report a payment</button>
-          <button id="hardship-btn" class="warning" onclick="showRenegotiationInitiationForm()" style="width:100%; font-weight:500; white-space:nowrap" aria-label="Having trouble paying?">Having trouble paying?</button>
+          <button id="borrower-record-payment-btn" class="record-payment-btn"
+            style="width:100%; font-weight:500; white-space:nowrap" aria-label="Report a payment">Report a
+            payment</button>
+          <button id="hardship-btn" class="warning" onclick="showRenegotiationInitiationForm()"
+            style="width:100%; font-weight:500; white-space:nowrap" aria-label="Having trouble paying?">Having trouble
+            paying?</button>
         </div>
       </div>
     </div>
@@ -347,47 +1279,61 @@
       <p id="inline-payment-subtitle" style="color:var(--muted); font-size:14px; margin:0 0 12px 0">
         Confirm the payment you already made to <span id="inline-lender-name"></span>.
       </p>
-      <p style="color:var(--muted); font-size:13px; margin:0 0 20px 0; line-height:1.6; display:flex; align-items:start; gap:4px">
-        <img src="/images/payfriends-handshake.svg" style="display:inline-block; height:16px; width:16px; margin-top:2px; flex-shrink:0" alt="PayFriends fairness icon" />
-        <span id="fairness-explanation-text"><strong style="color:var(--accent)">Fairness recalculations activated:</strong> <span id="fairness-explanation-detail"></span></span>
+      <p
+        style="color:var(--muted); font-size:13px; margin:0 0 20px 0; line-height:1.6; display:flex; align-items:start; gap:4px">
+        <img src="/images/payfriends-handshake.svg"
+          style="display:inline-block; height:16px; width:16px; margin-top:2px; flex-shrink:0"
+          alt="PayFriends fairness icon" />
+        <span id="fairness-explanation-text"><strong style="color:var(--accent)">Fairness recalculations
+            activated:</strong> <span id="fairness-explanation-detail"></span></span>
       </p>
 
       <div class="form-group">
         <label class="form-label" for="inline-payment-amount">Amount (EUR)</label>
         <p id="amount-due-today-label" style="color:var(--muted); font-size:13px; margin:0 0 8px 0"></p>
         <div style="position:relative; width:100%; max-width:400px">
-          <input type="number" id="inline-payment-amount" placeholder="e.g. 1 234,56" min="0" step="0.01" style="width:100%; padding-right:165px">
-          <span id="autofill-amount-link" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap; text-decoration:underline; text-decoration-style:dotted" title="Autofill with the amount due today">Use amount due today</span>
+          <input type="number" id="inline-payment-amount" placeholder="e.g. 1 234,56" min="0" step="0.01"
+            style="width:100%; padding-right:165px">
+          <span id="autofill-amount-link"
+            style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap; text-decoration:underline; text-decoration-style:dotted"
+            title="Autofill with the amount due today">Use amount due today</span>
         </div>
         <p id="early-payment-tip" style="color:var(--muted); font-size:12px; margin:4px 0 0 0; font-style:italic"></p>
         <p id="amount-helper-text" style="color:var(--muted); font-size:13px; margin:8px 0 0 0; line-height:1.5"></p>
       </div>
 
       <!-- Live Impact Box (only visible for overpayments) -->
-      <div id="live-impact-box" class="hidden" style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.3); border-radius:8px; padding:14px 16px; margin:12px 0; font-size:13px; animation:fadeIn 250ms ease-in">
+      <div id="live-impact-box" class="hidden"
+        style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.3); border-radius:8px; padding:14px 16px; margin:12px 0; font-size:13px; animation:fadeIn 250ms ease-in">
         <div id="impact-content" style="line-height:1.8"></div>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="inline-payment-method">Payment method</label>
-        <select id="inline-payment-method" required style="width:100%; max-width:400px; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+        <select id="inline-payment-method" required
+          style="width:100%; max-width:400px; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
           <!-- Options populated dynamically based on agreement payment methods -->
         </select>
       </div>
 
       <!-- Payment method details section (shown automatically when method is selected) -->
-      <div id="inline-payment-method-details" class="hidden" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin:-8px 0 16px 0; font-size:14px; line-height:1.8">
+      <div id="inline-payment-method-details" class="hidden"
+        style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin:-8px 0 16px 0; font-size:14px; line-height:1.8">
         <!-- Method details populated dynamically -->
       </div>
 
       <div id="inline-payment-proof-section" class="form-group">
         <label class="form-label" id="inline-payment-proof-label" for="inline-payment-proof">Proof of repayment</label>
-        <div id="inline-payment-proof-dropzone" style="border:2px dashed rgba(255,255,255,0.2); border-radius:8px; padding:20px; background:rgba(255,255,255,0.02); text-align:center; cursor:pointer; transition:all 0.2s ease; min-height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px">
-          <input type="file" id="inline-payment-proof" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="display:none">
+        <div id="inline-payment-proof-dropzone"
+          style="border:2px dashed rgba(255,255,255,0.2); border-radius:8px; padding:20px; background:rgba(255,255,255,0.02); text-align:center; cursor:pointer; transition:all 0.2s ease; min-height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px">
+          <input type="file" id="inline-payment-proof"
+            accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+            style="display:none">
           <p id="inline-payment-proof-text" style="color:var(--muted); font-size:13px; margin:0">
             Drag and drop your proof here, or click Browse to upload
           </p>
-          <button type="button" id="inline-payment-proof-browse-btn" style="padding:8px 16px; font-size:13px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:var(--text); cursor:pointer; font-family:inherit; font-weight:500">
+          <button type="button" id="inline-payment-proof-browse-btn"
+            style="padding:8px 16px; font-size:13px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:var(--text); cursor:pointer; font-family:inherit; font-weight:500">
             Browse
           </button>
           <p id="inline-payment-proof-filename" style="color:var(--accent); font-size:12px; margin:0; display:none"></p>
@@ -401,7 +1347,9 @@
 
       <div class="form-group">
         <label class="form-label" for="inline-payment-note">Note (optional)</label>
-        <input type="text" id="inline-payment-note" placeholder="Add a short note (e.g., paid in two parts)" maxlength="120" style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+        <input type="text" id="inline-payment-note" placeholder="Add a short note (e.g., paid in two parts)"
+          maxlength="120"
+          style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
       </div>
 
       <div style="display:flex; gap:12px; margin-top:20px">
@@ -427,7 +1375,8 @@
             <span id="lender-name"></span>
             <span id="lender-profile-link-inline" style="display:none">
               <span style="color:var(--muted)"> - </span>
-              <a href="#" id="lender-profile-link-inline-a" style="color:var(--accent); text-decoration:none; font-size:inherit">View profile</a>
+              <a href="#" id="lender-profile-link-inline-a"
+                style="color:var(--accent); text-decoration:none; font-size:inherit">View profile</a>
             </span>
           </span>
         </div>
@@ -437,7 +1386,8 @@
             <span id="borrower-name"></span>
             <span id="borrower-profile-link-inline" style="display:none">
               <span style="color:var(--muted)"> - </span>
-              <a href="#" id="borrower-profile-link-inline-a" style="color:var(--accent); text-decoration:none; font-size:inherit">View profile</a>
+              <a href="#" id="borrower-profile-link-inline-a"
+                style="color:var(--accent); text-decoration:none; font-size:inherit">View profile</a>
             </span>
           </span>
         </div>
@@ -457,7 +1407,8 @@
           <span class="detail-label">Initial payment</span>
           <span class="detail-value" id="initial-payment-display">
             <span id="initial-payment-text"></span>
-            <a href="#" id="initial-payment-proof-link" style="margin-left:8px; color:var(--accent); text-decoration:none; display:none">View proof</a>
+            <a href="#" id="initial-payment-proof-link"
+              style="margin-left:8px; color:var(--accent); text-decoration:none; display:none">View proof</a>
           </span>
         </div>
         <div class="detail-row" id="loan-duration-row" style="display:none">
@@ -526,22 +1477,26 @@
 
       <!-- Repayment schedule & interest calculation (collapsible) -->
       <div id="interest-calc-card" class="hidden" style="margin:16px 0">
-        <button onclick="toggleReviewSection('interest-calc-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+        <button onclick="toggleReviewSection('interest-calc-detail')" class="secondary"
+          style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
           <span>Repayment schedule & interest calculation</span>
           <span id="interest-calc-detail-toggle">▼</span>
         </button>
-        <div id="interest-calc-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+        <div id="interest-calc-detail" class="hidden"
+          style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
           <div id="interest-calc-detail-content"></div>
         </div>
       </div>
 
       <!-- Repayment details & reminders (collapsible) -->
       <div id="payments-reminders-card" class="hidden" style="margin:16px 0">
-        <button onclick="toggleReviewSection('payments-reminders-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+        <button onclick="toggleReviewSection('payments-reminders-detail')" class="secondary"
+          style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
           <span>Repayment details & reminders</span>
           <span id="payments-reminders-detail-toggle">▼</span>
         </button>
-        <div id="payments-reminders-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+        <div id="payments-reminders-detail" class="hidden"
+          style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
           <div id="payments-reminders-detail-content"></div>
         </div>
       </div>
@@ -556,28 +1511,36 @@
 
       <!-- Fairness Between Friends (collapsible) -->
       <div id="fairness-card" style="margin:16px 0">
-        <button onclick="toggleReviewSection('fairness-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+        <button onclick="toggleReviewSection('fairness-detail')" class="secondary"
+          style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
           <div style="display:flex; align-items:center; gap:8px; color:var(--accent)">
-            <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;" title="Fairness Between Friends"></span>
+            <span style="display:inline-flex; align-items:center; width:18px; height:18px; flex-shrink:0;"
+              title="Fairness Between Friends"></span>
             <span>Fairness Between Friends (How it Works)</span>
           </div>
           <span id="fairness-detail-toggle">▼</span>
         </button>
         <script>
-          document.currentScript.previousElementSibling.querySelector('div > span:first-child').innerHTML = fairnessIconSVG('', {width:'18px', height:'18px', display:'block'});
+          document.currentScript.previousElementSibling.querySelector('div > span:first-child').innerHTML = fairnessIconSVG('', { width: '18px', height: '18px', display: 'block' });
         </script>
-        <div id="fairness-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+        <div id="fairness-detail" class="hidden"
+          style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
           <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6">
-            PayFriends operates on a fairness principle designed to keep lending between friends transparent and balanced.
+            PayFriends operates on a fairness principle designed to keep lending between friends transparent and
+            balanced.
             Interest is calculated dynamically on the outstanding balance and the time elapsed.
           </p>
           <ul style="margin:0 0 12px 0; padding-left:20px; font-size:14px; line-height:1.6">
-            <li style="margin-bottom:8px"><strong>Early or higher payments</strong> reduce the total interest and, where applicable, lower future installment amounts.</li>
-            <li style="margin-bottom:8px"><strong>Late or smaller payments</strong> increase the total interest for the period the amount remains outstanding.</li>
-            <li style="margin-bottom:8px">These recalculations happen automatically and are reflected instantly in the agreement for both lender and borrower.</li>
+            <li style="margin-bottom:8px"><strong>Early or higher payments</strong> reduce the total interest and, where
+              applicable, lower future installment amounts.</li>
+            <li style="margin-bottom:8px"><strong>Late or smaller payments</strong> increase the total interest for the
+              period the amount remains outstanding.</li>
+            <li style="margin-bottom:8px">These recalculations happen automatically and are reflected instantly in the
+              agreement for both lender and borrower.</li>
           </ul>
           <p style="margin:0; font-size:14px; line-height:1.6">
-            Each repayment entry in the payment history clearly notes when a payment caused a change in the total interest, outstanding balance, or future installments.
+            Each repayment entry in the payment history clearly notes when a payment caused a change in the total
+            interest, outstanding balance, or future installments.
             This ensures both parties always see the current, fair value of the loan.
           </p>
         </div>
@@ -585,11 +1548,13 @@
 
       <!-- Sharing details (collapsible, lender only, for pending agreements) -->
       <div id="share-card" class="hidden" style="margin:16px 0">
-        <button onclick="toggleReviewSection('share-detail')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+        <button onclick="toggleReviewSection('share-detail')" class="secondary"
+          style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
           <span>Sharing details</span>
           <span id="share-detail-toggle">▼</span>
         </button>
-        <div id="share-detail" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+        <div id="share-detail" class="hidden"
+          style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
           <div id="share-detail-content"></div>
         </div>
       </div>
@@ -603,7 +1568,8 @@
 
       <!-- Lender actions (only for pending agreements) -->
       <div id="lender-actions" class="hidden">
-        <button id="cancel-agreement-btn" class="btn-danger" onclick="openCancelModal()" style="width:100%">Cancel pending agreement</button>
+        <button id="cancel-agreement-btn" class="btn-danger" onclick="openCancelModal()" style="width:100%">Cancel
+          pending agreement</button>
       </div>
 
       <p class="status" id="action-status"></p>
@@ -632,7 +1598,8 @@
     <!-- Loan Timeline (for all agreements) -->
     <div id="loan-timeline" class="card hidden">
       <h2>Loan Timeline</h2>
-      <p style="color:var(--muted); font-size:14px; margin-bottom:16px">Complete history of this loan, including all negotiations and changes.</p>
+      <p style="color:var(--muted); font-size:14px; margin-bottom:16px">Complete history of this loan, including all
+        negotiations and changes.</p>
       <div id="timeline-events">
         <p style="color:var(--muted); font-size:14px">Loading timeline...</p>
       </div>
@@ -652,7 +1619,8 @@
 
       <div class="form-group">
         <label class="form-label" for="payment-method">Payment method</label>
-        <select id="payment-method" required style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+        <select id="payment-method" required
+          style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
           <option value="">Select method...</option>
           <option value="cash">Cash</option>
           <option value="bank">Bank transfer</option>
@@ -666,7 +1634,8 @@
         <p id="payment-proof-helper" style="color:var(--muted); font-size:12px; margin-bottom:8px">
           Upload a screenshot, photo or PDF that shows this repayment.
         </p>
-        <input type="file" id="payment-proof" accept="image/*,.pdf" style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
+        <input type="file" id="payment-proof" accept="image/*,.pdf"
+          style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px">
       </div>
 
       <div class="form-group">
@@ -684,7 +1653,8 @@
     <div id="hardship-form" class="card hidden">
       <h2>Request Payment Assistance</h2>
       <p style="color:var(--muted); margin-bottom:20px">
-        Let us know what's making this payment difficult. We'll share your situation with your friend to work out a new plan together.
+        Let us know what's making this payment difficult. We'll share your situation with your friend to work out a new
+        plan together.
       </p>
 
       <!-- Step 1: Reason -->
@@ -747,7 +1717,8 @@
 
       <!-- Step 3: Preferred adjustments -->
       <div class="form-section">
-        <div class="form-section-title">What kind of new plan would feel most realistic for you? (Check all that apply)</div>
+        <div class="form-section-title">What kind of new plan would feel most realistic for you? (Check all that apply)
+        </div>
 
         <div class="form-checkbox">
           <input type="checkbox" id="adj-smaller" value="smaller_payments_longer_period">
@@ -756,7 +1727,8 @@
 
         <div class="form-checkbox">
           <input type="checkbox" id="adj-skip" value="skip_or_reduce_next">
-          <label for="adj-skip">Skip or reduce this upcoming payment, and increase the later payments to catch up.</label>
+          <label for="adj-skip">Skip or reduce this upcoming payment, and increase the later payments to catch
+            up.</label>
         </div>
 
         <div class="form-checkbox">
@@ -766,7 +1738,8 @@
 
         <div class="form-checkbox">
           <input type="checkbox" id="adj-lower" value="lower_monthly_higher_interest">
-          <label for="adj-lower">Lower the monthly amount, even if the total interest becomes higher and the loan runs longer.</label>
+          <label for="adj-lower">Lower the monthly amount, even if the total interest becomes higher and the loan runs
+            longer.</label>
         </div>
 
         <div class="form-checkbox">
@@ -804,7 +1777,8 @@
 
       <!-- Step 0: How much can you pay now? -->
       <div class="form-section" id="renegotiation-step-0">
-        <div style="background:rgba(255,165,0,0.1); border:1px solid rgba(255,165,0,0.3); border-radius:8px; padding:12px; margin-bottom:16px">
+        <div
+          style="background:rgba(255,165,0,0.1); border:1px solid rgba(255,165,0,0.3); border-radius:8px; padding:12px; margin-bottom:16px">
           <p id="expected-payment-context" style="margin:0; font-size:14px; color:var(--text); font-weight:500"></p>
         </div>
 
@@ -812,13 +1786,16 @@
 
         <div class="form-group">
           <label class="form-label">Amount (€)</label>
-          <input type="number" id="renegotiation-can-pay-now" placeholder="0.00" step="0.01" min="0" style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-size:14px">
-          <small id="can-pay-now-microcopy" style="color:var(--muted); font-size:12px; line-height:1.5; display:block; margin-top:8px"></small>
+          <input type="number" id="renegotiation-can-pay-now" placeholder="0.00" step="0.01" min="0"
+            style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-size:14px">
+          <small id="can-pay-now-microcopy"
+            style="color:var(--muted); font-size:12px; line-height:1.5; display:block; margin-top:8px"></small>
         </div>
 
         <div class="form-group">
           <label class="form-label">Tell your friend what's going on</label>
-          <select id="renegotiation-trouble-reason" style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-size:14px">
+          <select id="renegotiation-trouble-reason"
+            style="width:100%; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:var(--bg); color:var(--text); font-size:14px">
             <option value="">Select a reason...</option>
             <option value="unexpected_expenses">Unexpected expenses</option>
             <option value="income_delay">Income delay (salary, client, invoice, etc)</option>
@@ -830,7 +1807,8 @@
 
         <div class="form-group hidden" id="renegotiation-reason-other-container">
           <label class="form-label">Explain in your own words</label>
-          <textarea id="renegotiation-reason-other" rows="3" placeholder="Tell your friend more about your situation..."></textarea>
+          <textarea id="renegotiation-reason-other" rows="3"
+            placeholder="Tell your friend more about your situation..."></textarea>
         </div>
       </div>
 
@@ -851,9 +1829,14 @@
       <h2>Error</h2>
       <p id="error-message">Unable to load agreement details.</p>
       <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap">
-        <button id="retry-load-btn" onclick="retryLoad()" style="padding:10px 20px; background:var(--accent); color:#0d130f; border:none; border-radius:10px; font-weight:600; cursor:pointer; font-size:14px">Retry</button>
-        <a href="/agreements" style="display:inline-block; padding:10px 20px; background:#374151; color:#cbd5e1; border-radius:10px; text-decoration:none; font-weight:600; font-size:16px">← Return to Loan Agreements</a>
-        <a href="/app" style="display:inline-block; padding:10px 20px; background:#374151; color:#cbd5e1; border-radius:10px; text-decoration:none; font-weight:600">Return to Dashboard</a>
+        <button id="retry-load-btn" onclick="retryLoad()"
+          style="padding:10px 20px; background:var(--accent); color:#0d130f; border:none; border-radius:10px; font-weight:600; cursor:pointer; font-size:14px">Retry</button>
+        <a href="/agreements"
+          style="display:inline-block; padding:10px 20px; background:#374151; color:#cbd5e1; border-radius:10px; text-decoration:none; font-weight:600; font-size:16px">←
+          Return to Loan Agreements</a>
+        <a href="/app"
+          style="display:inline-block; padding:10px 20px; background:#374151; color:#cbd5e1; border-radius:10px; text-decoration:none; font-weight:600">Return
+          to Dashboard</a>
       </div>
     </div>
   </div>
@@ -899,7 +1882,7 @@
       const otherContainer = document.getElementById('renegotiation-reason-other-container');
 
       if (troubleReasonDropdown && otherContainer) {
-        troubleReasonDropdown.addEventListener('change', function() {
+        troubleReasonDropdown.addEventListener('change', function () {
           if (this.value === 'other') {
             otherContainer.classList.remove('hidden');
           } else {
@@ -1239,10 +2222,33 @@
         plannedEl.style.display = 'none';
       }
 
-      // Set up the "Report payment" button to toggle inline form
+      // Set up the "Report payment" button to use shared component
       const recordBtn = document.getElementById('borrower-record-payment-btn');
       const lenderName = (agreement.lender_full_name || agreement.lender_name || agreement.lender_email).split(' ')[0];
-      recordBtn.onclick = () => toggleInlinePaymentForm(lenderName, nextPaymentInfo);
+
+      recordBtn.onclick = () => {
+        // Initialize the report payment component
+        window.ReportPaymentComponent.initialize(agreement, currentUser, nextPaymentInfo, {
+          containerId: 'inline-payment-form-card',
+          onSuccess: (updatedAgreement) => {
+            // Handle success - reload or redirect
+            if (updatedAgreement.status === 'settled') {
+              window.location.href = '/app';
+            } else {
+              window.location.reload();
+            }
+          },
+          onCancel: () => {
+            // Show button again
+            document.getElementById('borrower-record-payment-btn').classList.remove('hidden');
+          },
+          showCancelButton: true,
+          submitButtonText: `Report repayment to ${lenderName}`
+        });
+
+        // Hide the button to avoid redundancy
+        recordBtn.classList.add('hidden');
+      };
 
       // Show the card
       document.getElementById('next-payment-card').classList.remove('hidden');
@@ -2093,7 +3099,7 @@
       // 5. Money transfer date (use timing config for consistent display)
       let loanStartLabel;
       if (typeof window.buildLoanTimingConfigFromAgreement !== 'undefined' &&
-          typeof window.getLoanStartDisplay !== 'undefined') {
+        typeof window.getLoanStartDisplay !== 'undefined') {
         try {
           const timingConfig = window.buildLoanTimingConfigFromAgreement(agreement);
           loanStartLabel = window.getLoanStartDisplay(timingConfig, agreement.status, agreement.accepted_at);
@@ -2276,14 +3282,14 @@
         let fullDueDateText, showCountdown;
 
         if (typeof window.buildLoanTimingConfigFromAgreement !== 'undefined' &&
-            typeof window.getFullRepaymentDueDisplay !== 'undefined') {
+          typeof window.getFullRepaymentDueDisplay !== 'undefined') {
           try {
             const timingConfig = window.buildLoanTimingConfigFromAgreement(agreement);
             fullDueDateText = window.getFullRepaymentDueDisplay(timingConfig, agreement.status, agreement.accepted_at);
 
             // Only show countdown for active/settled agreements with concrete dates
             showCountdown = (agreement.status === 'active' || agreement.status === 'settled') &&
-                           !fullDueDateText.includes('after loan start');
+              !fullDueDateText.includes('after loan start');
 
             document.getElementById('full-due-display').textContent = fullDueDateText;
 
@@ -3492,10 +4498,10 @@
         <div id="counter-values-form" class="hidden" style="margin-top:20px">
           <h4 style="margin-bottom:12px">Counter-propose different values:</h4>
           ${window.RenegotiationModule.buildValuesForm(
-            renegotiation.agreed_type,
-            renegotiation.loan_type,
-            renegotiation.borrower_values_proposal
-          )}
+        renegotiation.agreed_type,
+        renegotiation.loan_type,
+        renegotiation.borrower_values_proposal
+      )}
           <div class="form-group">
             <label class="form-label">Optional note</label>
             <textarea id="counter-values-note" rows="2" placeholder="I think these values would work better..."></textarea>
@@ -3915,8 +4921,8 @@
               day: 'numeric', month: 'short', year: 'numeric'
             });
             const eventClass = event.type === 'issue' ? 'timeline-event--issue' :
-                               event.type === 'resolved' ? 'timeline-event--resolved' :
-                               event.type === 'settled' ? 'timeline-event--settled' : '';
+              event.type === 'resolved' ? 'timeline-event--resolved' :
+                event.type === 'settled' ? 'timeline-event--settled' : '';
 
             return `
               <div class="timeline-event ${eventClass}">
@@ -5200,10 +6206,13 @@
   <script src="/components/agreements-table.js"></script>
 
   <!-- Proof of payment modal -->
-  <div id="proof-modal" onclick="closeProofModal()" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); align-items:center; justify-content:center;">
-    <div onclick="event.stopPropagation()" style="max-width:90%; max-height:90%; width:90%; position:relative; background:#1a1f26; padding:20px; border-radius:8px; cursor:default">
+  <div id="proof-modal" onclick="closeProofModal()"
+    style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); align-items:center; justify-content:center;">
+    <div onclick="event.stopPropagation()"
+      style="max-width:90%; max-height:90%; width:90%; position:relative; background:#1a1f26; padding:20px; border-radius:8px; cursor:default">
       <!-- Close button -->
-      <span onclick="closeProofModal()" style="position:absolute; top:10px; right:15px; color:#fff; font-size:35px; font-weight:bold; cursor:pointer; z-index:1001">&times;</span>
+      <span onclick="closeProofModal()"
+        style="position:absolute; top:10px; right:15px; color:#fff; font-size:35px; font-weight:bold; cursor:pointer; z-index:1001">&times;</span>
 
       <!-- Title -->
       <h3 style="color:#fff; margin:0 0 15px 0; padding-right:40px">Proof of payment</h3>
@@ -5216,25 +6225,37 @@
 
       <!-- Footer with download button -->
       <div style="display:flex; justify-content:flex-end; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1)">
-        <a id="proof-modal-download" href="#" download style="display:inline-block; padding:10px 20px; background:#2a2a2a; color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:8px; text-decoration:none; font-weight:500; font-size:14px; cursor:pointer; transition:all 0.2s ease">Download</a>
+        <a id="proof-modal-download" href="#" download
+          style="display:inline-block; padding:10px 20px; background:#2a2a2a; color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:8px; text-decoration:none; font-weight:500; font-size:14px; cursor:pointer; transition:all 0.2s ease">Download</a>
       </div>
     </div>
   </div>
 
   <!-- Accept Agreement Modal -->
-  <div id="accept-modal" onclick="closeAcceptModal()" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.85); align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="accept-modal-title">
-    <div onclick="event.stopPropagation()" class="pf-review-modal" style="max-width:780px; width:100%; max-height:90vh; overflow-y:auto; position:relative; background:#1a1f26; padding:24px; border-radius:12px; cursor:default; border:1px solid rgba(255,255,255,0.1);">
+  <div id="accept-modal" onclick="closeAcceptModal()"
+    style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.85); align-items:center; justify-content:center;"
+    role="dialog" aria-modal="true" aria-labelledby="accept-modal-title">
+    <div onclick="event.stopPropagation()" class="pf-review-modal"
+      style="max-width:780px; width:100%; max-height:90vh; overflow-y:auto; position:relative; background:#1a1f26; padding:24px; border-radius:12px; cursor:default; border:1px solid rgba(255,255,255,0.1);">
       <!-- Close button -->
-      <span onclick="closeAcceptModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeAcceptModal();}" tabindex="0" role="button" style="position:absolute; top:10px; right:15px; color:#fff; font-size:28px; font-weight:bold; cursor:pointer; line-height:1;" aria-label="Close">&times;</span>
+      <span onclick="closeAcceptModal()"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeAcceptModal();}" tabindex="0"
+        role="button"
+        style="position:absolute; top:10px; right:15px; color:#fff; font-size:28px; font-weight:bold; cursor:pointer; line-height:1;"
+        aria-label="Close">&times;</span>
 
       <!-- Title -->
-      <h3 id="accept-modal-title" style="color:#fff; margin:0 0 8px 0; padding-right:35px; font-size:20px; font-weight:600;">Accept this agreement?</h3>
+      <h3 id="accept-modal-title"
+        style="color:#fff; margin:0 0 8px 0; padding-right:35px; font-size:20px; font-weight:600;">Accept this
+        agreement?</h3>
 
       <!-- Lead -->
-      <p style="color:var(--muted); margin:0 0 20px 0; font-size:14px; line-height:1.5;">Review the key terms below and confirm to proceed.</p>
+      <p style="color:var(--muted); margin:0 0 20px 0; font-size:14px; line-height:1.5;">Review the key terms below and
+        confirm to proceed.</p>
 
       <!-- Key terms section -->
-      <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin-bottom:20px; margin-top:20px;">
+      <div
+        style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin-bottom:20px; margin-top:20px;">
         <div style="font-weight:600; margin-bottom:16px; font-size:14px; color:var(--text);">Key terms</div>
         <div id="accept-modal-terms" style="display:flex; flex-direction:column; gap:10px; font-size:13px;"></div>
       </div>
@@ -5249,32 +6270,46 @@
         <div style="font-weight:600; margin-bottom:12px; font-size:14px; color:var(--text);">Confirmations</div>
         <div style="display:flex; flex-direction:column; gap:12px;">
           <!-- Single required checkbox -->
-          <label style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
-            <input type="checkbox" id="accept-confirm-terms" style="margin-top:2px; cursor:pointer;" onchange="validateAcceptModal()">
-            <span style="color:var(--text); font-size:13px; line-height:1.5;">I confirm the above terms are correct and I agree to repay as stated.</span>
+          <label
+            style="display:flex; align-items:start; gap:10px; cursor:pointer; padding:10px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; transition:background 0.2s;"
+            onmouseover="this.style.background='rgba(255,255,255,0.03)'"
+            onmouseout="this.style.background='transparent'">
+            <input type="checkbox" id="accept-confirm-terms" style="margin-top:2px; cursor:pointer;"
+              onchange="validateAcceptModal()">
+            <span style="color:var(--text); font-size:13px; line-height:1.5;">I confirm the above terms are correct and
+              I agree to repay as stated.</span>
           </label>
-          <p id="accept-checkbox-error" class="hidden" style="color:#ff6b6b; font-size:12px; margin:0;">Please tick this box to confirm you accept the terms.</p>
+          <p id="accept-checkbox-error" class="hidden" style="color:#ff6b6b; font-size:12px; margin:0;">Please tick this
+            box to confirm you accept the terms.</p>
         </div>
       </div>
 
       <!-- Signature section -->
       <div style="margin-bottom:20px; margin-top:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <label for="accept-signature-canvas" style="font-weight:600; font-size:14px; color:var(--text);">Sign to accept</label>
-          <button type="button" id="clear-signature-btn" onclick="clearSignature()" style="background:none; border:none; color:#8691a1; font-size:12px; cursor:pointer; padding:4px 8px; text-decoration:underline;">Clear</button>
+          <label for="accept-signature-canvas" style="font-weight:600; font-size:14px; color:var(--text);">Sign to
+            accept</label>
+          <button type="button" id="clear-signature-btn" onclick="clearSignature()"
+            style="background:none; border:none; color:#8691a1; font-size:12px; cursor:pointer; padding:4px 8px; text-decoration:underline;">Clear</button>
         </div>
-        <div style="position:relative; width:100%; border:1px solid rgba(255,255,255,0.15); border-radius:8px; background:rgba(255,255,255,0.02);">
-          <canvas id="accept-signature-canvas" style="width:100%; height:140px; display:block; cursor:crosshair; border-radius:8px; touch-action:none;"></canvas>
+        <div
+          style="position:relative; width:100%; border:1px solid rgba(255,255,255,0.15); border-radius:8px; background:rgba(255,255,255,0.02);">
+          <canvas id="accept-signature-canvas"
+            style="width:100%; height:140px; display:block; cursor:crosshair; border-radius:8px; touch-action:none;"></canvas>
         </div>
         <p style="color:var(--muted); font-size:12px; margin-top:8px; line-height:1.5;">
-          By signing here I confirm that I am the borrower named above and I accept this repayment agreement as legally binding.
+          By signing here I confirm that I am the borrower named above and I accept this repayment agreement as legally
+          binding.
         </p>
-        <p id="accept-signature-error" class="hidden" style="color:#ff6b6b; font-size:12px; margin:6px 0 0 0;">Please add your signature to continue.</p>
+        <p id="accept-signature-error" class="hidden" style="color:#ff6b6b; font-size:12px; margin:6px 0 0 0;">Please
+          add your signature to continue.</p>
       </div>
 
       <!-- Action buttons -->
       <div style="display:flex; gap:12px; flex-direction:row-reverse;">
-        <button id="accept-modal-confirm-btn" class="btn-accept" onclick="confirmAccept()" style="width:auto; flex:1; margin-top:0; background:#22c55e; color:#0d130f; font-weight:700; border:none; padding:12px 20px; border-radius:10px; cursor:pointer; opacity:0.5;" disabled>Accept & Sign</button>
+        <button id="accept-modal-confirm-btn" class="btn-accept" onclick="confirmAccept()"
+          style="width:auto; flex:1; margin-top:0; background:#22c55e; color:#0d130f; font-weight:700; border:none; padding:12px 20px; border-radius:10px; cursor:pointer; opacity:0.5;"
+          disabled>Accept & Sign</button>
         <button class="secondary" onclick="closeAcceptModal()" style="width:auto; flex:1; margin-top:0;">Cancel</button>
       </div>
 
@@ -5283,24 +6318,37 @@
   </div>
 
   <!-- Cancel Agreement Confirmation Modal -->
-  <div id="cancel-modal" onclick="closeCancelModal()" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.85); align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="cancel-modal-title">
-    <div onclick="event.stopPropagation()" style="max-width:500px; width:90%; position:relative; background:#1a1f26; padding:24px; border-radius:12px; cursor:default; border:1px solid rgba(255,255,255,0.1);">
+  <div id="cancel-modal" onclick="closeCancelModal()"
+    style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.85); align-items:center; justify-content:center;"
+    role="dialog" aria-modal="true" aria-labelledby="cancel-modal-title">
+    <div onclick="event.stopPropagation()"
+      style="max-width:500px; width:90%; position:relative; background:#1a1f26; padding:24px; border-radius:12px; cursor:default; border:1px solid rgba(255,255,255,0.1);">
       <!-- Close button -->
-      <span onclick="closeCancelModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeCancelModal();}" tabindex="0" role="button" style="position:absolute; top:10px; right:15px; color:#fff; font-size:28px; font-weight:bold; cursor:pointer; line-height:1;" aria-label="Close">&times;</span>
+      <span onclick="closeCancelModal()"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeCancelModal();}" tabindex="0"
+        role="button"
+        style="position:absolute; top:10px; right:15px; color:#fff; font-size:28px; font-weight:bold; cursor:pointer; line-height:1;"
+        aria-label="Close">&times;</span>
 
       <!-- Title -->
-      <h3 id="cancel-modal-title" style="color:#fff; margin:0 0 16px 0; padding-right:35px; font-size:20px; font-weight:600;">Cancel this request?</h3>
+      <h3 id="cancel-modal-title"
+        style="color:#fff; margin:0 0 16px 0; padding-right:35px; font-size:20px; font-weight:600;">Cancel this request?
+      </h3>
 
       <!-- Body text -->
-      <p style="color:var(--text); line-height:1.6; margin:0 0 24px 0; font-size:15px;">Are you sure you want to cancel this agreement request? This will withdraw the agreement so your friend can no longer accept it.</p>
+      <p style="color:var(--text); line-height:1.6; margin:0 0 24px 0; font-size:15px;">Are you sure you want to cancel
+        this agreement request? This will withdraw the agreement so your friend can no longer accept it.</p>
 
       <!-- Action buttons -->
       <div style="display:flex; gap:12px; flex-direction:row-reverse;">
-        <button id="confirm-cancel-btn" class="btn-danger" onclick="confirmCancel()" style="width:auto; flex:1; margin-top:0;">Yes, cancel request</button>
-        <button class="secondary" onclick="closeCancelModal()" style="width:auto; flex:1; margin-top:0;">Keep agreement</button>
+        <button id="confirm-cancel-btn" class="btn-danger" onclick="confirmCancel()"
+          style="width:auto; flex:1; margin-top:0;">Yes, cancel request</button>
+        <button class="secondary" onclick="closeCancelModal()" style="width:auto; flex:1; margin-top:0;">Keep
+          agreement</button>
       </div>
     </div>
   </div>
 
 </body>
+
 </html>

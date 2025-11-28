@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -37,396 +38,1290 @@
   <!-- Profile pages content -->
   <script src="/js/profile-pages.js"></script>
   <style>
-    :root{
-      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
-      --danger:#ef4444;
-      --danger-ink:#fca5a5;
-      --danger-border:rgba(239,68,68,.28);
-      --danger-bg:rgba(239,68,68,.06);
-      --warning:#f97316;
-      --warning-ink:#fb923c;
-      --warning-border:rgba(249,115,22,.28);
-      --warning-bg:rgba(249,115,22,.06);
+    :root {
+      --bg: #0e1116;
+      --card: #151a21;
+      --text: #e6eef6;
+      --muted: #a7b0bd;
+      --accent: #3ddc97;
+      --danger: #ef4444;
+      --danger-ink: #fca5a5;
+      --danger-border: rgba(239, 68, 68, .28);
+      --danger-bg: rgba(239, 68, 68, .06);
+      --warning: #f97316;
+      --warning-ink: #fb923c;
+      --warning-border: rgba(249, 115, 22, .28);
+      --warning-bg: rgba(249, 115, 22, .06);
     }
-    *{box-sizing:border-box}
-    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
-    .container{max-width:1200px;margin:0 auto;padding:32px 16px;}
-    .header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .header-left h1{margin:0 0 4px 0;font-size:28px}
-    .header-left .user-email{color:var(--muted); font-size:14px}
-    .header-right{display:flex; gap:16px; align-items:center}
-    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .top-header-left{display:flex; align-items:center; gap:12px}
-    .top-header-right{display:flex; gap:12px; align-items:center}
-    .logo-coin{height:54px; width:auto}
-    .top-header-text{display:flex; flex-direction:column; gap:2px}
-    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
-    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
-    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
-    .top-header-user-info{color:var(--text); font-size:14px; line-height:1; white-space:nowrap; display:inline-flex; align-items:center; height:40px}
-    .top-header-actions{display:flex; gap:12px; align-items:center}
-    .inbox-count{color:var(--accent); font-weight:700}
-    .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;margin:16px 0}
-    .row{display:flex; gap:12px; align-items:center; margin:10px 0}
-    .row label{width:160px; color:var(--muted)}
-    .row input{flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)}
-    .row input:focus{outline:none; border-color:var(--accent); background:#10151d}
-    .row input:hover{background:#10151d}
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .header-left h1 {
+      margin: 0 0 4px 0;
+      font-size: 28px
+    }
+
+    .header-left .user-email {
+      color: var(--muted);
+      font-size: 14px
+    }
+
+    .header-right {
+      display: flex;
+      gap: 16px;
+      align-items: center
+    }
+
+    .top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .top-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .top-header-right {
+      display: flex;
+      gap: 12px;
+      align-items: center
+    }
+
+    .logo-coin {
+      height: 54px;
+      width: auto
+    }
+
+    .top-header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px
+    }
+
+    .app-name {
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1.2;
+      margin: 0
+    }
+
+    .user-meta {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.2
+    }
+
+    .app-slogan {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.2;
+      margin-top: 2px
+    }
+
+    .top-header-user-info {
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      height: 40px
+    }
+
+    .top-header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center
+    }
+
+    .inbox-count {
+      color: var(--accent);
+      font-weight: 700
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 16px;
+      margin: 16px 0
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin: 10px 0
+    }
+
+    .row label {
+      width: 160px;
+      color: var(--muted)
+    }
+
+    .row input {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #10151d;
+      color: var(--text)
+    }
+
+    .row input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: #10151d
+    }
+
+    .row input:hover {
+      background: #10151d
+    }
+
     .row input:-webkit-autofill,
     .row input:-webkit-autofill:hover,
     .row input:-webkit-autofill:focus,
-    .row input:-webkit-autofill:active{
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:var(--text);
-      transition:background-color 5000s ease-in-out 0s;
-      box-shadow:inset 0 0 20px 20px #10151d;
+    .row input:-webkit-autofill:active {
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: var(--text);
+      transition: background-color 5000s ease-in-out 0s;
+      box-shadow: inset 0 0 20px 20px #10151d;
     }
-    button{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#0d130f;font-weight:700; cursor:pointer}
-    button:hover{filter:brightness(1.06)}
-    button.secondary{background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-left:8px}
-    button.secondary:hover{background:rgba(255,255,255,0.05)}
-    button.btn-review-pending{background:#facc15; color:#0d130f}
-    button.btn-review-pending:hover{filter:brightness(1.1)}
-    .tabs{display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .tab{padding:10px 16px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
-    .tab.active{color:var(--accent); border-bottom-color:var(--accent)}
-    .tab:hover{color:var(--text)}
-    table{width:100%;border-collapse:collapse;margin-top:8px}
-    th,td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; vertical-align:middle}
-    th{color:var(--muted); font-weight:600; font-size:13px}
-    th:nth-child(5), td:nth-child(5){text-align:center; width:80px}
-    .status{color:var(--muted); margin-top:8px; min-height:1.2em;}
-    .status-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600}
-    .status-badge.pending{background:#4a4a4a; color:#fff}
-    .status-badge.active{background:#3d7bdc; color:#fff}
-    .status-badge.settled{background:#3ddc97; color:#0d130f}
-    .status-badge.declined{background:#ff6b6b; color:#fff}
-    .status-badge.cancelled{background:#6c757d; color:#fff}
-    .status-text{font-size:14px; font-weight:400}
-    .status-text.active{color:#22c55e}
-    .status-text.pending{color:#facc15}
-    .status-text.overdue{color:#f87171}
-    .status-text.settled{color:#9ca3af}
-    .status-text.cancelled{color:#9ca3af}
-    .status-text.declined{color:#f87171}
-    .status-indicator{width:22px;height:22px;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;margin:0 auto;cursor:help}
-    .status-indicator--active{background:#22c55e}
-    .status-indicator--pending{background:#facc15}
-    .status-indicator--settled{background:#9ca3af}
-    .status-indicator--overdue{background:#f87171}
-    .status-indicator--cancelled{background:#9ca3af}
-    .status-indicator--declined{background:#f87171}
-    .status-dot{display:inline-block; width:16px; height:16px; border-radius:9999px; cursor:help; position:relative}
-    .status-dot--active{background:#22c55e}
-    .status-dot--pending{background:#facc15}
-    .status-dot--settled{background:#9ca3af}
-    .status-dot--overdue{background:#f87171}
-    .status-dot--cancelled{background:#9ca3af}
-    .status-dot--declined{background:#f87171}
-    .status-dot-wrapper{display:inline-flex;align-items:center;justify-content:center;position:relative}
-    .status-dot-wrapper::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.2s ease;border:1px solid rgba(255,255,255,0.1);z-index:1000}
-    .status-dot-wrapper::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1f2937;opacity:0;pointer-events:none;transition:opacity 0.2s ease;z-index:1000}
-    .status-dot-wrapper:hover::after,.status-dot-wrapper:hover::before{opacity:1}
-    .actions-column{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; width:100%}
-    .actions-column button{flex:0 0 auto; padding:8px 12px; font-size:14px; white-space:nowrap; width:auto}
-    .btn-confirm-payment{background:#f97316; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px}
-    .btn-confirm-payment:hover{background:#ea580c}
-    .btn-payment-issue{background:#dc2626; color:#fff; border:0; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px}
-    .btn-payment-issue:hover{background:#b91c1c}
-    .messages-list{margin-top:12px; display:flex; flex-direction:column; gap:8px}
-    .message-item{padding:16px 18px; background:transparent; border-radius:12px; margin:0; font-size:14px; transition:background 0.16s ease, border-color 0.16s ease, transform 0.08s ease; border:1px solid rgba(255,255,255,0.06); cursor:pointer}
-    .message-item.message-clickable{cursor:pointer}
-    .message-item.message-clickable:hover{background:rgba(255,255,255,0.02); transform:translateY(-1px)}
-    .message-item.message-unread{font-weight:500; background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.3)}
-    .message-item.message-unread.message-clickable{cursor:pointer}
-    .message-item.message-unread.message-clickable:hover{background:rgba(61,220,151,0.08); border-color:rgba(61,220,151,0.35)}
-    .unread-indicator{color:var(--accent); font-size:16px; margin-left:8px; flex-shrink:0}
-    .message-subject{font-weight:600; margin-bottom:4px}
-    .message-date{color:var(--muted); font-size:12px}
-    .empty-state{text-align:center; color:var(--muted); padding:32px; font-size:14px}
+
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 0;
+      background: var(--accent);
+      color: #0d130f;
+      font-weight: 700;
+      cursor: pointer
+    }
+
+    button:hover {
+      filter: brightness(1.06)
+    }
+
+    button.secondary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text);
+      margin-left: 8px
+    }
+
+    button.secondary:hover {
+      background: rgba(255, 255, 255, 0.05)
+    }
+
+    button.btn-review-pending {
+      background: #facc15;
+      color: #0d130f
+    }
+
+    button.btn-review-pending:hover {
+      filter: brightness(1.1)
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .tab {
+      padding: 10px 16px;
+      cursor: pointer;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent)
+    }
+
+    .tab:hover {
+      color: var(--text)
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: left;
+      vertical-align: middle
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px
+    }
+
+    th:nth-child(5),
+    td:nth-child(5) {
+      text-align: center;
+      width: 80px
+    }
+
+    .status {
+      color: var(--muted);
+      margin-top: 8px;
+      min-height: 1.2em;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600
+    }
+
+    .status-badge.pending {
+      background: #4a4a4a;
+      color: #fff
+    }
+
+    .status-badge.active {
+      background: #3d7bdc;
+      color: #fff
+    }
+
+    .status-badge.settled {
+      background: #3ddc97;
+      color: #0d130f
+    }
+
+    .status-badge.declined {
+      background: #ff6b6b;
+      color: #fff
+    }
+
+    .status-badge.cancelled {
+      background: #6c757d;
+      color: #fff
+    }
+
+    .status-text {
+      font-size: 14px;
+      font-weight: 400
+    }
+
+    .status-text.active {
+      color: #22c55e
+    }
+
+    .status-text.pending {
+      color: #facc15
+    }
+
+    .status-text.overdue {
+      color: #f87171
+    }
+
+    .status-text.settled {
+      color: #9ca3af
+    }
+
+    .status-text.cancelled {
+      color: #9ca3af
+    }
+
+    .status-text.declined {
+      color: #f87171
+    }
+
+    .status-indicator {
+      width: 22px;
+      height: 22px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      cursor: help
+    }
+
+    .status-indicator--active {
+      background: #22c55e
+    }
+
+    .status-indicator--pending {
+      background: #facc15
+    }
+
+    .status-indicator--settled {
+      background: #9ca3af
+    }
+
+    .status-indicator--overdue {
+      background: #f87171
+    }
+
+    .status-indicator--cancelled {
+      background: #9ca3af
+    }
+
+    .status-indicator--declined {
+      background: #f87171
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 9999px;
+      cursor: help;
+      position: relative
+    }
+
+    .status-dot--active {
+      background: #22c55e
+    }
+
+    .status-dot--pending {
+      background: #facc15
+    }
+
+    .status-dot--settled {
+      background: #9ca3af
+    }
+
+    .status-dot--overdue {
+      background: #f87171
+    }
+
+    .status-dot--cancelled {
+      background: #9ca3af
+    }
+
+    .status-dot--declined {
+      background: #f87171
+    }
+
+    .status-dot-wrapper {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative
+    }
+
+    .status-dot-wrapper::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f2937;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 1000
+    }
+
+    .status-dot-wrapper::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 2px);
+      left: 50%;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: #1f2937;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1000
+    }
+
+    .status-dot-wrapper:hover::after,
+    .status-dot-wrapper:hover::before {
+      opacity: 1
+    }
+
+    .actions-column {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+      width: 100%
+    }
+
+    .actions-column button {
+      flex: 0 0 auto;
+      padding: 8px 12px;
+      font-size: 14px;
+      white-space: nowrap;
+      width: auto
+    }
+
+    .btn-confirm-payment {
+      background: #f97316;
+      color: #fff;
+      border: 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px
+    }
+
+    .btn-confirm-payment:hover {
+      background: #ea580c
+    }
+
+    .btn-payment-issue {
+      background: #dc2626;
+      color: #fff;
+      border: 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px
+    }
+
+    .btn-payment-issue:hover {
+      background: #b91c1c
+    }
+
+    .messages-list {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .message-item {
+      padding: 16px 18px;
+      background: transparent;
+      border-radius: 12px;
+      margin: 0;
+      font-size: 14px;
+      transition: background 0.16s ease, border-color 0.16s ease, transform 0.08s ease;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      cursor: pointer
+    }
+
+    .message-item.message-clickable {
+      cursor: pointer
+    }
+
+    .message-item.message-clickable:hover {
+      background: rgba(255, 255, 255, 0.02);
+      transform: translateY(-1px)
+    }
+
+    .message-item.message-unread {
+      font-weight: 500;
+      background: rgba(61, 220, 151, 0.05);
+      border: 1px solid rgba(61, 220, 151, 0.3)
+    }
+
+    .message-item.message-unread.message-clickable {
+      cursor: pointer
+    }
+
+    .message-item.message-unread.message-clickable:hover {
+      background: rgba(61, 220, 151, 0.08);
+      border-color: rgba(61, 220, 151, 0.35)
+    }
+
+    .unread-indicator {
+      color: var(--accent);
+      font-size: 16px;
+      margin-left: 8px;
+      flex-shrink: 0
+    }
+
+    .message-subject {
+      font-weight: 600;
+      margin-bottom: 4px
+    }
+
+    .message-date {
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 32px;
+      font-size: 14px
+    }
+
     /* Payment issue variant - orange theme for activity items */
-    .activity-item--issue,.message-item.activity-item--issue{background:var(--warning-bg) !important; border-color:var(--warning-border) !important}
-    .activity-item--issue .message-date,.message-item.activity-item--issue .message-date{color:var(--warning-ink)}
-    .activity-item--issue .unread-indicator,.message-item.activity-item--issue .unread-indicator{color:var(--warning) !important; text-shadow:0 0 8px rgba(249,115,22,.3)}
-    /* New Agreement wizard header */
-    .new-agreement-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px}
-    .new-agreement-title{font-size:28px; font-weight:700; margin:0}
-    .back-to-agreements-link{font-size:14px; color:#9da7b8; text-decoration:none; cursor:pointer; transition:color 0.15s ease}
-    .back-to-agreements-link:hover{color:#ffffff; text-decoration:underline}
-    @media (max-width:768px){
-      .new-agreement-header{flex-direction:column; align-items:flex-start; gap:4px}
-      .back-to-agreements-link{align-self:flex-start}
+    .activity-item--issue,
+    .message-item.activity-item--issue {
+      background: var(--warning-bg) !important;
+      border-color: var(--warning-border) !important
     }
+
+    .activity-item--issue .message-date,
+    .message-item.activity-item--issue .message-date {
+      color: var(--warning-ink)
+    }
+
+    .activity-item--issue .unread-indicator,
+    .message-item.activity-item--issue .unread-indicator {
+      color: var(--warning) !important;
+      text-shadow: 0 0 8px rgba(249, 115, 22, .3)
+    }
+
+    /* New Agreement wizard header */
+    .new-agreement-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px
+    }
+
+    .new-agreement-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0
+    }
+
+    .back-to-agreements-link {
+      font-size: 14px;
+      color: #9da7b8;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.15s ease
+    }
+
+    .back-to-agreements-link:hover {
+      color: #ffffff;
+      text-decoration: underline
+    }
+
+    @media (max-width:768px) {
+      .new-agreement-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px
+      }
+
+      .back-to-agreements-link {
+        align-self: flex-start
+      }
+    }
+
     /* Wizard steps navigation */
-    .wizard-steps{display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap}
-    .wizard-step{border-radius:999px; border:1px solid #2c333d; padding:8px 16px; background-color:#151a21; color:#9da7b8; font-size:14px; font-weight:500; cursor:pointer; transition:background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; white-space:nowrap}
-    .wizard-step:hover:not(.active){background-color:#1b222c; border-color:#3a4453; color:#e6eef6}
-    .wizard-step.active{background-color:var(--accent); border-color:var(--accent); color:#0e1116; font-weight:600}
-    .wizard-step.completed{color:#9da7b8}
-    .wizard-content{min-height:200px}
-    .wizard-footer{display:flex; justify-content:space-between; align-items:center; margin-top:24px; padding-top:0; gap:12px}
-    .wizard-footer button{flex:0 0 auto}
-    .wizard-footer .wizard-back{order:1}
-    .wizard-footer .wizard-next{order:2; margin-left:auto}
-    .hidden{display:none}
-    .role-badge{display:inline-block; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; background:#2a2a2a; color:#fff}
-    .role-badge.lend{background:#3d7bdc; color:#fff}
-    .role-badge.borrow{background:#e67e22; color:#fff}
-    .invite-url-box{background:#10151d; padding:12px; border-radius:8px; margin:16px 0; font-family:monospace; font-size:13px; word-break:break-all; border:1px solid rgba(255,255,255,0.08)}
-    .summary-row{display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .summary-row:last-child{border-bottom:none}
-    .summary-label{color:var(--muted)}
-    .summary-value{font-weight:600}
-    .modal-overlay{position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:1000}
-    .modal-card{background:var(--card); border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:24px; max-width:600px; width:90%; max-height:90vh; overflow-y:auto}
-    .modal-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .modal-title{margin:0; font-size:20px; font-weight:600}
-    .modal-close{background:transparent; border:0; color:var(--muted); font-size:24px; cursor:pointer; padding:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:6px}
-    .modal-close:hover{background:rgba(255,255,255,0.05); color:var(--text)}
-    .modal-body{margin-bottom:20px}
-    .modal-footer{display:flex; gap:12px; justify-content:flex-end; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08)}
-    .modal-info-row{display:flex; justify-content:space-between; padding:12px; background:#10151d; border-radius:8px; margin:8px 0}
-    .modal-info-label{color:var(--muted); font-size:14px}
-    .modal-info-value{font-weight:600; font-size:14px}
-    .modal-note{background:#10151d; padding:12px; border-radius:8px; margin:12px 0; font-size:14px; color:var(--text)}
-    .modal-helper-text{color:var(--muted); font-size:13px; margin-bottom:16px; line-height:1.5}
-    .actions-header-text{display:inline-block; text-align:right; width:100%}
-    .user-avatar{display:inline-flex; align-items:center; justify-content:center; border-radius:50%; overflow:hidden; flex-shrink:0; vertical-align:middle}
-    .user-avatar.size-small{width:36px; height:36px; min-width:36px; font-size:13px; font-weight:600; line-height:1; letter-spacing:-0.2px}
-    .user-avatar-image{width:100%; height:100%; object-fit:cover}
-    .user-avatar-initials{width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; text-transform:uppercase}
-    .user-avatar-initials.color-1{background:#6366f1}
-    .user-avatar-initials.color-2{background:#8b5cf6}
-    .user-avatar-initials.color-3{background:#ec4899}
-    .user-avatar-initials.color-4{background:#f59e0b}
-    .user-avatar-initials.color-5{background:#10b981}
-    .user-avatar-initials.color-6{background:#3b82f6}
-    .user-avatar-initials.color-7{background:#14b8a6}
-    .counterparty-cell{display:flex; align-items:center; gap:10px}
-    .due-date-overdue{color:#f87171}
-    .due-date-upcoming{color:var(--muted)}
-    .due-date-settled{color:#9ca3af}
-    .toggle-switch{position:relative;display:inline-block;width:48px;height:24px}
-    .toggle-switch input{opacity:0;width:0;height:0}
-    .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#4a4a4a;transition:0.3s;border-radius:24px}
-    .toggle-slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:white;transition:0.3s;border-radius:50%}
-    .toggle-switch input:checked + .toggle-slider{background-color:var(--accent)}
-    .toggle-switch input:checked + .toggle-slider:before{transform:translateX(24px)}
-    .toggle-switch input:disabled + .toggle-slider{opacity:0.5;cursor:not-allowed}
-    .reminder-option-active{background:rgba(61,220,151,0.05) !important;border:1px solid rgba(61,220,151,0.15) !important;border-radius:12px !important}
-    .payment-method-card.selected{border-color:var(--accent) !important;background:rgba(61,220,151,0.08) !important}
-    .payment-method-card.disabled{opacity:0.4;cursor:not-allowed !important;pointer-events:none}
+    .wizard-steps {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      flex-wrap: wrap
+    }
+
+    .wizard-step {
+      border-radius: 999px;
+      border: 1px solid #2c333d;
+      padding: 8px 16px;
+      background-color: #151a21;
+      color: #9da7b8;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap
+    }
+
+    .wizard-step:hover:not(.active) {
+      background-color: #1b222c;
+      border-color: #3a4453;
+      color: #e6eef6
+    }
+
+    .wizard-step.active {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      color: #0e1116;
+      font-weight: 600
+    }
+
+    .wizard-step.completed {
+      color: #9da7b8
+    }
+
+    .wizard-content {
+      min-height: 200px
+    }
+
+    .wizard-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 24px;
+      padding-top: 0;
+      gap: 12px
+    }
+
+    .wizard-footer button {
+      flex: 0 0 auto
+    }
+
+    .wizard-footer .wizard-back {
+      order: 1
+    }
+
+    .wizard-footer .wizard-next {
+      order: 2;
+      margin-left: auto
+    }
+
+    .hidden {
+      display: none
+    }
+
+    .role-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #2a2a2a;
+      color: #fff
+    }
+
+    .role-badge.lend {
+      background: #3d7bdc;
+      color: #fff
+    }
+
+    .role-badge.borrow {
+      background: #e67e22;
+      color: #fff
+    }
+
+    .invite-url-box {
+      background: #10151d;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 16px 0;
+      font-family: monospace;
+      font-size: 13px;
+      word-break: break-all;
+      border: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .summary-row:last-child {
+      border-bottom: none
+    }
+
+    .summary-label {
+      color: var(--muted)
+    }
+
+    .summary-value {
+      font-weight: 600
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000
+    }
+
+    .modal-card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600
+    }
+
+    .modal-close {
+      background: transparent;
+      border: 0;
+      color: var(--muted);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text)
+    }
+
+    .modal-body {
+      margin-bottom: 20px
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .modal-info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px;
+      background: #10151d;
+      border-radius: 8px;
+      margin: 8px 0
+    }
+
+    .modal-info-label {
+      color: var(--muted);
+      font-size: 14px
+    }
+
+    .modal-info-value {
+      font-weight: 600;
+      font-size: 14px
+    }
+
+    .modal-note {
+      background: #10151d;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 12px 0;
+      font-size: 14px;
+      color: var(--text)
+    }
+
+    .modal-helper-text {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 16px;
+      line-height: 1.5
+    }
+
+    .actions-header-text {
+      display: inline-block;
+      text-align: right;
+      width: 100%
+    }
+
+    .user-avatar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      vertical-align: middle
+    }
+
+    .user-avatar.size-small {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: -0.2px
+    }
+
+    .user-avatar-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover
+    }
+
+    .user-avatar-initials {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 600;
+      text-transform: uppercase
+    }
+
+    .user-avatar-initials.color-1 {
+      background: #6366f1
+    }
+
+    .user-avatar-initials.color-2 {
+      background: #8b5cf6
+    }
+
+    .user-avatar-initials.color-3 {
+      background: #ec4899
+    }
+
+    .user-avatar-initials.color-4 {
+      background: #f59e0b
+    }
+
+    .user-avatar-initials.color-5 {
+      background: #10b981
+    }
+
+    .user-avatar-initials.color-6 {
+      background: #3b82f6
+    }
+
+    .user-avatar-initials.color-7 {
+      background: #14b8a6
+    }
+
+    .counterparty-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .due-date-overdue {
+      color: #f87171
+    }
+
+    .due-date-upcoming {
+      color: var(--muted)
+    }
+
+    .due-date-settled {
+      color: #9ca3af
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 24px
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #4a4a4a;
+      transition: 0.3s;
+      border-radius: 24px
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%
+    }
+
+    .toggle-switch input:checked+.toggle-slider {
+      background-color: var(--accent)
+    }
+
+    .toggle-switch input:checked+.toggle-slider:before {
+      transform: translateX(24px)
+    }
+
+    .toggle-switch input:disabled+.toggle-slider {
+      opacity: 0.5;
+      cursor: not-allowed
+    }
+
+    .reminder-option-active {
+      background: rgba(61, 220, 151, 0.05) !important;
+      border: 1px solid rgba(61, 220, 151, 0.15) !important;
+      border-radius: 12px !important
+    }
+
+    .payment-method-card.selected {
+      border-color: var(--accent) !important;
+      background: rgba(61, 220, 151, 0.08) !important
+    }
+
+    .payment-method-card.disabled {
+      opacity: 0.4;
+      cursor: not-allowed !important;
+      pointer-events: none
+    }
 
     /* Custom Phone Input Widget */
-    .phone-input-wrapper{position:relative}
-    .phone-input-row{display:flex;gap:8px;align-items:stretch;position:relative}
+    .phone-input-wrapper {
+      position: relative
+    }
+
+    .phone-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+      position: relative
+    }
 
     /* Country button */
-    .phone-country-button{
-      display:flex;align-items:center;gap:8px;
-      padding:0 12px;
-      background:#10151d;
-      border:1px solid rgba(255,255,255,0.12);
-      border-radius:10px;
-      color:var(--text);
-      font-size:15px;
-      cursor:pointer;
-      transition:all 0.2s;
-      white-space:nowrap;
-      min-width:180px;
+    .phone-country-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      background: #10151d;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      min-width: 180px;
     }
+
     .phone-country-button:hover,
-    .phone-country-button:focus{
-      border-color:rgba(61,220,151,0.4);
-      outline:none;
+    .phone-country-button:focus {
+      border-color: rgba(61, 220, 151, 0.4);
+      outline: none;
     }
-    .phone-country-flag{font-size:18px}
-    .phone-country-name{flex:1}
-    .phone-caret{font-size:10px;color:var(--muted)}
+
+    .phone-country-flag {
+      font-size: 18px
+    }
+
+    .phone-country-name {
+      flex: 1
+    }
+
+    .phone-caret {
+      font-size: 10px;
+      color: var(--muted)
+    }
 
     /* Prefix input - editable country code field */
-    .phone-prefix-input{
-      width:65px;
-      min-width:65px;
-      max-width:65px;
-      flex-shrink:0;
-      padding:12px 8px;
-      background:#10151d;
-      border:1px solid rgba(255,255,255,0.12);
-      border-radius:10px;
-      color:var(--text);
-      font-size:15px;
-      text-align:center;
-      font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+    .phone-prefix-input {
+      width: 65px;
+      min-width: 65px;
+      max-width: 65px;
+      flex-shrink: 0;
+      padding: 12px 8px;
+      background: #10151d;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+      text-align: center;
+      font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
     }
-    .phone-prefix-input:focus{
-      outline:none;
-      border-color:var(--accent);
+
+    .phone-prefix-input:focus {
+      outline: none;
+      border-color: var(--accent);
     }
 
     /* Local number input */
-    .phone-number-input{
-      flex:1;
-      padding:12px;
-      background:#10151d;
-      border:1px solid rgba(255,255,255,0.12);
-      border-radius:10px;
-      color:var(--text);
-      font-size:15px;
-      font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+    .phone-number-input {
+      flex: 1;
+      padding: 12px;
+      background: #10151d;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
     }
-    .phone-number-input:focus{
-      outline:none;
-      border-color:rgba(61,220,151,0.4);
-      background:#10151d;
+
+    .phone-number-input:focus {
+      outline: none;
+      border-color: rgba(61, 220, 151, 0.4);
+      background: #10151d;
     }
-    .phone-number-input:hover{background:#10151d}
+
+    .phone-number-input:hover {
+      background: #10151d
+    }
+
     .phone-number-input:-webkit-autofill,
     .phone-number-input:-webkit-autofill:hover,
     .phone-number-input:-webkit-autofill:focus,
-    .phone-number-input:-webkit-autofill:active{
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:var(--text);
-      transition:background-color 5000s ease-in-out 0s;
-      box-shadow:inset 0 0 20px 20px #10151d;
+    .phone-number-input:-webkit-autofill:active {
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: var(--text);
+      transition: background-color 5000s ease-in-out 0s;
+      box-shadow: inset 0 0 20px 20px #10151d;
     }
-    .phone-number-input.phone-input-invalid{
-      border-color:#ff6b6b;
+
+    .phone-number-input.phone-input-invalid {
+      border-color: #ff6b6b;
     }
 
     /* Hidden full number field */
-    .phone-number-full{display:none}
+    .phone-number-full {
+      display: none
+    }
 
     /* Dropdown */
-    .phone-dropdown{
-      display:none;
-      position:absolute;
-      top:100%;
-      left:0;
-      right:0;
-      margin-top:4px;
-      background:#151a21;
-      border:1px solid rgba(255,255,255,0.15);
-      border-radius:10px;
-      box-shadow:0 4px 16px rgba(0,0,0,0.4);
-      z-index:1000;
-      max-height:320px;
-      overflow:hidden;
+    .phone-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 4px;
+      background: #151a21;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      max-height: 320px;
+      overflow: hidden;
     }
 
     /* Dropdown search */
-    .phone-dropdown-search{
-      width:calc(100% - 24px);
-      margin:12px;
-      padding:10px 12px;
-      background:#10151d;
-      border:1px solid rgba(255,255,255,0.12);
-      border-radius:8px;
-      color:var(--text);
-      font-size:15px;
-      font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+    .phone-dropdown-search {
+      width: calc(100% - 24px);
+      margin: 12px;
+      padding: 10px 12px;
+      background: #10151d;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
     }
-    .phone-dropdown-search:focus{
-      outline:none;
-      border-color:rgba(61,220,151,0.4);
-      background:#10151d;
+
+    .phone-dropdown-search:focus {
+      outline: none;
+      border-color: rgba(61, 220, 151, 0.4);
+      background: #10151d;
     }
-    .phone-dropdown-search:hover{background:#10151d}
+
+    .phone-dropdown-search:hover {
+      background: #10151d
+    }
+
     .phone-dropdown-search:-webkit-autofill,
     .phone-dropdown-search:-webkit-autofill:hover,
     .phone-dropdown-search:-webkit-autofill:focus,
-    .phone-dropdown-search:-webkit-autofill:active{
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:var(--text);
-      transition:background-color 5000s ease-in-out 0s;
-      box-shadow:inset 0 0 20px 20px #10151d;
+    .phone-dropdown-search:-webkit-autofill:active {
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: var(--text);
+      transition: background-color 5000s ease-in-out 0s;
+      box-shadow: inset 0 0 20px 20px #10151d;
     }
-    .phone-dropdown-search::placeholder{
-      color:var(--muted);
+
+    .phone-dropdown-search::placeholder {
+      color: var(--muted);
     }
 
     /* Country list */
-    .phone-country-list{
-      max-height:220px;
-      overflow-y:auto;
-      padding:4px 0;
+    .phone-country-list {
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 4px 0;
     }
-    .phone-country-list::-webkit-scrollbar{width:6px}
-    .phone-country-list::-webkit-scrollbar-thumb{background-color:#333;border-radius:4px}
+
+    .phone-country-list::-webkit-scrollbar {
+      width: 6px
+    }
+
+    .phone-country-list::-webkit-scrollbar-thumb {
+      background-color: #333;
+      border-radius: 4px
+    }
 
     /* Country item */
-    .phone-country-item{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding:10px 16px;
-      cursor:pointer;
-      transition:all 0.15s;
-      border-left:3px solid transparent;
+    .phone-country-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
     }
-    .phone-country-item:hover{
-      background:rgba(61,220,151,0.08);
-      border-left-color:var(--accent);
+
+    .phone-country-item:hover {
+      background: rgba(61, 220, 151, 0.08);
+      border-left-color: var(--accent);
     }
-    .phone-country-item .phone-country-flag{font-size:18px}
-    .phone-country-item .phone-country-name{flex:1;color:var(--text);font-size:14px}
-    .phone-country-item .phone-country-dial{color:var(--muted);font-size:14px}
+
+    .phone-country-item .phone-country-flag {
+      font-size: 18px
+    }
+
+    .phone-country-item .phone-country-name {
+      flex: 1;
+      color: var(--text);
+      font-size: 14px
+    }
+
+    .phone-country-item .phone-country-dial {
+      color: var(--muted);
+      font-size: 14px
+    }
 
     /* Phone error message */
-    .phone-error{color:#ff6b6b;font-size:13px;margin-top:4px;display:none}
-    /* Phone hint for friendly feedback while typing */
-    .phone-hint{color:var(--muted);font-size:13px;margin-top:4px}
-    .phone-hint.valid{color:var(--accent)}
-    /* Phone validation icon (checkmark inside input) */
-    .phone-valid-icon{
-      position:absolute;
-      right:12px;
-      top:50%;
-      transform:translateY(-50%);
-      color:var(--accent);
-      font-size:18px;
-      display:none;
-      pointer-events:none;
+    .phone-error {
+      color: #ff6b6b;
+      font-size: 13px;
+      margin-top: 4px;
+      display: none
     }
-    .phone-valid-icon.show{display:block}
+
+    /* Phone hint for friendly feedback while typing */
+    .phone-hint {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px
+    }
+
+    .phone-hint.valid {
+      color: var(--accent)
+    }
+
+    /* Phone validation icon (checkmark inside input) */
+    .phone-valid-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      font-size: 18px;
+      display: none;
+      pointer-events: none;
+    }
+
+    .phone-valid-icon.show {
+      display: block
+    }
 
     /* Summary grid layout for Step 4 - COMPACT STYLING TO MATCH STEP 2 */
-    .summary-grid{
-      display:flex;
-      flex-direction:column;
-      gap:0;
+    .summary-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
-    .summary-grid-row{
-      display:grid;
-      grid-template-columns:1fr 2fr;
-      gap:12px;
-      padding:10px 0;
-      align-items:center;
+
+    .summary-grid-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 12px;
+      padding: 10px 0;
+      align-items: center;
     }
-    .summary-grid-row:not(:last-child){
-      border-bottom:1px solid rgba(255,255,255,0.05);
+
+    .summary-grid-row:not(:last-child) {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
-    .summary-grid-row.items-start{
-      align-items:start;
+
+    .summary-grid-row.items-start {
+      align-items: start;
     }
-    .summary-grid-label{
-      font-size:14px;
-      font-weight:500;
-      color:#9ca3af;
-      line-height:1.4;
+
+    .summary-grid-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #9ca3af;
+      line-height: 1.4;
     }
-    .summary-grid-value{
-      font-size:14px;
-      font-weight:500;
-      color:#e5e7eb;
-      line-height:1.4;
-      width:100%;
+
+    .summary-grid-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: #e5e7eb;
+      line-height: 1.4;
+      width: 100%;
     }
+
     @media (max-width: 768px) {
-      .summary-grid-row{
-        grid-template-columns:1fr;
-        gap:4px;
-        padding:12px 0;
+      .summary-grid-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        padding: 12px 0;
       }
     }
 
@@ -435,21 +1330,25 @@
       max-width: 1200px;
       margin: 0 auto;
     }
+
     #wizard-step-4 h4 {
       font-size: 16px;
       font-weight: 600;
       margin: 0 0 12px 0;
       color: var(--text);
     }
+
     /* Step 4 toggle buttons should be full-width, but not footer buttons */
     #wizard-step-4 .secondary {
       padding: 12px 16px;
     }
+
     #wizard-step-4 .secondary:not(.wizard-footer .secondary) {
       margin: 0;
       width: 100%;
     }
-    #wizard-step-4 > div[style*="margin:16px 0"] {
+
+    #wizard-step-4>div[style*="margin:16px 0"] {
       margin: 16px 0 !important;
     }
 
@@ -950,9 +1849,6 @@
       font-style: italic;
     }
 
-    .dashboard-hero-zero {
-      /* Same as dashboard-hero but with specific class for zero state */
-    }
 
     @media (max-width: 768px) {
       .dashboard-status-row {
@@ -1440,8 +2336,8 @@
       border-radius: 16px;
       padding: 18px 24px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4),
-                  0 0 0 1px rgba(61, 220, 151, 0.1),
-                  0 0 20px rgba(61, 220, 151, 0.15);
+        0 0 0 1px rgba(61, 220, 151, 0.1),
+        0 0 20px rgba(61, 220, 151, 0.15);
       z-index: 5;
     }
 
@@ -1582,6 +2478,7 @@
     }
   </style>
 </head>
+
 <body>
   <main class="container">
     <!-- Header will be loaded dynamically by header.js -->
@@ -1590,7 +2487,8 @@
     <section class="card" id="activity-section" style="display:none">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
         <h2 style="margin:0">Activity</h2>
-        <button id="mark-all-read-btn" onclick="markAllAsRead()" style="padding:6px 12px; font-size:13px">Mark all as read</button>
+        <button id="mark-all-read-btn" onclick="markAllAsRead()" style="padding:6px 12px; font-size:13px">Mark all as
+          read</button>
       </div>
       <p id="activity-timezone-note" style="font-size:13px; color:var(--muted); margin:0 0 16px 0">
         Times in this history are shown in your local timezone.
@@ -1605,7 +2503,8 @@
       <!-- Speech Balloon (onboarding task) -->
       <div class="speech-balloon" id="welcome-speech-balloon" style="display:none">
         <p class="speech-balloon-text">
-          <a href="#" onclick="navigateToProfile(event)">Please add a profile photo to make sending requests to friends more personal.</a>
+          <a href="#" onclick="navigateToProfile(event)">Please add a profile photo to make sending requests to friends
+            more personal.</a>
         </p>
       </div>
 
@@ -1614,11 +2513,13 @@
           <h1 class="dashboard-hero__title" id="welcome-heading-zero">Welcome</h1>
 
           <p class="dashboard-hero__lead">
-            PayFriends keeps money and friendships in balance. Create simple agreements with friends, let us handle the reminders, and always know exactly where you stand.
+            PayFriends keeps money and friendships in balance. Create simple agreements with friends, let us handle the
+            reminders, and always know exactly where you stand.
           </p>
 
           <p class="dashboard-hero__text">
-            Start by creating your first agreement. You can lend money to a friend or set up a plan to repay someone else. We will take care of the plan, the schedule and the follow up.
+            Start by creating your first agreement. You can lend money to a friend or set up a plan to repay someone
+            else. We will take care of the plan, the schedule and the follow up.
           </p>
 
           <p class="dashboard-hero__features-link">
@@ -1645,7 +2546,8 @@
       <!-- Greeting and intro -->
       <div class="dashboard-header">
         <h1 id="dashboard-greeting" style="font-size:32px; margin-bottom:12px">Hi, welcome to your dashboard.</h1>
-        <p class="dashboard-intro" style="font-size:17px; line-height:1.6; margin-bottom:16px">Money between friends can get messy. We keep it smooth, simple, and drama-free.</p>
+        <p class="dashboard-intro" style="font-size:17px; line-height:1.6; margin-bottom:16px">Money between friends can
+          get messy. We keep it smooth, simple, and drama-free.</p>
         <p class="dashboard-intro-link" style="margin-top:24px">
           <a href="/features" style="font-size:16px">See how PayFriends works →</a>
         </p>
@@ -1681,6 +2583,11 @@
 
       <!-- Action buttons -->
       <div class="dashboard-actions">
+        <button id="report-payment-btn" class="secondary" onclick="handleReportPaymentClick()"
+          style="display:none; align-items:center; gap:8px; padding:12px 20px">
+          <span>📝</span>
+          <span>Report a payment</span>
+        </button>
         <button onclick="toggleNewAgreement()" style="display:flex; align-items:center; gap:8px; padding:12px 20px">
           <span style="font-size:18px; font-weight:bold">+</span>
           <span>New Loan Agreement</span>
@@ -1704,374 +2611,456 @@
 
       <!-- Wizard step navigation -->
       <nav class="wizard-steps" role="navigation" aria-label="Agreement wizard steps">
-        <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics</div>
+        <div class="wizard-step" id="step-indicator-1" onclick="clickStep(1)" aria-label="Step 1, Basics">1. Basics
+        </div>
         <div class="wizard-step" id="step-indicator-2" onclick="clickStep(2)" aria-label="Step 2, Terms">2. Terms</div>
-        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Payments">3. Payments</div>
-        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Summary">4. Summary</div>
+        <div class="wizard-step" id="step-indicator-3" onclick="clickStep(3)" aria-label="Step 3, Payments">3. Payments
+        </div>
+        <div class="wizard-step" id="step-indicator-4" onclick="clickStep(4)" aria-label="Step 4, Summary">4. Summary
+        </div>
         <div class="wizard-step" id="step-indicator-5" onclick="clickStep(5)" aria-label="Step 5, Share">5. Share</div>
       </nav>
 
       <!-- Wizard steps container -->
       <div class="wizard-steps-container">
         <!-- Step 1: Setup -->
-      <div id="wizard-step-1" class="wizard-content">
-        <div id="readonly-banner-1" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
-          ⚠️ This agreement has already been sent to <span id="readonly-name-1"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
-        </div>
-        <h3 style="margin-top:0">Let's set up your agreement.</h3>
-        <p style="color:var(--muted); font-size:14px; margin:-6px 0 20px 0">Start by choosing what you want to do.</p>
-
-        <!-- Role selector cards -->
-        <div style="margin:16px 0 24px 0">
-          <label style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:16px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:12px; transition:all 0.2s" onclick="selectRoleCard('lend')" id="role-card-lend">
-            <input type="radio" name="role" value="lend" onchange="toggleBorrowerFields()" style="width:20px; height:20px" />
-            <div style="flex:1">
-              <div style="font-weight:600; font-size:15px">I want to lend money</div>
-            </div>
-          </label>
-          <label style="display:flex; align-items:center; gap:12px; padding:16px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); opacity:0.4; cursor:not-allowed">
-            <input type="radio" name="role" value="borrow" disabled style="width:20px; height:20px" />
-            <div style="flex:1">
-              <div style="font-weight:600; font-size:15px">Borrow coming soon</div>
-              <div style="color:var(--muted); font-size:13px">(greyed out)</div>
-            </div>
-          </label>
-        </div>
-
-        <div id="borrower-fields" class="hidden" style="transition:all 0.3s ease">
-          <div class="row">
-            <label>Borrower name</label>
-            <input id="friend-first-name" placeholder="Alex" required oninput="autoCapitalizeName()" />
+        <div id="wizard-step-1" class="wizard-content">
+          <div id="readonly-banner-1" class="hidden"
+            style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
+            ⚠️ This agreement has already been sent to <span id="readonly-name-1"></span> and can't be edited. To change
+            details, cancel it from your dashboard and create a new one.
           </div>
-          <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">Full name or first name.</p>
+          <h3 style="margin-top:0">Let's set up your agreement.</h3>
+          <p style="color:var(--muted); font-size:14px; margin:-6px 0 20px 0">Start by choosing what you want to do.</p>
 
-          <div class="row">
-            <label>Borrower email</label>
-            <input id="friend-email" type="email" placeholder="alex@example.com" required />
-          </div>
-          <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">To this email address we will send the link to review the agreement.</p>
-
-          <div class="row">
-            <label>Borrower phone</label>
-            <div class="phone-input-wrapper" data-phone-id="agreement-phone">
-              <div class="phone-input-row">
-                <button type="button" class="phone-country-button"></button>
-                <input type="text" class="phone-prefix-input" />
-                <input type="tel" class="phone-number-input" placeholder="612345678" />
-                <input type="hidden" id="agreement-phone" name="agreement-phone" class="phone-number-full" />
-                <span id="agreement-phone-valid-icon" class="phone-valid-icon">✓</span>
+          <!-- Role selector cards -->
+          <div style="margin:16px 0 24px 0">
+            <label
+              style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:16px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:12px; transition:all 0.2s"
+              onclick="selectRoleCard('lend')" id="role-card-lend">
+              <input type="radio" name="role" value="lend" onchange="toggleBorrowerFields()"
+                style="width:20px; height:20px" />
+              <div style="flex:1">
+                <div style="font-weight:600; font-size:15px">I want to lend money</div>
               </div>
-              <div class="phone-dropdown">
-                <input type="text" class="phone-dropdown-search" placeholder="Search country or code…" />
-                <div class="phone-country-list"></div>
+            </label>
+            <label
+              style="display:flex; align-items:center; gap:12px; padding:16px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); opacity:0.4; cursor:not-allowed">
+              <input type="radio" name="role" value="borrow" disabled style="width:20px; height:20px" />
+              <div style="flex:1">
+                <div style="font-weight:600; font-size:15px">Borrow coming soon</div>
+                <div style="color:var(--muted); font-size:13px">(greyed out)</div>
               </div>
-            </div>
-            <div id="agreement-phone-hint" class="phone-hint"></div>
-            <div id="agreement-phone-error" class="phone-error">Please enter a valid phone number.</div>
-          </div>
-          <p style="color:rgba(255,255,255,0.5); font-size:13px; margin:-6px 0 12px 172px">Borrower's phone number is required to send reminders.</p>
-
-          <div class="row">
-            <label>Loan description</label>
-            <input id="description" type="text" placeholder="e.g. Money for rent, Car repair, Holiday loan" required maxlength="30" oninput="autoCapitalizeDescription()" />
-          </div>
-          <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to identify this agreement.</p>
-        </div>
-
-        <!-- Wizard navigation footer -->
-        <div class="wizard-footer">
-          <button class="wizard-next" onclick="goToTerms()">Continue to Terms</button>
-        </div>
-        <p id="step1-status" class="status"></p>
-      </div>
-
-      <!-- Step 2: Loan Calculator -->
-      <div id="wizard-step-2" class="wizard-content hidden">
-        <div id="readonly-banner-2" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
-          ⚠️ This agreement has already been sent to <span id="readonly-name-2"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
-        </div>
-        <h3 style="margin-top:0">Configure loan terms and repayment schedule.</h3>
-
-        <!-- Calculator will be loaded here -->
-        <div id="wizard-calculator-container"></div>
-
-        <!-- Wizard navigation footer -->
-        <div class="wizard-footer">
-          <button class="secondary wizard-back" onclick="goToStep(1)">Back</button>
-          <button class="wizard-next" onclick="saveCalculatorAndContinue()">Continue to Payments</button>
-        </div>
-        <p id="step2-status" class="status"></p>
-      </div>
-
-      <!-- Step 3: Payments & Reminders -->
-      <div id="wizard-step-3" class="wizard-content hidden">
-        <div id="readonly-banner-3" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
-          ⚠️ This agreement has already been sent to <span id="readonly-name-3"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
-        </div>
-        <h3 style="margin-top:0">Decide how repayments will be made and managed.</h3>
-
-        <!-- Payment methods -->
-        <div style="margin:24px 0">
-          <h4 style="margin:0 0 12px 0; font-size:16px">Payment methods</h4>
-          <p style="color:var(--muted); font-size:13px; margin-bottom:12px">Select all that apply:</p>
-
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
-            <label class="payment-method-card" data-value="bank" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
-              <input type="checkbox" class="payment-method-checkbox" value="bank" style="display:none" />
-              <span style="font-size:14px; font-weight:500">Bank transfer</span>
-            </label>
-            <label class="payment-method-card" data-value="paypal" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
-              <input type="checkbox" class="payment-method-checkbox" value="paypal" style="display:none" />
-              <span style="font-size:14px; font-weight:500">PayPal</span>
-            </label>
-            <label class="payment-method-card" data-value="crypto" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
-              <input type="checkbox" class="payment-method-checkbox" value="crypto" style="display:none" />
-              <span style="font-size:14px; font-weight:500">Crypto</span>
-            </label>
-            <label class="payment-method-card" data-value="cash" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
-              <input type="checkbox" class="payment-method-checkbox" value="cash" style="display:none" />
-              <span style="font-size:14px; font-weight:500">Cash</span>
-            </label>
-            <label class="payment-method-card" data-value="other" style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
-              <input type="checkbox" class="payment-method-checkbox" value="other" style="display:none" />
-              <span style="font-size:14px; font-weight:500">Other</span>
             </label>
           </div>
 
-          <!-- Payment method detail fields (shown below the grid when selected) -->
-          <div id="payment-method-details" style="margin-top:16px">
-            <!-- Bank transfer details -->
-            <div id="bank-details" class="payment-detail-section hidden" style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
-              <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">Bank transfer instructions *</label>
-              <textarea id="bank-instructions" placeholder="Enter all information needed to receive a bank transfer, including the account holder name.&#10;&#10;Examples: IBAN, account number, routing number, sort code, BSB, SWIFT, or any regional format." style="width:100%; min-height:120px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:inherit; resize:vertical"></textarea>
-              <p style="color:var(--muted); font-size:12px; margin:6px 0 0 0">Enter all information needed to receive a bank transfer, including the account holder name. Examples: IBAN, account number, routing number, sort code, BSB, SWIFT, or any regional format.</p>
+          <div id="borrower-fields" class="hidden" style="transition:all 0.3s ease">
+            <div class="row">
+              <label>Borrower name</label>
+              <input id="friend-first-name" placeholder="Alex" required oninput="autoCapitalizeName()" />
             </div>
+            <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">Full name or first name.</p>
 
-            <!-- PayPal details -->
-            <div id="paypal-details" class="payment-detail-section hidden" style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
-              <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">PayPal email *</label>
-              <input id="paypal-email" type="email" placeholder="your.email@example.com" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
+            <div class="row">
+              <label>Borrower email</label>
+              <input id="friend-email" type="email" placeholder="alex@example.com" required />
             </div>
+            <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">To this email address we will send
+              the link to review the agreement.</p>
 
-            <!-- Crypto details -->
-            <div id="crypto-details" class="payment-detail-section hidden" style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
-              <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">Crypto payment instructions *</label>
-              <textarea id="crypto-instructions" placeholder="Include wallet address and the network.&#10;&#10;Example: 0xABC123… (ETH on ERC-20)" style="width:100%; min-height:100px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:inherit; resize:vertical"></textarea>
-              <p style="color:var(--muted); font-size:12px; margin:6px 0 0 0">Include wallet address and the network. Example: 0xABC123… (ETH on ERC-20).</p>
-            </div>
-
-            <!-- Cash - no fields needed -->
-
-            <!-- Other method details -->
-            <div id="other-details" class="payment-detail-section hidden" style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
-              <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">Description *</label>
-              <input id="other-payment-description" type="text" placeholder="Describe the other payment method" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Require proof of repayment -->
-        <div id="proof-required-section" style="margin:24px 0 48px 0">
-          <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
-            <label class="toggle-switch">
-              <input type="checkbox" id="proof-required" checked />
-              <span class="toggle-slider"></span>
-            </label>
-            <h4 style="margin:0; font-size:16px">Require proof of repayment</h4>
-          </div>
-          <p style="color:var(--muted); font-size:13px; margin:0; line-height:1.5">The borrower will be asked to upload proof for each repayment, such as a photo, screenshot or PDF of the transfer or receipt.</p>
-        </div>
-
-        <!-- Reminders -->
-        <div style="margin:24px 0">
-          <h4 style="margin:0 0 8px 0; font-size:16px">Reminders</h4>
-          <p style="color:var(--muted); font-size:13px; margin-bottom:12px">We only send reminders if no payment has been reported for that installment.</p>
-
-          <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer; padding:16px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:12px; transition:all 0.2s" id="reminder-auto-card">
-            <input type="radio" name="reminder-mode" value="auto" onchange="toggleReminderMode()" checked style="margin-top:2px" />
-            <div style="flex:1">
-              <div style="font-weight:600; margin-bottom:6px">Auto (recommended)</div>
-              <div style="color:var(--muted); font-size:13px; line-height:1.5">We'll remind the borrower 7 days before, 1 day before and on the due date. If no payment is reported, we'll send follow-up reminders 1 day after, then every 3 days.</div>
-            </div>
-          </label>
-          <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer; padding:16px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); transition:all 0.2s" id="reminder-custom-card">
-            <input type="radio" name="reminder-mode" value="custom" onchange="toggleReminderMode()" style="margin-top:2px" />
-            <div style="flex:1">
-              <div style="font-weight:600; margin-bottom:6px">Custom schedule</div>
-              <div id="custom-reminders" class="hidden" style="margin-top:12px">
-                <div style="color:var(--muted); font-size:13px; margin-bottom:10px">Select when to send reminders:</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
-                  <label style="display:flex; align-items:center; gap:6px; font-size:13px">
-                    <input type="checkbox" value="-14" class="custom-reminder-checkbox" /> 14 days before
-                  </label>
-                  <label style="display:flex; align-items:center; gap:6px; font-size:13px">
-                    <input type="checkbox" value="-7" class="custom-reminder-checkbox" /> 7 days before
-                  </label>
-                  <label style="display:flex; align-items:center; gap:6px; font-size:13px">
-                    <input type="checkbox" value="-3" class="custom-reminder-checkbox" /> 3 days before
-                  </label>
-                  <label style="display:flex; align-items:center; gap:6px; font-size:13px">
-                    <input type="checkbox" value="-1" class="custom-reminder-checkbox" /> 1 day before
-                  </label>
-                  <label style="display:flex; align-items:center; gap:6px; font-size:13px">
-                    <input type="checkbox" value="0" class="custom-reminder-checkbox" /> On the due date
-                  </label>
-                  <label style="display:flex; align-items:center; gap:6px; font-size:13px">
-                    <input type="checkbox" value="1" class="custom-reminder-checkbox" /> 1 day after
-                  </label>
-                  <label style="display:flex; align-items:center; gap:6px; font-size:13px">
-                    <input type="checkbox" value="3" class="custom-reminder-checkbox" /> Every 3 days after
-                  </label>
-                  <label style="display:flex; align-items:center; gap:6px; font-size:13px">
-                    <input type="checkbox" value="7" class="custom-reminder-checkbox" /> Every 7 days after
-                  </label>
+            <div class="row">
+              <label>Borrower phone</label>
+              <div class="phone-input-wrapper" data-phone-id="agreement-phone">
+                <div class="phone-input-row">
+                  <button type="button" class="phone-country-button"></button>
+                  <input type="text" class="phone-prefix-input" />
+                  <input type="tel" class="phone-number-input" placeholder="612345678" />
+                  <input type="hidden" id="agreement-phone" name="agreement-phone" class="phone-number-full" />
+                  <span id="agreement-phone-valid-icon" class="phone-valid-icon">✓</span>
                 </div>
-                <p id="custom-reminder-error" style="color:#ff6b6b; font-size:12px; margin-top:8px; display:none">Please select at least one reminder</p>
+                <div class="phone-dropdown">
+                  <input type="text" class="phone-dropdown-search" placeholder="Search country or code…" />
+                  <div class="phone-country-list"></div>
+                </div>
               </div>
+              <div id="agreement-phone-hint" class="phone-hint"></div>
+              <div id="agreement-phone-error" class="phone-error">Please enter a valid phone number.</div>
             </div>
-          </label>
-        </div>
+            <p style="color:rgba(255,255,255,0.5); font-size:13px; margin:-6px 0 12px 172px">Borrower's phone number is
+              required to send reminders.</p>
 
-        <!-- Non-payment escalation (only shown for loans >= 3000 EUR) -->
-        <div id="third-party-handling-container" style="margin:48px 0 24px 0">
-          <h4 style="margin:0 0 8px 0; font-size:16px">Non-payment escalation</h4>
-          <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
-            <label class="toggle-switch">
-              <input type="checkbox" id="debt-collection-clause" checked />
-              <span class="toggle-slider"></span>
-            </label>
-            <span style="font-size:14px; font-weight:500">Allow automatic third-party handling</span>
-          </div>
-          <p style="color:var(--muted); font-size:13px; margin:0 0 12px 0; line-height:1.5">PayFriends may automatically hand over the loan to an independent collection partner if repayment fails, keeping the lender out of the conflict. All collection costs are for the borrower.</p>
-          <p style="color:var(--muted); font-size:13px; margin:0; line-height:1.5">Escalation only occurs when 90 days have passed since the final repayment date, the loan still remains unpaid, and no new repayment plan was agreed inside PayFriends.</p>
-        </div>
-
-        <!-- Wizard navigation footer -->
-        <div class="wizard-footer">
-          <button class="secondary wizard-back" onclick="goToStep(2)">Back</button>
-          <button class="wizard-next" onclick="goToSummary()">Continue to Summary</button>
-        </div>
-        <p id="step3-status" class="status"></p>
-      </div>
-
-      <!-- Step 4: Summary -->
-      <div id="wizard-step-4" class="wizard-content hidden">
-        <div id="readonly-banner-4" class="hidden" style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
-          ⚠️ This agreement has already been sent to <span id="readonly-name-4"></span> and can't be edited. To change details, cancel it from your dashboard and create a new one.
-        </div>
-        <h3 style="margin-top:0">Review and send your agreement.</h3>
-
-        <!-- Summary text at top -->
-        <div style="background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px; padding:20px; margin:20px 0">
-          <p id="full-summary-text" style="margin:0; color:var(--accent); font-size:15px; line-height:1.8; white-space:pre-line"></p>
-        </div>
-
-        <!-- General details table -->
-        <div style="margin:16px 0">
-          <h4 style="margin:0 0 12px 0; font-size:16px">Agreement Details</h4>
-          <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px">
-            <div id="general-details-content"></div>
-
-            <!-- Fairness Between Friends footer -->
-            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 13px; color: #9ca3af;">
-              <p style="margin-bottom: 8px;">
-                Amounts marked with <span class="pf-fairness-icon-inline" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle; margin: 0 2px;"></span> are calculated using the Fairness Between Friends rules.
-                <a href="#" id="step4FairnessToggle" style="color: #34d399; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s;" onmouseover="this.style.borderBottomColor='#34d399'" onmouseout="this.style.borderBottomColor='transparent'">How it works</a>
-              </p>
-              <div id="step4FairnessExplanation" style="display: none; margin-top: 12px; padding: 12px; background: rgba(0, 0, 0, 0.2); border-radius: 6px; font-size: 12px; line-height: 1.6; color: #d1d5db;">
-                Fairness Between Friends adjusts interest dynamically based on the outstanding balance and the time that has passed. This means paying earlier or more reduces total interest, while paying later or less increases it. Both sides always see the current, fair value of the loan in real time.
-              </div>
+            <div class="row">
+              <label>Loan description</label>
+              <input id="description" type="text" placeholder="e.g. Money for rent, Car repair, Holiday loan" required
+                maxlength="30" oninput="autoCapitalizeDescription()" />
             </div>
+            <p style="color:var(--muted); font-size:12px; margin:-6px 0 12px 172px">A short note to identify this
+              agreement.</p>
           </div>
-        </div>
 
-        <!-- Expandable: Repayment schedule & interest calculation -->
-        <div style="margin:16px 0">
-          <button onclick="toggleSection('interest-calc-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-            <span>Repayment schedule & interest calculation</span>
-            <span id="interest-calc-toggle">▼</span>
-          </button>
-          <div id="interest-calc-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
-            <div id="interest-calc-content"></div>
-          </div>
-        </div>
-
-        <!-- Expandable: Repayment details & reminders -->
-        <div style="margin:16px 0">
-          <button onclick="toggleSection('payments-reminders-section')" class="secondary" style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
-            <span>Repayment details & reminders</span>
-            <span id="payments-reminders-toggle">▼</span>
-          </button>
-          <div id="payments-reminders-section" class="hidden" style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
-            <div id="payments-reminders-content"></div>
-          </div>
-        </div>
-
-        <!-- Status message for Step 4 -->
-        <p id="step4-status" class="status-message" style="color:var(--text); margin:16px 0; font-size:14px"></p>
-
-        <!-- Wizard navigation footer - before sending -->
-        <div id="invite-not-sent" class="wizard-footer">
-          <button class="secondary wizard-back" onclick="goToStep(3)">Back to edit</button>
-          <button class="wizard-next" onclick="sendInvite()">Share to <span id="send-friend-name"></span> for review</button>
-        </div>
-
-        <!-- After sending state -->
-        <div id="invite-sent" class="hidden">
-          <div style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.2); border-radius:12px; padding:16px; margin:24px 0">
-            <p style="margin:0; color:var(--accent); font-weight:600; font-size:16px">✓ Invite sent!</p>
-          </div>
-          <p style="color:var(--muted); font-size:14px">Share this invite link with your friend:</p>
-          <div class="invite-url-box" id="invite-url"></div>
-
-          <!-- Wizard navigation footer - after sending -->
+          <!-- Wizard navigation footer -->
           <div class="wizard-footer">
-            <button class="wizard-next" onclick="copyInviteUrl()">Copy invite link</button>
-            <button class="secondary" onclick="resetWizard()">Create another agreement</button>
+            <button class="wizard-next" onclick="goToTerms()">Continue to Terms</button>
           </div>
+          <p id="step1-status" class="status"></p>
         </div>
 
-        <p id="step3-status" class="status"></p>
-      </div>
-
-      <!-- Step 5: Share -->
-      <div id="wizard-step-5" class="wizard-content hidden">
-        <h3 style="margin-top:0">Sharing options</h3>
-
-        <!-- Success header -->
-        <div style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.25); border-radius:12px; padding:20px; margin:20px 0">
-          <div style="font-size:18px; font-weight:700; color:var(--accent); margin-bottom:8px">Agreement sent by email</div>
-          <div style="font-size:14px; color:var(--text)">We've emailed this agreement to <span id="share-invite-name"></span> at <span id="share-invite-email"></span>. You can also share the link or QR code below.</div>
-        </div>
-
-        <!-- Share link section -->
-        <div style="margin:24px 0">
-          <h4 style="margin:0 0 12px 0; font-size:16px">Share the invite link</h4>
-          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
-            <input id="share-link-input" type="text" readonly style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:monospace; font-size:13px" />
-            <button onclick="copyShareLink()" style="width:auto; white-space:nowrap; padding:10px 16px">Copy link</button>
+        <!-- Step 2: Loan Calculator -->
+        <div id="wizard-step-2" class="wizard-content hidden">
+          <div id="readonly-banner-2" class="hidden"
+            style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
+            ⚠️ This agreement has already been sent to <span id="readonly-name-2"></span> and can't be edited. To change
+            details, cancel it from your dashboard and create a new one.
           </div>
-          <p style="color:var(--muted); font-size:13px; margin:0">You can paste this link into WhatsApp, Signal, email or anywhere else you like. Please note that <span id="share-signup-name"></span> needs to sign up with <span id="share-signup-email"></span> in order to view the agreement.</p>
+          <h3 style="margin-top:0">Configure loan terms and repayment schedule.</h3>
+
+          <!-- Calculator will be loaded here -->
+          <div id="wizard-calculator-container"></div>
+
+          <!-- Wizard navigation footer -->
+          <div class="wizard-footer">
+            <button class="secondary wizard-back" onclick="goToStep(1)">Back</button>
+            <button class="wizard-next" onclick="saveCalculatorAndContinue()">Continue to Payments</button>
+          </div>
+          <p id="step2-status" class="status"></p>
         </div>
 
-        <!-- QR code section -->
-        <div style="margin:24px 0">
-          <h4 style="margin:0 0 12px 0; font-size:16px">Or let <span id="share-qr-name"></span> scan this QR code</h4>
-          <div id="qr-code-container"></div>
+        <!-- Step 3: Payments & Reminders -->
+        <div id="wizard-step-3" class="wizard-content hidden">
+          <div id="readonly-banner-3" class="hidden"
+            style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
+            ⚠️ This agreement has already been sent to <span id="readonly-name-3"></span> and can't be edited. To change
+            details, cancel it from your dashboard and create a new one.
+          </div>
+          <h3 style="margin-top:0">Decide how repayments will be made and managed.</h3>
+
+          <!-- Payment methods -->
+          <div style="margin:24px 0">
+            <h4 style="margin:0 0 12px 0; font-size:16px">Payment methods</h4>
+            <p style="color:var(--muted); font-size:13px; margin-bottom:12px">Select all that apply:</p>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+              <label class="payment-method-card" data-value="bank"
+                style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+                <input type="checkbox" class="payment-method-checkbox" value="bank" style="display:none" />
+                <span style="font-size:14px; font-weight:500">Bank transfer</span>
+              </label>
+              <label class="payment-method-card" data-value="paypal"
+                style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+                <input type="checkbox" class="payment-method-checkbox" value="paypal" style="display:none" />
+                <span style="font-size:14px; font-weight:500">PayPal</span>
+              </label>
+              <label class="payment-method-card" data-value="crypto"
+                style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+                <input type="checkbox" class="payment-method-checkbox" value="crypto" style="display:none" />
+                <span style="font-size:14px; font-weight:500">Crypto</span>
+              </label>
+              <label class="payment-method-card" data-value="cash"
+                style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+                <input type="checkbox" class="payment-method-checkbox" value="cash" style="display:none" />
+                <span style="font-size:14px; font-weight:500">Cash</span>
+              </label>
+              <label class="payment-method-card" data-value="other"
+                style="display:flex; align-items:center; cursor:pointer; padding:14px 16px; border-radius:12px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.02); transition:all 0.2s">
+                <input type="checkbox" class="payment-method-checkbox" value="other" style="display:none" />
+                <span style="font-size:14px; font-weight:500">Other</span>
+              </label>
+            </div>
+
+            <!-- Payment method detail fields (shown below the grid when selected) -->
+            <div id="payment-method-details" style="margin-top:16px">
+              <!-- Bank transfer details -->
+              <div id="bank-details" class="payment-detail-section hidden"
+                style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
+                <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">Bank transfer
+                  instructions *</label>
+                <textarea id="bank-instructions"
+                  placeholder="Enter all information needed to receive a bank transfer, including the account holder name.&#10;&#10;Examples: IBAN, account number, routing number, sort code, BSB, SWIFT, or any regional format."
+                  style="width:100%; min-height:120px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:inherit; resize:vertical"></textarea>
+                <p style="color:var(--muted); font-size:12px; margin:6px 0 0 0">Enter all information needed to receive
+                  a bank transfer, including the account holder name. Examples: IBAN, account number, routing number,
+                  sort code, BSB, SWIFT, or any regional format.</p>
+              </div>
+
+              <!-- PayPal details -->
+              <div id="paypal-details" class="payment-detail-section hidden"
+                style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
+                <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">PayPal email *</label>
+                <input id="paypal-email" type="email" placeholder="your.email@example.com"
+                  style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
+              </div>
+
+              <!-- Crypto details -->
+              <div id="crypto-details" class="payment-detail-section hidden"
+                style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
+                <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">Crypto payment
+                  instructions *</label>
+                <textarea id="crypto-instructions"
+                  placeholder="Include wallet address and the network.&#10;&#10;Example: 0xABC123… (ETH on ERC-20)"
+                  style="width:100%; min-height:100px; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:inherit; resize:vertical"></textarea>
+                <p style="color:var(--muted); font-size:12px; margin:6px 0 0 0">Include wallet address and the network.
+                  Example: 0xABC123… (ETH on ERC-20).</p>
+              </div>
+
+              <!-- Cash - no fields needed -->
+
+              <!-- Other method details -->
+              <div id="other-details" class="payment-detail-section hidden"
+                style="margin:16px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08)">
+                <label style="display:block; margin-bottom:8px; font-weight:500; font-size:14px">Description *</label>
+                <input id="other-payment-description" type="text" placeholder="Describe the other payment method"
+                  style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Require proof of repayment -->
+          <div id="proof-required-section" style="margin:24px 0 48px 0">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
+              <label class="toggle-switch">
+                <input type="checkbox" id="proof-required" checked />
+                <span class="toggle-slider"></span>
+              </label>
+              <h4 style="margin:0; font-size:16px">Require proof of repayment</h4>
+            </div>
+            <p style="color:var(--muted); font-size:13px; margin:0; line-height:1.5">The borrower will be asked to
+              upload proof for each repayment, such as a photo, screenshot or PDF of the transfer or receipt.</p>
+          </div>
+
+          <!-- Reminders -->
+          <div style="margin:24px 0">
+            <h4 style="margin:0 0 8px 0; font-size:16px">Reminders</h4>
+            <p style="color:var(--muted); font-size:13px; margin-bottom:12px">We only send reminders if no payment has
+              been reported for that installment.</p>
+
+            <label
+              style="display:flex; align-items:flex-start; gap:12px; cursor:pointer; padding:16px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); margin-bottom:12px; transition:all 0.2s"
+              id="reminder-auto-card">
+              <input type="radio" name="reminder-mode" value="auto" onchange="toggleReminderMode()" checked
+                style="margin-top:2px" />
+              <div style="flex:1">
+                <div style="font-weight:600; margin-bottom:6px">Auto (recommended)</div>
+                <div style="color:var(--muted); font-size:13px; line-height:1.5">We'll remind the borrower 7 days
+                  before, 1 day before and on the due date. If no payment is reported, we'll send follow-up reminders 1
+                  day after, then every 3 days.</div>
+              </div>
+            </label>
+            <label
+              style="display:flex; align-items:flex-start; gap:12px; cursor:pointer; padding:16px; border-radius:10px; border:2px solid rgba(255,255,255,0.08); transition:all 0.2s"
+              id="reminder-custom-card">
+              <input type="radio" name="reminder-mode" value="custom" onchange="toggleReminderMode()"
+                style="margin-top:2px" />
+              <div style="flex:1">
+                <div style="font-weight:600; margin-bottom:6px">Custom schedule</div>
+                <div id="custom-reminders" class="hidden" style="margin-top:12px">
+                  <div style="color:var(--muted); font-size:13px; margin-bottom:10px">Select when to send reminders:
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px">
+                      <input type="checkbox" value="-14" class="custom-reminder-checkbox" /> 14 days before
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px">
+                      <input type="checkbox" value="-7" class="custom-reminder-checkbox" /> 7 days before
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px">
+                      <input type="checkbox" value="-3" class="custom-reminder-checkbox" /> 3 days before
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px">
+                      <input type="checkbox" value="-1" class="custom-reminder-checkbox" /> 1 day before
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px">
+                      <input type="checkbox" value="0" class="custom-reminder-checkbox" /> On the due date
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px">
+                      <input type="checkbox" value="1" class="custom-reminder-checkbox" /> 1 day after
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px">
+                      <input type="checkbox" value="3" class="custom-reminder-checkbox" /> Every 3 days after
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:13px">
+                      <input type="checkbox" value="7" class="custom-reminder-checkbox" /> Every 7 days after
+                    </label>
+                  </div>
+                  <p id="custom-reminder-error" style="color:#ff6b6b; font-size:12px; margin-top:8px; display:none">
+                    Please select at least one reminder</p>
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <!-- Non-payment escalation (only shown for loans >= 3000 EUR) -->
+          <div id="third-party-handling-container" style="margin:48px 0 24px 0">
+            <h4 style="margin:0 0 8px 0; font-size:16px">Non-payment escalation</h4>
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
+              <label class="toggle-switch">
+                <input type="checkbox" id="debt-collection-clause" checked />
+                <span class="toggle-slider"></span>
+              </label>
+              <span style="font-size:14px; font-weight:500">Allow automatic third-party handling</span>
+            </div>
+            <p style="color:var(--muted); font-size:13px; margin:0 0 12px 0; line-height:1.5">PayFriends may
+              automatically hand over the loan to an independent collection partner if repayment fails, keeping the
+              lender out of the conflict. All collection costs are for the borrower.</p>
+            <p style="color:var(--muted); font-size:13px; margin:0; line-height:1.5">Escalation only occurs when 90 days
+              have passed since the final repayment date, the loan still remains unpaid, and no new repayment plan was
+              agreed inside PayFriends.</p>
+          </div>
+
+          <!-- Wizard navigation footer -->
+          <div class="wizard-footer">
+            <button class="secondary wizard-back" onclick="goToStep(2)">Back</button>
+            <button class="wizard-next" onclick="goToSummary()">Continue to Summary</button>
+          </div>
+          <p id="step3-status" class="status"></p>
         </div>
 
-        <!-- Wizard navigation footer -->
-        <div class="wizard-footer">
-          <button class="wizard-next" onclick="goToDashboard()">Done, return to dashboard</button>
+        <!-- Step 4: Summary -->
+        <div id="wizard-step-4" class="wizard-content hidden">
+          <div id="readonly-banner-4" class="hidden"
+            style="background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; padding:12px; margin-bottom:20px; font-size:14px; color:var(--text)">
+            ⚠️ This agreement has already been sent to <span id="readonly-name-4"></span> and can't be edited. To change
+            details, cancel it from your dashboard and create a new one.
+          </div>
+          <h3 style="margin-top:0">Review and send your agreement.</h3>
+
+          <!-- Summary text at top -->
+          <div
+            style="background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.15); border-radius:12px; padding:20px; margin:20px 0">
+            <p id="full-summary-text"
+              style="margin:0; color:var(--accent); font-size:15px; line-height:1.8; white-space:pre-line"></p>
+          </div>
+
+          <!-- General details table -->
+          <div style="margin:16px 0">
+            <h4 style="margin:0 0 12px 0; font-size:16px">Agreement Details</h4>
+            <div style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px">
+              <div id="general-details-content"></div>
+
+              <!-- Fairness Between Friends footer -->
+              <div
+                style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 13px; color: #9ca3af;">
+                <p style="margin-bottom: 8px;">
+                  Amounts marked with <span class="pf-fairness-icon-inline" title="Fairness Between Friends"
+                    style="display: inline-flex; align-items: center; vertical-align: middle; margin: 0 2px;"></span>
+                  are calculated using the Fairness Between Friends rules.
+                  <a href="#" id="step4FairnessToggle"
+                    style="color: #34d399; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s;"
+                    onmouseover="this.style.borderBottomColor='#34d399'"
+                    onmouseout="this.style.borderBottomColor='transparent'">How it works</a>
+                </p>
+                <div id="step4FairnessExplanation"
+                  style="display: none; margin-top: 12px; padding: 12px; background: rgba(0, 0, 0, 0.2); border-radius: 6px; font-size: 12px; line-height: 1.6; color: #d1d5db;">
+                  Fairness Between Friends adjusts interest dynamically based on the outstanding balance and the time
+                  that has passed. This means paying earlier or more reduces total interest, while paying later or less
+                  increases it. Both sides always see the current, fair value of the loan in real time.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Expandable: Repayment schedule & interest calculation -->
+          <div style="margin:16px 0">
+            <button onclick="toggleSection('interest-calc-section')" class="secondary"
+              style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+              <span>Repayment schedule & interest calculation</span>
+              <span id="interest-calc-toggle">▼</span>
+            </button>
+            <div id="interest-calc-section" class="hidden"
+              style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+              <div id="interest-calc-content"></div>
+            </div>
+          </div>
+
+          <!-- Expandable: Repayment details & reminders -->
+          <div style="margin:16px 0">
+            <button onclick="toggleSection('payments-reminders-section')" class="secondary"
+              style="width:100%; text-align:left; padding:12px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center">
+              <span>Repayment details & reminders</span>
+              <span id="payments-reminders-toggle">▼</span>
+            </button>
+            <div id="payments-reminders-section" class="hidden"
+              style="background:#10151d; border:1px solid rgba(255,255,255,0.08); border-radius:0 0 8px 8px; padding:16px; margin-top:-1px">
+              <div id="payments-reminders-content"></div>
+            </div>
+          </div>
+
+          <!-- Status message for Step 4 -->
+          <p id="step4-status" class="status-message" style="color:var(--text); margin:16px 0; font-size:14px"></p>
+
+          <!-- Wizard navigation footer - before sending -->
+          <div id="invite-not-sent" class="wizard-footer">
+            <button class="secondary wizard-back" onclick="goToStep(3)">Back to edit</button>
+            <button class="wizard-next" onclick="sendInvite()">Share to <span id="send-friend-name"></span> for
+              review</button>
+          </div>
+
+          <!-- After sending state -->
+          <div id="invite-sent" class="hidden">
+            <div
+              style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.2); border-radius:12px; padding:16px; margin:24px 0">
+              <p style="margin:0; color:var(--accent); font-weight:600; font-size:16px">✓ Invite sent!</p>
+            </div>
+            <p style="color:var(--muted); font-size:14px">Share this invite link with your friend:</p>
+            <div class="invite-url-box" id="invite-url"></div>
+
+            <!-- Wizard navigation footer - after sending -->
+            <div class="wizard-footer">
+              <button class="wizard-next" onclick="copyInviteUrl()">Copy invite link</button>
+              <button class="secondary" onclick="resetWizard()">Create another agreement</button>
+            </div>
+          </div>
+
+          <p id="step3-status" class="status"></p>
         </div>
 
-        <p id="step5-status" class="status"></p>
-      </div>
+        <!-- Step 5: Share -->
+        <div id="wizard-step-5" class="wizard-content hidden">
+          <h3 style="margin-top:0">Sharing options</h3>
+
+          <!-- Success header -->
+          <div
+            style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.25); border-radius:12px; padding:20px; margin:20px 0">
+            <div style="font-size:18px; font-weight:700; color:var(--accent); margin-bottom:8px">Agreement sent by email
+            </div>
+            <div style="font-size:14px; color:var(--text)">We've emailed this agreement to <span
+                id="share-invite-name"></span> at <span id="share-invite-email"></span>. You can also share the link or
+              QR code below.</div>
+          </div>
+
+          <!-- Share link section -->
+          <div style="margin:24px 0">
+            <h4 style="margin:0 0 12px 0; font-size:16px">Share the invite link</h4>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
+              <input id="share-link-input" type="text" readonly
+                style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:#10151d; color:var(--text); font-family:monospace; font-size:13px" />
+              <button onclick="copyShareLink()" style="width:auto; white-space:nowrap; padding:10px 16px">Copy
+                link</button>
+            </div>
+            <p style="color:var(--muted); font-size:13px; margin:0">You can paste this link into WhatsApp, Signal, email
+              or anywhere else you like. Please note that <span id="share-signup-name"></span> needs to sign up with
+              <span id="share-signup-email"></span> in order to view the agreement.
+            </p>
+          </div>
+
+          <!-- QR code section -->
+          <div style="margin:24px 0">
+            <h4 style="margin:0 0 12px 0; font-size:16px">Or let <span id="share-qr-name"></span> scan this QR code</h4>
+            <div id="qr-code-container"></div>
+          </div>
+
+          <!-- Wizard navigation footer -->
+          <div class="wizard-footer">
+            <button class="wizard-next" onclick="goToDashboard()">Done, return to dashboard</button>
+          </div>
+
+          <p id="step5-status" class="status"></p>
+        </div>
       </div>
     </div>
 
     <!-- Payment Confirmation Modal -->
-    <div id="confirm-payment-modal" class="modal-overlay" style="display:none" onclick="closeModalOnOverlay(event, 'confirm-payment-modal')">
+    <div id="confirm-payment-modal" class="modal-overlay" style="display:none"
+      onclick="closeModalOnOverlay(event, 'confirm-payment-modal')">
       <div class="modal-card" onclick="event.stopPropagation()">
         <div class="modal-header">
           <h2 class="modal-title">Confirm payment</h2>
@@ -2084,7 +3073,8 @@
     </div>
 
     <!-- Payment Issue Modal -->
-    <div id="difficulty-modal" class="modal-overlay" style="display:none" onclick="closeModalOnOverlay(event, 'difficulty-modal')">
+    <div id="difficulty-modal" class="modal-overlay" style="display:none"
+      onclick="closeModalOnOverlay(event, 'difficulty-modal')">
       <div class="modal-card" onclick="event.stopPropagation()">
         <div class="modal-header">
           <h2 class="modal-title">Payment issue</h2>
@@ -3514,7 +4504,7 @@
       const resetBtn = document.getElementById('calculator-reset-link');
       if (resetBtn) {
         resetBtn.style.display = 'inline-block';
-        resetBtn.addEventListener('click', function(event) {
+        resetBtn.addEventListener('click', function (event) {
           event.preventDefault();
           resetWizardCalculator();
         });
@@ -3663,7 +4653,7 @@
 
       function debounce(func, delay) {
         let timeoutId;
-        return function(...args) {
+        return function (...args) {
           clearTimeout(timeoutId);
           timeoutId = setTimeout(() => func.apply(this, args), delay);
         };
@@ -3697,7 +4687,7 @@
           lines.push(`<p style="${pStyle}"><strong>Annual interest rate:</strong> ${summary.annualInterestRate.toFixed(2)}% per year</p>`);
         }
 
-        const fairnessIcon = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginLeft: '4px'});
+        const fairnessIcon = fairnessIconSVG('', { width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginLeft: '4px' });
         lines.push(`<p style="${pStyle}"><strong>Total interest:</strong> ${formatMoney(summary.totalInterest)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
         lines.push(`<p style="${pStyle}"><strong>Total to repay:</strong> ${formatMoney(summary.totalRepayment)} <span class="pf-fairness-icon" title="Fairness Between Friends" style="display: inline-flex; align-items: center; vertical-align: middle;">${fairnessIcon}</span></p>`);
 
@@ -3731,7 +4721,7 @@
         const fairnessExplanation = document.getElementById('wizardFairnessExplanation');
 
         if (fairnessToggle && fairnessExplanation) {
-          fairnessToggle.addEventListener('click', function(e) {
+          fairnessToggle.addEventListener('click', function (e) {
             e.preventDefault();
             if (fairnessExplanation.style.display === 'none') {
               fairnessExplanation.style.display = 'block';
@@ -3851,7 +4841,7 @@
         updateFairRangePill();
       });
 
-      document.getElementById('principal').addEventListener('blur', function() {
+      document.getElementById('principal').addEventListener('blur', function () {
         const trimmed = this.value.trim();
         if (trimmed !== '') {
           const num = window.PayFriendsCalculator.parseMoney(trimmed);
@@ -3884,7 +4874,7 @@
         updateFairRangePill();
       });
 
-      document.getElementById('loanStartMode').addEventListener('change', function() {
+      document.getElementById('loanStartMode').addEventListener('change', function () {
         const loanStartDateGroup = document.getElementById('loanStartDateGroup');
         const loanStartDateInput = document.getElementById('loanStartDate');
         if (this.value === 'pick-date') {
@@ -3895,7 +4885,7 @@
         }
       });
 
-      document.getElementById('firstPaymentDue').addEventListener('change', function() {
+      document.getElementById('firstPaymentDue').addEventListener('change', function () {
         const firstPaymentDateGroup = document.getElementById('firstPaymentDateGroup');
         const firstPaymentDateInput = document.getElementById('firstPaymentDate');
         if (this.value === 'pick-date') {
@@ -5117,7 +6107,7 @@
             iconSpan.style.alignItems = 'center';
             iconSpan.style.verticalAlign = 'middle';
             iconSpan.style.marginLeft = '4px';
-            iconSpan.innerHTML = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle'});
+            iconSpan.innerHTML = fairnessIconSVG('', { width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle' });
 
             // Append icon to value span
             valueSpan.appendChild(iconSpan);
@@ -5128,7 +6118,7 @@
       // Inject icon in the footer text
       const footerIcon = content.parentElement.querySelector('.pf-fairness-icon-inline');
       if (footerIcon) {
-        footerIcon.innerHTML = fairnessIconSVG('', {width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle'});
+        footerIcon.innerHTML = fairnessIconSVG('', { width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle' });
       }
 
       // Set up "How it works" toggle event listener
@@ -5140,7 +6130,7 @@
         const newToggle = fairnessToggle.cloneNode(true);
         fairnessToggle.parentNode.replaceChild(newToggle, fairnessToggle);
 
-        newToggle.addEventListener('click', function(e) {
+        newToggle.addEventListener('click', function (e) {
           e.preventDefault();
           if (fairnessExplanation.style.display === 'none') {
             fairnessExplanation.style.display = 'block';
@@ -6915,27 +7905,69 @@
             }
           }
 
-          // Populate Active GroupTabs box (appears after timeline)
+
+          // Populate grouped periods (active grouptabs)
           const grouptabsContainer = document.getElementById('grouptabs-container');
-          if (grouptabsContainer && data.stats) {
-            const grouptabCount = data.stats.totalGroupTabs || 0;
-            const grouptabItems = grouptabCount > 0 ? [{
-              name: 'GroupTab Feature',
-              detail: '€ 0 total',
-              icon: 'GT',
-              avatarColorClass: 'color-6'
-            }] : [];
-            const grouptabBox = renderSummaryBox(
-              'Active GroupTabs',
-              grouptabCount,
-              grouptabItems,
-              '/grouptabs',
-              { showPreviews: true, emptyMessage: 'Coming soon' }
-            );
-            grouptabsContainer.innerHTML = grouptabBox;
-            grouptabsContainer.style.display = 'block';
+          if (grouptabsContainer) {
+            grouptabsContainer.style.display = 'none';
+            // GroupTabs population logic would go here
           }
+
+          // Show/hide "Report a payment" button based on active agreements
+          updateReportPaymentButton(data);
         }
+      }
+    }
+
+    /**
+     * Update "Report a payment" button visibility based on active agreements
+     */
+    function updateReportPaymentButton(data) {
+      const reportPaymentBtn = document.getElementById('report-payment-btn');
+      if (!reportPaymentBtn || !data || !data.agreementsSummary || !data.user) {
+        return;
+      }
+
+      // Filter active agreements where user is borrower OR lender
+      const activeAgreements = data.agreementsSummary.filter(a => a.status === 'active');
+
+      if (activeAgreements.length > 0) {
+        // Show the button
+        reportPaymentBtn.style.display = 'flex';
+      } else {
+        // Hide the button
+        reportPaymentBtn.style.display = 'none';
+      }
+    }
+
+    /**
+     * Handle "Report a payment" button click
+     */
+    async function handleReportPaymentClick() {
+      const data = window.__DASHBOARD_DATA__;
+      if (!data || !data.agreementsSummary || !data.user) {
+        console.error('Dashboard data not available');
+        return;
+      }
+
+      // Filter active agreements (both borrower and lender) from ALL agreements, not just summary
+      const allAgreements = data.agreements || data.agreementsSummary || [];
+      const activeAgreements = allAgreements.filter(a => a.status === 'active');
+
+      if (activeAgreements.length === 0) {
+        alert('No active agreements found.');
+        return;
+      }
+
+      if (activeAgreements.length === 1) {
+        // Navigate directly to report payment page
+        window.location.href = `/agreements/${activeAgreements[0].id}/report-payment`;
+      } else {
+        // Navigate to selection page
+        // Determine role (borrower or lender) - use borrower as default for mixed scenario
+        const hasBorrowerAgreement = activeAgreements.some(a => !a.isLender);
+        const role = hasBorrowerAgreement ? 'borrower' : 'lender';
+        window.location.href = `/report-payment-select.html?role=${role}`;
       }
     }
 
@@ -7075,4 +8107,5 @@
   <!-- Shared Agreements Table Component -->
   <script src="/components/agreements-table.js"></script>
 </body>
+
 </html>
