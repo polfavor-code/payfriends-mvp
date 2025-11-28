@@ -451,6 +451,13 @@
           <span class="detail-label">Money transfer date (Loan start)</span>
           <span class="detail-value" id="money-sent-display"></span>
         </div>
+        <div class="detail-row" id="initial-payment-row" style="display:none">
+          <span class="detail-label">Initial payment</span>
+          <span class="detail-value" id="initial-payment-display">
+            <span id="initial-payment-text"></span>
+            <a href="#" id="initial-payment-proof-link" style="margin-left:8px; color:var(--accent); text-decoration:none; display:none">View proof</a>
+          </span>
+        </div>
         <div class="detail-row" id="loan-duration-row" style="display:none">
           <span class="detail-label">Loan duration</span>
           <span class="detail-value" id="loan-duration-display"></span>
@@ -2092,6 +2099,42 @@
       }
       document.getElementById('money-sent-display').textContent = loanStartLabel;
       document.getElementById('money-sent-row').style.display = 'flex';
+
+      // 5b. Initial payment status (for loan start upon acceptance)
+      try {
+        const reportRes = await fetch(`/api/agreements/${agreementId}/initial-payment-report`);
+        if (reportRes.ok) {
+          const reportData = await reportRes.json();
+          if (reportData.data && reportData.data.isCompleted) {
+            // Show initial payment status
+            let statusText = 'Payment completed';
+            if (reportData.data.paymentMethod) {
+              const methodLabels = {
+                'bank_transfer': 'Bank transfer',
+                'cash': 'Cash',
+                'crypto': 'Crypto',
+                'other': 'Other'
+              };
+              const methodLabel = methodLabels[reportData.data.paymentMethod] || reportData.data.paymentMethod;
+              statusText += ` (${methodLabel})`;
+            }
+            document.getElementById('initial-payment-text').textContent = statusText;
+
+            // Show proof link if proof exists
+            if (reportData.data.hasProof) {
+              const proofLink = document.getElementById('initial-payment-proof-link');
+              proofLink.style.display = 'inline';
+              proofLink.href = `/api/agreements/${agreementId}/initial-payment-report/proof`;
+              proofLink.target = '_blank';
+            }
+
+            document.getElementById('initial-payment-row').style.display = 'flex';
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching initial payment report:', err);
+        // Don't show the row if there's an error
+      }
 
       // 6. Loan duration (hide for one-time loans, show for installments)
       const isOneTimePayment = agreement.repayment_type === 'one_time';
