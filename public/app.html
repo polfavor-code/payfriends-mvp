@@ -2856,9 +2856,13 @@
 
       if (showWorstCase) {
         container.style.display = '';
+        // Default to checked (enabled) when shown
+        if (checkbox) {
+          checkbox.checked = true;
+        }
       } else {
         container.style.display = 'none';
-        // Clear the checkbox when hidden
+        // Uncheck the checkbox when hidden
         if (checkbox) {
           checkbox.checked = false;
         }
@@ -3908,7 +3912,7 @@
       const firstPaymentDate = document.getElementById('firstPaymentDate').value;
 
       // Store in wizard data
-      wizardData.amount = loanAmount / 100; // Convert cents to euros
+      wizardData.amount = loanAmount; // parseMoney returns euros, not cents
       wizardData.repaymentType = repaymentType;
       wizardData.moneySentOption = loanStartMode;
       wizardData.moneySentDate = loanStartDate;
