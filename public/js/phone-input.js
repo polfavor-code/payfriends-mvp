@@ -217,7 +217,7 @@ class PhoneInput {
   init() {
     // Find or create elements
     this.elements.countryButton = this.container.querySelector('.phone-country-button');
-    this.elements.prefix = this.container.querySelector('.phone-prefix');
+    this.elements.prefixInput = this.container.querySelector('.phone-prefix-input');
     this.elements.localInput = this.container.querySelector('.phone-number-input');
     this.elements.fullInput = this.container.querySelector('.phone-number-full');
     this.elements.dropdown = this.container.querySelector('.phone-dropdown');
@@ -248,6 +248,11 @@ class PhoneInput {
     // Search input
     this.elements.searchInput.addEventListener('input', (e) => {
       this.filterCountries(e.target.value);
+    });
+
+    // Prefix input - allow typing country code directly (e.g., +31 switches to Netherlands)
+    this.elements.prefixInput.addEventListener('input', (e) => {
+      this.handlePrefixInput(e);
     });
 
     // Local number input - validate on every keystroke
@@ -350,8 +355,17 @@ class PhoneInput {
       <span class="phone-caret">▼</span>
     `;
 
-    // Update prefix
-    this.elements.prefix.textContent = this.selectedCountry.dialCode;
+    // Update prefix input value
+    this.elements.prefixInput.value = this.selectedCountry.dialCode;
+  }
+
+  updateCountryButton() {
+    // Only update the button, not the prefix input (user may be typing in prefix)
+    this.elements.countryButton.innerHTML = `
+      <span class="phone-country-flag">${this.selectedCountry.flag}</span>
+      <span class="phone-country-name">${this.selectedCountry.name}</span>
+      <span class="phone-caret">▼</span>
+    `;
   }
 
   handleLocalInput(e) {
@@ -371,6 +385,53 @@ class PhoneInput {
 
     // Trigger validation change callback if registered
     this._triggerValidationChange();
+  }
+
+  handlePrefixInput(e) {
+    let value = e.target.value;
+
+    // Ensure it starts with +
+    if (!value.startsWith('+')) {
+      value = '+' + value.replace(/[^0-9]/g, '');
+      e.target.value = value;
+    } else {
+      // Keep + and only digits after
+      value = '+' + value.substring(1).replace(/[^0-9]/g, '');
+      e.target.value = value;
+    }
+
+    // Try to match a country by dial code
+    const sortedCountries = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
+
+    for (const country of sortedCountries) {
+      if (value === country.dialCode) {
+        // Exact match - switch to this country
+        this.selectedCountry = country;
+        this.updateCountryButton();
+        this.updateFullNumber();
+        this._triggerValidationChange();
+        return;
+      }
+    }
+
+    // If the typed value is longer than any dial code and matches, switch country
+    for (const country of sortedCountries) {
+      if (value.startsWith(country.dialCode) && value.length > country.dialCode.length) {
+        // User typed extra digits - move them to local input
+        const localPart = value.substring(country.dialCode.length);
+        this.selectedCountry = country;
+        this.updateCountryButton();
+        e.target.value = country.dialCode;
+        this.elements.localInput.value = localPart + this.elements.localInput.value;
+        this.elements.localInput.focus();
+        this.updateFullNumber();
+        this._triggerValidationChange();
+        return;
+      }
+    }
+
+    // No match yet - just update the full number with current prefix
+    this.updateFullNumber();
   }
 
   detectAndSetCountry(fullNumber) {
@@ -400,7 +461,8 @@ class PhoneInput {
 
   updateFullNumber() {
     const localDigits = this.elements.localInput.value.replace(/\D/g, '');
-    const fullNumber = localDigits ? `${this.selectedCountry.dialCode}${localDigits}` : '';
+    const prefix = this.elements.prefixInput.value || this.selectedCountry.dialCode;
+    const fullNumber = localDigits ? `${prefix}${localDigits}` : '';
     this.elements.fullInput.value = fullNumber;
   }
 

@@ -242,17 +242,21 @@
     .phone-country-name{flex:1}
     .phone-caret{font-size:10px;color:var(--muted)}
 
-    /* Prefix display */
-    .phone-prefix{
-      display:flex;align-items:center;
-      padding:0 12px;
+    /* Prefix input - editable country code field */
+    .phone-prefix-input{
+      width:65px;
+      padding:12px 8px;
       background:#10151d;
       border:1px solid rgba(255,255,255,0.12);
       border-radius:10px;
-      color:var(--muted);
+      color:var(--text);
       font-size:15px;
-      min-width:60px;
-      justify-content:center;
+      text-align:center;
+      font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+    }
+    .phone-prefix-input:focus{
+      outline:none;
+      border-color:var(--accent);
     }
 
     /* Local number input */
@@ -1748,8 +1752,8 @@
             <div class="phone-input-wrapper" data-phone-id="agreement-phone">
               <div class="phone-input-row">
                 <button type="button" class="phone-country-button"></button>
-                <span class="phone-prefix"></span>
-                <input type="tel" class="phone-number-input" placeholder="612345678 or +31..." />
+                <input type="text" class="phone-prefix-input" />
+                <input type="tel" class="phone-number-input" placeholder="612345678" />
                 <input type="hidden" id="agreement-phone" name="agreement-phone" class="phone-number-full" />
                 <span id="agreement-phone-valid-icon" class="phone-valid-icon">✓</span>
               </div>

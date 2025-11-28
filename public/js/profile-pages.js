@@ -115,8 +115,8 @@
             <div class="phone-input-wrapper" data-phone-id="phone-number">
               <div class="phone-input-row">
                 <button type="button" class="phone-country-button"></button>
-                <span class="phone-prefix"></span>
-                <input type="tel" class="phone-number-input" placeholder="612345678 or +31..." />
+                <input type="text" class="phone-prefix-input" />
+                <input type="tel" class="phone-number-input" placeholder="612345678" />
                 <input type="hidden" id="phone-number" name="phone-number" class="phone-number-full" />
                 <span id="phone-valid-icon" class="phone-valid-icon">✓</span>
               </div>
