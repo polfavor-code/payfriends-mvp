@@ -177,22 +177,33 @@
 
         // Register validation change callback for real-time feedback
         // Uses country-specific validation from libphonenumber-js (shared logic)
-        // Shows friendly hints while typing, errors only on blur/submit
+        // - While typing under limit: show nothing
+        // - While typing OVER limit: show error immediately
+        // - On blur with too few digits: show error
+        // - When valid: show green success message
         if (phoneInput) {
           phoneInput.onValidationChange((isValid, errorMessage, typingHint, eventType) => {
             const phoneError = document.getElementById('phone-error');
             const phoneHint = document.getElementById('phone-hint');
 
             if (isValid) {
-              // Valid: show green success hint, hide error
+              // Valid: show green success, hide error
               if (phoneHint) {
                 phoneHint.textContent = typingHint.text;
                 phoneHint.className = 'phone-hint valid';
               }
               if (phoneError) phoneError.style.display = 'none';
               phoneInput.setInvalid(false);
+            } else if (typingHint.isTooLong) {
+              // Too many digits: show error immediately while typing
+              if (phoneHint) phoneHint.textContent = '';
+              if (phoneError) {
+                phoneError.textContent = errorMessage;
+                phoneError.style.display = 'block';
+              }
+              phoneInput.setInvalid(true);
             } else if (eventType === 'blur' && typingHint.currentDigits > 0) {
-              // Blur with invalid content: show error
+              // Blur with too few digits: show error
               if (phoneHint) phoneHint.textContent = '';
               if (phoneError) {
                 phoneError.textContent = errorMessage;
@@ -200,11 +211,8 @@
               }
               phoneInput.setInvalid(true);
             } else {
-              // Typing: show friendly hint, hide error
-              if (phoneHint) {
-                phoneHint.textContent = typingHint.text;
-                phoneHint.className = 'phone-hint';
-              }
+              // Typing under limit: show nothing, hide error
+              if (phoneHint) phoneHint.textContent = '';
               if (phoneError) phoneError.style.display = 'none';
               phoneInput.setInvalid(false);
             }

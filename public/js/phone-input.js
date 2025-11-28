@@ -528,7 +528,7 @@ class PhoneInput {
   /**
    * Returns a friendly typing hint showing digit progress.
    * Used to provide positive feedback while user is typing.
-   * @returns {{ text: string, isValid: boolean, currentDigits: number, expectedDigits: number|null }}
+   * @returns {{ text: string, isValid: boolean, isTooLong: boolean, currentDigits: number, expectedDigits: number|null }}
    */
   getTypingHint() {
     const currentDigits = this.elements.localInput.value.replace(/\D/g, '').length;
@@ -538,11 +538,25 @@ class PhoneInput {
 
     // Try to get expected digit count from libphonenumber-js
     let expectedDigits = null;
+    let isTooLong = false;
+
     if (typeof libphonenumber !== 'undefined') {
       try {
         const example = libphonenumber.getExampleNumber(countryCode);
         if (example) {
           expectedDigits = example.nationalNumber.length;
+        }
+        // Check if number is too long using isPossible
+        const number = this.getNumber();
+        if (number && number !== this.selectedCountry.dialCode) {
+          const phoneNumber = libphonenumber.parsePhoneNumberFromString(number, countryCode);
+          if (phoneNumber && !phoneNumber.isPossible()) {
+            // isPossible returns false for both too short and too long
+            // If we have more digits than expected, it's too long
+            if (expectedDigits && currentDigits > expectedDigits) {
+              isTooLong = true;
+            }
+          }
         }
       } catch (e) {
         // Some countries may not have examples
@@ -553,41 +567,16 @@ class PhoneInput {
       return {
         text: `Valid ${countryName} number`,
         isValid: true,
-        currentDigits,
-        expectedDigits
-      };
-    }
-
-    if (currentDigits === 0) {
-      if (expectedDigits) {
-        return {
-          text: `${countryName} numbers are typically ${expectedDigits} digits`,
-          isValid: false,
-          currentDigits,
-          expectedDigits
-        };
-      }
-      return {
-        text: `Enter phone number`,
-        isValid: false,
-        currentDigits,
-        expectedDigits
-      };
-    }
-
-    // Show progress while typing
-    if (expectedDigits) {
-      return {
-        text: `${currentDigits} / ${expectedDigits} digits`,
-        isValid: false,
+        isTooLong: false,
         currentDigits,
         expectedDigits
       };
     }
 
     return {
-      text: `${currentDigits} digits entered`,
+      text: `Please enter a valid phone number for ${countryName}. Check the number of digits.`,
       isValid: false,
+      isTooLong,
       currentDigits,
       expectedDigits
     };
