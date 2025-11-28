@@ -1904,7 +1904,7 @@
           </label>
         </div>
 
-        <!-- Worst-case scenario (only shown for loans >= 6000 EUR) -->
+        <!-- Worst-case scenario (only shown for loans >= 3000 EUR) -->
         <div id="worst-case-scenario-container" style="margin:48px 0 24px 0">
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
             <label class="toggle-switch">
@@ -2105,9 +2105,9 @@
       agreementSent: false
     };
 
-    // Worst case scenario is only shown for loans from 6,000 EUR and higher,
+    // Worst case scenario is only shown for loans from 3,000 EUR and higher,
     // since debt collectors and legal escalation rarely make sense below this amount.
-    const WORST_CASE_MIN_AMOUNT_EUR = 6000;
+    const WORST_CASE_MIN_AMOUNT_EUR = 3000;
 
     // Currency formatters are loaded from /js/formatters.js
     // - formatCurrency0(cents) - for My Agreements table (no decimals, nl-NL locale)
@@ -2335,9 +2335,10 @@
         initializeWizardCalculator();
       }
 
-      // Special handling for step 3: initialize reminder mode highlight
+      // Special handling for step 3: initialize reminder mode highlight and update worst case visibility
       if (step === 3) {
         toggleReminderMode();
+        updateWorstCaseVisibility();
       }
 
       // Apply read-only mode if agreement has been sent
@@ -2843,25 +2844,25 @@
 
     // Update visibility of worst case scenario option based on loan amount
     function updateWorstCaseVisibility() {
-      const amountInput = document.getElementById('amount');
-      if (!amountInput) return;
-
-      const amountValue = amountInput.value;
-      const cleanAmount = amountValue.replace(/[.,]/g, '');
-      const amountNum = parseFloat(cleanAmount) || 0;
-
       const container = document.getElementById('worst-case-scenario-container');
       const checkbox = document.getElementById('debt-collection-clause');
 
       if (!container) return;
 
-      const showWorstCase = amountNum >= WORST_CASE_MIN_AMOUNT_EUR;
+      // Get amount from wizardData (already stored in euros from previous steps)
+      const amountEur = wizardData.amount || 0;
+
+      const showWorstCase = amountEur >= WORST_CASE_MIN_AMOUNT_EUR;
 
       if (showWorstCase) {
         container.style.display = '';
+        // Default to checked (enabled) when shown
+        if (checkbox) {
+          checkbox.checked = true;
+        }
       } else {
         container.style.display = 'none';
-        // Clear the checkbox when hidden
+        // Uncheck the checkbox when hidden
         if (checkbox) {
           checkbox.checked = false;
         }
@@ -3911,7 +3912,7 @@
       const firstPaymentDate = document.getElementById('firstPaymentDate').value;
 
       // Store in wizard data
-      wizardData.amount = loanAmount / 100; // Convert cents to euros
+      wizardData.amount = loanAmount; // parseMoney returns euros, not cents
       wizardData.repaymentType = repaymentType;
       wizardData.moneySentOption = loanStartMode;
       wizardData.moneySentDate = loanStartDate;
@@ -4787,7 +4788,7 @@
 
       wizardData.proofRequired = document.getElementById('proof-required').checked;
 
-      // Only include debt collection clause if amount is >= 6000 EUR
+      // Only include debt collection clause if amount is >= 3000 EUR
       const amountEur = wizardData.amount || 0;
       if (amountEur >= WORST_CASE_MIN_AMOUNT_EUR) {
         wizardData.debtCollectionClause = document.getElementById('debt-collection-clause').checked;
