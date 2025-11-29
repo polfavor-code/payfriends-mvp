@@ -102,8 +102,7 @@
       <div style="margin-top:24px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); background:rgba(21,26,33,0.6); padding:24px; display:flex; align-items:center; gap:20px">
         <div id="friend-avatar" style="flex-shrink:0"></div>
         <div style="flex:1">
-          <div id="friend-name" style="font-size:24px; font-weight:600; margin-bottom:8px"></div>
-          <div id="friend-role" style="display:inline-block; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; margin-bottom:12px"></div>
+          <div id="friend-name" style="font-size:24px; font-weight:600; margin-bottom:12px"></div>
 
           <!-- Timezone, Email, Phone with consistent spacing -->
           <div style="display:flex; flex-direction:column; gap:6px">
@@ -262,27 +261,6 @@
 
       // Name
       document.getElementById('friend-name').textContent = data.name;
-
-      // Role badge
-      const roleEl = document.getElementById('friend-role');
-      // Determine role from agreements (are they borrower or lender from my perspective?)
-      let role = 'Friend';
-      if (data.agreementsWithThisFriend && data.agreementsWithThisFriend.length > 0) {
-        // Check the first agreement to determine primary role
-        const firstAgreement = data.agreementsWithThisFriend[0];
-        if (firstAgreement.roleForCurrentUser === 'lender') {
-          role = 'Borrower'; // I'm the lender, so they're the borrower
-          roleEl.style.background = 'rgba(230,126,34,0.15)';
-          roleEl.style.color = '#f39c63';
-          roleEl.style.border = '1px solid rgba(230,126,34,0.3)';
-        } else {
-          role = 'Lender'; // I'm the borrower, so they're the lender
-          roleEl.style.background = 'rgba(61,123,220,0.15)';
-          roleEl.style.color = '#6b9cff';
-          roleEl.style.border = '1px solid rgba(61,123,220,0.3)';
-        }
-      }
-      roleEl.textContent = role;
 
       // Timezone and local time
       const timezoneEl = document.getElementById('friend-timezone');

@@ -42,10 +42,6 @@
     .friend-avatar-initials.color-6{background:#3b82f6}
     .friend-avatar-initials.color-7{background:#14b8a6}
     .friend-name{font-size:16px; font-weight:600; color:var(--text)}
-    .friend-role-badge{display:inline-block; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; margin-top:4px}
-    .friend-role-badge.lent{background:rgba(61,123,220,0.15); color:#6b9cff; border:1px solid rgba(61,123,220,0.3)}
-    .friend-role-badge.borrowed{background:rgba(230,126,34,0.15); color:#f39c63; border:1px solid rgba(230,126,34,0.3)}
-    .friend-role-badge.both{background:rgba(61,220,151,0.15); color:#3ddc97; border:1px solid rgba(61,220,151,0.3)}
     .friend-stats{margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); font-size:13px; color:var(--muted)}
     .friend-stats-item{display:inline-block; margin-right:16px}
     .friend-stats-value{color:var(--accent); font-weight:600}
@@ -137,26 +133,25 @@
       }
     }
 
-    // Utility: Get role badge text and class
-    function getRoleBadge(roleSummary) {
-      // From your perspective: who is this friend?
-      if (roleSummary === 'both') {
-        return { text: 'Both', className: 'both' };
-      } else if (roleSummary === 'you lent') {
-        return { text: 'Borrower', className: 'lent' }; // You lent to them, so they're the borrower
-      } else {
-        return { text: 'Lender', className: 'borrowed' }; // They lent to you, so they're the lender
-      }
-    }
-
     // Render friends list
     function renderFriends(friends) {
       const friendsGrid = document.getElementById('friends-grid');
       friendsGrid.innerHTML = '';
 
       friends.forEach(friend => {
-        const badge = getRoleBadge(friend.roleSummary);
         const avatarHTML = generateAvatarHTML(friend);
+
+        // Format total outstanding (signed value)
+        const outstandingCents = friend.totalOutstandingCents || 0;
+        let outstandingText = '';
+        if (outstandingCents !== 0) {
+          outstandingText = formatCurrency0(Math.abs(outstandingCents));
+          if (outstandingCents < 0) {
+            outstandingText = '−' + outstandingText; // Unicode minus sign for negative
+          }
+        } else {
+          outstandingText = formatCurrency0(0);
+        }
 
         const card = document.createElement('div');
         card.className = 'friend-card';
@@ -169,12 +164,14 @@
             <div class="friend-avatar">${avatarHTML}</div>
             <div>
               <div class="friend-name">${escapeHTML(friend.name)}</div>
-              <div class="friend-role-badge ${badge.className}">${badge.text}</div>
             </div>
           </div>
           <div class="friend-stats">
             <span class="friend-stats-item">Active: <span class="friend-stats-value">${friend.activeAgreementsCount}</span></span>
             <span class="friend-stats-item">Settled: <span class="friend-stats-value">${friend.settledAgreementsCount}</span></span>
+          </div>
+          <div class="friend-stats" style="margin-top:8px; padding-top:8px">
+            <span class="friend-stats-item">Total outstanding: <span class="friend-stats-value">${outstandingText}</span></span>
           </div>
           <div class="friend-actions">
             <button class="btn-view-profile" onclick="event.stopPropagation(); window.location.href='/friends/${friend.friendPublicId}'">Open profile</button>

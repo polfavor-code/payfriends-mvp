@@ -2155,7 +2155,8 @@ app.get('/api/friends', requireAuth, (req, res) => {
       friendMap.get(friend.friend_id).isBorrower = true;
     }
 
-    // Get agreement counts for each friend
+    // Get agreement counts and total outstanding for each friend
+    const today = new Date();
     for (const [friendId, friendData] of friendMap.entries()) {
       const counts = db.prepare(`
         SELECT
@@ -2168,6 +2169,40 @@ app.get('/api/friends', requireAuth, (req, res) => {
 
       friendData.activeAgreementsCount = counts.active_count || 0;
       friendData.settledAgreementsCount = counts.settled_count || 0;
+
+      // Calculate total outstanding for active agreements with this friend
+      // Outstanding = principal + interest accrued to date - payments made
+      // Sign convention: positive = they owe me, negative = I owe them
+      const activeAgreements = db.prepare(`
+        SELECT * FROM agreements
+        WHERE status = 'active'
+          AND ((lender_user_id = ? AND borrower_user_id = ?)
+            OR (lender_user_id = ? AND borrower_user_id = ?))
+      `).all(userId, friendId, friendId, userId);
+
+      let totalOutstandingCents = 0;
+      for (const agreement of activeAgreements) {
+        // Get payment totals
+        const totals = getPaymentTotals(agreement.id);
+        // Calculate dynamic interest info (principal + interest accrued to today)
+        const interestInfo = getAgreementInterestInfo(agreement, today);
+        const totalDueCentsToday = interestInfo.total_due_cents;
+
+        // Outstanding for this agreement
+        let outstandingCents = totalDueCentsToday - totals.total_paid_cents;
+        if (outstandingCents < 0) outstandingCents = 0;
+
+        // Apply sign based on who owes whom
+        if (agreement.lender_user_id === userId) {
+          // I'm the lender: they owe me (positive)
+          totalOutstandingCents += outstandingCents;
+        } else {
+          // I'm the borrower: I owe them (negative)
+          totalOutstandingCents -= outstandingCents;
+        }
+      }
+
+      friendData.totalOutstandingCents = totalOutstandingCents;
 
       // Determine role summary
       if (friendData.isLender && friendData.isBorrower) {
