@@ -243,27 +243,21 @@
         // Global variable for agreement ID
         let agreementId;
 
-        // Import formatters and initialize
-        import('/js/formatters.js').then(() => {
-            // Formatters are now available on window
+        // Extract agreement ID from URL
+        const pathParts = window.location.pathname.split('/');
+        agreementId = pathParts[2]; // /agreements/[id]/report-payment
 
-            // Extract agreement ID from URL
-            const pathParts = window.location.pathname.split('/');
-            agreementId = pathParts[2]; // /agreements/[id]/report-payment
-
+        // Main initialization
+        function initializePage() {
             if (!agreementId || agreementId === 'report-payment') {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('error').textContent = 'Invalid agreement ID. Please return to the dashboard and try again.';
                 document.getElementById('error').classList.remove('hidden');
-            } else {
-                loadAgreementAndInitialize();
+                return;
             }
-        }).catch(err => {
-            console.error('Failed to load formatters:', err);
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').textContent = 'Failed to load application resources. Please refresh.';
-            document.getElementById('error').classList.remove('hidden');
-        });
+            
+            loadAgreementAndInitialize();
+        }
 
         async function loadAgreementAndInitialize() {
             const loading = document.getElementById('loading');
@@ -377,6 +371,13 @@
                     type: 'installment'
                 };
             }
+        }
+
+        // Wait for DOM and all scripts to be ready, then initialize
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePage);
+        } else {
+            initializePage();
         }
 
         // Initialize footer
