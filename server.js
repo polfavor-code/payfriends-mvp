@@ -621,7 +621,13 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
     nextPaymentAmountFormatted = null;
   }
 
-  // Generate full repayment schedule for timeline (only for active agreements)
+  // Generate timeline payments for active agreements
+  // This includes:
+  // - ALL unpaid schedule rows (future or overdue)
+  // - Amounts match the repayment schedule EXACTLY (Payment total)
+  // - Dates match the repayment schedule EXACTLY
+  // - Only CONFIRMED payments reduce outstanding/mark rows as paid
+  // - Pending payments do NOT affect the schedule
   let futurePayments = [];
   if (agreement.status === 'active' && agreement.accepted_at) {
     try {
@@ -648,15 +654,84 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Filter to future payments only
-      futurePayments = schedule.rows
-        .filter(row => row.date && new Date(row.date) >= today)
-        .map(row => ({
-          date: row.date.toISOString().split('T')[0],
-          dateLabel: row.dateLabel,
-          amountCents: row.totalPayment,
-          amountFormatted: formatCurrency0(row.totalPayment)
-        }));
+      // Get total CONFIRMED payments only (pending payments do NOT count)
+      const totalConfirmedPaidCents = totals.total_paid_cents;
+
+      // Helper to format date as YYYY-MM-DD in local timezone (avoids UTC shift)
+      const formatLocalDate = (d) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      if (agreement.repayment_type === 'one_time') {
+        // For bullet (one-time) loans:
+        // Use agreement.due_date as the authoritative due date
+        // Use schedule to calculate the total amount (principal + interest)
+        if (outstandingCents > 0 && agreement.due_date) {
+          const dueDate = new Date(agreement.due_date);
+          dueDate.setHours(0, 0, 0, 0);
+          
+          // Get the payment total from schedule (if available) for accurate interest calculation
+          // Otherwise use the outstanding amount
+          let paymentTotal = outstandingCents;
+          if (schedule.rows.length > 0) {
+            // Schedule totalPayment includes principal + interest
+            paymentTotal = schedule.rows[0].totalPayment;
+          }
+          
+          // For one-time loans, show remaining outstanding (original total minus paid)
+          // This is different from installment loans which show exact schedule amounts
+          futurePayments.push({
+            date: formatLocalDate(dueDate), // Use agreement's due_date
+            dateLabel: formatDateShort(dueDate), // Formatted date for display
+            amountCents: outstandingCents, // Remaining amount to pay
+            amountFormatted: formatCurrency2(outstandingCents),
+            status: dueDate < today ? 'overdue' : 'scheduled'
+          });
+        }
+      } else {
+        // For installment loans:
+        // Show ALL unpaid schedule rows with EXACT amounts from schedule (Payment Total)
+        // Apply confirmed payments to determine which rows are fully paid (and skip them)
+        // But always show the EXACT schedule amount - never reduce it for partial payments
+        let remainingPaidCents = totalConfirmedPaidCents;
+
+        for (const row of schedule.rows) {
+          if (!row.date) continue;
+
+          const rowDate = new Date(row.date);
+          rowDate.setHours(0, 0, 0, 0);
+          
+          // Check if this row is fully paid by confirmed payments
+          if (remainingPaidCents >= row.totalPayment) {
+            // This installment is fully paid - deduct and skip
+            remainingPaidCents -= row.totalPayment;
+            continue;
+          }
+
+          // This row is not fully paid - show it with the EXACT schedule amount
+          // Note: We don't reduce the amount for partial payments, we show the full schedule amount
+          // Any remaining paid credit is "consumed" but doesn't affect display
+          if (remainingPaidCents > 0) {
+            // There's some partial payment credit, but we still show full amount
+            remainingPaidCents = 0;
+          }
+
+          // Determine status based on date
+          const status = rowDate < today ? 'overdue' : 'scheduled';
+
+          // Use the EXACT Payment Total from schedule - matches repayment schedule table exactly
+          futurePayments.push({
+            date: formatLocalDate(rowDate), // Local timezone date for JavaScript parsing
+            dateLabel: row.dateLabel, // Formatted date for display
+            amountCents: row.totalPayment, // EXACT schedule amount (Payment Total)
+            amountFormatted: formatCurrency2(row.totalPayment), // Use 2 decimal places to match schedule
+            status: status
+          });
+        }
+      }
     } catch (err) {
       console.error('Error generating repayment schedule for agreement', agreement.id, err);
     }

@@ -2080,13 +2080,14 @@
       line-height: 1.5;
     }
 
-    /* Money Timeline */
+    /* Cashflow Roadmap (formerly Money Timeline) */
     .timeline-container {
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 16px;
       padding: 24px;
       margin: 32px 0;
+      overflow: visible; /* Allow tooltips to escape */
     }
 
     .timeline-header {
@@ -2140,9 +2141,8 @@
     .timeline-wrapper {
       position: relative;
       margin: 24px 0;
-      padding: 40px 0;
-      overflow-x: auto;
-      overflow-y: visible;
+      padding: 60px 0 80px 0; /* Extra padding: top for tooltips, bottom for labels */
+      overflow: visible; /* No scrollbars - tooltips can escape */
     }
 
     .timeline-line {
@@ -2199,6 +2199,67 @@
       border: 3px solid var(--card);
     }
 
+    .timeline-dot-overdue {
+      background: #ef4444;
+      border: 3px solid var(--card);
+      animation: pulse-overdue 2s infinite;
+    }
+
+    @keyframes pulse-overdue {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    }
+
+    .timeline-summary {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .timeline-summary-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .timeline-summary-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .timeline-summary-dot.incoming {
+      background: var(--accent);
+    }
+
+    .timeline-summary-dot.outgoing {
+      background: #fb923c;
+    }
+
+    .timeline-summary-dot.net {
+      background: linear-gradient(135deg, var(--accent), #fb923c);
+    }
+
+    .timeline-summary-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .timeline-summary-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .timeline-summary-value.positive {
+      color: var(--accent);
+    }
+
+    .timeline-summary-value.negative {
+      color: #fb923c;
+    }
+
     .timeline-dot:hover {
       width: 24px;
       height: 24px;
@@ -2243,15 +2304,17 @@
       transform: translateX(-50%);
       background: #1f2937;
       color: #fff;
-      padding: 8px 12px;
-      border-radius: 6px;
+      padding: 10px 14px;
+      border-radius: 8px;
       font-size: 12px;
+      line-height: 1.5;
       white-space: nowrap;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      z-index: 100;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1000; /* High z-index to appear above everything */
     }
 
     .timeline-dot:hover .timeline-tooltip {
@@ -2301,7 +2364,7 @@
 
       .timeline-wrapper {
         margin: 16px 0;
-        padding: 30px 0;
+        padding: 50px 0 70px 0; /* Extra padding for tooltips and labels */
       }
 
       .timeline-zoom-controls {
@@ -7473,131 +7536,279 @@
       `;
     }
 
-    // Helper: Render repayment timeline with incoming and outgoing payments
-    function renderRepaymentTimeline(activeAgreements, currentUserId) {
+    // Global state for cashflow roadmap zoom mode
+    let cashflowZoomMode = 'auto';
+
+    // Helper: Render Cashflow Roadmap with incoming and outgoing payments
+    function renderCashflowRoadmap(activeAgreements, currentUserId, zoomMode = 'auto') {
       if (!activeAgreements || activeAgreements.length === 0) {
         return '';
       }
 
-      // Collect all future repayments from active agreements using full schedule data
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+      // Collect all repayment events from active agreements
       const allEvents = [];
       activeAgreements.forEach(agreement => {
         const isLender = agreement.isLender;
         const direction = isLender ? 'incoming' : 'outgoing';
+        const loanDescription = agreement.description || `Loan with ${agreement.counterpartyName}`;
 
-        // Use the futurePayments array from the agreement
+        // Use the futurePayments array from the agreement (includes overdue)
         if (agreement.futurePayments && agreement.futurePayments.length > 0) {
           agreement.futurePayments.forEach(payment => {
             const paymentDate = new Date(payment.date);
+            // Use payment.status from backend if available, otherwise determine from date
+            const isOverdue = payment.status === 'overdue' || paymentDate < today;
+            
             allEvents.push({
               date: paymentDate,
               dateStr: payment.date,
+              dateLabel: payment.dateLabel, // Use formatted date from backend
               counterparty: agreement.counterpartyName,
+              loanDescription: loanDescription,
               amount: payment.amountFormatted,
               amountCents: payment.amountCents,
-              direction: direction
+              direction: direction,
+              isOverdue: isOverdue,
+              status: isOverdue ? 'overdue' : 'scheduled',
+              agreementId: agreement.id
             });
           });
         }
       });
 
+      // Empty state
       if (allEvents.length === 0) {
         return `
           <div class="timeline-header">
             <div>
-              <h3 class="timeline-title">Money timeline</h3>
-              <p class="timeline-subtitle">All incoming and outgoing repayments on one horizontal line.</p>
+              <h3 class="timeline-title">Cashflow Roadmap</h3>
+              <p class="timeline-subtitle">Upcoming incoming and outgoing payments combined.</p>
             </div>
           </div>
           <div style="padding:32px; text-align:center; color:var(--muted); font-style:italic">
-            No upcoming repayments
+            No upcoming payments — all loans are fully repaid!
           </div>
         `;
       }
 
-      // Sort by date
+      // Sort by date (earliest first)
       allEvents.sort((a, b) => a.date - b.date);
 
-      // Calculate timeline range
-      const minDate = allEvents[0].date;
-      const maxDate = allEvents[allEvents.length - 1].date;
-      const timeRange = maxDate - minDate;
-      const todayPosition = timeRange > 0 ? ((today - minDate) / timeRange) * 100 : 50;
+      // Calculate visible date range based on zoom mode
+      let rangeStart = new Date(today);
+      let rangeEnd;
+      
+      switch (zoomMode) {
+        case '6m':
+          rangeEnd = new Date(today);
+          rangeEnd.setMonth(rangeEnd.getMonth() + 6);
+          break;
+        case '12m':
+          rangeEnd = new Date(today);
+          rangeEnd.setMonth(rangeEnd.getMonth() + 12);
+          break;
+        case 'all':
+          // Show from earliest event to latest event
+          rangeStart = new Date(allEvents[0].date);
+          rangeEnd = new Date(allEvents[allEvents.length - 1].date);
+          break;
+        case 'auto':
+        default:
+          // Start from today, end at last event (capped at 24 months)
+          rangeEnd = new Date(allEvents[allEvents.length - 1].date);
+          const maxEnd = new Date(today);
+          maxEnd.setMonth(maxEnd.getMonth() + 24);
+          if (rangeEnd > maxEnd) rangeEnd = maxEnd;
+          break;
+      }
 
-      // Build timeline dots with direction indicators
-      const dotsHtml = allEvents.map(event => {
-        const position = timeRange > 0 ? ((event.date - minDate) / timeRange) * 100 : 50;
+      // For modes other than 'all', include overdue events near the start
+      const overdueEvents = allEvents.filter(e => e.isOverdue);
+      if (zoomMode !== 'all' && overdueEvents.length > 0) {
+        const earliestOverdue = overdueEvents[0].date;
+        if (earliestOverdue < rangeStart) {
+          rangeStart = new Date(earliestOverdue);
+        }
+      }
+
+      // Filter events to visible range (but keep overdue events)
+      const visibleEvents = allEvents.filter(event => {
+        if (event.isOverdue) return true; // Always show overdue
+        return event.date >= rangeStart && event.date <= rangeEnd;
+      });
+
+      // Calculate summary totals (from visible events)
+      let totalIncomingCents = 0;
+      let totalOutgoingCents = 0;
+      visibleEvents.forEach(event => {
+        if (event.direction === 'incoming') {
+          totalIncomingCents += event.amountCents;
+        } else {
+          totalOutgoingCents += event.amountCents;
+        }
+      });
+      const netCents = totalIncomingCents - totalOutgoingCents;
+
+      // Format amounts without minus signs (use window.formatCurrency0 if available)
+      const formatAmount = (cents) => {
+        if (window.formatCurrency0) {
+          return window.formatCurrency0(Math.abs(cents));
+        }
+        return `€${(Math.abs(cents) / 100).toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+      };
+
+      const totalIncomingFormatted = formatAmount(totalIncomingCents);
+      const totalOutgoingFormatted = formatAmount(totalOutgoingCents);
+      const netFormatted = formatAmount(netCents);
+      // Use text labels instead of +/- signs for Net display
+      const netLabel = netCents >= 0 ? 'Net gain:' : 'Net owed:';
+      const netClass = netCents >= 0 ? 'positive' : 'negative';
+
+      // Build summary HTML
+      const summaryHtml = `
+        <div class="timeline-summary">
+          <div class="timeline-summary-item">
+            <div class="timeline-summary-dot incoming"></div>
+            <span class="timeline-summary-label">Incoming:</span>
+            <span class="timeline-summary-value positive">${totalIncomingFormatted}</span>
+          </div>
+          <div class="timeline-summary-item">
+            <div class="timeline-summary-dot outgoing"></div>
+            <span class="timeline-summary-label">Outgoing:</span>
+            <span class="timeline-summary-value negative">${totalOutgoingFormatted}</span>
+          </div>
+          <div class="timeline-summary-item">
+            <div class="timeline-summary-dot net"></div>
+            <span class="timeline-summary-label">${netLabel}</span>
+            <span class="timeline-summary-value ${netClass}">${netFormatted}</span>
+          </div>
+        </div>
+      `;
+
+      // Calculate timeline positions
+      const timeRange = rangeEnd - rangeStart;
+
+      // Build timeline dots
+      const dotsHtml = visibleEvents.map(event => {
+        const position = timeRange > 0 ? ((event.date - rangeStart) / timeRange) * 100 : 50;
+        const clampedPosition = Math.max(0, Math.min(100, position));
+        
         const daysUntil = Math.ceil((event.date - today) / (1000 * 60 * 60 * 24));
-        const daysText = daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : daysUntil > 0 ? `In ${daysUntil} days` : `${Math.abs(daysUntil)} days ago`;
+        let daysText;
+        if (daysUntil === 0) {
+          daysText = 'today';
+        } else if (daysUntil === 1) {
+          daysText = 'tomorrow';
+        } else if (daysUntil > 0) {
+          daysText = `in ${daysUntil} days`;
+        } else {
+          daysText = `${Math.abs(daysUntil)} days overdue`;
+        }
 
-        // Format date as short version (e.g., "28 Nov")
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const shortDate = `${event.date.getDate()} ${monthNames[event.date.getMonth()]}`;
-
-        // Determine dot style based on direction
-        const dotClass = event.direction === 'incoming' ? 'timeline-dot-incoming' : 'timeline-dot-outgoing';
-        const sign = event.direction === 'incoming' ? '+' : '−';
-        const directionLabel = event.direction === 'incoming' ? 'Incoming from' : 'Outgoing to';
+        // Use dateLabel from backend for display (exact match with schedule)
+        const shortDate = event.dateLabel ? event.dateLabel.replace(/\s+\d{4}$/, '') : `${event.date.getDate()} ${monthNames[event.date.getMonth()]}`;
+        const fullDate = event.dateLabel || `${event.date.getDate()} ${monthNames[event.date.getMonth()]} ${event.date.getFullYear()}`;
+        
+        // Determine dot style based on direction and overdue status
+        let dotClass;
+        if (event.isOverdue) {
+          dotClass = 'timeline-dot-overdue';
+        } else if (event.direction === 'incoming') {
+          dotClass = 'timeline-dot-incoming';
+        } else {
+          dotClass = 'timeline-dot-outgoing';
+        }
+        
+        // Direction text without minus signs
+        const directionText = event.direction === 'incoming' 
+          ? `You receive from ${event.counterparty}`
+          : `You pay ${event.counterparty}`;
+        const statusText = event.isOverdue ? 'overdue' : 'scheduled';
+        const statusLabel = event.isOverdue ? ' (OVERDUE)' : '';
+        
+        // Use colored indicator instead of +/- sign in dot
+        const dotIndicator = event.direction === 'incoming' ? '↓' : '↑';
 
         return `
-          <div class="timeline-dot ${dotClass}" style="left:${position}%">
-            <div class="timeline-tooltip">${directionLabel} ${escapeHTML(event.counterparty)} • ${sign}${escapeHTML(event.amount)} • ${daysText}</div>
-            <div class="timeline-dot-marker">${sign}</div>
+          <div class="timeline-dot ${dotClass}" style="left:${clampedPosition}%">
+            <div class="timeline-tooltip">
+              <strong>${directionText}${statusLabel}</strong><br>
+              ${escapeHTML(event.amount)} on ${escapeHTML(fullDate)}<br>
+              <span style="color: var(--muted)">Status: ${statusText}</span>
+            </div>
+            <div class="timeline-dot-marker">${dotIndicator}</div>
             <div class="timeline-dot-label">
               <div class="timeline-dot-amount">${escapeHTML(event.amount)}</div>
-              <div class="timeline-dot-date">${shortDate}</div>
+              <div class="timeline-dot-date">${escapeHTML(shortDate)}</div>
             </div>
           </div>
         `;
       }).join('');
 
-      // Find next money movement (soonest future event)
-      const nextEvent = allEvents.find(e => e.date >= today);
+      // Today marker position
+      const todayPosition = timeRange > 0 ? ((today - rangeStart) / timeRange) * 100 : 0;
+      const clampedTodayPosition = Math.max(0, Math.min(100, todayPosition));
+      
+      const todayMarker = `
+        <div class="timeline-today" style="left:${clampedTodayPosition}%">
+          <div class="timeline-today-label">Today</div>
+        </div>
+      `;
+
+      // Find next payment (soonest future event)
+      const nextEvent = visibleEvents.find(e => e.date >= today);
       let nextEventHtml = '';
+      
       if (nextEvent) {
         const daysUntil = Math.ceil((nextEvent.date - today) / (1000 * 60 * 60 * 24));
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const fullDate = `${nextEvent.date.getDate()} ${monthNames[nextEvent.date.getMonth()]} ${nextEvent.date.getFullYear()}`;
-        const sign = nextEvent.direction === 'incoming' ? '+' : '−';
-        const directionLabel = nextEvent.direction === 'incoming' ? `Incoming from ${nextEvent.counterparty}` : `Outgoing to ${nextEvent.counterparty}`;
+        
+        // Use proper direction-based labels (no minus signs)
+        const isIncoming = nextEvent.direction === 'incoming';
+        const cardTitle = isIncoming ? 'Next incoming payment' : 'Next outgoing payment';
+        const preposition = isIncoming ? 'From' : 'To';
+        const daysLabel = daysUntil === 0 ? '(today)' : daysUntil === 1 ? '(tomorrow)' : `(in ${daysUntil} days)`;
 
         nextEventHtml = `
-          <div class="next-payment-panel">
-            <div class="next-payment-label">Next money movement</div>
-            <div class="next-payment-text">${escapeHTML(directionLabel)} · ${sign}${escapeHTML(nextEvent.amount)} on ${fullDate}</div>
+          <div class="next-payment-panel" style="${isIncoming ? '' : 'border-color: rgba(251, 146, 60, 0.3); background: rgba(251, 146, 60, 0.05);'}">
+            <div class="next-payment-label">${cardTitle}</div>
+            <div class="next-payment-text">${preposition} ${escapeHTML(nextEvent.counterparty)} · ${escapeHTML(nextEvent.amount)} on ${fullDate} ${daysLabel}</div>
+          </div>
+        `;
+      } else if (overdueEvents.length > 0) {
+        nextEventHtml = `
+          <div class="next-payment-panel" style="border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05);">
+            <div class="next-payment-label" style="color: #ef4444;">⚠️ Overdue payments</div>
+            <div class="next-payment-text" style="color: #ef4444;">${overdueEvents.length} payment(s) are past due</div>
           </div>
         `;
       } else {
         nextEventHtml = `
           <div class="next-payment-panel">
-            <div class="next-payment-label">Next money movement</div>
-            <div class="next-payment-text" style="color:var(--muted)">No upcoming repayments</div>
+            <div class="next-payment-label">All done!</div>
+            <div class="next-payment-text" style="color:var(--muted)">No upcoming payments</div>
           </div>
         `;
       }
 
-      const todayMarker = today >= minDate && today <= maxDate ? `
-        <div class="timeline-today" style="left:${todayPosition}%">
-          <div class="timeline-today-label">Today</div>
-        </div>
-      ` : '';
-
       return `
         <div class="timeline-header">
           <div>
-            <h3 class="timeline-title">Money timeline</h3>
-            <p class="timeline-subtitle">All incoming and outgoing repayments on one horizontal line.</p>
+            <h3 class="timeline-title">Cashflow Roadmap</h3>
+            <p class="timeline-subtitle">Upcoming incoming and outgoing payments combined.</p>
           </div>
           <div class="timeline-zoom-controls">
-            <button class="timeline-zoom-btn active" onclick="setTimelineZoom('auto')">Auto</button>
-            <button class="timeline-zoom-btn" onclick="setTimelineZoom('6m')">6m</button>
-            <button class="timeline-zoom-btn" onclick="setTimelineZoom('12m')">12m</button>
-            <button class="timeline-zoom-btn" onclick="setTimelineZoom('all')">All</button>
+            <button class="timeline-zoom-btn ${zoomMode === 'auto' ? 'active' : ''}" onclick="setTimelineZoom('auto')">Auto</button>
+            <button class="timeline-zoom-btn ${zoomMode === '6m' ? 'active' : ''}" onclick="setTimelineZoom('6m')">6m</button>
+            <button class="timeline-zoom-btn ${zoomMode === '12m' ? 'active' : ''}" onclick="setTimelineZoom('12m')">12m</button>
+            <button class="timeline-zoom-btn ${zoomMode === 'all' ? 'active' : ''}" onclick="setTimelineZoom('all')">All</button>
           </div>
         </div>
+        ${summaryHtml}
         <div class="timeline-wrapper">
           <div class="timeline-line">
             ${todayMarker}
@@ -7608,14 +7819,24 @@
       `;
     }
 
-    // Placeholder for timeline zoom (to be implemented later)
+    // Alias for backwards compatibility
+    function renderRepaymentTimeline(activeAgreements, currentUserId) {
+      return renderCashflowRoadmap(activeAgreements, currentUserId, cashflowZoomMode);
+    }
+
+    // Functional zoom control for cashflow roadmap
     function setTimelineZoom(mode) {
-      // Update active state
-      document.querySelectorAll('.timeline-zoom-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      event.target.classList.add('active');
-      // TODO: Implement zoom logic
+      cashflowZoomMode = mode;
+      
+      // Re-render the timeline with new zoom mode
+      const data = window.__DASHBOARD_DATA__;
+      if (data && data.agreements && data.user) {
+        const activeAgreements = data.agreements.filter(a => a.status === 'active');
+        const timelineContainer = document.getElementById('timeline-container');
+        if (timelineContainer && activeAgreements.length > 0) {
+          timelineContainer.innerHTML = renderCashflowRoadmap(activeAgreements, data.user.id, mode);
+        }
+      }
     }
 
     // Dashboard initialization function
@@ -7850,10 +8071,11 @@
             }
           }
 
-          // Populate progress rings (separate for lender and borrower)
+          // Populate progress rings (separate for lender and borrower) - use ALL agreements
           const progressContainer = document.getElementById('progress-circle-container');
-          if (progressContainer && data.agreementsSummary && data.user) {
-            const activeAgreements = data.agreementsSummary.filter(a => a.status === 'active');
+          if (progressContainer && data.agreements && data.user) {
+            // Use all agreements, not agreementsSummary (which is limited to first 3)
+            const activeAgreements = data.agreements.filter(a => a.status === 'active');
 
             if (activeAgreements.length > 0) {
               let lentTotal = 0;
@@ -7892,10 +8114,11 @@
             }
           }
 
-          // Populate repayment timeline
+          // Populate repayment timeline - use ALL agreements, not just the first 3
           const timelineContainer = document.getElementById('timeline-container');
-          if (timelineContainer && data.agreementsSummary && data.user) {
-            const activeAgreements = data.agreementsSummary.filter(a => a.status === 'active');
+          if (timelineContainer && data.agreements && data.user) {
+            // Use all agreements, not agreementsSummary (which is limited to first 3)
+            const activeAgreements = data.agreements.filter(a => a.status === 'active');
 
             if (activeAgreements.length > 0) {
               timelineContainer.innerHTML = renderRepaymentTimeline(activeAgreements, data.user.id);
