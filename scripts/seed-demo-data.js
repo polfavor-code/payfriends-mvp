@@ -4,6 +4,19 @@
  * 
  * Usage: node scripts/seed-demo-data.js
  * 
+ * Test Scenarios Created:
+ * 
+ * User A (Alice): Lender in multiple loans
+ *   - Bullet loan to Bob (€1,000, due in 3 months, with partial confirmed payments)
+ *   - Installment loan to Charlie (€3,000, 6 monthly installments, some paid)
+ *   - Also a borrower from Dave (€500, small loan)
+ * 
+ * User B (Bob): Borrower from Alice (bullet loan)
+ * 
+ * User C (Charlie): Borrower from Alice (installment loan)
+ * 
+ * User D (Dave): Lender to Alice (small loan where Alice is borrower)
+ * 
  * This script is idempotent - safe to run multiple times.
  */
 
@@ -16,9 +29,15 @@ const DB_PATH = path.join(__dirname, '..', 'data', 'payfriends.db');
 const SALT_ROUNDS = 10;
 
 // Test user credentials
-const LENDER_EMAIL = 'lender@test.dev';
-const BORROWER_EMAIL = 'borrower@test.dev';
-const PASSWORD = 'password123';
+const USERS = {
+  alice: { email: 'alice@test.dev', password: 'password123', fullName: 'Alice Anderson' },
+  bob: { email: 'bob@test.dev', password: 'password123', fullName: 'Bob Brown' },
+  charlie: { email: 'charlie@test.dev', password: 'password123', fullName: 'Charlie Chen' },
+  dave: { email: 'dave@test.dev', password: 'password123', fullName: 'Dave Davis' },
+  // Keep legacy test users for backward compatibility
+  lender: { email: 'lender@test.dev', password: 'password123', fullName: 'Lenny Lender' },
+  borrower: { email: 'borrower@test.dev', password: 'password123', fullName: 'Bob Borrower' }
+};
 
 console.log('=== PayFriends Demo Data Seeder ===\n');
 
@@ -30,60 +49,84 @@ db.pragma('journal_mode = WAL');
  * Create or update a user
  */
 async function upsertUser(email, password, fullName) {
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-    const publicId = crypto.randomBytes(16).toString('hex');
-    const createdAt = new Date().toISOString();
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const publicId = crypto.randomBytes(16).toString('hex');
+  const createdAt = new Date().toISOString();
 
-    // Check if user exists
-    const existing = db.prepare('SELECT id, public_id FROM users WHERE email = ?').get(email);
+  // Check if user exists
+  const existing = db.prepare('SELECT id, public_id FROM users WHERE email = ?').get(email);
 
-    if (existing) {
-        // Update existing user (password and name only, keep existing public_id)
-        db.prepare(`
+  if (existing) {
+    // Update existing user (password and name only, keep existing public_id)
+    db.prepare(`
       UPDATE users 
-      SET password_hash = ?, full_name = ?, created_at = ?
+      SET password_hash = ?, full_name = ?
       WHERE email = ?
-    `).run(passwordHash, fullName, createdAt, email);
+    `).run(passwordHash, fullName, email);
 
-        console.log(`✓ Updated existing user: ${email} (ID: ${existing.id})`);
-        return { id: existing.id, public_id: existing.public_id };
-    } else {
-        // Insert new user
-        const result = db.prepare(`
+    console.log(`✓ Updated existing user: ${email} (ID: ${existing.id})`);
+    return { id: existing.id, public_id: existing.public_id };
+  } else {
+    // Insert new user
+    const result = db.prepare(`
       INSERT INTO users (email, password_hash, full_name, public_id, created_at)
       VALUES (?, ?, ?, ?, ?)
     `).run(email, passwordHash, fullName, publicId, createdAt);
 
-        console.log(`✓ Created new user: ${email} (ID: ${result.lastInsertRowid})`);
-        return { id: result.lastInsertRowid, public_id: publicId };
-    }
+    console.log(`✓ Created new user: ${email} (ID: ${result.lastInsertRowid})`);
+    return { id: result.lastInsertRowid, public_id: publicId };
+  }
 }
 
 /**
  * Create or update an active agreement
  */
-function upsertAgreement(lenderUserId, borrowerUserId, lenderName, borrowerEmail, borrowerName, amountCents = 100000, description = 'Demo loan for testing') {
-    // Agreement parameters
-    // Agreement parameters
-    const interestRate = 5.0; // 5% annual
-    const daysUntilDue = 90; // 90 days from now
+function upsertAgreement(params) {
+  const {
+    lenderUserId,
+    borrowerUserId,
+    lenderName,
+    borrowerEmail,
+    borrowerName,
+    amountCents,
+    description,
+    interestRate = 5.0,
+    repaymentType = 'one_time',
+    installmentCount = 1,
+    paymentFrequency = 'once',
+    dueInDays = 90,
+    moneysentDaysAgo = 0
+  } = params;
 
-    const now = new Date();
-    const createdAt = now.toISOString();
-    const acceptedAt = now.toISOString(); // Make it accepted immediately
-    const moneySentDate = now.toISOString().split('T')[0]; // Today's date
+  const now = new Date();
+  const createdAt = now.toISOString();
+  const acceptedAt = now.toISOString();
+  
+  // Money sent date (can be in the past for testing)
+  const moneySentDate = new Date(now);
+  moneySentDate.setDate(moneySentDate.getDate() - moneysentDaysAgo);
+  const moneySentDateStr = moneySentDate.toISOString().split('T')[0];
 
-    const dueDate = new Date(now);
-    dueDate.setDate(dueDate.getDate() + daysUntilDue);
-    const dueDateStr = dueDate.toISOString().split('T')[0];
+  // Due date
+  const dueDate = new Date(moneySentDate);
+  dueDate.setDate(dueDate.getDate() + dueInDays);
+  const dueDateStr = dueDate.toISOString().split('T')[0];
 
-    // Calculate total repayment amount with simple interest
-    const yearFraction = daysUntilDue / 365;
-    const interestCents = Math.round(amountCents * (interestRate / 100) * yearFraction);
-    const totalRepayAmount = (amountCents + interestCents) / 100; // Convert to euros for storage
+  // First payment date for installments
+  let firstPaymentDate = null;
+  if (repaymentType === 'installments') {
+    const fpDate = new Date(moneySentDate);
+    fpDate.setDate(fpDate.getDate() + 30); // First payment 30 days after money sent
+    firstPaymentDate = fpDate.toISOString().split('T')[0];
+  }
 
-    // Check if agreement already exists for these users
-    const existing = db.prepare(`
+  // Calculate total repayment amount with simple interest
+  const yearFraction = dueInDays / 365;
+  const interestCents = Math.round(amountCents * (interestRate / 100) * yearFraction);
+  const totalRepayAmount = (amountCents + interestCents) / 100;
+
+  // Check if agreement already exists
+  const existing = db.prepare(`
     SELECT id FROM agreements 
     WHERE lender_user_id = ? AND borrower_user_id = ?
     AND status IN ('pending', 'active')
@@ -91,15 +134,18 @@ function upsertAgreement(lenderUserId, borrowerUserId, lenderName, borrowerEmail
     LIMIT 1
   `).get(lenderUserId, borrowerUserId, description);
 
-    if (existing) {
-        // Update existing agreement
-        db.prepare(`
+  if (existing) {
+    // Update existing agreement
+    db.prepare(`
       UPDATE agreements 
       SET amount_cents = ?,
           interest_rate = ?,
           due_date = ?,
           status = 'active',
-          repayment_type = 'one_time',
+          repayment_type = ?,
+          installment_count = ?,
+          payment_frequency = ?,
+          first_payment_date = ?,
           total_repay_amount = ?,
           accepted_at = ?,
           money_sent_date = ?,
@@ -108,27 +154,25 @@ function upsertAgreement(lenderUserId, borrowerUserId, lenderName, borrowerEmail
           proof_required = 0
       WHERE id = ?
     `).run(
-            amountCents,
-            interestRate,
-            dueDateStr,
-            totalRepayAmount,
-            acceptedAt,
-            moneySentDate,
-            description,
-            existing.id
-        );
+      amountCents,
+      interestRate,
+      dueDateStr,
+      repaymentType,
+      installmentCount,
+      paymentFrequency,
+      firstPaymentDate,
+      totalRepayAmount,
+      acceptedAt,
+      moneySentDateStr,
+      description,
+      existing.id
+    );
 
-        console.log(`✓ Updated existing agreement ID: ${existing.id}`);
-        console.log(`  Principal: €${(amountCents / 100).toFixed(2)}`);
-        console.log(`  Interest: ${interestRate}% (€${(interestCents / 100).toFixed(2)})`);
-        console.log(`  Total to repay: €${totalRepayAmount.toFixed(2)}`);
-        console.log(`  Due date: ${dueDateStr} (${daysUntilDue} days from now)`);
-        console.log(`  Status: active`);
-
-        return existing.id;
-    } else {
-        // Create new agreement
-        const result = db.prepare(`
+    console.log(`✓ Updated agreement ID: ${existing.id} - ${description}`);
+    return existing.id;
+  } else {
+    // Create new agreement
+    const result = db.prepare(`
       INSERT INTO agreements (
         lender_user_id,
         lender_name,
@@ -137,6 +181,9 @@ function upsertAgreement(lenderUserId, borrowerUserId, lenderName, borrowerEmail
         friend_first_name,
         direction,
         repayment_type,
+        installment_count,
+        payment_frequency,
+        first_payment_date,
         amount_cents,
         due_date,
         created_at,
@@ -148,133 +195,213 @@ function upsertAgreement(lenderUserId, borrowerUserId, lenderName, borrowerEmail
         money_sent_date,
         payment_preference_method,
         proof_required
-      ) VALUES (?, ?, ?, ?, ?, 'lend', 'one_time', ?, ?, ?, 'active', ?, ?, ?, ?, ?, 'bank,cash', 0)
+      ) VALUES (?, ?, ?, ?, ?, 'lend', ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, 'bank,cash', 0)
     `).run(
-            lenderUserId,
-            lenderName,
-            borrowerEmail,
-            borrowerUserId,
-            borrowerName,
-            amountCents,
-            dueDateStr,
-            createdAt,
-            description,
-            interestRate,
-            totalRepayAmount,
-            acceptedAt,
-            moneySentDate
-        );
+      lenderUserId,
+      lenderName,
+      borrowerEmail,
+      borrowerUserId,
+      borrowerName,
+      repaymentType,
+      installmentCount,
+      paymentFrequency,
+      firstPaymentDate,
+      amountCents,
+      dueDateStr,
+      createdAt,
+      description,
+      interestRate,
+      totalRepayAmount,
+      acceptedAt,
+      moneySentDateStr
+    );
 
-        console.log(`✓ Created new agreement ID: ${result.lastInsertRowid}`);
-        console.log(`  Principal: €${(amountCents / 100).toFixed(2)}`);
-        console.log(`  Interest: ${interestRate}% (€${(interestCents / 100).toFixed(2)})`);
-        console.log(`  Total to repay: €${totalRepayAmount.toFixed(2)}`);
-        console.log(`  Due date: ${dueDateStr} (${daysUntilDue} days from now)`);
-        console.log(`  Status: active`);
-
-        return result.lastInsertRowid;
-    }
+    console.log(`✓ Created agreement ID: ${result.lastInsertRowid} - ${description}`);
+    return result.lastInsertRowid;
+  }
 }
 
 /**
- * Create or update a payment
+ * Clear existing payments for an agreement
  */
-function upsertPayment(agreementId, lenderUserId, borrowerUserId, amountCents, dateStr, status) {
-    // Check if payment exists (by date/created_at and amount to avoid dupes)
-    // We use LIKE for date matching since created_at is ISO timestamp
-    const existing = db.prepare(`
-        SELECT id FROM payments 
-        WHERE agreement_id = ? AND amount_cents = ? AND created_at LIKE ?
-    `).get(agreementId, amountCents, `${dateStr}%`);
+function clearPayments(agreementId) {
+  db.prepare('DELETE FROM payments WHERE agreement_id = ?').run(agreementId);
+}
 
-    if (existing) {
-        db.prepare(`
-            UPDATE payments
-            SET status = ?
-            WHERE id = ?
-        `).run(status, existing.id);
-        console.log(`✓ Updated payment ID: ${existing.id} (${status})`);
-        return existing.id;
-    } else {
-        // Use dateStr as created_at (assuming it's YYYY-MM-DD, we append time)
-        const fullDate = dateStr.includes('T') ? dateStr : `${dateStr}T12:00:00.000Z`;
+/**
+ * Create a payment
+ */
+function createPayment(agreementId, recordedByUserId, amountCents, daysAgo, status = 'approved') {
+  const paymentDate = new Date();
+  paymentDate.setDate(paymentDate.getDate() - daysAgo);
+  const createdAt = paymentDate.toISOString();
 
-        const result = db.prepare(`
-            INSERT INTO payments (
-                agreement_id, recorded_by_user_id, amount_cents, created_at, status, method
-            ) VALUES (?, ?, ?, ?, ?, 'bank')
-        `).run(agreementId, borrowerUserId, amountCents, fullDate, status);
-        console.log(`✓ Created payment ID: ${result.lastInsertRowid} (${status})`);
-        return result.lastInsertRowid;
-    }
+  // For applied_amount_cents, use the full amount (no overpayment handling in seed)
+  const result = db.prepare(`
+    INSERT INTO payments (
+      agreement_id, 
+      recorded_by_user_id, 
+      amount_cents, 
+      applied_amount_cents,
+      created_at, 
+      status, 
+      method
+    ) VALUES (?, ?, ?, ?, ?, ?, 'bank')
+  `).run(agreementId, recordedByUserId, amountCents, amountCents, createdAt, status);
+  
+  console.log(`  ✓ Payment: €${(amountCents/100).toFixed(2)} (${status}) - ${daysAgo} days ago`);
+  return result.lastInsertRowid;
 }
 
 /**
  * Main execution
  */
 async function main() {
-    try {
-        console.log('Creating test users...\n');
+  try {
+    console.log('Creating test users...\n');
 
-        // Create lender
-        const lender = await upsertUser(LENDER_EMAIL, PASSWORD, 'Lenny Lender');
+    // Create all users
+    const alice = await upsertUser(USERS.alice.email, USERS.alice.password, USERS.alice.fullName);
+    const bob = await upsertUser(USERS.bob.email, USERS.bob.password, USERS.bob.fullName);
+    const charlie = await upsertUser(USERS.charlie.email, USERS.charlie.password, USERS.charlie.fullName);
+    const dave = await upsertUser(USERS.dave.email, USERS.dave.password, USERS.dave.fullName);
+    
+    // Legacy users for backward compatibility
+    const lender = await upsertUser(USERS.lender.email, USERS.lender.password, USERS.lender.fullName);
+    const borrower = await upsertUser(USERS.borrower.email, USERS.borrower.password, USERS.borrower.fullName);
 
-        // Create borrower
-        const borrower = await upsertUser(BORROWER_EMAIL, PASSWORD, 'Bob Borrower');
+    console.log('\n--- Creating Agreements for ALICE (mixed lender/borrower) ---\n');
 
-        console.log('\nCreating active agreements...\n');
+    // Agreement 1: Alice lends to Bob (bullet loan, partial payments)
+    const aliceToBobId = upsertAgreement({
+      lenderUserId: alice.id,
+      borrowerUserId: bob.id,
+      lenderName: USERS.alice.fullName,
+      borrowerEmail: USERS.bob.email,
+      borrowerName: 'Bob',
+      amountCents: 100000, // €1,000
+      description: 'Loan to Bob for car repairs',
+      interestRate: 5.0,
+      repaymentType: 'one_time',
+      dueInDays: 90,
+      moneysentDaysAgo: 30 // Started 30 days ago
+    });
+    
+    // Add some confirmed payments
+    console.log('  Adding payments for Alice → Bob loan:');
+    clearPayments(aliceToBobId);
+    createPayment(aliceToBobId, bob.id, 30000, 20, 'approved'); // €300 paid 20 days ago
+    createPayment(aliceToBobId, bob.id, 20000, 10, 'approved'); // €200 paid 10 days ago
 
-        // Agreement 1: Standard active loan (Scenario A & B)
-        const agreement1Id = upsertAgreement(
-            lender.id,
-            borrower.id,
-            'Lenny Lender',
-            BORROWER_EMAIL,
-            'Bob',
-            100000, // €1,000
-            'Demo loan 1'
-        );
+    // Agreement 2: Alice lends to Charlie (installment loan)
+    const aliceToCharlieId = upsertAgreement({
+      lenderUserId: alice.id,
+      borrowerUserId: charlie.id,
+      lenderName: USERS.alice.fullName,
+      borrowerEmail: USERS.charlie.email,
+      borrowerName: 'Charlie',
+      amountCents: 300000, // €3,000
+      description: 'Wedding expenses loan to Charlie',
+      interestRate: 3.0,
+      repaymentType: 'installments',
+      installmentCount: 6,
+      paymentFrequency: 'every-month',
+      dueInDays: 180, // 6 months
+      moneysentDaysAgo: 60 // Started 60 days ago
+    });
+    
+    // First 2 installments paid
+    console.log('  Adding payments for Alice → Charlie loan:');
+    clearPayments(aliceToCharlieId);
+    createPayment(aliceToCharlieId, charlie.id, 51500, 30, 'approved'); // ~€515 (installment 1)
+    createPayment(aliceToCharlieId, charlie.id, 51500, 0, 'approved');  // ~€515 (installment 2)
 
-        // Agreement 2: Active loan with history and pending payment (Scenario B, C, D)
-        const agreement2Id = upsertAgreement(
-            lender.id,
-            borrower.id,
-            'Lenny Lender',
-            BORROWER_EMAIL,
-            'Bob',
-            250000, // €2,500
-            'Demo loan 2 with history'
-        );
+    // Agreement 3: Dave lends to Alice (Alice is borrower here)
+    const daveToAliceId = upsertAgreement({
+      lenderUserId: dave.id,
+      borrowerUserId: alice.id,
+      lenderName: USERS.dave.fullName,
+      borrowerEmail: USERS.alice.email,
+      borrowerName: 'Alice',
+      amountCents: 50000, // €500
+      description: 'Small emergency loan to Alice',
+      interestRate: 0, // Interest-free friendly loan
+      repaymentType: 'one_time',
+      dueInDays: 60,
+      moneysentDaysAgo: 15
+    });
+    console.log('  No payments yet for Dave → Alice loan');
+    clearPayments(daveToAliceId);
 
-        // Add past payments to Agreement 2 (Scenario D)
-        console.log('\nAdding payment history...\n');
-        upsertPayment(agreement2Id, lender.id, borrower.id, 50000, '2023-01-15', 'settled');
-        upsertPayment(agreement2Id, lender.id, borrower.id, 50000, '2023-02-15', 'settled');
+    console.log('\n--- Creating Legacy Test Agreements ---\n');
 
-        // Add pending payment to Agreement 2 (Scenario C)
-        console.log('\nAdding pending payment...\n');
-        upsertPayment(agreement2Id, lender.id, borrower.id, 50000, new Date().toISOString().split('T')[0], 'pending');
+    // Legacy Agreement 1: Standard active loan
+    const legacyId1 = upsertAgreement({
+      lenderUserId: lender.id,
+      borrowerUserId: borrower.id,
+      lenderName: USERS.lender.fullName,
+      borrowerEmail: USERS.borrower.email,
+      borrowerName: 'Bob',
+      amountCents: 100000, // €1,000
+      description: 'Demo loan 1',
+      dueInDays: 90
+    });
+    clearPayments(legacyId1);
 
-        console.log('\n=== Demo Data Ready ===\n');
-        console.log('Test Users:');
-        console.log(`  Lender:   ${LENDER_EMAIL} / ${PASSWORD}`);
-        console.log(`  Borrower: ${BORROWER_EMAIL} / ${PASSWORD}`);
-        console.log('\nActive Agreements:');
-        console.log(`  ID: ${agreement1Id} (Standard)`);
-        console.log(`  ID: ${agreement2Id} (With history & pending task)`);
-        console.log(`  View at: http://localhost:3000/agreements/${agreement1Id}/manage`);
-        console.log('\nYou can now:');
-        console.log('  1. Run: npm run dev');
-        console.log('  2. Login as borrower@test.dev');
-        console.log('  3. Test "Report a payment" from dashboard');
-        console.log('\n✅ Seed complete!\n');
+    // Legacy Agreement 2: Loan with payment history
+    const legacyId2 = upsertAgreement({
+      lenderUserId: lender.id,
+      borrowerUserId: borrower.id,
+      lenderName: USERS.lender.fullName,
+      borrowerEmail: USERS.borrower.email,
+      borrowerName: 'Bob',
+      amountCents: 250000, // €2,500
+      description: 'Demo loan 2 with history',
+      dueInDays: 90
+    });
+    
+    console.log('  Adding payments for legacy loan 2:');
+    clearPayments(legacyId2);
+    createPayment(legacyId2, borrower.id, 50000, 60, 'approved');
+    createPayment(legacyId2, borrower.id, 50000, 30, 'approved');
+    createPayment(legacyId2, borrower.id, 50000, 0, 'pending'); // Pending confirmation
 
-    } catch (error) {
-        console.error('\n❌ Error seeding data:', error);
-        process.exit(1);
-    } finally {
-        db.close();
-    }
+    console.log('\n=== Demo Data Ready ===\n');
+    
+    console.log('Test Users (password for all: password123):');
+    console.log('┌──────────────────────────────────────────────────────────────┐');
+    console.log('│ User       │ Email              │ Role                        │');
+    console.log('├──────────────────────────────────────────────────────────────┤');
+    console.log('│ Alice      │ alice@test.dev     │ Lender AND Borrower (best!) │');
+    console.log('│ Bob        │ bob@test.dev       │ Borrower only               │');
+    console.log('│ Charlie    │ charlie@test.dev   │ Borrower only               │');
+    console.log('│ Dave       │ dave@test.dev      │ Lender only                 │');
+    console.log('│ Lenny      │ lender@test.dev    │ Lender (legacy)             │');
+    console.log('│ Bob B.     │ borrower@test.dev  │ Borrower (legacy)           │');
+    console.log('└──────────────────────────────────────────────────────────────┘');
+    
+    console.log('\nTest Scenarios:');
+    console.log('  • Login as ALICE to see:');
+    console.log('    - Mixed incoming (€500 from Bob, €2.5k from Charlie)');
+    console.log('    - Outgoing (€500 to Dave)');
+    console.log('    - Multiple active loans on timeline');
+    console.log('');
+    console.log('  • Login as BOB to see:');
+    console.log('    - Outgoing payment to Alice (partial paid)');
+    console.log('');
+    console.log('  • Login as DAVE to see:');
+    console.log('    - Incoming from Alice');
+    console.log('');
+    console.log('Run: npm start');
+    console.log('Then visit: http://localhost:3000');
+    console.log('\n✅ Seed complete!\n');
+
+  } catch (error) {
+    console.error('\n❌ Error seeding data:', error);
+    process.exit(1);
+  } finally {
+    db.close();
+  }
 }
 
 // Run

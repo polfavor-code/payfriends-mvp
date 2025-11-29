@@ -5487,13 +5487,14 @@
         startDate: startDate
       });
 
-      // Convert to old format for compatibility
+      // Convert to old format for compatibility, including the correctly calculated date
       return schedule.rows.map((row, index) => ({
         period: index + 1,
         payment: row.paymentCents / 100,
         principal: row.principalCents / 100,
         interest: row.interestCents / 100,
-        remaining: row.remainingCents / 100
+        remaining: row.remainingCents / 100,
+        dateISO: row.dateISO // Include the correct date from schedule
       }));
     }
 
@@ -5578,22 +5579,13 @@
           html += '<div style="position:sticky; top:0; background:rgba(31,41,55,0.98); backdrop-filter:blur(8px); padding:10px 12px; font-weight:600; font-size:12px; text-transform:uppercase; color:rgba(156,163,175,1); border-bottom:1px solid rgba(55,65,81,0.5); text-align:right">Balance</div>';
           html += '</div>';
 
-          // Data rows
+          // Data rows - use dates from schedule (calculated with proper month clamping)
           for (let i = 0; i < installmentCount; i++) {
-            const installmentDate = new Date(firstDate);
-            if (planUnit === 'months') {
-              installmentDate.setMonth(installmentDate.getMonth() + i);
-            } else if (planUnit === 'weeks') {
-              installmentDate.setDate(installmentDate.getDate() + (i * 7));
-            } else if (planUnit === 'days') {
-              installmentDate.setDate(installmentDate.getDate() + i);
-            } else if (planUnit === 'years') {
-              installmentDate.setFullYear(installmentDate.getFullYear() + i);
-            }
-            const dateStr = formatScheduleDate(installmentDate.toISOString());
-
             const row = schedule[i];
             if (row) {
+              // Use the correctly calculated date from the schedule
+              // This avoids the setMonth() overflow bug (e.g., Jan 30 + 1 month = Feb 30 → Mar 2)
+              const dateStr = row.dateISO ? formatScheduleDate(row.dateISO) : formatScheduleDate(new Date());
               // Highlight current period
               const isCurrentPeriod = i === currentPeriodIndex;
               const rowBg = isCurrentPeriod ? 'rgba(61,124,220,0.15)' : (i % 2 === 0 ? 'rgba(12,16,21,1)' : 'rgba(10,13,17,1)');

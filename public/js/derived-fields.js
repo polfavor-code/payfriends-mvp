@@ -4,6 +4,30 @@
  */
 
 /**
+ * Add months to a date while preserving day-of-month (clamping to valid day).
+ * This implements "Month-based (same day of month)" behavior from the payment frequency UI.
+ * Example: Jan 30 + 1 month = Feb 28 (not Mar 2 which is what setMonth() would produce)
+ * @param {Date} date - Starting date
+ * @param {number} months - Number of months to add
+ * @returns {Date} New date with months added
+ */
+function addMonthsKeepingDayLocal(date, months) {
+  const result = new Date(date);
+  const targetMonth = result.getMonth() + months;
+  const targetYear = result.getFullYear() + Math.floor(targetMonth / 12);
+  const normalizedMonth = ((targetMonth % 12) + 12) % 12;
+
+  // Preserve day-of-month, clamping to valid day in target month
+  const originalDay = result.getDate();
+  result.setFullYear(targetYear, normalizedMonth, 1);
+  const daysInTargetMonth = new Date(targetYear, normalizedMonth + 1, 0).getDate();
+  const clampedDay = Math.min(originalDay, daysInTargetMonth);
+  result.setDate(clampedDay);
+
+  return result;
+}
+
+/**
  * Get a formatted loan duration label for display
  * @param {Object} agreement - Agreement object with repayment details
  * @returns {string|null} Formatted duration string (e.g., "3 months") or null if not calculable
@@ -332,16 +356,20 @@ function getNextPaymentInfoSimple(agreement) {
       nextDate.setDate(nextDate.getDate() + (periodsToAdd * 28));
       break;
     case 'monthly':
-      nextDate.setMonth(nextDate.getMonth() + periodsToAdd);
+    case 'every-month':  // Support both formats (same day of month)
+      // Use proper month addition with day clamping
+      nextDate = addMonthsKeepingDayLocal(baseDate, periodsToAdd);
       break;
     case 'quarterly':
-      nextDate.setMonth(nextDate.getMonth() + (periodsToAdd * 3));
+      // Use proper month addition with day clamping (same day of month)
+      nextDate = addMonthsKeepingDayLocal(baseDate, periodsToAdd * 3);
       break;
     case 'yearly':
       nextDate.setFullYear(nextDate.getFullYear() + periodsToAdd);
       break;
     default:
-      nextDate.setMonth(nextDate.getMonth() + periodsToAdd);
+      // Default to monthly with proper clamping
+      nextDate = addMonthsKeepingDayLocal(baseDate, periodsToAdd);
   }
 
   return {

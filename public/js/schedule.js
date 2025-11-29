@@ -59,6 +59,7 @@ function addOnePeriod(dateInput, frequency) {
     case 'every_4_weeks':
       return new Date(date.getTime() + 28 * 24 * 60 * 60 * 1000);
     case 'monthly':
+    case 'every-month':  // Support both formats (same day of month)
       return addMonthsKeepingDay(date, 1);
     case 'quarterly':
       return addMonthsKeepingDay(date, 3);
