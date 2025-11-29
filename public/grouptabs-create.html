@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>PayFriends — Create GroupTab</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <link rel="stylesheet" href="/css/app.css" />
+  
+  <!-- Chat Theme -->
+  <link rel="stylesheet" href="/css/chat-theme.css" />
+
+  <script src="/js/header.js"></script>
+  <script src="/js/footer.js"></script>
+  <script src="/js/formatters.js"></script>
+  
+  <style>
+    /* Extra styles specific to the Wizard */
+    .chat-input {
+      font-size: 18px; /* Larger font for input */
+    }
+    
+    /* Typing indicator animation */
+    .typing-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 12px 16px;
+      background: var(--message-bot-bg);
+      border-radius: 18px;
+      border-bottom-left-radius: 4px;
+      margin-bottom: 8px;
+      align-self: flex-start;
+    }
+    
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: typing 1.4s infinite ease-in-out both;
+    }
+    
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes typing {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="chat-container">
+    
+    <div class="chat-header">
+      <div class="chat-title-row">
+        <div class="chat-avatar">🤖</div>
+        <div class="chat-title-text">
+          <div class="chat-title-main">PayBot</div>
+          <div class="chat-title-sub">Assistant</div>
+        </div>
+      </div>
+      <a href="/grouptabs" style="font-size:14px; color:var(--muted); text-decoration:none">Cancel</a>
+    </div>
+
+    <div id="chat-scroll-area" class="chat-scroll-area">
+      <!-- Chat history injected here -->
+    </div>
+
+    <div class="input-container">
+      <div id="quick-replies" class="quick-replies">
+        <!-- Quick replies injected here -->
+      </div>
+      
+      <div class="input-bar">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..." autocomplete="off">
+        <button id="send-btn" class="send-btn" disabled>➤</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // State Machine
+    const state = {
+      step: 'START', // START, NAME, TYPE, TOTAL, PEOPLE, CONFIRM, CREATING
+      data: {
+        name: '',
+        type: '', // 'one_bill' or 'multi_bill'
+        total: 0,
+        people: 2
+      }
+    };
+
+    const chatHistory = document.getElementById('chat-scroll-area');
+    const inputField = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const quickReplies = document.getElementById('quick-replies');
+
+    // Initial Greeting
+    setTimeout(() => {
+      addBotMessage("Hey! 👋 I can help you set up a new GroupTab.");
+      setTimeout(() => {
+        addBotMessage("First, what should we call this tab? (e.g., 'Friday Dinner', 'Ski Trip')");
+        state.step = 'NAME';
+      }, 800);
+    }, 500);
+
+    // --- EVENT LISTENERS ---
+    inputField.addEventListener('input', () => {
+      sendBtn.disabled = inputField.value.trim() === '';
+    });
+
+    inputField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !sendBtn.disabled) {
+        handleUserInput(inputField.value.trim());
+      }
+    });
+
+    sendBtn.addEventListener('click', () => {
+      handleUserInput(inputField.value.trim());
+    });
+
+    // --- LOGIC ---
+    function handleUserInput(text) {
+      if (!text) return;
+      
+      // 1. Display User Message
+      addUserMessage(text);
+      inputField.value = '';
+      sendBtn.disabled = true;
+      quickReplies.innerHTML = ''; // Clear chips
+      
+      // 2. Process Input based on State
+      showTyping();
+      
+      setTimeout(() => {
+        removeTyping();
+        processStep(text);
+      }, 600 + Math.random() * 400); // Fake delay
+    }
+
+    function processStep(input) {
+      switch (state.step) {
+        case 'NAME':
+          state.data.name = input;
+          addBotMessage(`"${input}" it is. 👍`);
+          setTimeout(() => {
+            addBotMessage("Is this for a single bill (like dinner) or a multi-expense trip?");
+            setQuickReplies(['Single Bill 🧾', 'Multi-Expense Trip ✈️']);
+            state.step = 'TYPE';
+          }, 600);
+          break;
+
+        case 'TYPE':
+          const lower = input.toLowerCase();
+          if (lower.includes('single') || lower.includes('bill') || lower.includes('dinner')) {
+            state.data.type = 'one_bill';
+            addBotMessage("Got it. A single bill.");
+            setTimeout(() => {
+              addBotMessage("What is the total amount?");
+              state.step = 'TOTAL';
+            }, 600);
+          } else {
+            state.data.type = 'multi_bill';
+            // Skip total/people for multi-bill, go straight to confirm
+            addBotMessage("Understood. A trip where people add expenses over time.");
+            setTimeout(() => {
+              askConfirmation();
+            }, 600);
+          }
+          break;
+
+        case 'TOTAL':
+          // Parse amount (remove currency symbols)
+          const cleanAmount = input.replace(/[^0-9.,]/g, '').replace(',', '.');
+          const amount = parseFloat(cleanAmount);
+          
+          if (isNaN(amount) || amount <= 0) {
+            addBotMessage("That doesn't look like a valid amount. Please try again (e.g. 25.50).");
+            return;
+          }
+          
+          state.data.total = Math.round(amount * 100); // Store in cents
+          addBotMessage(`Okay, total is ${formatCurrency2(state.data.total)}.`);
+          setTimeout(() => {
+            addBotMessage("How many people are splitting this?");
+            setQuickReplies(['2 people', '3 people', '4 people', '5 people']);
+            state.step = 'PEOPLE';
+          }, 600);
+          break;
+
+        case 'PEOPLE':
+          const num = parseInt(input.replace(/[^0-9]/g, ''));
+          if (isNaN(num) || num < 1) {
+            addBotMessage("Please enter a valid number of people.");
+            return;
+          }
+          state.data.people = num;
+          askConfirmation();
+          break;
+
+        case 'CONFIRM':
+          if (input.toLowerCase().includes('yes') || input.toLowerCase().includes('create')) {
+            createTab();
+          } else {
+            addBotMessage("Okay, let's start over. What should we call this tab?");
+            state.step = 'NAME';
+          }
+          break;
+      }
+    }
+
+    function askConfirmation() {
+      state.step = 'CONFIRM';
+      
+      let summary = `Name: <strong>${state.data.name}</strong><br>`;
+      summary += `Type: ${state.data.type === 'one_bill' ? 'Single Bill' : 'Trip'}<br>`;
+      
+      if (state.data.type === 'one_bill') {
+        summary += `Total: ${formatCurrency2(state.data.total)}<br>`;
+        summary += `Split: ${state.data.people} people (~${formatCurrency2(state.data.total / state.data.people)}/person)`;
+      }
+      
+      addBotMessage("Does this look right?");
+      addBotMessage(summary);
+      setQuickReplies(['Yes, create it! 🚀', 'No, restart ↺']);
+    }
+
+    async function createTab() {
+      state.step = 'CREATING';
+      addBotMessage("Creating your tab...");
+      
+      try {
+        const payload = {
+          name: state.data.name,
+          tabType: state.data.type,
+          template: state.data.type === 'one_bill' ? 'restaurant' : 'trip', // Default templates
+          proofRequired: 'optional',
+          description: null
+        };
+        
+        if (state.data.type === 'one_bill') {
+          payload.totalAmountCents = state.data.total;
+          payload.splitMode = 'equal';
+          payload.expectedPayRate = 100;
+          payload.peopleCount = state.data.people;
+        }
+        
+        const response = await fetch('/api/grouptabs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to create tab');
+        }
+        
+        addBotMessage("Done! Redirecting you now...");
+        setTimeout(() => {
+          window.location.href = `/grouptabs/${data.tab.id}`;
+        }, 1000);
+        
+      } catch (error) {
+        console.error('Error creating tab:', error);
+        addBotMessage(`Error: ${error.message}. Please try again.`);
+        state.step = 'CONFIRM';
+      }
+    }
+
+    // --- UI HELPERS ---
+    function addBotMessage(html) {
+      const div = document.createElement('div');
+      div.className = 'msg msg-bot';
+      div.innerHTML = html;
+      chatHistory.appendChild(div);
+      scrollToBottom();
+    }
+
+    function addUserMessage(text) {
+      const div = document.createElement('div');
+      div.className = 'msg msg-user';
+      div.textContent = text;
+      chatHistory.appendChild(div);
+      scrollToBottom();
+    }
+    
+    function showTyping() {
+      const div = document.createElement('div');
+      div.className = 'typing-indicator';
+      div.id = 'typing-indicator';
+      div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+      chatHistory.appendChild(div);
+      scrollToBottom();
+    }
+    
+    function removeTyping() {
+      const indicator = document.getElementById('typing-indicator');
+      if (indicator) indicator.remove();
+    }
+
+    function setQuickReplies(replies) {
+      quickReplies.innerHTML = '';
+      replies.forEach(text => {
+        const chip = document.createElement('div');
+        chip.className = 'reply-chip';
+        chip.textContent = text;
+        chip.onclick = () => handleUserInput(text);
+        quickReplies.appendChild(chip);
+      });
+    }
+
+    function scrollToBottom() {
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+  </script>
+</body>
+</html>

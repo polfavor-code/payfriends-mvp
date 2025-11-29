@@ -6995,11 +6995,29 @@
             } else if (msg.event_type === 'HARDSHIP_RESOLVED') {
               // Repayment issue resolved
               activityText = msg.body;
+            } else if (msg.event_type === 'GROUPTAB_CREATED') {
+              // GroupTab created
+              activityText = msg.body || 'You created a new GroupTab';
+            } else if (msg.event_type === 'GROUPTAB_CLOSED') {
+              // GroupTab closed
+              activityText = msg.body || 'A GroupTab was closed';
+            } else if (msg.event_type === 'GROUPTAB_EXPENSE_ADDED') {
+              // Expense added to GroupTab
+              activityText = msg.body || 'An expense was added to a GroupTab';
+            } else if (msg.event_type === 'GROUPTAB_PAYMENT_ADDED') {
+              // Payment recorded in GroupTab
+              activityText = msg.body || 'A payment was recorded in a GroupTab';
+            } else if (msg.event_type === 'GROUPTAB_PARTICIPANT_JOINED') {
+              // Someone joined a GroupTab
+              activityText = msg.body || 'Someone joined a GroupTab';
             }
 
-            // Determine the link URL based on agreement_id and event_type
+            // Determine the link URL based on agreement_id, tab_id, or event_type
             let linkUrl = '';
-            if (msg.agreement_id) {
+            if (msg.tab_id) {
+              // GroupTab activity - navigate to tab detail page
+              linkUrl = `/grouptabs/${msg.tab_id}`;
+            } else if (msg.agreement_id) {
               // For pending agreements where the current user is the borrower, go to review page
               if (msg.agreement_status === 'pending' && msg.borrower_user_id === currentUser.id) {
                 linkUrl = `/agreements/${msg.agreement_id}/review`;
