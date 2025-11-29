@@ -1145,6 +1145,47 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// Dev routes for God Mode
+app.get('/api/dev/users', (req, res) => {
+  try {
+    const users = db.prepare('SELECT id, full_name, email FROM users ORDER BY id').all();
+    res.json({ users });
+  } catch (err) {
+    console.error('Error fetching users for dev mode:', err);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+app.post('/api/dev/switch-user', (req, res) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID required' });
+  }
+
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Create new session
+    const sessionId = createSession(user.id);
+    
+    // Set cookie
+    res.cookie('session_id', sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      sameSite: 'lax'
+    });
+
+    res.json({ success: true, user: { id: user.id, email: user.email, full_name: user.full_name } });
+  } catch (err) {
+    console.error('Error switching user:', err);
+    res.status(500).json({ error: 'Failed to switch user' });
+  }
+});
+
 // Get current user
 app.get('/api/user', requireAuth, (req, res) => {
   const user = { ...req.user };

@@ -116,6 +116,9 @@
       // Set up event listeners
       setupEventListeners(options);
 
+      // Initialize God Mode
+      setupGodMode();
+
     } catch (error) {
       console.error('Error initializing header:', error);
     }
@@ -434,6 +437,103 @@
       const activeItem = document.getElementById(activeItemId);
       if (activeItem) {
         activeItem.classList.add('active');
+      }
+    }
+  }
+
+  /**
+   * God Mode functionality
+   */
+  function setupGodMode() {
+    const trigger = document.getElementById('god-mode-trigger');
+    const modal = document.getElementById('god-mode-modal');
+    const closeBtn = document.getElementById('god-mode-close');
+    const userList = document.getElementById('god-mode-user-list');
+    
+    if (!trigger || !modal) return;
+
+    let clickCount = 0;
+    let clickTimer = null;
+
+    trigger.addEventListener('click', () => {
+      clickCount++;
+      
+      if (clickTimer) clearTimeout(clickTimer);
+      
+      clickTimer = setTimeout(() => {
+        clickCount = 0;
+      }, 500); // Reset count if not clicked 3 times within 500ms
+      
+      if (clickCount >= 3) {
+        clickCount = 0;
+        clearTimeout(clickTimer);
+        openGodMode();
+      }
+    });
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        modal.classList.remove('visible');
+      });
+    }
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('visible');
+      }
+    });
+
+    async function openGodMode() {
+      modal.classList.add('visible');
+      userList.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">Loading users...</div>';
+
+      try {
+        const res = await fetch('/api/dev/users');
+        if (!res.ok) throw new Error('Failed to load users');
+        const data = await res.json();
+        renderUserList(data.users);
+      } catch (err) {
+        userList.innerHTML = `<div style="text-align: center; padding: 20px; color: #ef4444;">Error: ${err.message}</div>`;
+      }
+    }
+
+    function renderUserList(users) {
+      if (!users || users.length === 0) {
+        userList.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">No users found</div>';
+        return;
+      }
+
+      userList.innerHTML = '';
+      users.forEach(user => {
+        const item = document.createElement('div');
+        item.className = 'god-mode-user-item';
+        item.innerHTML = `
+          <div class="god-mode-user-avatar user-avatar size-small">
+             <div class="user-avatar-initials ${getAvatarColor(user.full_name || '')}">${getAvatarInitialsFromUser(user)}</div>
+          </div>
+          <div>
+            <div class="god-mode-user-name">${user.full_name || 'Unknown Name'}</div>
+            <div class="god-mode-user-email">${user.email}</div>
+          </div>
+        `;
+        item.addEventListener('click', () => switchUser(user.id));
+        userList.appendChild(item);
+      });
+    }
+
+    async function switchUser(userId) {
+      try {
+        const res = await fetch('/api/dev/switch-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        });
+        
+        if (!res.ok) throw new Error('Failed to switch user');
+        
+        window.location.reload();
+      } catch (err) {
+        alert('Failed to switch user: ' + err.message);
       }
     }
   }
