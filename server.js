@@ -705,8 +705,8 @@ function enrichAgreementForDisplay(agreement, currentUserId) {
     const moneySentDate = agreement.money_sent_date;
     const acceptedDate = agreement.accepted_at ? agreement.accepted_at.split('T')[0] : null;
     const isUponAcceptance = moneySentDate === 'on-acceptance' ||
-                             moneySentDate === 'upon agreement acceptance' ||
-                             (acceptedDate && moneySentDate === acceptedDate);
+      moneySentDate === 'upon agreement acceptance' ||
+      (acceptedDate && moneySentDate === acceptedDate);
 
     if (isUponAcceptance) {
       // Check if there's a completed report
@@ -1097,12 +1097,14 @@ app.post('/auth/login', async (req, res) => {
     // Find user
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
     if (!user) {
+      console.log('Login failed: User not found', email);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     // Verify password
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
+      console.log('Login failed: Password invalid for', email);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -1471,8 +1473,8 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       const moneySentDate = agreement.money_sent_date;
       const acceptedDate = agreement.accepted_at ? agreement.accepted_at.split('T')[0] : null;
       const isUponAcceptance = moneySentDate === 'on-acceptance' ||
-                               moneySentDate === 'upon agreement acceptance' ||
-                               (acceptedDate && moneySentDate === acceptedDate);
+        moneySentDate === 'upon agreement acceptance' ||
+        (acceptedDate && moneySentDate === acceptedDate);
 
       if (isUponAcceptance) {
         // Check if there's a completed report
@@ -2543,8 +2545,8 @@ app.post('/api/agreements/:id/accept', requireAuth, (req, res) => {
     // Check if money_sent_date needs to be updated
     const moneySentDate = agreement.money_sent_date;
     const shouldUpdateMoneySentDate = !moneySentDate ||
-                                       moneySentDate === 'on-acceptance' ||
-                                       moneySentDate === 'upon agreement acceptance';
+      moneySentDate === 'on-acceptance' ||
+      moneySentDate === 'upon agreement acceptance';
 
     // Update agreement status and dates
     if (shouldUpdateMoneySentDate) {
@@ -2948,8 +2950,8 @@ app.post('/api/agreements/:id/initial-payment-report', requireAuth, uploadInitia
     // Verify loan start is upon acceptance
     const moneySentDate = agreement.money_sent_date;
     const isUponAcceptance = !moneySentDate || moneySentDate === 'on-acceptance' ||
-                             moneySentDate === 'upon agreement acceptance' ||
-                             (agreement.accepted_at && moneySentDate === agreement.accepted_at.split('T')[0]);
+      moneySentDate === 'upon agreement acceptance' ||
+      (agreement.accepted_at && moneySentDate === agreement.accepted_at.split('T')[0]);
 
     if (!isUponAcceptance) {
       return res.status(400).json({ error: 'Initial payment report is only for agreements with loan start upon acceptance' });
@@ -3286,7 +3288,7 @@ app.post('/api/agreements/:id/renegotiation', requireAuth, (req, res) => {
 
     // Get human-readable reason text
     let reasonText = '';
-    switch(troubleReason) {
+    switch (troubleReason) {
       case 'unexpected_expenses':
         reasonText = 'unexpected expenses';
         break;
@@ -4870,8 +4872,8 @@ app.post('/api/invites/:token/accept', requireAuth, (req, res) => {
     // Check if money_sent_date needs to be updated
     const moneySentDate = invite.money_sent_date;
     const shouldUpdateMoneySentDate = !moneySentDate ||
-                                       moneySentDate === 'on-acceptance' ||
-                                       moneySentDate === 'upon agreement acceptance';
+      moneySentDate === 'on-acceptance' ||
+      moneySentDate === 'upon agreement acceptance';
 
     // Update agreement status, borrower_user_id, and dates
     if (shouldUpdateMoneySentDate) {

@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed:demo": "node ./scripts/seed-demo-data.js",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +26,7 @@
     "multer": "^2.0.2"
   },
   "devDependencies": {
-    "libphonenumber-js": "^1.12.29"
+    "libphonenumber-js": "^1.12.29",
+    "@playwright/test": "^1.40.0"
   }
 }

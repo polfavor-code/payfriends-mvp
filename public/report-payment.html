@@ -1,338 +1,390 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PayFriends — Report Payment</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <!-- Shared control styles -->
-  <link rel="stylesheet" href="/css/shared-controls.css" />
-  <!-- App-wide styles -->
-  <link rel="stylesheet" href="/css/app.css" />
-  <!-- Shared header component -->
-  <script src="/js/header.js"></script>
-  <!-- Shared footer component -->
-  <script src="/js/footer.js"></script>
-  <!-- Centralized currency formatters -->
-  <script src="/js/formatters.js"></script>
-  <style>
-    :root{
-      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
-    }
-    *{box-sizing:border-box}
-    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); padding:32px 16px;}
-    .container{max-width:1200px; margin:0 auto;}
-    .container-narrow{max-width:700px; margin:0 auto;}
-    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
-    h1{margin:0 0 8px 0; font-size:28px}
-    h2{margin:0 0 16px 0; font-size:20px}
-    h3{margin:16px 0 12px 0; font-size:18px}
-    p{color:var(--muted); line-height:1.6; margin:8px 0}
-    .detail-row{display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .detail-row:last-child{border-bottom:none}
-    .detail-label{color:var(--muted); font-weight:500}
-    .detail-value{color:var(--text); font-weight:600}
-    .form-group{margin:20px 0}
-    .form-label{display:block; color:var(--text); font-weight:500; margin-bottom:8px; font-size:14px}
-    .form-label-optional{color:var(--muted); font-weight:400; font-size:13px}
-    select, input[type="file"]{
-      width:100%;
-      padding:12px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,0.08);
-      background:#10151d;
-      color:var(--text);
-      font-size:14px;
-      font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
-    }
-    select:focus, input[type="file"]:focus{
-      outline:none;
-      border-color:var(--accent);
-      background:#10151d
-    }
-    select:hover, input[type="file"]:hover{background:#10151d}
-    button{padding:14px 20px; border-radius:10px; border:0; background:var(--accent); color:#0d130f; font-weight:700; cursor:pointer; font-size:15px; width:100%}
-    button:hover{filter:brightness(1.06)}
-    button:disabled{opacity:0.5; cursor:not-allowed}
-    button.secondary{background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); margin-top:8px}
-    button.secondary:hover{background:rgba(255,255,255,0.05)}
-    .status{color:var(--muted); margin-top:12px; min-height:1.2em; font-size:14px; text-align:center}
-    .hidden{display:none}
-    .error{color:#ff6b6b}
-    .success{color:var(--accent)}
-    .info-box{
-      background:rgba(160,160,160,0.1);
-      border:1px solid rgba(160,160,160,0.2);
-      border-radius:10px;
-      padding:16px;
-      color:var(--text);
-      font-size:14px;
-      margin:20px 0;
-      line-height:1.6;
-    }
-    .info-box-title{
-      font-weight:600;
-      margin-bottom:8px;
-      color:var(--text);
-    }
-    .info-box ul{
-      margin:8px 0 0 0;
-      padding-left:20px;
-      color:var(--muted);
-    }
-    .info-box li{
-      margin:4px 0;
-    }
-    .task-header{
-      background:rgba(61,220,151,0.08);
-      border:1px solid rgba(61,220,151,0.2);
-      border-radius:10px;
-      padding:16px;
-      margin-bottom:24px;
-    }
-    .task-header h2{
-      margin:0 0 8px 0;
-      color:var(--accent);
-      font-size:18px;
-      font-weight:600;
-    }
-    .task-header p{
-      margin:0;
-      font-size:14px;
-      line-height:1.5;
-    }
-    .back-link{
-      display:inline-block;
-      color:var(--muted);
-      text-decoration:none;
-      margin-bottom:16px;
-      font-size:14px;
-    }
-    .back-link:hover{
-      color:var(--text);
-      text-decoration:underline;
-    }
-  </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PayFriends — Report Payment</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Shared control styles -->
+    <link rel="stylesheet" href="/css/shared-controls.css" />
+    <!-- App-wide styles -->
+    <link rel="stylesheet" href="/css/app.css" />
+    <!-- Shared header component -->
+    <script src="/js/header.js"></script>
+    <!-- Centralized currency formatters -->
+    <script src="/js/formatters.js"></script>
+    <!-- Shared footer component -->
+    <script src="/js/footer.js"></script>
+    <!-- Report Payment Component -->
+    <script src="/js/report-payment-component.js"></script>
+    <style>
+        :root {
+            --bg: #0e1116;
+            --card: #151a21;
+            --text: #e6eef6;
+            --muted: #a7b0bd;
+            --accent: #3ddc97;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 16px;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: var(--muted);
+            text-decoration: none;
+            margin-bottom: 16px;
+            font-size: 14px
+        }
+
+        .back-link:hover {
+            color: var(--text);
+            text-decoration: underline
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: 28px
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 16px 0
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+        }
+
+        .detail-row:last-child {
+            border-bottom: none
+        }
+
+        .detail-label {
+            color: var(--muted);
+            font-weight: 500
+        }
+
+        .detail-value {
+            color: var(--text);
+            font-weight: normal
+        }
+
+        .hidden {
+            display: none
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--muted);
+            padding: 48px 32px;
+            font-size: 15px
+        }
+
+        .error {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 32px;
+            font-size: 15px
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+    </style>
 </head>
+
 <body>
-  <div class="container-narrow">
-    <a href="/app" class="back-link">← Back to Dashboard</a>
+    <div class="container">
+        <a href="/app" class="back-link">← Back to Dashboard</a>
 
-    <div class="card">
-      <div class="task-header">
-        <h2>TASK: Make the initial payment</h2>
-        <p>Because you selected loan start = when the agreement is accepted, the loan officially starts today.</p>
-        <p>To keep your agreement fair and transparent, please complete your initial payment to <span id="borrower-first-name"></span> today.</p>
-      </div>
+        <div id="loading" class="loading">Loading agreement...</div>
+        <div id="error" class="error hidden"></div>
 
-      <h1>Report Initial Payment</h1>
-
-      <!-- Agreement Summary -->
-      <div style="margin:20px 0">
-        <div class="detail-row">
-          <span class="detail-label">Borrower:</span>
-          <span class="detail-value" id="borrower-name">-</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Agreement:</span>
-          <span class="detail-value" id="agreement-description">-</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Amount due now:</span>
-          <span class="detail-value" id="amount-due">-</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Loan start date:</span>
-          <span class="detail-value">Today (agreement accepted)</span>
-        </div>
-      </div>
-
-      <!-- Payment Report Form -->
-      <form id="payment-report-form">
-        <div class="form-group">
-          <label class="form-label">
-            How did you pay? <span class="form-label-optional">(optional)</span>
-          </label>
-          <select id="payment-method" name="paymentMethod">
-            <option value="">Select payment method</option>
-            <option value="bank_transfer">Bank transfer</option>
-            <option value="cash">Cash</option>
-            <option value="crypto">Crypto</option>
-            <option value="other">Other</option>
-          </select>
+        <!-- Agreement Context Card -->
+        <div id="agreement-context" class="card hidden">
+            <h1 style="margin:0 0 20px 0">Report a payment</h1>
+            <div class="detail-row">
+                <span class="detail-label">Lender:</span>
+                <span class="detail-value" id="context-lender"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Borrower:</span>
+                <span class="detail-value" id="context-borrower"></span>
+            </div>
+            <div class="detail-row" id="context-description-row" style="display:none">
+                <span class="detail-label">Description:</span>
+                <span class="detail-value" id="context-description"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Loan amount:</span>
+                <span class="detail-value" id="context-amount"></span>
+            </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">
-            Upload proof of payment <span class="form-label-optional">(optional)</span>
-          </label>
-          <input type="file" id="proof-file" name="proof" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" />
+        <!-- Inline Report Payment Form - ReportPaymentComponent binds to these elements -->
+        <div id="inline-payment-form-card" class="card hidden" style="padding:20px; margin:20px 0">
+            <h3 style="font-size:18px; font-weight:600; margin:0 0 8px 0">Report a payment</h3>
+            <p id="inline-payment-subtitle" style="color:var(--muted); font-size:14px; margin:0 0 12px 0">
+                Confirm the payment you already made to <span id="inline-lender-name"></span>.
+            </p>
+            <p
+                style="color:var(--muted); font-size:13px; margin:0 0 20px 0; line-height:1.6; display:flex; align-items:start; gap:4px">
+                <img src="/images/payfriends-handshake.svg"
+                    style="display:inline-block; height:16px; width:16px; margin-top:2px; flex-shrink:0"
+                    alt="PayFriends fairness icon" />
+                <span id="fairness-explanation-text"><strong style="color:var(--accent)">Fairness recalculations
+                        activated:</strong> <span id="fairness-explanation-detail"></span></span>
+            </p>
 
-          <div class="info-box">
-            <div class="info-box-title">Info</div>
-            <ul>
-              <li>Uploading proof is optional but highly recommended.</li>
-              <li>It will only be visible to you and the borrower.</li>
-              <li>PayFriends will never share this information with any third parties.</li>
-            </ul>
-          </div>
+            <div class="form-group">
+                <label class="form-label" for="inline-payment-amount">Amount (EUR)</label>
+                <p id="amount-due-today-label" style="color:var(--muted); font-size:13px; margin:0 0 8px 0"></p>
+                <div style="position:relative; width:100%; max-width:400px">
+                    <input type="number" id="inline-payment-amount" placeholder="e.g. 1 234,56" min="0" step="0.01"
+                        style="width:100%; padding-right:165px">
+                    <span id="autofill-amount-link"
+                        style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap; text-decoration:underline; text-decoration-style:dotted"
+                        title="Autofill with the amount due today">Use amount due today</span>
+                </div>
+                <p id="early-payment-tip"
+                    style="color:var(--muted); font-size:12px; margin:4px 0 0 0; font-style:italic"></p>
+                <p id="amount-helper-text"
+                    style="color:var(--muted); font-size:13px; margin:8px 0 0 0; line-height:1.5"></p>
+            </div>
+
+            <!-- Live Impact Box -->
+            <div id="live-impact-box" class="hidden"
+                style="background:rgba(61,220,151,0.1); border:1px solid rgba(61,220,151,0.3); border-radius:8px; padding:14px 16px; margin:12px 0; font-size:13px; animation:fadeIn 250ms ease-in">
+                <div id="impact-content" style="line-height:1.8"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="inline-payment-method">Payment method</label>
+                <select id="inline-payment-method" required style="width:100%; max-width:400px">
+                    <!-- Options populated by component -->
+                </select>
+            </div>
+
+            <!-- Payment method details -->
+            <div id="inline-payment-method-details" class="hidden"
+                style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; margin:-8px 0 16px 0; font-size:14px; line-height:1.8">
+                <!-- Details populated by component -->
+            </div>
+
+            <div id="inline-payment-proof-section" class="form-group">
+                <label class="form-label" id="inline-payment-proof-label" for="inline-payment-proof">Proof of
+                    repayment</label>
+                <div id="inline-payment-proof-dropzone"
+                    style="border:2px dashed rgba(255,255,255,0.2); border-radius:8px; padding:20px; background:rgba(255,255,255,0.02); text-align:center; cursor:pointer; transition:all 0.2s ease; min-height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px">
+                    <input type="file" id="inline-payment-proof"
+                        accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                        style="display:none">
+                    <p id="inline-payment-proof-text" style="color:var(--muted); font-size:13px; margin:0">
+                        Drag and drop your proof here, or click Browse to upload
+                    </p>
+                    <button type="button" id="inline-payment-proof-browse-btn"
+                        style="padding:8px 16px; font-size:13px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:var(--text); cursor:pointer; font-family:inherit; font-weight:500">
+                        Browse
+                    </button>
+                    <p id="inline-payment-proof-filename"
+                        style="color:var(--accent); font-size:12px; margin:0; display:none"></p>
+                </div>
+            </div>
+
+            <!-- Crypto tip -->
+            <p id="crypto-tx-tip" class="hidden" style="color:var(--muted); font-size:13px; margin:0 0 16px 0">
+                <strong>Tip:</strong> You can also paste the TX hash or blockchain link in the note field.
+            </p>
+
+            <div class="form-group">
+                <label class="form-label" for="inline-payment-note">Note (optional)</label>
+                <input type="text" id="inline-payment-note" placeholder="Add a short note (e.g., paid in two parts)"
+                    maxlength="120">
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top:20px">
+                <button id="inline-payment-submit" style="flex:1">Report repayment</button>
+                <button class="secondary" style="flex:0.5">Cancel</button>
+            </div>
+
+            <p class="status" id="inline-payment-status" style="margin-top:12px"></p>
         </div>
-
-        <button type="submit" id="submit-btn">Save Payment Report</button>
-        <div class="status" id="status-message"></div>
-      </form>
     </div>
-  </div>
 
-  <script type="module">
-    import { formatCurrency0 } from '/js/formatters.js';
+    <script>
+        // Global variable for agreement ID
+        let agreementId;
 
-    // Initialize footer
-    if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
-      window.PayFriendsFooter.initialize();
-    }
+        // Extract agreement ID from URL
+        const pathParts = window.location.pathname.split('/');
+        agreementId = pathParts[2]; // /agreements/[id]/report-payment
 
-    // Get agreement ID from URL
-    const pathParts = window.location.pathname.split('/');
-    const agreementId = pathParts[2];
-
-    if (!agreementId) {
-      window.location.href = '/app';
-    }
-
-    // Load agreement data
-    async function loadAgreement() {
-      try {
-        // Get current user first
-        const userResponse = await fetch('/api/user');
-        if (!userResponse.ok) {
-          window.location.href = '/login.html';
-          return;
-        }
-        const currentUser = await userResponse.json();
-
-        const response = await fetch(`/api/agreements/${agreementId}`);
-        if (!response.ok) {
-          throw new Error('Failed to load agreement');
+        // Main initialization
+        function initializePage() {
+            if (!agreementId || agreementId === 'report-payment') {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').textContent = 'Invalid agreement ID. Please return to the dashboard and try again.';
+                document.getElementById('error').classList.remove('hidden');
+                return;
+            }
+            
+            loadAgreementAndInitialize();
         }
 
-        const agreement = await response.json();
-        console.log('[Report Payment] Agreement data:', agreement);
+        async function loadAgreementAndInitialize() {
+            const loading = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const contextCard = document.getElementById('agreement-context');
 
-        // Verify current user is the lender
-        if (agreement.lender_user_id !== currentUser.id) {
-          alert('Only the lender can report the initial payment.');
-          window.location.href = '/app';
-          return;
+            try {
+                // Get current user
+                const userResponse = await fetch('/api/user');
+                if (!userResponse.ok) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                const userData = await userResponse.json();
+                const currentUser = userData.user;
+
+                // Get agreement data
+                const agreementResponse = await fetch(`/api/agreements/${agreementId}`);
+                if (!agreementResponse.ok) {
+                    throw new Error('Failed to load agreement');
+                }
+                const agreement = await agreementResponse.json();
+
+                // Verify user is either borrower or lender
+                const isBorrower = agreement.borrower_user_id === currentUser.id;
+                const isLender = agreement.lender_user_id === currentUser.id;
+
+                if (!isBorrower && !isLender) {
+                    throw new Error(`You do not have permission to report payments for this agreement. User: ${currentUser.id}, Borrower: ${agreement.borrower_user_id}, Lender: ${agreement.lender_user_id}`);
+                }
+
+                // Verify agreement is active
+                if (agreement.status !== 'active') {
+                    throw new Error('You can only report payments for active agreements.');
+                }
+
+                // Populate agreement context
+                const lenderName = agreement.lender_full_name || agreement.lender_name || agreement.lender_email;
+                const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
+
+                document.getElementById('context-lender').textContent = lenderName;
+                document.getElementById('context-borrower').textContent = borrowerName;
+                document.getElementById('context-amount').textContent = window.formatCurrency2(agreement.amount_cents);
+
+                if (agreement.description) {
+                    document.getElementById('context-description').textContent = agreement.description;
+                    document.getElementById('context-description-row').style.display = 'flex';
+                }
+
+                // Calculate next payment info
+                const nextPaymentInfo = getNextPaymentInfo(agreement);
+
+                if (!nextPaymentInfo) {
+                    throw new Error('Could not determine next payment amount.');
+                }
+
+                loading.style.display = 'none';
+                contextCard.classList.remove('hidden');
+
+                // Initialize the report payment component
+                if (window.ReportPaymentComponent) {
+                    window.ReportPaymentComponent.initialize(agreement, currentUser, nextPaymentInfo, {
+                        containerId: 'inline-payment-form-card',
+                        onSuccess: (updatedAgreement) => {
+                            // Redirect to dashboard
+                            window.location.href = '/app';
+                        },
+                        onCancel: () => {
+                            // Return to dashboard
+                            window.location.href = '/app';
+                        },
+                        showCancelButton: true
+                    });
+                } else {
+                    throw new Error('Report payment component not loaded');
+                }
+
+            } catch (err) {
+                console.error('Error loading agreement:', err);
+                loading.style.display = 'none';
+                errorEl.textContent = err.message || 'Error loading agreement. Please try again.';
+                errorEl.classList.remove('hidden');
+            }
         }
 
-        // Verify this is a valid agreement for initial payment report
-        if (agreement.status !== 'active') {
-          alert('This agreement is not eligible for initial payment reporting.');
-          window.location.href = '/app';
-          return;
+        // Helper to calculate next payment info (same logic as review-details.html)
+        function getNextPaymentInfo(agreement) {
+            const repaymentType = agreement.repayment_type || 'one_time';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (repaymentType === 'one_time') {
+                // One-time loan: use today's total due amount
+                const todayTotalDueCents = agreement.today_total_due_cents || agreement.planned_total_due_cents || agreement.amount_cents;
+                const paidCents = agreement.total_paid_cents || 0;
+                const amountCents = Math.max(0, todayTotalDueCents - paidCents);
+
+                return {
+                    amount_cents: amountCents,
+                    due_date: agreement.due_date,
+                    type: 'one_time'
+                };
+            } else {
+                // Installment loan: use installment amount
+                const installmentCents = Math.round((agreement.installment_amount || 0) * 100);
+                const firstPaymentDate = new Date(agreement.first_payment_date);
+
+                return {
+                    amount_cents: installmentCents,
+                    due_date: firstPaymentDate.toISOString().split('T')[0],
+                    type: 'installment'
+                };
+            }
         }
 
-        // Populate agreement summary (use same fallback pattern as review-details.html)
-        const borrowerName = agreement.borrower_full_name || agreement.friend_first_name || agreement.borrower_email;
-        const borrowerFirstName = borrowerName ? borrowerName.split(' ')[0] : '';
-
-        console.log('[Report Payment] Borrower name:', borrowerName);
-        console.log('[Report Payment] Description:', agreement.description);
-        console.log('[Report Payment] Amount cents:', agreement.amount_cents);
-
-        document.getElementById('borrower-name').textContent = borrowerName || '-';
-        document.getElementById('borrower-first-name').textContent = borrowerFirstName || 'the borrower';
-        document.getElementById('agreement-description').textContent = agreement.description || 'Loan agreement';
-        document.getElementById('amount-due').textContent = formatCurrency0(agreement.amount_cents);
-
-        // Detect if this is a cash-only agreement
-        const allowedMethods = agreement.payment_preference_method
-          ? agreement.payment_preference_method.split(',').map(m => m.trim())
-          : [];
-        const isCashOnly = allowedMethods.length === 1 && allowedMethods[0] === 'cash';
-
-        // Hide proof section for cash-only agreements
-        if (isCashOnly) {
-          const proofFormGroup = document.querySelector('#proof-file').closest('.form-group');
-          if (proofFormGroup) {
-            proofFormGroup.style.display = 'none';
-          }
-        }
-
-        // Check if already reported
-        const reportResponse = await fetch(`/api/agreements/${agreementId}/initial-payment-report`);
-        if (reportResponse.ok) {
-          const reportData = await reportResponse.json();
-          if (reportData.data && reportData.data.isCompleted) {
-            // Already reported, redirect to manage page
-            alert('The initial payment has already been reported.');
-            window.location.href = `/agreements/${agreementId}/manage`;
-            return;
-          }
-        }
-      } catch (err) {
-        console.error('[Report Payment] Error loading agreement:', err);
-        console.error('[Report Payment] Error stack:', err.stack);
-        document.getElementById('status-message').textContent = 'Error loading agreement data: ' + err.message;
-        document.getElementById('status-message').className = 'status error';
-      }
-    }
-
-    // Handle form submission
-    document.getElementById('payment-report-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const submitBtn = document.getElementById('submit-btn');
-      const statusMessage = document.getElementById('status-message');
-
-      submitBtn.disabled = true;
-      statusMessage.textContent = 'Saving...';
-      statusMessage.className = 'status';
-
-      try {
-        const formData = new FormData();
-        const paymentMethod = document.getElementById('payment-method').value;
-        const proofFile = document.getElementById('proof-file').files[0];
-
-        if (paymentMethod) {
-          formData.append('paymentMethod', paymentMethod);
-        }
-
-        if (proofFile) {
-          formData.append('proof', proofFile);
-        }
-
-        const response = await fetch(`/api/agreements/${agreementId}/initial-payment-report`, {
-          method: 'POST',
-          body: formData
-        });
-
-        const result = await response.json();
-
-        if (response.ok && result.success) {
-          statusMessage.textContent = 'Payment report saved successfully!';
-          statusMessage.className = 'status success';
-
-          // Redirect to dashboard after a short delay
-          setTimeout(() => {
-            window.location.href = '/app';
-          }, 1500);
+        // Wait for DOM and all scripts to be ready, then initialize
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePage);
         } else {
-          throw new Error(result.error || 'Failed to save payment report');
+            initializePage();
         }
-      } catch (err) {
-        console.error('Error submitting payment report:', err);
-        statusMessage.textContent = err.message || 'Error saving payment report. Please try again.';
-        statusMessage.className = 'status error';
-        submitBtn.disabled = false;
-      }
-    });
 
-    // Initialize page
-    (async () => {
-      await loadAgreement();
-    })();
-  </script>
+        // Initialize footer
+        if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+            window.PayFriendsFooter.initialize();
+        }
+    </script>
 </body>
+
 </html>
