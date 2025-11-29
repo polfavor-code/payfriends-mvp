@@ -236,7 +236,86 @@
   .activity-count {
     color: #3ddc97;
   }
+
+  /* God Mode Modal */
+  .god-mode-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .god-mode-modal.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .god-mode-content {
+    background: #1e293b;
+    padding: 24px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+  .god-mode-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 16px;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .god-mode-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 24px;
+    padding: 4px;
+  }
+  .god-mode-user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .god-mode-user-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .god-mode-user-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(61, 220, 151, 0.3);
+  }
+  .god-mode-user-name {
+    font-weight: 600;
+    color: #fff;
+  }
+  .god-mode-user-email {
+    font-size: 12px;
+    color: #94a3b8;
+  }
 </style>
+
+<div id="god-mode-trigger" style="position: fixed; top: 0; left: 0; width: 60px; height: 60px; z-index: 9999; cursor: default;" title=""></div>
 
 <header class="top-header">
   <div class="top-header-left">
@@ -323,3 +402,16 @@
     </div>
   </div>
 </header>
+
+<!-- God Mode Modal -->
+<div id="god-mode-modal" class="god-mode-modal">
+  <div class="god-mode-content">
+    <div class="god-mode-title">
+      <span>😇 God Mode: Switch User</span>
+      <button id="god-mode-close" class="god-mode-close">&times;</button>
+    </div>
+    <div id="god-mode-user-list" class="god-mode-user-list">
+      <div style="text-align: center; padding: 20px; color: #94a3b8;">Loading users...</div>
+    </div>
+  </div>
+</div>

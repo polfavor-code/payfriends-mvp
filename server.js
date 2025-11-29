@@ -1145,6 +1145,47 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// Dev routes for God Mode
+app.get('/api/dev/users', (req, res) => {
+  try {
+    const users = db.prepare('SELECT id, full_name, email FROM users ORDER BY id').all();
+    res.json({ users });
+  } catch (err) {
+    console.error('Error fetching users for dev mode:', err);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+app.post('/api/dev/switch-user', (req, res) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID required' });
+  }
+
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Create new session
+    const sessionId = createSession(user.id);
+    
+    // Set cookie
+    res.cookie('session_id', sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      sameSite: 'lax'
+    });
+
+    res.json({ success: true, user: { id: user.id, email: user.email, full_name: user.full_name } });
+  } catch (err) {
+    console.error('Error switching user:', err);
+    res.status(500).json({ error: 'Failed to switch user' });
+  }
+});
+
 // Get current user
 app.get('/api/user', requireAuth, (req, res) => {
   const user = { ...req.user };
@@ -2155,7 +2196,8 @@ app.get('/api/friends', requireAuth, (req, res) => {
       friendMap.get(friend.friend_id).isBorrower = true;
     }
 
-    // Get agreement counts for each friend
+    // Get agreement counts and total outstanding for each friend
+    const today = new Date();
     for (const [friendId, friendData] of friendMap.entries()) {
       const counts = db.prepare(`
         SELECT
@@ -2168,6 +2210,40 @@ app.get('/api/friends', requireAuth, (req, res) => {
 
       friendData.activeAgreementsCount = counts.active_count || 0;
       friendData.settledAgreementsCount = counts.settled_count || 0;
+
+      // Calculate total outstanding for active agreements with this friend
+      // Outstanding = principal + interest accrued to date - payments made
+      // Sign convention: positive = they owe me, negative = I owe them
+      const activeAgreements = db.prepare(`
+        SELECT * FROM agreements
+        WHERE status = 'active'
+          AND ((lender_user_id = ? AND borrower_user_id = ?)
+            OR (lender_user_id = ? AND borrower_user_id = ?))
+      `).all(userId, friendId, friendId, userId);
+
+      let totalOutstandingCents = 0;
+      for (const agreement of activeAgreements) {
+        // Get payment totals
+        const totals = getPaymentTotals(agreement.id);
+        // Calculate dynamic interest info (principal + interest accrued to today)
+        const interestInfo = getAgreementInterestInfo(agreement, today);
+        const totalDueCentsToday = interestInfo.total_due_cents;
+
+        // Outstanding for this agreement
+        let outstandingCents = totalDueCentsToday - totals.total_paid_cents;
+        if (outstandingCents < 0) outstandingCents = 0;
+
+        // Apply sign based on who owes whom
+        if (agreement.lender_user_id === userId) {
+          // I'm the lender: they owe me (positive)
+          totalOutstandingCents += outstandingCents;
+        } else {
+          // I'm the borrower: I owe them (negative)
+          totalOutstandingCents -= outstandingCents;
+        }
+      }
+
+      friendData.totalOutstandingCents = totalOutstandingCents;
 
       // Determine role summary
       if (friendData.isLender && friendData.isBorrower) {
@@ -2310,6 +2386,28 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
       };
     });
 
+    // Calculate total outstanding for active agreements with this friend
+    const today = new Date();
+    const activeAgreements = db.prepare(`
+      SELECT * FROM agreements
+      WHERE status = 'active'
+        AND ((lender_user_id = ? AND borrower_user_id = ?)
+          OR (lender_user_id = ? AND borrower_user_id = ?))
+    `).all(userId, friendId, friendId, userId);
+
+    let totalOutstandingCents = 0;
+    for (const agreement of activeAgreements) {
+      const totals = getPaymentTotals(agreement.id);
+      const interestInfo = getAgreementInterestInfo(agreement, today);
+      const totalDueCentsToday = interestInfo.total_due_cents;
+
+      let outstandingCents = totalDueCentsToday - totals.total_paid_cents;
+      if (outstandingCents < 0) outstandingCents = 0;
+
+      // Always add as positive (absolute value for display)
+      totalOutstandingCents += outstandingCents;
+    }
+
     // Build response
     const response = {
       friendId: friend.id, // Internal ID for profile picture endpoint
@@ -2317,6 +2415,7 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
       name: friend.full_name || friend.email,
       avatarUrl: friend.profile_picture,
       timezone: friend.timezone || null,
+      totalOutstandingCents,
       agreementsWithThisFriend
     };
 
