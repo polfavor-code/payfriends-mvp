@@ -25,9 +25,15 @@ test.describe('Report a Payment', () => {
         page.on('console', msg => console.log(`BROWSER LOG: ${msg.text()}`));
         page.on('pageerror', err => console.log(`BROWSER ERROR: ${err.message}`));
 
-        // Step 2: Fill in login credentials
-        await page.fill('input[type="email"]', BORROWER_EMAIL);
-        await page.fill('input[type="password"]', BORROWER_PASSWORD);
+        // Step 2: Fill in login credentials (clear first to avoid prefilled values)
+        const emailInput = page.locator('#login-email');
+        const passwordInput = page.locator('#login-password');
+        await emailInput.click();
+        await emailInput.fill('');
+        await emailInput.fill(BORROWER_EMAIL);
+        await passwordInput.click();
+        await passwordInput.fill('');
+        await passwordInput.fill(BORROWER_PASSWORD);
 
         // Step 3: Click login button
         await page.click('button[type="submit"]');
@@ -120,8 +126,14 @@ test.describe('Report a Payment', () => {
     test('should show agreement context on report payment page', async ({ page }) => {
         // Login
         await page.goto('/login.html');
-        await page.fill('input[type="email"]', BORROWER_EMAIL);
-        await page.fill('input[type="password"]', BORROWER_PASSWORD);
+        const emailInput = page.locator('#login-email');
+        const passwordInput = page.locator('#login-password');
+        await emailInput.click();
+        await emailInput.fill('');
+        await emailInput.fill(BORROWER_EMAIL);
+        await passwordInput.click();
+        await passwordInput.fill('');
+        await passwordInput.fill(BORROWER_PASSWORD);
         await page.click('button[type="submit"]');
         await page.waitForURL('/app');
 
@@ -155,7 +167,7 @@ test.describe('Report a Payment', () => {
 
         // Verify loan amount is shown
         const amount = page.locator('#context-amount');
-        await expect(amount).toContainText('1.000'); // €1,000
+        await expect(amount).toContainText('2.500'); // €2,500 (agreement ID 2)
 
         console.log('✅ Agreement context displayed correctly');
     });
@@ -163,8 +175,14 @@ test.describe('Report a Payment', () => {
     test('should show autofill link for amount due today', async ({ page }) => {
         // Login
         await page.goto('/login.html');
-        await page.fill('input[type="email"]', BORROWER_EMAIL);
-        await page.fill('input[type="password"]', BORROWER_PASSWORD);
+        const emailInput = page.locator('#login-email');
+        const passwordInput = page.locator('#login-password');
+        await emailInput.click();
+        await emailInput.fill('');
+        await emailInput.fill(BORROWER_EMAIL);
+        await passwordInput.click();
+        await passwordInput.fill('');
+        await passwordInput.fill(BORROWER_PASSWORD);
         await page.click('button[type="submit"]');
         await page.waitForURL('/app');
 

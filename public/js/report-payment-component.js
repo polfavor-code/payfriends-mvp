@@ -196,7 +196,7 @@
       if (!proofSection) return;
 
       if (isCashOnly) {
-        // Cash-only agreements: hide proof section entirely
+        // Cash-only agreements: hide proof section entirely (no upload needed for cash)
         proofSection.style.display = 'none';
         if (proofInput) proofInput.required = false;
       } else if (agreement.proof_required) {

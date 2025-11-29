@@ -109,7 +109,6 @@
             font-size: 15px
         }
 
-        /* Fairness icon styles */
         @keyframes fadeIn {
             from {
                 opacity: 0
@@ -118,346 +117,6 @@
             to {
                 opacity: 1
             }
-        }
-
-        .form-group {
-            margin: 20px 0
-        }
-
-        .form-label {
-            display: block;
-            color: var(--text);
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px
-        }
-
-        input[type="number"],
-        input[type="text"],
-        select {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: var(--bg);
-            color: var(--text);
-            font-family: inherit;
-            font-size: 14px
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: var(--accent);
-            background: var(--bg)
-        }
-
-        input:hover,
-        select:hover {
-            background: var(--bg)
-        }
-
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
-        input:-webkit-autofill:active {
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: var(--text);
-            transition: background-color 5000s ease-in-out 0s;
-            box-shadow: inset 0 0 20px 20px var(--bg);
-        }
-
-        button {
-            padding: 14px 20px;
-            border-radius: 10px;
-            border: 0;
-            background: var(--accent);
-            color: #0d130f;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 15px;
-            width: 100%
-        }
-
-        button:hover {
-            filter: brightness(1.06)
-        }
-
-        button.secondary {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: var(--text);
-            margin-top: 8px;
-            margin-left: 0
-        }
-
-        button.secondary:hover {
-            background: rgba(255, 255, 255, 0.05)
-        }
-
-        .status {
-            color: var(--muted);
-            margin-top: 12px;
-            min-height: 1.2em;
-            font-size: 14px
-        }
-
-        .status.success {
-            color: var(--accent)
-        }
-
-        .status.error {
-            color: #ff6b6b
-        }
-    </style>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PayFriends — Report Payment</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <!-- Shared control styles -->
-    <link rel="stylesheet" href="/css/shared-controls.css" />
-    <!-- App-wide styles -->
-    <link rel="stylesheet" href="/css/app.css" />
-    <!-- Shared header component -->
-    <script src="/js/header.js"></script>
-    <!-- Shared footer component -->
-    <script src="/js/footer.js"></script>
-    <!-- Centralized currency formatters -->
-    <script src="/js/formatters.js"></script>
-    <style>
-        :root {
-            --bg: #0e1116;
-            --card: #151a21;
-            --text: #e6eef6;
-            --muted: #a7b0bd;
-            --accent: #3ddc97;
-        }
-
-        * {
-            box-sizing: border-box
-        }
-
-        body {
-            margin: 0;
-            font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 32px 16px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .container-narrow {
-            max-width: 700px;
-            margin: 0 auto;
-        }
-
-        .card {
-            background: var(--card);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 16px;
-            padding: 24px;
-            margin: 16px 0
-        }
-
-        h1 {
-            margin: 0 0 8px 0;
-            font-size: 28px
-        }
-
-        h2 {
-            margin: 0 0 16px 0;
-            font-size: 20px
-        }
-
-        h3 {
-            margin: 16px 0 12px 0;
-            font-size: 18px
-        }
-
-        p {
-            color: var(--muted);
-            line-height: 1.6;
-            margin: 8px 0
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08)
-        }
-
-        .detail-row:last-child {
-            border-bottom: none
-        }
-
-        .detail-label {
-            color: var(--muted);
-            font-weight: 500
-        }
-
-        .detail-value {
-            color: var(--text);
-            font-weight: 600
-        }
-
-        .form-group {
-            margin: 20px 0
-        }
-
-        .form-label {
-            display: block;
-            color: var(--text);
-            font-weight: 500;
-            margin-bottom: 8px;
-            font-size: 14px
-        }
-
-        .form-label-optional {
-            color: var(--muted);
-            font-weight: 400;
-            font-size: 13px
-        }
-
-        select,
-        input[type="file"] {
-            width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: #10151d;
-            color: var(--text);
-            font-size: 14px;
-            font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif;
-        }
-
-        select:focus,
-        input[type="file"]:focus {
-            outline: none;
-            border-color: var(--accent);
-            background: #10151d
-        }
-
-        select:hover,
-        input[type="file"]:hover {
-            background: #10151d
-        }
-
-        button {
-            padding: 14px 20px;
-            border-radius: 10px;
-            border: 0;
-            background: var(--accent);
-            color: #0d130f;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 15px;
-            width: 100%
-        }
-
-        button:hover {
-            filter: brightness(1.06)
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed
-        }
-
-        button.secondary {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: var(--text);
-            margin-top: 8px
-        }
-
-        button.secondary:hover {
-            background: rgba(255, 255, 255, 0.05)
-        }
-
-        .status {
-            color: var(--muted);
-            margin-top: 12px;
-            min-height: 1.2em;
-            font-size: 14px;
-            text-align: center
-        }
-
-        .hidden {
-            display: none
-        }
-
-        .error {
-            color: #ff6b6b
-        }
-
-        .success {
-            color: var(--accent)
-        }
-
-        .info-box {
-            background: rgba(160, 160, 160, 0.1);
-            border: 1px solid rgba(160, 160, 160, 0.2);
-            border-radius: 10px;
-            padding: 16px;
-            color: var(--text);
-            font-size: 14px;
-            margin: 20px 0;
-            line-height: 1.6;
-        }
-
-        .info-box-title {
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text);
-        }
-
-        .info-box ul {
-            margin: 8px 0 0 0;
-            padding-left: 20px;
-            color: var(--muted);
-        }
-
-        .info-box li {
-            margin: 4px 0;
-        }
-
-        .task-header {
-            background: rgba(61, 220, 151, 0.08);
-            border: 1px solid rgba(61, 220, 151, 0.2);
-            border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 24px;
-        }
-
-        .task-header h2 {
-            margin: 0 0 8px 0;
-            color: var(--accent);
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .task-header p {
-            margin: 0;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .back-link {
-            display: inline-block;
-            color: var(--muted);
-            text-decoration: none;
-            margin-bottom: 16px;
-            font-size: 14px;
-        }
-
-        .back-link:hover {
-            color: var(--text);
-            text-decoration: underline;
         }
     </style>
 </head>
@@ -490,7 +149,7 @@
             </div>
         </div>
 
-        <!-- Inline Report Payment Form - this container will be populated by the component -->
+        <!-- Inline Report Payment Form - ReportPaymentComponent binds to these elements -->
         <div id="inline-payment-form-card" class="card hidden" style="padding:20px; margin:20px 0">
             <h3 style="font-size:18px; font-weight:600; margin:0 0 8px 0">Report a payment</h3>
             <p id="inline-payment-subtitle" style="color:var(--muted); font-size:14px; margin:0 0 12px 0">
@@ -584,14 +243,6 @@
         // Global variable for agreement ID
         let agreementId;
 
-        <script type="module">
-            import {formatCurrency0} from '/js/formatters.js';
-
-
-            // Initialize footer
-            if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
-                window.PayFriendsFooter.initialize();
-    }
         // Import formatters and initialize
         import('/js/formatters.js').then(() => {
             // Formatters are now available on window
@@ -602,19 +253,19 @@
 
             if (!agreementId || agreementId === 'report-payment') {
                 document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').textContent = 'Invalid agreement ID. Please return to the dashboard and try again.';
-            document.getElementById('error').classList.remove('hidden');
+                document.getElementById('error').textContent = 'Invalid agreement ID. Please return to the dashboard and try again.';
+                document.getElementById('error').classList.remove('hidden');
             } else {
                 loadAgreementAndInitialize();
             }
         }).catch(err => {
-                console.error('Failed to load formatters:', err);
+            console.error('Failed to load formatters:', err);
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error').textContent = 'Failed to load application resources. Please refresh.';
             document.getElementById('error').classList.remove('hidden');
         });
 
-            async function loadAgreementAndInitialize() {
+        async function loadAgreementAndInitialize() {
             const loading = document.getElementById('loading');
             const errorEl = document.getElementById('error');
             const contextCard = document.getElementById('agreement-context');
@@ -622,25 +273,25 @@
             try {
                 // Get current user
                 const userResponse = await fetch('/api/user');
-            if (!userResponse.ok) {
-                window.location.href = '/login.html';
-            return;
+                if (!userResponse.ok) {
+                    window.location.href = '/login.html';
+                    return;
                 }
-            const userData = await userResponse.json();
-            const currentUser = userData.user;
+                const userData = await userResponse.json();
+                const currentUser = userData.user;
 
-            // Get agreement data
-            const agreementResponse = await fetch(`/api/agreements/${agreementId}`);
-            if (!agreementResponse.ok) {
+                // Get agreement data
+                const agreementResponse = await fetch(`/api/agreements/${agreementId}`);
+                if (!agreementResponse.ok) {
                     throw new Error('Failed to load agreement');
                 }
-            const agreement = await agreementResponse.json();
+                const agreement = await agreementResponse.json();
 
-            // Verify user is either borrower or lender
-            const isBorrower = agreement.borrower_user_id === currentUser.id;
-            const isLender = agreement.lender_user_id === currentUser.id;
+                // Verify user is either borrower or lender
+                const isBorrower = agreement.borrower_user_id === currentUser.id;
+                const isLender = agreement.lender_user_id === currentUser.id;
 
-            if (!isBorrower && !isLender) {
+                if (!isBorrower && !isLender) {
                     throw new Error(`You do not have permission to report payments for this agreement. User: ${currentUser.id}, Borrower: ${agreement.borrower_user_id}, Lender: ${agreement.lender_user_id}`);
                 }
 
@@ -726,6 +377,11 @@
                     type: 'installment'
                 };
             }
+        }
+
+        // Initialize footer
+        if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
+            window.PayFriendsFooter.initialize();
         }
     </script>
 </body>
