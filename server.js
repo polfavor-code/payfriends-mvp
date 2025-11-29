@@ -2345,6 +2345,28 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
       };
     });
 
+    // Calculate total outstanding for active agreements with this friend
+    const today = new Date();
+    const activeAgreements = db.prepare(`
+      SELECT * FROM agreements
+      WHERE status = 'active'
+        AND ((lender_user_id = ? AND borrower_user_id = ?)
+          OR (lender_user_id = ? AND borrower_user_id = ?))
+    `).all(userId, friendId, friendId, userId);
+
+    let totalOutstandingCents = 0;
+    for (const agreement of activeAgreements) {
+      const totals = getPaymentTotals(agreement.id);
+      const interestInfo = getAgreementInterestInfo(agreement, today);
+      const totalDueCentsToday = interestInfo.total_due_cents;
+
+      let outstandingCents = totalDueCentsToday - totals.total_paid_cents;
+      if (outstandingCents < 0) outstandingCents = 0;
+
+      // Always add as positive (absolute value for display)
+      totalOutstandingCents += outstandingCents;
+    }
+
     // Build response
     const response = {
       friendId: friend.id, // Internal ID for profile picture endpoint
@@ -2352,6 +2374,7 @@ app.get('/api/friends/:friendPublicId', requireAuth, (req, res) => {
       name: friend.full_name || friend.email,
       avatarUrl: friend.profile_picture,
       timezone: friend.timezone || null,
+      totalOutstandingCents,
       agreementsWithThisFriend
     };
 

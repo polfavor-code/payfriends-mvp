@@ -141,17 +141,9 @@
       friends.forEach(friend => {
         const avatarHTML = generateAvatarHTML(friend);
 
-        // Format total outstanding (signed value)
+        // Format outstanding now (always positive)
         const outstandingCents = friend.totalOutstandingCents || 0;
-        let outstandingText = '';
-        if (outstandingCents !== 0) {
-          outstandingText = formatCurrency0(Math.abs(outstandingCents));
-          if (outstandingCents < 0) {
-            outstandingText = '−' + outstandingText; // Unicode minus sign for negative
-          }
-        } else {
-          outstandingText = formatCurrency0(0);
-        }
+        const outstandingText = formatCurrency0(Math.abs(outstandingCents));
 
         const card = document.createElement('div');
         card.className = 'friend-card';
@@ -171,7 +163,7 @@
             <span class="friend-stats-item">Settled: <span class="friend-stats-value">${friend.settledAgreementsCount}</span></span>
           </div>
           <div class="friend-stats" style="margin-top:8px; padding-top:8px">
-            <span class="friend-stats-item">Total outstanding: <span class="friend-stats-value">${outstandingText}</span></span>
+            <span class="friend-stats-item">Outstanding now: <span class="friend-stats-value">${outstandingText}</span></span>
           </div>
           <div class="friend-actions">
             <button class="btn-view-profile" onclick="event.stopPropagation(); window.location.href='/friends/${friend.friendPublicId}'">Open profile</button>

@@ -102,7 +102,10 @@
       <div style="margin-top:24px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); background:rgba(21,26,33,0.6); padding:24px; display:flex; align-items:center; gap:20px">
         <div id="friend-avatar" style="flex-shrink:0"></div>
         <div style="flex:1">
-          <div id="friend-name" style="font-size:24px; font-weight:600; margin-bottom:12px"></div>
+          <div id="friend-name" style="font-size:24px; font-weight:600; margin-bottom:8px"></div>
+          <div id="friend-outstanding" style="font-size:14px; color:var(--muted); margin-bottom:12px">
+            <span style="color:rgba(255,255,255,0.7)">Outstanding now:</span> <span id="outstanding-value" style="color:var(--accent); font-weight:600"></span>
+          </div>
 
           <!-- Timezone, Email, Phone with consistent spacing -->
           <div style="display:flex; flex-direction:column; gap:6px">
@@ -261,6 +264,10 @@
 
       // Name
       document.getElementById('friend-name').textContent = data.name;
+
+      // Outstanding now (always positive)
+      const outstandingCents = data.totalOutstandingCents || 0;
+      document.getElementById('outstanding-value').textContent = formatCurrency0(Math.abs(outstandingCents));
 
       // Timezone and local time
       const timezoneEl = document.getElementById('friend-timezone');
