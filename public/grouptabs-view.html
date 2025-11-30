@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>PayFriends — GroupTab</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  
+  <!-- Shared control styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <link rel="stylesheet" href="/css/app.css" />
+  
+  <!-- Chat Theme -->
+  <link rel="stylesheet" href="/css/chat-theme.css" />
+
+  <script src="/js/header.js"></script>
+  <script src="/js/footer.js"></script>
+  <script src="/js/formatters.js"></script>
+  <!-- Chart.js for fairness donuts (hidden logic, not UI) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    /* Action bar fixed at bottom */
+    .action-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+      position: sticky;
+      bottom: 0;
+      z-index: 100;
+    }
+    
+    .action-btn {
+      background: var(--card);
+      padding: 20px;
+      text-align: center;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      border: none;
+      color: var(--text);
+      font-size: 16px;
+    }
+    
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .ab-primary {
+      color: var(--accent);
+    }
+    
+    /* Modal overrides for chat theme */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+    }
+    
+    .modal-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .modal {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px;
+      width: 90%;
+      max-width: 400px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 24px;
+      cursor: pointer;
+    }
+    
+    /* Form inputs in modal */
+    .chat-form-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .chat-form-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #0e1116;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="chat-container">
+    
+    <div class="chat-header">
+      <div class="chat-title-row">
+        <a href="/grouptabs" style="text-decoration:none; color:var(--text); font-size:20px; margin-right:8px">←</a>
+        <div class="chat-title-text">
+          <div class="chat-title-main" id="tab-title">Loading...</div>
+          <div class="chat-title-sub" id="tab-subtitle">...</div>
+        </div>
+      </div>
+      <button onclick="showSettingsModal()" style="background:none; border:none; font-size:20px; cursor:pointer">⚙️</button>
+    </div>
+
+    <div id="chat-scroll-area" class="chat-scroll-area">
+      <!-- Messages injected here -->
+    </div>
+
+    <div class="action-bar" id="action-bar">
+      <button class="action-btn ab-primary" onclick="copyMagicLink()">Share Link</button>
+      <button class="action-btn" id="secondary-action-btn" onclick="handleSecondaryAction()">Add Expense</button>
+    </div>
+
+  </div>
+
+  <!-- Hidden inputs for magic link -->
+  <input type="text" id="magic-link-input" style="position:absolute; left:-9999px;" readonly>
+
+  <!-- Generic Modal -->
+  <div class="modal-overlay" id="generic-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-title">Title</div>
+        <button class="modal-close" onclick="hideModal('generic-modal')">&times;</button>
+      </div>
+      <div id="modal-content">
+        <!-- Dynamic content -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let tabId = null;
+    let tabData = null;
+    let participants = [];
+    let expenses = [];
+    let payments = [];
+    let currentParticipant = null;
+
+    // Get tab ID from URL
+    const pathParts = window.location.pathname.split('/');
+    tabId = parseInt(pathParts[pathParts.length - 1]);
+
+    async function loadTabData() {
+      try {
+        const response = await fetch(`/api/grouptabs/${tabId}`);
+        if (!response.ok) {
+          if (response.status === 401) { window.location.href = '/'; return; }
+          throw new Error('Failed to load tab');
+        }
+        
+        const data = await response.json();
+        tabData = data.tab;
+        participants = data.participants;
+        expenses = data.expenses || [];
+        payments = data.payments || [];
+        currentParticipant = data.currentParticipant;
+        
+        renderHeader();
+        renderChatStream();
+        updateActionBar();
+        
+        // Set magic link
+        document.getElementById('magic-link-input').value = `${window.location.origin}/tab/${tabData.magic_token}`;
+        
+      } catch (error) {
+        console.error('Error loading tab:', error);
+      }
+    }
+
+    function renderHeader() {
+      document.getElementById('tab-title').textContent = tabData.name;
+      const isOneBill = tabData.tab_type === 'one_bill';
+      document.getElementById('tab-subtitle').textContent = `${participants.length} people • ${isOneBill ? 'One-Bill' : 'Trip'}`;
+    }
+
+    function renderChatStream() {
+      const container = document.getElementById('chat-scroll-area');
+      container.innerHTML = '';
+      
+      // 1. System message: Created
+      addSystemMessage(`Tab created on ${new Date(tabData.created_at).toLocaleDateString()}`);
+      
+      // 2. Bill Card (Rich Message)
+      const isOneBill = tabData.tab_type === 'one_bill';
+      const total = isOneBill ? tabData.total_amount_cents : expenses.reduce((sum, e) => sum + e.amount_cents, 0);
+      
+      // Calculate my share
+      let myShare = 0;
+      let myPaid = 0;
+      if (currentParticipant) {
+        // This is simplified logic for display; real logic is in engine
+        const sharePerPerson = total / (participants.length || 1);
+        myShare = sharePerPerson; // Just an estimate for now
+        
+        // Calculate what I've paid
+        if (isOneBill) {
+           // Check payments
+           myPaid = payments
+             .filter(p => p.from_participant_id === currentParticipant.id)
+             .reduce((sum, p) => sum + p.amount_cents, 0);
+        } else {
+           // Check expenses paid by me
+           myPaid = expenses
+             .filter(e => e.paid_by_participant_id === currentParticipant.id)
+             .reduce((sum, e) => sum + e.amount_cents, 0);
+        }
+      }
+      
+      const percentPaid = myShare > 0 ? Math.min(100, (myPaid / myShare) * 100) : 0;
+
+      const billCard = `
+        <div class="msg msg-bot msg-card">
+          <div class="rich-card">
+            <div class="rc-header">
+              <span>${isOneBill ? 'TOTAL BILL' : 'TOTAL EXPENSES'}</span>
+              <span>${tabData.status === 'open' ? 'Active' : 'Closed'}</span>
+            </div>
+            <div class="rc-value">${formatCurrency2(total)}</div>
+            <div class="rc-row">
+              <span style="opacity:0.7">Your share (est.)</span>
+              <span>${formatCurrency2(myShare)}</span>
+            </div>
+            <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; margin-top:12px; overflow:hidden">
+              <div style="height:100%; width:${percentPaid}%; background:var(--accent)"></div>
+            </div>
+            <div style="font-size:11px; margin-top:6px; opacity:0.7; text-align:right">
+              You paid ${Math.round(percentPaid)}%
+            </div>
+          </div>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', billCard);
+
+      // 3. Timeline events (Expenses, Joins, Payments)
+      // We need to merge and sort these events by date
+      const events = [];
+      
+      // Add join events
+      participants.forEach(p => {
+        // Skip creator (usually first)
+        if (p.user_id !== tabData.created_by && p.created_at) {
+          events.push({
+            type: 'join',
+            date: new Date(p.created_at),
+            data: p
+          });
+        }
+      });
+      
+      // Add expenses
+      expenses.forEach(e => {
+        events.push({
+          type: 'expense',
+          date: new Date(e.created_at),
+          data: e
+        });
+      });
+      
+      // Add payments
+      payments.forEach(p => {
+        events.push({
+          type: 'payment',
+          date: new Date(p.created_at),
+          data: p
+        });
+      });
+      
+      // Sort by date
+      events.sort((a, b) => a.date - b.date);
+      
+      // Render events
+      events.forEach(e => {
+        if (e.type === 'join') {
+          const name = e.data.full_name || e.data.guest_name || 'Someone';
+          addBotMessage(`<strong>${escapeHtml(name)}</strong> joined the tab.`);
+        } else if (e.type === 'expense') {
+          const name = e.data.payer_name || 'Someone';
+          const desc = e.data.description;
+          const amount = formatCurrency2(e.data.amount_cents);
+          addBotMessage(`<strong>${escapeHtml(name)}</strong> added expense: ${escapeHtml(desc)} (${amount}).`);
+        } else if (e.type === 'payment') {
+          const name = e.data.from_name || e.data.from_guest_name || 'Someone';
+          const amount = formatCurrency2(e.data.amount_cents);
+          const method = e.data.method ? ` via ${e.data.method}` : '';
+          addBotMessage(`<strong>${escapeHtml(name)}</strong> paid <strong>${amount}</strong>${method}.`);
+        }
+      });
+      
+      // Scroll to bottom
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function updateActionBar() {
+      const btn = document.getElementById('secondary-action-btn');
+      if (tabData.tab_type === 'one_bill') {
+        btn.textContent = 'Record Payment';
+        btn.onclick = showPaymentModal;
+      } else {
+        btn.textContent = 'Add Expense';
+        btn.onclick = showExpenseModal;
+      }
+    }
+
+    function handleSecondaryAction() {
+      // Logic handled in updateActionBar
+    }
+
+    // --- UI Helpers ---
+    function addBotMessage(html) {
+      const div = document.createElement('div');
+      div.className = 'msg msg-bot';
+      div.innerHTML = html;
+      document.getElementById('chat-scroll-area').appendChild(div);
+    }
+    
+    function addSystemMessage(text) {
+      const div = document.createElement('div');
+      div.className = 'msg-system';
+      div.textContent = text;
+      document.getElementById('chat-scroll-area').appendChild(div);
+    }
+
+    // --- Modals (Simplified for Chat UI) ---
+    function showModal(id) {
+      document.getElementById(id).classList.add('visible');
+    }
+    
+    function hideModal(id) {
+      document.getElementById(id).classList.remove('visible');
+    }
+    
+    function showPaymentModal() {
+      const content = document.getElementById('modal-content');
+      document.getElementById('modal-title').textContent = 'Record Payment';
+      content.innerHTML = `
+        <form onsubmit="submitPayment(event)">
+          <input type="number" id="pay-amount" class="chat-form-input" placeholder="Amount (€)" step="0.01" required>
+          <select id="pay-method" class="chat-form-input">
+            <option value="cash">Cash</option>
+            <option value="venmo">Venmo</option>
+            <option value="bank_transfer">Bank Transfer</option>
+          </select>
+          <button type="submit" class="chat-form-btn">Record Paid</button>
+        </form>
+      `;
+      showModal('generic-modal');
+    }
+    
+    function showExpenseModal() {
+      const content = document.getElementById('modal-content');
+      document.getElementById('modal-title').textContent = 'Add Expense';
+      content.innerHTML = `
+        <form onsubmit="submitExpense(event)">
+          <input type="text" id="exp-desc" class="chat-form-input" placeholder="Description (e.g. Pizza)" required>
+          <input type="number" id="exp-amount" class="chat-form-input" placeholder="Amount (€)" step="0.01" required>
+          <button type="submit" class="chat-form-btn">Add to Tab</button>
+        </form>
+      `;
+      showModal('generic-modal');
+    }
+    
+    function showSettingsModal() {
+      alert('Settings not implemented in this demo.');
+    }
+
+    // --- Actions ---
+    async function submitPayment(e) {
+      e.preventDefault();
+      const amount = document.getElementById('pay-amount').value;
+      const method = document.getElementById('pay-method').value;
+      
+      // Call API (Mocked)
+      try {
+        const formData = new FormData();
+        formData.append('amountCents', Math.round(parseFloat(amount) * 100));
+        formData.append('method', method);
+        
+        const response = await fetch(`/api/grouptabs/${tabId}/payments`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          hideModal('generic-modal');
+          loadTabData(); // Reload chat
+        }
+      } catch (err) {
+        alert('Error recording payment');
+      }
+    }
+    
+    async function submitExpense(e) {
+      e.preventDefault();
+      const desc = document.getElementById('exp-desc').value;
+      const amount = document.getElementById('exp-amount').value;
+      
+      try {
+        const formData = new FormData();
+        formData.append('description', desc);
+        formData.append('amountCents', Math.round(parseFloat(amount) * 100));
+        formData.append('expenseDate', new Date().toISOString().split('T')[0]);
+        
+        const response = await fetch(`/api/grouptabs/${tabId}/expenses`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          hideModal('generic-modal');
+          loadTabData(); // Reload chat
+        }
+      } catch (err) {
+        alert('Error adding expense');
+      }
+    }
+
+    function copyMagicLink() {
+      const input = document.getElementById('magic-link-input');
+      input.select();
+      document.execCommand('copy');
+      
+      const btn = document.querySelector('.ab-primary');
+      const originalText = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = originalText, 2000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // Init
+    if (window.PayFriendsHeader) window.PayFriendsHeader.initialize({ hasActivitySection: false });
+    loadTabData();
+  </script>
+</body>
+</html>

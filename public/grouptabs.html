@@ -6,74 +6,187 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>PayFriends — GroupTabs</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  
   <!-- Shared control styles -->
   <link rel="stylesheet" href="/css/shared-controls.css" />
-  <!-- App-wide styles -->
   <link rel="stylesheet" href="/css/app.css" />
-  <!-- Shared header component -->
+  
+  <!-- Chat Theme -->
+  <link rel="stylesheet" href="/css/chat-theme.css" />
+
   <script src="/js/header.js"></script>
-  <!-- Shared footer component -->
   <script src="/js/footer.js"></script>
-  <style>
-    :root{
-      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
-    }
-    *{box-sizing:border-box}
-    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
-    .container{max-width:1200px; margin:0 auto; padding:32px 16px;}
-    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
-    h1{margin:0 0 8px 0; font-size:28px; font-weight:600}
-    .subtitle{color:var(--muted); font-size:14px; margin:0 0 24px 0; line-height:1.6; text-align:left}
-    .page-title{font-size:28px; font-weight:600; margin:0 0 24px 0}
-    .placeholder-content{text-align:center; padding:64px 32px; color:var(--muted)}
-    .placeholder-icon{font-size:64px; margin-bottom:24px; opacity:0.5}
-    .placeholder-text{font-size:18px; margin-bottom:12px; color:var(--text)}
-    .placeholder-subtext{font-size:15px; line-height:1.6}
-    .top-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08)}
-    .top-header-left{display:flex; align-items:center; gap:12px}
-    .top-header-right{display:flex; gap:12px; align-items:center}
-    .logo-coin{height:54px; width:auto}
-    .top-header-text{display:flex; flex-direction:column; gap:2px}
-    .app-name{font-size:24px; font-weight:600; line-height:1.2; margin:0}
-    .user-meta{color:var(--muted); font-size:14px; line-height:1.2}
-    .app-slogan{color:var(--muted); font-size:14px; line-height:1.2; margin-top:2px}
-    .top-header-user-info{color:var(--text); font-size:14px; line-height:1; white-space:nowrap; display:inline-flex; align-items:center; height:40px}
-    .top-header-actions{display:flex; gap:12px; align-items:center}
-  </style>
+  <script src="/js/formatters.js"></script>
 </head>
 <body>
-  <div class="container">
+  
+  <div class="chat-container">
     <!-- Header will be loaded dynamically by header.js -->
-
-    <div class="page-header-row">
-      <h1 class="page-title">GroupTabs</h1>
-      <a href="/app" class="back-to-dashboard">&larr; Back to dashboard</a>
-    </div>
-
-    <div class="card">
-      <p class="subtitle">Split expenses and settle up with groups.</p>
-
-      <div class="placeholder-content">
-        <div class="placeholder-icon">🎉</div>
-        <div class="placeholder-text">Content of this page coming soon.</div>
-        <div class="placeholder-subtext">
-          GroupTabs will let you split expenses with multiple friends,<br />
-          track who paid what, and settle up fairly.
+    
+    <div class="chat-header">
+      <div class="chat-title-row">
+        <div class="chat-title-text">
+          <div class="chat-title-main">GroupTabs</div>
+          <div class="chat-title-sub">Your active tabs</div>
         </div>
       </div>
+      <a href="/app" style="font-size:20px; text-decoration:none; opacity:0.7">🏠</a>
     </div>
+
+    <div class="filter-tabs">
+      <button class="filter-tab active" data-filter="all" onclick="filterTabs('all')">All</button>
+      <button class="filter-tab" data-filter="open" onclick="filterTabs('open')">Active</button>
+      <button class="filter-tab" data-filter="closed" onclick="filterTabs('closed')">Settled</button>
+    </div>
+
+    <div id="loading" style="text-align:center; padding:40px; color:var(--muted);">
+      Loading chats...
+    </div>
+
+    <div id="thread-list" class="thread-list" style="display:none">
+      <!-- Threads injected here -->
+    </div>
+
+    <div id="empty-state" style="display:none; text-align:center; padding:60px 20px;">
+      <div style="font-size:48px; margin-bottom:16px; opacity:0.5">📭</div>
+      <div style="font-size:18px; font-weight:600; margin-bottom:8px;">No tabs yet</div>
+      <p style="color:var(--muted); max-width:300px; margin:0 auto;">
+        Start a new tab to split dinner, a trip, or any shared expense.
+      </p>
+    </div>
+
+    <a href="/grouptabs/create" class="fab">+</a>
+
   </div>
 
   <script>
-    // Initialize header
-    if (window.PayFriendsHeader && typeof window.PayFriendsHeader.initialize === 'function') {
-      window.PayFriendsHeader.initialize({ hasActivitySection: false });
+    let allTabs = [];
+    let currentFilter = 'all';
+
+    async function loadTabs() {
+      try {
+        const response = await fetch('/api/grouptabs');
+        if (!response.ok) {
+          if (response.status === 401) {
+            window.location.href = '/';
+            return;
+          }
+          throw new Error('Failed to fetch tabs');
+        }
+        
+        const data = await response.json();
+        allTabs = data.tabs || [];
+        
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('thread-list').style.display = 'block';
+        
+        renderTabs();
+      } catch (error) {
+        console.error('Error loading tabs:', error);
+        document.getElementById('loading').innerHTML = 'Error loading tabs.';
+      }
     }
 
-    // Initialize footer
-    if (window.PayFriendsFooter && typeof window.PayFriendsFooter.initialize === 'function') {
-      window.PayFriendsFooter.initialize();
+    function filterTabs(filter) {
+      currentFilter = filter;
+      
+      document.querySelectorAll('.filter-tab').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-filter') === filter) {
+          btn.classList.add('active');
+        }
+      });
+      
+      renderTabs();
     }
+
+    function renderTabs() {
+      const list = document.getElementById('thread-list');
+      const emptyState = document.getElementById('empty-state');
+      
+      let filteredTabs = allTabs;
+      if (currentFilter === 'open') {
+        filteredTabs = allTabs.filter(t => t.status === 'open');
+      } else if (currentFilter === 'closed') {
+        filteredTabs = allTabs.filter(t => t.status === 'closed');
+      }
+      
+      if (filteredTabs.length === 0) {
+        list.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+      
+      emptyState.style.display = 'none';
+      
+      list.innerHTML = filteredTabs.map(tab => {
+        const isOneBill = tab.tab_type === 'one_bill';
+        const emoji = isOneBill ? '🧾' : '✈️';
+        const typeLabel = isOneBill ? 'One-Bill' : 'Trip';
+        
+        // Status Logic (Mocked for visual feel)
+        let statusText = '';
+        let statusClass = 'status-neutral';
+        
+        if (tab.status === 'closed') {
+          statusText = 'Settled & Closed';
+        } else {
+          if (isOneBill) {
+             // Example logic: check if fully paid
+             statusText = 'Waiting on payments...';
+             statusClass = 'status-highlight';
+          } else {
+             statusText = `${tab.participant_count} participants active`;
+          }
+        }
+        
+        const timeAgo = getTimeAgo(new Date(tab.created_at));
+
+        return `
+          <a href="/grouptabs/${tab.id}" class="thread-item">
+            <div class="chat-avatar" style="${isOneBill ? '' : 'background:rgba(99,102,241,0.15); color:#818cf8'}">
+              ${emoji}
+            </div>
+            <div class="thread-content">
+              <div class="thread-top">
+                <span class="thread-name">${escapeHtml(tab.name)}</span>
+                <span class="thread-time">${timeAgo}</span>
+              </div>
+              <div class="thread-preview">
+                ${tab.description ? escapeHtml(tab.description) : (isOneBill ? `Total: ${formatCurrency2(tab.total_amount_cents)}` : 'Multi-expense tab')}
+              </div>
+              <div class="thread-status ${statusClass}">
+                ${statusText}
+              </div>
+            </div>
+          </a>
+        `;
+      }).join('');
+    }
+
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      if (seconds < 60) return 'just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      return date.toLocaleDateString();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Initialize
+    if (window.PayFriendsHeader) window.PayFriendsHeader.initialize({ hasActivitySection: false });
+    loadTabs();
   </script>
 </body>
 </html>
