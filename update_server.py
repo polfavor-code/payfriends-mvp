@@ -1,9 +1,31 @@
 
 import sys
+import shutil
+from datetime import datetime
 
-# Read the file
-with open('server.js', 'r') as f:
-    lines = f.readlines()
+# Verify file exists and create backup before any modifications
+SERVER_FILE = 'server.js'
+
+try:
+    # First check if file exists by trying to open it
+    with open(SERVER_FILE, 'r') as f:
+        lines = f.readlines()
+except FileNotFoundError:
+    print(f"Error: {SERVER_FILE} not found")
+    sys.exit(1)
+except IOError as e:
+    print(f"Error reading {SERVER_FILE}: {e}")
+    sys.exit(1)
+
+# Create timestamped backup before any modifications
+backup_filename = f"{SERVER_FILE}.{datetime.now().strftime('%Y%m%d_%H%M%S')}.bak"
+try:
+    shutil.copy2(SERVER_FILE, backup_filename)
+    print(f"Backup created: {backup_filename}")
+except IOError as e:
+    print(f"Error: Failed to create backup {backup_filename}: {e}")
+    print("Aborting to prevent data loss.")
+    sys.exit(1)
 
 start_marker = -1
 end_marker = -1

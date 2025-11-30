@@ -5595,6 +5595,32 @@ function getGuestParticipant(req, tabId) {
   return db.prepare('SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND guest_session_token = ?').get(tabId, token);
 }
 
+// Check if requester has access to a tab (either as authenticated participant or guest)
+function checkTabAccess(req, tabId) {
+  // Check if authenticated user is a participant
+  if (req.user) {
+    const participant = db.prepare(`
+      SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
+    `).get(tabId, req.user.id);
+    if (participant) {
+      return { hasAccess: true, participant, isAuthenticated: true };
+    }
+    // Also check if user is the creator (they may not be in participants table yet)
+    const tab = db.prepare(`SELECT creator_user_id FROM group_tabs WHERE id = ?`).get(tabId);
+    if (tab && tab.creator_user_id === req.user.id) {
+      return { hasAccess: true, participant: null, isAuthenticated: true, isCreator: true };
+    }
+  }
+  
+  // Check for guest session
+  const guestParticipant = getGuestParticipant(req, tabId);
+  if (guestParticipant) {
+    return { hasAccess: true, participant: guestParticipant, isAuthenticated: false };
+  }
+  
+  return { hasAccess: false, participant: null, isAuthenticated: false };
+}
+
 // Create new tab
 app.post('/api/grouptabs', requireAuth, (req, res) => {
   const { name, tabType, template, totalAmountCents, splitMode, expectedPayRate, seatCount, proofRequired, description, peopleCount, tiers } = req.body;
@@ -5700,7 +5726,7 @@ app.get('/api/grouptabs', requireAuth, (req, res) => {
   }
 });
 
-// Get tab details
+// Get tab details (requires participant access)
 app.get('/api/grouptabs/:id', (req, res) => {
   const tabId = parseInt(req.params.id);
   
@@ -5716,24 +5742,35 @@ app.get('/api/grouptabs/:id', (req, res) => {
       return res.status(404).json({ error: 'Tab not found' });
     }
     
-    // Check if user is a participant
-    let currentParticipant = null;
-    if (req.user) {
-      currentParticipant = db.prepare(`
-        SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
-      `).get(tabId, req.user.id);
-    } else {
-      currentParticipant = getGuestParticipant(req, tabId);
+    // Enforce access control: must be authenticated participant or valid guest
+    const access = checkTabAccess(req, tabId);
+    if (!access.hasAccess) {
+      return res.status(403).json({ error: 'Access denied. You must be a participant in this tab.' });
     }
     
-    // Get all participants
-    const participants = db.prepare(`
-      SELECT gtp.*, u.full_name, u.email, u.profile_picture
-      FROM group_tab_participants gtp
-      LEFT JOIN users u ON gtp.user_id = u.id
-      WHERE gtp.group_tab_id = ?
-      ORDER BY gtp.role DESC, gtp.joined_at ASC
-    `).all(tabId);
+    const currentParticipant = access.participant;
+    const isAuthenticated = access.isAuthenticated;
+    
+    // Get all participants - filter sensitive fields for non-authenticated callers
+    let participants;
+    if (isAuthenticated) {
+      participants = db.prepare(`
+        SELECT gtp.*, u.full_name, u.email, u.profile_picture
+        FROM group_tab_participants gtp
+        LEFT JOIN users u ON gtp.user_id = u.id
+        WHERE gtp.group_tab_id = ?
+        ORDER BY gtp.role DESC, gtp.joined_at ASC
+      `).all(tabId);
+    } else {
+      // Guest callers: exclude email and profile_picture
+      participants = db.prepare(`
+        SELECT gtp.*, u.full_name
+        FROM group_tab_participants gtp
+        LEFT JOIN users u ON gtp.user_id = u.id
+        WHERE gtp.group_tab_id = ?
+        ORDER BY gtp.role DESC, gtp.joined_at ASC
+      `).all(tabId);
+    }
     
     // Get expenses (for multi_bill tabs)
     const expenses = db.prepare(`
@@ -5790,7 +5827,7 @@ app.patch('/api/grouptabs/:id', requireAuth, (req, res) => {
     const updates = [];
     const params = [];
     
-    if (name !== undefined) { updates.push('title = ?'); params.push(name); }
+    if (name !== undefined) { updates.push('name = ?'); params.push(name); }
     if (totalAmountCents !== undefined) { updates.push('total_amount_cents = ?'); params.push(totalAmountCents); }
     if (splitMode !== undefined) { updates.push('split_mode = ?'); params.push(splitMode); }
     if (expectedPayRate !== undefined) { updates.push('expected_pay_rate = ?'); params.push(expectedPayRate); }
@@ -5804,21 +5841,29 @@ app.patch('/api/grouptabs/:id', requireAuth, (req, res) => {
       db.prepare(`UPDATE group_tabs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
     }
     
-    // Handle tiers update
+    // Handle tiers update (only if the group_tab_tiers table exists)
     if (tiers && Array.isArray(tiers) && splitMode === 'tiered') {
-      // Delete existing tiers
-      db.prepare(`DELETE FROM group_tab_tiers WHERE group_tab_id = ?`).run(tabId);
+      // Check if group_tab_tiers table exists before operating on it
+      const tiersTableExists = db.prepare(`
+        SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'
+      `).get();
       
-      // Insert new tiers
-      const insertTier = db.prepare(`
-        INSERT INTO group_tab_tiers (group_tab_id, name, multiplier, sort_order, created_at)
-        VALUES (?, ?, ?, ?, ?)
-      `);
-      
-      const now = new Date().toISOString();
-      tiers.forEach((tier, idx) => {
-        insertTier.run(tabId, tier.name, tier.multiplier, idx, now);
-      });
+      if (tiersTableExists) {
+        // Delete existing tiers
+        db.prepare(`DELETE FROM group_tab_tiers WHERE group_tab_id = ?`).run(tabId);
+        
+        // Insert new tiers
+        const insertTier = db.prepare(`
+          INSERT INTO group_tab_tiers (group_tab_id, name, multiplier, sort_order, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+        
+        const now = new Date().toISOString();
+        tiers.forEach((tier, idx) => {
+          insertTier.run(tabId, tier.name, tier.multiplier, idx, now);
+        });
+      }
+      // If table doesn't exist, silently skip tier operations
     }
     
     res.json({ success: true });
@@ -5840,6 +5885,16 @@ app.get('/api/grouptabs/:id/tiers', requireAuth, (req, res) => {
     
     if (!participant) {
       return res.status(403).json({ error: 'Not a participant of this tab' });
+    }
+    
+    // Check if group_tab_tiers table exists
+    const tiersTableExists = db.prepare(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'
+    `).get();
+    
+    if (!tiersTableExists) {
+      // Table doesn't exist, return empty array
+      return res.json({ tiers: [] });
     }
     
     const tiers = db.prepare(`
@@ -6050,6 +6105,131 @@ app.post('/api/tabs/token/:token/join', (req, res) => {
   } catch (err) {
     console.error('Error joining tab:', err);
     res.status(500).json({ error: 'Failed to join tab' });
+  }
+});
+
+// Get fairness data by token (public for magic link access)
+app.get('/api/tabs/token/:token/fairness', (req, res) => {
+  const { token } = req.params;
+  
+  try {
+    const tab = db.prepare(`SELECT * FROM group_tabs WHERE magic_token = ?`).get(token);
+    if (!tab) {
+      return res.status(404).json({ error: 'Tab not found' });
+    }
+    
+    if (tab.status === 'closed') {
+      return res.status(403).json({ error: 'This tab has been closed' });
+    }
+    
+    const participants = db.prepare(`
+      SELECT gtp.*, 
+        COALESCE(gtp.guest_name, u.full_name) as display_name,
+        (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_expenses WHERE payer_participant_id = gtp.id) as expenses_paid_cents,
+        (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id) as payments_made_cents,
+        (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE to_participant_id = gtp.id) as payments_received_cents
+      FROM group_tab_participants gtp
+      LEFT JOIN users u ON gtp.user_id = u.id
+      WHERE gtp.group_tab_id = ?
+    `).all(tab.id);
+    
+    // Calculate total
+    let totalAmount = 0;
+    if (tab.tab_type === 'one_bill') {
+      totalAmount = tab.total_amount_cents || 0;
+    } else {
+      const expenseSum = db.prepare(`
+        SELECT COALESCE(SUM(amount_cents), 0) as total FROM group_tab_expenses WHERE group_tab_id = ?
+      `).get(tab.id);
+      totalAmount = expenseSum.total;
+    }
+    
+    // Calculate fair shares and balances
+    let totalWeight = 0;
+    for (const p of participants) {
+      let weight = p.tier_multiplier || 1;
+      if (tab.seat_count && p.seats_claimed) {
+        weight = p.seats_claimed;
+      }
+      p._weight = weight;
+      totalWeight += weight;
+    }
+    
+    const payRateMultiplier = tab.tab_type === 'one_bill' ? (tab.expected_pay_rate || 100) / 100 : 1;
+    
+    const fairnessData = [];
+    let totalDeviation = 0;
+    
+    for (const p of participants) {
+      let fairShare = totalWeight > 0 ? Math.round((totalAmount * p._weight / totalWeight) * payRateMultiplier) : 0;
+      
+      let actualContribution;
+      if (tab.tab_type === 'multi_bill') {
+        actualContribution = p.expenses_paid_cents + p.payments_made_cents - p.payments_received_cents;
+      } else {
+        actualContribution = p.payments_made_cents;
+      }
+      
+      const balance = actualContribution - fairShare;
+      totalDeviation += Math.abs(balance);
+      
+      fairnessData.push({
+        participantId: p.id,
+        displayName: p.display_name || 'Unknown',
+        isMember: p.is_member === 1,
+        fairShare,
+        actualPaid: actualContribution,
+        balance,
+        percentOfFair: fairShare > 0 ? Math.round((actualContribution / fairShare) * 100) : 0
+      });
+    }
+    
+    // Global fairness score
+    let globalScore = 100;
+    if (totalAmount > 0) {
+      globalScore = Math.max(0, Math.min(100, Math.round(100 * (1 - totalDeviation / (2 * totalAmount)))));
+    }
+    
+    // Generate settlement suggestions
+    const settlements = [];
+    const debtors = fairnessData.filter(b => b.balance < -50).map(b => ({...b})).sort((a, b) => a.balance - b.balance);
+    const creditors = fairnessData.filter(b => b.balance > 50).map(b => ({...b})).sort((a, b) => b.balance - a.balance);
+    
+    while (debtors.length > 0 && creditors.length > 0) {
+      const debtor = debtors[0];
+      const creditor = creditors[0];
+      const amount = Math.min(Math.abs(debtor.balance), creditor.balance);
+      
+      if (amount >= 50) {
+        settlements.push({
+          fromId: debtor.participantId,
+          fromName: debtor.displayName,
+          toId: creditor.participantId,
+          toName: creditor.displayName,
+          amountCents: Math.round(amount)
+        });
+      }
+      
+      debtor.balance += amount;
+      creditor.balance -= amount;
+      
+      if (Math.abs(debtor.balance) < 50) debtors.shift();
+      if (creditor.balance < 50) creditors.shift();
+    }
+    
+    res.json({
+      success: true,
+      tabType: tab.tab_type,
+      splitMode: tab.split_mode,
+      totalAmount,
+      expectedPayRate: tab.expected_pay_rate,
+      globalScore,
+      participants: fairnessData,
+      settlements
+    });
+  } catch (err) {
+    console.error('Error calculating fairness:', err);
+    res.status(500).json({ error: 'Failed to calculate fairness' });
   }
 });
 
@@ -6351,7 +6531,7 @@ app.post('/api/grouptabs/:id/payments', uploadGrouptabs.single('proof'), (req, r
   }
 });
 
-// Get fairness/settlement data
+// Get fairness/settlement data (requires participant access)
 app.get('/api/grouptabs/:id/fairness', (req, res) => {
   const tabId = parseInt(req.params.id);
   
@@ -6359,6 +6539,12 @@ app.get('/api/grouptabs/:id/fairness', (req, res) => {
     const tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
     if (!tab) {
       return res.status(404).json({ error: 'Tab not found' });
+    }
+    
+    // Enforce access control: must be authenticated participant or valid guest
+    const access = checkTabAccess(req, tabId);
+    if (!access.hasAccess) {
+      return res.status(403).json({ error: 'Access denied. You must be a participant in this tab.' });
     }
     
     const participants = db.prepare(`

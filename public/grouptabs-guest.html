@@ -264,11 +264,11 @@
     function showJoinScreen() {
       document.getElementById('join-screen').style.display = 'block';
       
-      const isOneBill = tabData.tabType === 'one_bill';
+      const isOneBill = tabData.tab_type === 'one_bill';
       const typeEmoji = isOneBill ? '🧾' : '📊';
       document.getElementById('join-icon').textContent = typeEmoji;
       document.getElementById('join-title').textContent = `Join "${tabData.name}"`;
-      document.getElementById('join-subtitle').textContent = `${tabData.creatorName} invited you to join this ${isOneBill ? 'bill' : 'shared expense'} tab.`;
+      document.getElementById('join-subtitle').textContent = `${tabData.creator_name} invited you to join this ${isOneBill ? 'bill' : 'shared expense'} tab.`;
       
       // If logged in, auto-join as member
       if (isLoggedIn) {
@@ -339,35 +339,35 @@
       document.getElementById('tab-title').textContent = tabData.name;
       document.getElementById('tab-description').textContent = tabData.description || '';
       
-      const isOneBill = tabData.tabType === 'one_bill';
+      const isOneBill = tabData.tab_type === 'one_bill';
       const typeLabel = isOneBill ? '🧾 One-Bill' : '📊 Multi-Bill';
       document.getElementById('tab-type-badge').textContent = typeLabel;
-      document.getElementById('tab-type-badge').className = `grouptab-type-badge ${tabData.tabType}`;
+      document.getElementById('tab-type-badge').className = `grouptab-type-badge ${tabData.tab_type}`;
       
       document.getElementById('tab-status-badge').textContent = tabData.status;
       document.getElementById('tab-status-badge').className = `grouptab-status-badge ${tabData.status}`;
       
       // Setup proof requirement
       const proofLabel = document.getElementById('proof-required-label');
-      if (tabData.proofRequired === 'required') {
+      if (tabData.proof_required === 'required') {
         proofLabel.textContent = '(required)';
         document.getElementById('payment-proof').required = true;
-      } else if (tabData.proofRequired === 'off') {
+      } else if (tabData.proof_required === 'off') {
         document.getElementById('payment-proof-group').style.display = 'none';
       } else {
         proofLabel.textContent = '(optional)';
       }
       
       // Setup seat/tier selection for one-bill
-      if (tabData.tabType === 'one_bill') {
+      if (tabData.tab_type === 'one_bill') {
         document.getElementById('seat-tier-section').style.display = 'block';
         
-        if (tabData.seatCount) {
+        if (tabData.seat_count) {
           document.getElementById('seat-picker-container').style.display = 'block';
           renderSeatPicker();
         }
         
-        if (tabData.splitMode === 'tiered' && tiers.length > 0) {
+        if (tabData.split_mode === 'tiered' && tiers.length > 0) {
           document.getElementById('tier-selector-container').style.display = 'block';
           renderTierSelector();
         }
@@ -587,7 +587,7 @@
       });
       
       let html = '';
-      for (let i = 1; i <= tabData.seatCount; i++) {
+      for (let i = 1; i <= tabData.seat_count; i++) {
         const isTaken = takenSeats[i];
         const isSelected = currentSeats.includes(i);
         html += `
