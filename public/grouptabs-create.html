@@ -322,6 +322,9 @@
     function scrollToBottom() {
       chatHistory.scrollTop = chatHistory.scrollHeight;
     }
+
+    // Initialize header
+    if (window.PayFriendsHeader) window.PayFriendsHeader.initialize({ hasActivitySection: false });
   </script>
 </body>
 </html>
