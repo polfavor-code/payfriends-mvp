@@ -19,6 +19,19 @@
   <script src="/js/formatters.js"></script>
   
   <style>
+    /* Standard page layout - matches dashboard, friends, agreements */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+    
+    /* Wizard uses narrower content area but same header width */
+    .chat-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
     /* Extra styles specific to the Wizard */
     .chat-input {
       font-size: 18px;
@@ -60,6 +73,8 @@
   </style>
 </head>
 <body>
+  <div class="container">
+    <!-- Header will be loaded dynamically by header.js -->
   
   <div class="chat-container">
     
@@ -76,8 +91,23 @@
           <div class="chat-title-sub">Let's get this sorted! 🚀</div>
         </div>
       </div>
-      <!-- New "X" Close Button -->
-      <a href="/grouptabs" class="close-icon-btn">×</a>
+      <!-- Controls Group -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <!-- Undo Button (Moved here) -->
+        <button id="undo-btn" class="undo-btn-header" title="Go back one step" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 14L4 9l5-5"/>
+            <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+          </svg>
+        </button>
+        
+        <!-- Close Button -->
+        <a href="/grouptabs" class="close-icon-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </a>
+      </div>
     </div>
 
     <div id="chat-scroll-area" class="chat-scroll-area">
@@ -90,7 +120,6 @@
       </div>
       
       <div class="input-bar">
-        <button id="undo-btn" class="undo-btn" title="Undo last step" disabled>↶</button>
         <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..." autocomplete="off">
         <button id="send-btn" class="send-btn" disabled>➤</button>
       </div>
@@ -155,10 +184,18 @@
       // 1. Restore Data State
       Object.assign(state, lastState.state);
       
-      // 2. Cleanup DOM (Remove elements added after this state)
+      // 2. Cleanup DOM - Remove elements added AFTER this state was saved
+      // Elements with historyIndex > lastState.index are from future steps
+      // We also remove user messages (msg-user) with historyIndex == lastState.index
+      // because those are the answers that triggered the next step
       const elements = document.querySelectorAll(`[data-history-index]`);
       elements.forEach(el => {
-        if (parseInt(el.dataset.historyIndex) > lastState.index) {
+        const elIndex = parseInt(el.dataset.historyIndex);
+        if (elIndex > lastState.index) {
+          // Future step elements - always remove
+          el.remove();
+        } else if (elIndex === lastState.index && el.classList.contains('msg-user')) {
+          // User's answer that triggered this transition - remove it
           el.remove();
         }
       });
@@ -231,9 +268,22 @@
     // INITIALIZATION
     // ===========================================
     setTimeout(() => {
-      addBotMessage("What is this GroupTab for?");
-      addSelectionBlocks(INTENT_OPTIONS);
-    }, 500);
+      // Show typing indicator first
+      showTyping();
+      
+      // After a moment, remove typing and show the question
+      setTimeout(() => {
+        removeTyping();
+        addBotMessage("What is this GroupTab for?");
+        
+        // Then show the selection blocks with a slight delay
+        setTimeout(() => {
+          addSelectionBlocks(INTENT_OPTIONS);
+        }, 400);
+        
+      }, 700);
+      
+    }, 300);
 
     // ===========================================
     // EVENT LISTENERS
@@ -284,28 +334,28 @@
         case 'INTENT':
           handleIntent(input);
           break;
-        
+
         // -----------------------------------------
         // STEP 2: NAME
         // -----------------------------------------
         case 'NAME':
           handleName(input);
           break;
-        
+
         // -----------------------------------------
         // STEP 3: AMOUNT (handled via card)
         // -----------------------------------------
         case 'AMOUNT':
           // Amount is handled by the card's confirm button
           break;
-        
+
         // -----------------------------------------
         // STEP 4: PEOPLE (handled via card)
         // -----------------------------------------
         case 'PEOPLE':
           // People is handled by the card's confirm button
           break;
-        
+
         // -----------------------------------------
         // STEP 5: SPLIT (handled via block clicks)
         // -----------------------------------------
@@ -416,6 +466,8 @@
     }
     
     function handlePeopleConfirm(count) {
+      pushHistory(); // Save state before transition
+      
       state.data.people = count;
       
       addUserMessage(`${count} people`);
@@ -447,6 +499,7 @@
       }
       
       if (splitMode) {
+        pushHistory(); // Save state before transitioning to CREATING
         state.data.splitMode = splitMode;
         
         // Note: User message is already added by handleBlockClick, so we don't add it here
@@ -968,7 +1021,7 @@
     function hideInputContainer() {
       inputContainer.classList.add('hidden');
     }
-    
+
     function showInputContainer() {
       inputContainer.classList.remove('hidden');
     }
@@ -1159,5 +1212,6 @@
     // Initialize header
     if (window.PayFriendsHeader) window.PayFriendsHeader.initialize({ hasActivitySection: false });
   </script>
+  </div>
 </body>
 </html>

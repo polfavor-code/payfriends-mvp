@@ -19,23 +19,25 @@ body {
 }
 
 .chat-container {
-  max-width: 800px; /* Chat interfaces work better narrow */
+  max-width: 1000px; /* Increased from 800px for better card fit */
   margin: 0 auto;
   padding: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1; /* Ensure global header dropdown (z-index:50) appears above */
 }
 
 /* --- HEADER --- */
 .chat-header {
   position: sticky;
   top: 0;
-  z-index: 100;
-  background: rgba(14, 17, 22, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
+  z-index: 10; /* Lowered from 100 so global header dropdown (z-index:50) appears above */
   padding: 16px 20px;
+  background: rgba(14, 17, 22, 0.85); /* More transparent */
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -60,19 +62,67 @@ body {
   flex-shrink: 0;
 }
 
+/* Playful assistant icon style */
+.chat-avatar.assistant-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #3ddc97 0%, #2563eb 100%);
+  border: none;
+  box-shadow: 0 4px 12px rgba(61, 220, 151, 0.3);
+  transform: rotate(-5deg); /* Playful tilt */
+}
+
+.chat-avatar.assistant-icon svg {
+  color: white;
+  width: 24px;
+  height: 24px;
+}
+
 .chat-title-text {
   display: flex;
   flex-direction: column;
 }
 
+/* Bigger, playful title */
 .chat-title-main {
-  font-weight: 700;
-  font-size: 16px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #ffffff 0%, #a7b0bd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 2px;
 }
 
 .chat-title-sub {
-  font-size: 12px;
-  color: var(--muted);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  opacity: 0.9;
+  margin-top: 4px;
+}
+
+/* Close "X" Button - Clean Style */
+.close-icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px; /* Squircle instead of circle */
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1;
+  transition: all 0.2s;
+  border: none;
+}
+
+.close-icon-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
 }
 
 /* --- MESSAGE LIST (Overview / Thread) --- */
@@ -241,6 +291,7 @@ body {
   display: flex;
   gap: 8px;
   overflow-x: auto;
+  padding-top: 4px; /* Room for hover lift */
   padding-bottom: 12px;
   /* Hide scrollbar */
   scrollbar-width: none; 
@@ -249,21 +300,31 @@ body {
 .quick-replies::-webkit-scrollbar { display: none; }
 
 .reply-chip {
-  padding: 8px 16px;
+  padding: 10px 16px; /* Balanced padding */
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  font-size: 14px;
+  border-radius: 20px; /* Classic pill shape */
+  font-size: 15px; /* Matches chat text size */
   white-space: nowrap;
   color: var(--accent);
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px; 
 }
 
 .reply-chip:hover {
   background: var(--accent-dim);
   border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+/* Ensure emoji/icons inside are sized up */
+.reply-chip span, 
+.reply-chip i {
+  font-size: 18px; /* Slightly smaller icons to match text */
 }
 
 .input-bar {
@@ -274,10 +335,49 @@ body {
   padding: 8px 8px 8px 16px;
   border-radius: 24px;
   border: 1px solid var(--border);
+  transition: border-color 0.2s;
 }
 
 .input-bar:focus-within {
   border-color: var(--accent);
+}
+
+.undo-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0; /* Reset padding */
+  margin-right: 4px;
+}
+
+.undo-btn svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.8;
+}
+
+.undo-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  border-color: var(--text);
+}
+
+.undo-btn:hover svg {
+  opacity: 1;
+}
+
+.undo-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+  border-color: transparent;
 }
 
 .chat-input {
@@ -362,3 +462,851 @@ body {
   transform: scale(1.05);
 }
 
+/* =============================================
+   GPT-STYLE SELECTION BLOCKS (Hybrid Wizard)
+   ============================================= */
+
+/* Horizontal scrolling container for selection cards */
+.selection-scroller {
+  display: flex;
+  gap: 32px; /* Increased gap to spread them out */
+  overflow-x: auto;
+  padding: 24px 20px 16px 20px; /* Increased padding */
+  margin-top: 8px;
+  max-width: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  align-self: center; /* Center the entire block */
+  width: fit-content; /* Ensure it centers correctly */
+}
+.selection-scroller::-webkit-scrollbar { display: none; }
+
+/* Individual selection card (Sticker Slap Style) */
+.selection-card {
+  min-width: 210px;
+  max-width: 240px;
+  background: #161b24;
+  border: 2px solid #2a303c;
+  border-radius: 24px;
+  padding: 20px 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: visible;
+  position: relative;
+}
+
+.selection-card:hover {
+  background: #1a2030;
+  border-color: var(--accent);
+  transform: rotate(-1deg) scale(1.03);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+
+.selection-card:active {
+  transform: rotate(-1deg) scale(0.98);
+}
+
+/* Icon container for SVG icons */
+.sc-icon {
+  font-size: 48px; /* Bigger icons */
+  margin-bottom: 8px;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.15));
+}
+
+/* When icon contains an SVG */
+.sc-icon svg {
+  width: 32px;
+  height: 32px;
+  color: var(--accent);
+}
+
+.sc-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sc-subtext {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.sc-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* Dual Icon Display (e.g., 🦞🍾 vs 🥕🚰) */
+.sc-icon-dual {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 32px; /* Bigger dual icons */
+  margin-bottom: 8px; /* Increased margin */
+}
+
+.sc-icon-vs {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* Selection Card Badge (Legacy text badge - kept for fallback) */
+.selection-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--accent);
+  color: #0e1116;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 12px;
+  transform: rotate(5deg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+}
+
+/* Stamp Badge (Sticker Slap Style - SVG Stamps) */
+.stamp-badge {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  width: 64px;
+  height: 64px;
+  z-index: 20;
+  transform: rotate(12deg);
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.35));
+  animation: stamp-slap 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  pointer-events: none;
+}
+
+.stamp-badge svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes stamp-slap {
+  0% {
+    transform: scale(2.5) rotate(0deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(0.9) rotate(15deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(12deg);
+    opacity: 1;
+  }
+}
+
+/* Suggestion chips (below input bar, GPT style) */
+.suggestion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Even bigger gap */
+  padding: 16px 0;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05); /* Lighter background */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* clearer border */
+  border-radius: 18px; /* rounder */
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); /* snappier transition */
+  text-align: left;
+  width: 100%;
+}
+
+.suggestion-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent);
+  transform: translateY(-2px); /* Lift up effect */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.suggestion-icon {
+  font-size: 28px; /* Much bigger icon */
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.suggestion-text {
+  font-size: 17px; /* Larger text */
+  font-weight: 600; /* Bolder */
+  color: var(--text);
+  flex: 1;
+}
+
+.suggestion-hint {
+  font-size: 12px;
+  color: var(--accent); /* Accent color for hint */
+  background: rgba(61, 220, 151, 0.1); /* Accent bg */
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* =============================================
+   IN-CHAT FORM CARDS (Amount, Counter, etc.)
+   ============================================= */
+
+/* Wrapper for in-chat interactive cards */
+.chat-card {
+  align-self: flex-start;
+  max-width: 320px;
+  width: 100%;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Base card styling */
+.form-card {
+  background: linear-gradient(145deg, rgba(28, 33, 43, 1), rgba(20, 24, 30, 1));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.form-card-header {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+/* Amount Input Card */
+.amount-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px; /* Reduced from 12px */
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.amount-input-wrapper:focus-within {
+  border-color: var(--accent);
+  background: rgba(61, 220, 151, 0.03);
+}
+
+.amount-currency {
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.amount-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 32px;
+  font-weight: 600;
+  outline: none;
+  padding: 0;
+  width: 100%;
+  font-family: inherit;
+  /* Remove spinner arrows */
+  -moz-appearance: textfield;
+}
+
+/* Remove spinner arrows for WebKit browsers */
+.amount-input::-webkit-outer-spin-button,
+.amount-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.amount-input:focus {
+  outline: none;
+}
+
+.amount-input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+  font-weight: 400;
+}
+
+/* Live total preview */
+.amount-preview {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 0; /* Removed margin by default */
+  min-height: 0;    /* Removed min-height */
+  height: 0;
+  overflow: hidden;
+  transition: height 0.2s ease;
+}
+
+.amount-preview.visible {
+  height: 24px;     /* Height when visible */
+  margin-bottom: 12px;
+}
+
+.amount-preview .total-value {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Tip Toggle Section */
+.tip-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.tip-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tip-toggle-btn.active {
+  background: rgba(61, 220, 151, 0.08);
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tip-input-row {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: rgba(61, 220, 151, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(61, 220, 151, 0.15);
+}
+
+.tip-input-row.visible {
+  display: flex;
+}
+
+.tip-label {
+  font-size: 14px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.tip-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 600;
+  outline: none;
+  padding: 6px 10px;
+  max-width: 100px;
+  font-family: inherit;
+  /* Remove spinner arrows */
+  -moz-appearance: textfield;
+}
+
+.tip-input::-webkit-outer-spin-button,
+.tip-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.tip-input:focus {
+  border-color: var(--accent);
+}
+
+.tip-total {
+  font-size: 13px;
+  color: var(--muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Receipt Upload Section (Simplified) */
+.receipt-simple-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.receipt-simple-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* Receipt Preview Container */
+.receipt-preview-mini {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(61, 220, 151, 0.1);
+  border: 1px solid rgba(61, 220, 151, 0.2);
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.receipt-preview-mini img {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.receipt-preview-mini-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.receipt-remove-x {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+}
+.receipt-remove-x:hover { color: #fff; }
+
+/* ===========================================
+   People Step - Stacked Layout (Selector above Summary Card)
+   =========================================== */
+
+.people-step-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* People Selector - Inline (no card background) */
+.people-selector-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.people-selector-controls {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.people-count-value {
+  width: 80px;
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  background: transparent;
+  border: none;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.people-count-value::-webkit-outer-spin-button,
+.people-count-value::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.people-count-value:focus {
+  color: var(--accent);
+}
+
+/* Price Summary Card */
+.price-summary-card {
+  background: linear-gradient(145deg, rgba(28, 33, 43, 1), rgba(20, 24, 30, 1));
+  border: 1px solid rgba(61, 220, 151, 0.2);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-width: 200px;
+  max-width: 280px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.price-summary-line-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.price-amount {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.price-label {
+  font-size: 14px;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.price-summary-line-total {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.price-summary-line-total span {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.price-summary-line-hint {
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.5;
+  margin-top: 4px;
+}
+
+/* Confirm Button for People Step */
+.people-confirm-btn {
+  width: auto;
+  min-width: 200px;
+  max-width: 280px;
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+/* ===========================================
+   Legacy Counter Card (kept for compatibility)
+   =========================================== */
+
+/* Counter Card */
+.counter-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 16px 0;
+}
+
+.counter-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.counter-btn:hover {
+  background: rgba(61, 220, 151, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.counter-btn:active {
+  transform: scale(0.95);
+}
+
+.counter-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.counter-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 80px;
+  text-align: center;
+}
+
+/* Counter Input (Editable) */
+.counter-input {
+  width: 80px;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  outline: none;
+  transition: border-color 0.2s;
+  -moz-appearance: textfield;
+}
+
+.counter-input::-webkit-outer-spin-button,
+.counter-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.counter-input:focus {
+  border-bottom-color: var(--accent);
+}
+
+/* Per Person Display - LEGACY (kept for compatibility, replaced by .price-summary-box) */
+.counter-per-person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 16px 0;
+}
+
+.per-person-amount {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.per-person-label {
+  font-size: 14px;
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+.counter-hint {
+  text-align: center;
+  font-size: 14px;
+  color: var(--accent);
+  margin-top: 8px;
+}
+
+/* Card Confirm Button */
+.card-confirm-btn {
+  width: 100%;
+  padding: 14px 20px;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  color: #0e1116;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.card-confirm-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(61, 220, 151, 0.3);
+}
+
+.card-confirm-btn:active {
+  transform: scale(0.98);
+}
+
+/* Launch Card (Final Summary) */
+.launch-card {
+  text-align: center;
+}
+
+.launch-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.launch-card-amount {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.launch-card-detail {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 20px;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  color: #0e1116;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 12px;
+}
+
+.share-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(61, 220, 151, 0.3);
+}
+
+.edit-link {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.edit-link:hover {
+  color: var(--text);
+}
+
+/* Launch Card Receipt Preview */
+.launch-card-receipt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+.launch-card-receipt img {
+  max-width: 100%;
+  max-height: 120px;
+  border-radius: 8px;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.launch-card-receipt img:hover {
+  transform: scale(1.02);
+}
+
+.launch-card-receipt-label {
+  font-size: 12px;
+  color: var(--accent);
+}
+
+/* Receipt Lightbox */
+.receipt-lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  cursor: zoom-out;
+  animation: fadeIn 0.2s ease;
+}
+
+.receipt-lightbox img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* New Header Undo Button - matches close button size */
+.undo-btn-header {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.undo-btn-header:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  transform: rotate(-45deg);
+}
+
+.undo-btn-header:disabled {
+  opacity: 0.25;
+  cursor: default;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.undo-btn-header svg {
+  width: 20px;
+  height: 20px;
+}

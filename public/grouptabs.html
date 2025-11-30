@@ -14,47 +14,459 @@
   <!-- Chat Theme -->
   <link rel="stylesheet" href="/css/chat-theme.css" />
 
+  <style>
+    /* =============================================
+       NEO-GLASS FINANCE - GroupTabs Overview
+       ============================================= */
+    
+    body {
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+
+    /* --- PAGE HEADER --- */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .page-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #ffffff 0%, #a7b0bd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .new-tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(61, 220, 151, 0.15);
+      color: #3ddc97;
+      border: 1px solid rgba(61, 220, 151, 0.3);
+      padding: 10px 18px;
+      border-radius: 24px;
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .new-tab-btn:hover {
+      background: rgba(61, 220, 151, 0.25);
+      border-color: rgba(61, 220, 151, 0.5);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(61, 220, 151, 0.2);
+    }
+
+    /* --- FILTER TABS --- */
+    .filter-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 12px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      position: static;
+    }
+
+    .filter-tab {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-tab:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+    }
+
+    .filter-tab.active {
+      background: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+      font-weight: 600;
+    }
+
+    .sort-select {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .sort-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* --- TAB LIST --- */
+    .tab-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-bottom: 100px;
+    }
+
+    /* --- GLASS TAB CARD --- */
+    .tab-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 18px 20px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .tab-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    /* --- TAB ICON (standalone, sized to match 3 text lines) --- */
+    .tab-icon {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-right: 8px;
+    }
+
+    /* --- TAB INFO (3-line layout) --- */
+    .tab-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tab-line-1 {
+      margin-bottom: 2px;
+    }
+
+    .tab-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tab-line-2 {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .tab-line-2 .creator-you {
+      color: var(--text);
+    }
+
+    .tab-line-3 {
+      font-size: 14px;
+    }
+
+    .tab-amount {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .tab-amount.settled {
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    /* --- PROGRESS RING --- */
+    .progress-ring-container {
+      width: 64px;
+      height: 64px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .progress-ring-container.glow {
+      filter: drop-shadow(0 0 8px rgba(61, 220, 151, 0.25));
+    }
+
+    .progress-ring-container.glow-settled {
+      filter: drop-shadow(0 0 8px rgba(129, 140, 248, 0.25));
+    }
+
+    .progress-ring {
+      transform: rotate(-90deg);
+    }
+
+    .progress-ring-bg {
+      fill: transparent;
+      stroke: rgba(255, 255, 255, 0.06);
+    }
+
+    .progress-ring-fill {
+      fill: transparent;
+      stroke: #3ddc97;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .progress-ring-fill.settled {
+      stroke: #818cf8;
+    }
+
+    .progress-ring-text {
+      position: absolute;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .progress-ring-text.settled {
+      color: #818cf8;
+    }
+
+    /* --- EMPTY STATE --- */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.4;
+    }
+
+    .empty-state-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-state-text {
+      color: var(--muted);
+      max-width: 280px;
+      margin: 0 auto 24px;
+      line-height: 1.5;
+    }
+
+    .empty-state-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: var(--bg);
+      padding: 14px 24px;
+      border-radius: 24px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .empty-state-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(61, 220, 151, 0.3);
+    }
+
+    /* --- LOADING STATE --- */
+    .loading-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* --- FAB (Secondary) --- */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 4px 20px rgba(61, 220, 151, 0.4);
+      border: none;
+      cursor: pointer;
+      z-index: 200;
+      transition: transform 0.2s;
+      text-decoration: none;
+    }
+
+    .fab:hover {
+      transform: scale(1.08);
+    }
+
+    /* Hide FAB on larger screens where header button is visible */
+    @media (min-width: 600px) {
+      .fab {
+        display: none;
+      }
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      .new-tab-btn {
+        display: none; /* Show FAB instead on mobile */
+      }
+
+      .filter-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .tab-card {
+        padding: 14px;
+      }
+
+      .tab-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 32px;
+      }
+
+      .progress-ring-container {
+        width: 52px;
+        height: 52px;
+      }
+
+      .tab-title {
+        font-size: 15px;
+      }
+    }
+  </style>
+
   <script src="/js/header.js"></script>
   <script src="/js/footer.js"></script>
   <script src="/js/formatters.js"></script>
 </head>
 <body>
-  
-  <div class="chat-container">
+  <div class="container">
     <!-- Header will be loaded dynamically by header.js -->
-    
-    <div class="chat-header">
-      <div class="chat-title-row">
-        <div class="chat-title-text">
-          <div class="chat-title-main">GroupTabs</div>
-          <div class="chat-title-sub">Your active tabs</div>
-        </div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <div class="page-title">GroupTabs</div>
+        <div class="page-subtitle">Split expenses with friends</div>
       </div>
-      <a href="/app" style="font-size:20px; text-decoration:none; opacity:0.7">🏠</a>
+      <a href="/grouptabs/create" class="new-tab-btn">
+        <span>+</span> New GroupTab
+      </a>
     </div>
 
-    <div class="filter-tabs">
-      <button class="filter-tab active" data-filter="all" onclick="filterTabs('all')">All</button>
-      <button class="filter-tab" data-filter="open" onclick="filterTabs('open')">Active</button>
-      <button class="filter-tab" data-filter="closed" onclick="filterTabs('closed')">Settled</button>
+    <!-- Filter Row -->
+    <div class="filter-row">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all" onclick="filterTabs('all')">All</button>
+        <button class="filter-tab" data-filter="open" onclick="filterTabs('open')">Active</button>
+        <button class="filter-tab" data-filter="closed" onclick="filterTabs('closed')">Settled</button>
+      </div>
+      <select class="sort-select" onchange="sortTabs(this.value)">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="unpaid">Highest unpaid</option>
+      </select>
     </div>
 
-    <div id="loading" style="text-align:center; padding:40px; color:var(--muted);">
-      Loading chats...
+    <!-- Loading State -->
+    <div id="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      Loading your tabs...
     </div>
 
-    <div id="thread-list" class="thread-list" style="display:none">
-      <!-- Threads injected here -->
+    <!-- Tab List -->
+    <div id="tab-list" class="tab-list" style="display:none">
+      <!-- Tabs injected here -->
     </div>
 
-    <div id="empty-state" style="display:none; text-align:center; padding:60px 20px;">
-      <div style="font-size:48px; margin-bottom:16px; opacity:0.5">📭</div>
-      <div style="font-size:18px; font-weight:600; margin-bottom:8px;">No tabs yet</div>
-      <p style="color:var(--muted); max-width:300px; margin:0 auto;">
-        Start a new tab to split dinner, a trip, or any shared expense.
+    <!-- Empty State -->
+    <div id="empty-state" class="empty-state" style="display:none">
+      <div class="empty-state-icon">📭</div>
+      <div class="empty-state-title">No tabs yet</div>
+      <p class="empty-state-text">
+        Start a new tab to split dinner, a trip, or any shared expense with friends.
       </p>
+      <a href="/grouptabs/create" class="empty-state-btn">
+        <span>+</span> Create your first tab
+      </a>
     </div>
 
+    <!-- FAB (mobile only) -->
     <a href="/grouptabs/create" class="fab">+</a>
 
   </div>
@@ -62,9 +474,23 @@
   <script>
     let allTabs = [];
     let currentFilter = 'all';
+    let currentSort = 'newest';
+    let currentUserId = null;
+    let currentUserFirstName = null;
 
     async function loadTabs() {
       try {
+        // Get current user info
+        const userResponse = await fetch('/api/user');
+        if (userResponse.ok) {
+          const data = await userResponse.json();
+          const user = data.user;
+          if (user) {
+            currentUserId = user.id;
+            currentUserFirstName = user.first_name || user.full_name?.split(' ')[0] || user.name?.split(' ')[0] || 'You';
+          }
+        }
+
         const response = await fetch('/api/grouptabs');
         if (!response.ok) {
           if (response.status === 401) {
@@ -78,12 +504,12 @@
         allTabs = data.tabs || [];
         
         document.getElementById('loading').style.display = 'none';
-        document.getElementById('thread-list').style.display = 'block';
+        document.getElementById('tab-list').style.display = 'flex';
         
         renderTabs();
       } catch (error) {
         console.error('Error loading tabs:', error);
-        document.getElementById('loading').innerHTML = 'Error loading tabs.';
+        document.getElementById('loading').innerHTML = '<div style="color:#f87171;">Error loading tabs. Please refresh.</div>';
       }
     }
 
@@ -100,16 +526,36 @@
       renderTabs();
     }
 
+    function sortTabs(sort) {
+      currentSort = sort;
+      renderTabs();
+    }
+
     function renderTabs() {
-      const list = document.getElementById('thread-list');
+      const list = document.getElementById('tab-list');
       const emptyState = document.getElementById('empty-state');
       
+      // Filter
       let filteredTabs = allTabs;
       if (currentFilter === 'open') {
         filteredTabs = allTabs.filter(t => t.status === 'open');
       } else if (currentFilter === 'closed') {
         filteredTabs = allTabs.filter(t => t.status === 'closed');
       }
+
+      // Sort
+      filteredTabs = [...filteredTabs].sort((a, b) => {
+        if (currentSort === 'newest') {
+          return new Date(b.created_at) - new Date(a.created_at);
+        } else if (currentSort === 'oldest') {
+          return new Date(a.created_at) - new Date(b.created_at);
+        } else if (currentSort === 'unpaid') {
+          const aUnpaid = (a.total_amount_cents || 0) - (a.paid_amount_cents || 0);
+          const bUnpaid = (b.total_amount_cents || 0) - (b.paid_amount_cents || 0);
+          return bUnpaid - aUnpaid;
+        }
+        return 0;
+      });
       
       if (filteredTabs.length === 0) {
         list.innerHTML = '';
@@ -119,49 +565,104 @@
       
       emptyState.style.display = 'none';
       
-      list.innerHTML = filteredTabs.map(tab => {
-        const isOneBill = tab.tab_type === 'one_bill';
-        const emoji = isOneBill ? '🧾' : '✈️';
-        const typeLabel = isOneBill ? 'One-Bill' : 'Trip';
-        
-        // Status Logic (Mocked for visual feel)
-        let statusText = '';
-        let statusClass = 'status-neutral';
-        
-        if (tab.status === 'closed') {
-          statusText = 'Settled & Closed';
-        } else {
-          if (isOneBill) {
-             // Example logic: check if fully paid
-             statusText = 'Waiting on payments...';
-             statusClass = 'status-highlight';
-          } else {
-             statusText = `${tab.participant_count} participants active`;
-          }
-        }
-        
-        const timeAgo = getTimeAgo(new Date(tab.created_at));
+      list.innerHTML = filteredTabs.map(tab => renderTabCard(tab)).join('');
+    }
 
-        return `
-          <a href="/grouptabs/${tab.id}" class="thread-item">
-            <div class="chat-avatar" style="${isOneBill ? '' : 'background:rgba(99,102,241,0.15); color:#818cf8'}">
-              ${emoji}
+    function renderTabCard(tab) {
+      const emoji = getTabEmoji(tab);
+
+      // Creator info - dynamic logic
+      const isCreatedByMe = tab.creator_user_id === currentUserId;
+      let creatorDisplay;
+      if (isCreatedByMe) {
+        creatorDisplay = `Created by <span class="creator-you">You</span>`;
+      } else {
+        const creatorFirstName = tab.creator_first_name || tab.creator_name?.split(' ')[0] || 'Someone';
+        creatorDisplay = `Created by ${escapeHtml(creatorFirstName)}`;
+      }
+
+      // Financial calculations
+      const totalCents = tab.total_amount_cents || 0;
+      const paidCents = tab.paid_amount_cents || 0;
+      const unpaidCents = totalCents - paidCents;
+      const isSettled = tab.status === 'closed' || unpaidCents <= 0;
+      
+      // Progress percentage (% paid)
+      const progressPercent = isSettled ? 100 : (totalCents > 0 ? Math.min(100, Math.round((paidCents / totalCents) * 100)) : 0);
+      
+      // Ring calculations (circumference = 2 * PI * radius)
+      const radius = 26;
+      const circumference = 2 * Math.PI * radius;
+      const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
+
+      // Amount display: green "€X unpaid" or muted "Settled"
+      const amountDisplay = isSettled 
+        ? '<span class="tab-amount settled">Settled</span>'
+        : `<span class="tab-amount">${formatCurrency2(unpaidCents)} unpaid</span>`;
+
+      return `
+        <a href="/grouptabs/${tab.id}" class="tab-card">
+          <div class="tab-icon">${emoji}</div>
+          
+          <div class="tab-info">
+            <div class="tab-line-1">
+              <span class="tab-title">${escapeHtml(tab.name)}</span>
             </div>
-            <div class="thread-content">
-              <div class="thread-top">
-                <span class="thread-name">${escapeHtml(tab.name)}</span>
-                <span class="thread-time">${timeAgo}</span>
-              </div>
-              <div class="thread-preview">
-                ${tab.description ? escapeHtml(tab.description) : (isOneBill ? `Total: ${formatCurrency2(tab.total_amount_cents)}` : 'Multi-expense tab')}
-              </div>
-              <div class="thread-status ${statusClass}">
-                ${statusText}
-              </div>
+            <div class="tab-line-2">
+              ${creatorDisplay}
             </div>
-          </a>
-        `;
-      }).join('');
+            <div class="tab-line-3">
+              ${amountDisplay}
+            </div>
+          </div>
+
+          <div class="progress-ring-container ${isSettled ? 'glow-settled' : 'glow'}">
+            <svg class="progress-ring" width="64" height="64">
+              <circle class="progress-ring-bg" stroke-width="4" r="${radius}" cx="32" cy="32"/>
+              <circle class="progress-ring-fill ${isSettled ? 'settled' : ''}" 
+                      stroke-width="4" 
+                      r="${radius}" 
+                      cx="32" 
+                      cy="32"
+                      stroke-dasharray="${circumference}"
+                      stroke-dashoffset="${strokeDashoffset}"/>
+            </svg>
+            <span class="progress-ring-text ${isSettled ? 'settled' : ''}">${progressPercent}%</span>
+          </div>
+        </a>
+      `;
+    }
+
+    function getTabEmoji(tab) {
+      // Use category if available, otherwise default based on type
+      const category = tab.category || '';
+      const emojiMap = {
+        'restaurant': '🍕',
+        'dinner': '🍕',
+        'lunch': '🍽️',
+        'drinks': '🍻',
+        'bar': '🍻',
+        'trip': '✈️',
+        'travel': '✈️',
+        'vacation': '🏖️',
+        'gift': '🎁',
+        'party': '🎉',
+        'groceries': '🛒',
+        'shopping': '🛍️',
+        'fuel': '⛽',
+        'taxi': '🚕',
+        'takeaway': '🥡',
+        'festival': '🎪',
+        'houseparty': '🏠'
+      };
+      
+      const lowerCategory = category.toLowerCase();
+      if (emojiMap[lowerCategory]) {
+        return emojiMap[lowerCategory];
+      }
+      
+      // Default based on tab type
+      return tab.tab_type === 'one_bill' ? '🧾' : '✈️';
     }
 
     function getTimeAgo(date) {
@@ -171,6 +672,9 @@
       if (minutes < 60) return `${minutes}m ago`;
       const hours = Math.floor(minutes / 60);
       if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      if (days < 7) return `${days}d ago`;
+      if (days < 30) return `${Math.floor(days / 7)}w ago`;
       return date.toLocaleDateString();
     }
 

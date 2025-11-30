@@ -185,9 +185,11 @@ db.exec(`
     expected_pay_rate INTEGER DEFAULT 100,
     seat_count INTEGER,
     people_count INTEGER DEFAULT 2,
+    receipt_file_path TEXT,
     -- Common fields
     proof_required TEXT DEFAULT 'optional',
     magic_token TEXT UNIQUE NOT NULL,
+    event_date TEXT,
     created_at TEXT NOT NULL,
     closed_at TEXT,
     FOREIGN KEY (creator_user_id) REFERENCES users(id)
@@ -458,6 +460,20 @@ try {
 // Add accepted_at column to agreements table
 try {
   db.exec(`ALTER TABLE agreements ADD COLUMN accepted_at TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add event_date column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN event_date TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add receipt_file_path column to group_tabs table (for one-bill receipt uploads)
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN receipt_file_path TEXT;`);
 } catch (e) {
   // Column already exists, ignore
 }
@@ -5621,8 +5637,27 @@ function checkTabAccess(req, tabId) {
   return { hasAccess: false, participant: null, isAuthenticated: false };
 }
 
-// Create new tab
+// Create new tab (with optional receipt upload)
 app.post('/api/grouptabs', requireAuth, (req, res) => {
+  // Handle multer upload with proper error handling
+  uploadGrouptabs.single('receipt')(req, res, (uploadErr) => {
+    if (uploadErr) {
+      console.error('File upload error:', uploadErr);
+      if (uploadErr instanceof multer.MulterError) {
+        if (uploadErr.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File size too large. Maximum size is 10MB.' });
+        }
+        return res.status(400).json({ error: `Upload error: ${uploadErr.message}` });
+      }
+      return res.status(400).json({ error: uploadErr.message || 'File upload failed' });
+    }
+    
+    // Continue with tab creation
+    createGroupTab(req, res);
+  });
+});
+
+function createGroupTab(req, res) {
   const { name, tabType, template, totalAmountCents, splitMode, expectedPayRate, seatCount, proofRequired, description, peopleCount, tiers } = req.body;
   
   if (!name || !tabType) {
@@ -5636,12 +5671,13 @@ app.post('/api/grouptabs', requireAuth, (req, res) => {
   try {
     const magicToken = crypto.randomBytes(32).toString('hex');
     const createdAt = new Date().toISOString();
+    const receiptFilePath = req.file ? `/uploads/grouptabs/${req.file.filename}` : null;
     
     const result = db.prepare(`
       INSERT INTO group_tabs (
         creator_user_id, name, description, tab_type, template, total_amount_cents, 
-        split_mode, expected_pay_rate, seat_count, people_count, proof_required, magic_token, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        split_mode, expected_pay_rate, seat_count, people_count, proof_required, magic_token, receipt_file_path, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       name,
@@ -5655,6 +5691,7 @@ app.post('/api/grouptabs', requireAuth, (req, res) => {
       peopleCount || 2,
       proofRequired || 'optional',
       magicToken,
+      receiptFilePath,
       createdAt
     );
     
@@ -5703,18 +5740,20 @@ app.post('/api/grouptabs', requireAuth, (req, res) => {
     console.error('Error creating tab:', err);
     res.status(500).json({ error: 'Failed to create tab' });
   }
-});
+}
 
 // List user's tabs
 app.get('/api/grouptabs', requireAuth, (req, res) => {
   try {
     const tabs = db.prepare(`
       SELECT gt.*, 
+        u.full_name as creator_name,
         (SELECT COUNT(*) FROM group_tab_participants WHERE group_tab_id = gt.id) as participant_count,
         (SELECT COUNT(*) FROM group_tab_expenses WHERE group_tab_id = gt.id) as expense_count,
         (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_expenses WHERE group_tab_id = gt.id) as total_expenses_cents,
         (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE group_tab_id = gt.id) as total_payments_cents
       FROM group_tabs gt
+      JOIN users u ON gt.creator_user_id = u.id
       WHERE gt.id IN (SELECT group_tab_id FROM group_tab_participants WHERE user_id = ?)
       ORDER BY gt.created_at DESC
     `).all(req.user.id);
@@ -5813,7 +5852,7 @@ app.get('/api/grouptabs/:id', (req, res) => {
 // Update tab
 app.patch('/api/grouptabs/:id', requireAuth, (req, res) => {
   const tabId = parseInt(req.params.id);
-  const { name, totalAmountCents, splitMode, expectedPayRate, seatCount, proofRequired, description, peopleCount, tiers } = req.body;
+  const { name, totalAmountCents, splitMode, expectedPayRate, seatCount, proofRequired, description, peopleCount, tiers, eventDate, status } = req.body;
   
   try {
     const organizer = db.prepare(`
@@ -5835,6 +5874,8 @@ app.patch('/api/grouptabs/:id', requireAuth, (req, res) => {
     if (proofRequired !== undefined) { updates.push('proof_required = ?'); params.push(proofRequired); }
     if (description !== undefined) { updates.push('description = ?'); params.push(description); }
     if (peopleCount !== undefined) { updates.push('people_count = ?'); params.push(peopleCount); }
+    if (eventDate !== undefined) { updates.push('event_date = ?'); params.push(eventDate); }
+    if (status !== undefined && ['open', 'closed'].includes(status)) { updates.push('status = ?'); params.push(status); }
     
     if (updates.length > 0) {
       params.push(tabId);
@@ -6723,6 +6764,27 @@ app.get('/faq', (req, res) => {
 
 // Serve other static files from "public" folder
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Global error handler - catches any unhandled errors and returns JSON
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  
+  // Check if it's a multer error
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File size too large' });
+    }
+    return res.status(400).json({ error: `Upload error: ${err.message}` });
+  }
+  
+  // For API routes, always return JSON
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+  
+  // For non-API routes, let Express handle it
+  next(err);
+});
 
 // Start server
 app.listen(PORT, () => {

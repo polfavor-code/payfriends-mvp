@@ -13,47 +13,316 @@
   
   <!-- Chat Theme -->
   <link rel="stylesheet" href="/css/chat-theme.css" />
+  <!-- GroupTabs specific styles -->
+  <link rel="stylesheet" href="/css/grouptabs.css" />
 
   <script src="/js/header.js"></script>
   <script src="/js/footer.js"></script>
   <script src="/js/formatters.js"></script>
-  <!-- Chart.js for fairness donuts (hidden logic, not UI) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/js/grouptabs-engine.js"></script>
   
   <style>
-    /* Action bar fixed at bottom */
-    .action-bar {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1px;
-      background: var(--border);
-      border-top: 1px solid var(--border);
-      position: sticky;
-      bottom: 0;
-      z-index: 100;
+    /* Standard page layout - matches dashboard, friends, agreements */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 16px;
     }
     
-    .action-btn {
-      background: var(--card);
-      padding: 20px;
-      text-align: center;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-      border: none;
+    /* =============================================
+       HUB LAYOUT (Dashboard + Feed Split)
+       ============================================= */
+    .hub-container {
+      display: flex;
+      flex-direction: column;
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1; /* Ensure global header dropdown appears above */
+    }
+
+    /* Full width on mobile */
+    @media (max-width: 900px) {
+      .hub-container {
+        max-width: 100%;
+      }
+    }
+
+    /* --- HEADER --- */
+    .hub-header {
+      position: relative; /* Not sticky - let global header be sticky */
+      z-index: 10;
+      background: transparent;
+      border-bottom: 1px solid var(--border);
+      padding: 16px 0;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hub-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .hub-back-btn {
+      font-size: 20px;
       color: var(--text);
-      font-size: 16px;
+      text-decoration: none;
+      padding: 4px;
     }
-    
-    .action-btn:hover {
-      background: rgba(255, 255, 255, 0.05);
+
+    .hub-title {
+      font-weight: 700;
+      font-size: 18px;
     }
-    
-    .ab-primary {
+
+    .hub-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .hub-edit-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    /* --- DASHBOARD SECTION --- */
+    .hub-dashboard {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Fairness Ring */
+    .fairness-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 0;
+    }
+
+    .fairness-ring {
+      width: 120px;
+      height: 120px;
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .fairness-ring svg {
+      transform: rotate(-90deg);
+    }
+
+    .fairness-ring-bg {
+      stroke: rgba(255, 255, 255, 0.1);
+    }
+
+    .fairness-ring-fill {
+      stroke: var(--accent);
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .fairness-score {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 36px;
+      font-weight: 700;
       color: var(--accent);
     }
-    
-    /* Modal overrides for chat theme */
+
+    .fairness-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Your Share Box */
+    .your-share-box {
+      background: rgba(61, 220, 151, 0.1);
+      border: 1px solid rgba(61, 220, 151, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .your-share-label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .your-share-amount {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .your-share-status {
+      font-size: 13px;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    /* Participants Row */
+    .participants-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 8px 0 16px 0;
+      scrollbar-width: none;
+    }
+    .participants-row::-webkit-scrollbar { display: none; }
+
+    .participant-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 70px;
+      cursor: pointer;
+    }
+
+    .participant-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(61, 220, 151, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+      position: relative;
+    }
+
+    .participant-status-dot {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--bg);
+    }
+
+    .participant-status-dot.paid { background: #22c55e; }
+    .participant-status-dot.owes { background: #f87171; }
+    .participant-status-dot.partial { background: #fbbf24; }
+
+    .participant-name {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      max-width: 70px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Primary Action Button */
+    .hub-primary-action {
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      color: #0e1116;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s;
+    }
+
+    .hub-primary-action:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(61, 220, 151, 0.3);
+    }
+
+    /* --- FEED SECTION --- */
+    .hub-feed {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .feed-header {
+      position: sticky;
+      top: 73px;
+      z-index: 90;
+      background: var(--bg);
+      padding: 12px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feed-scroll {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      padding-bottom: 100px;
+    }
+
+    /* Feed Event Bubbles */
+    .feed-event {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .feed-event-system {
+      align-self: flex-start;
+      background: var(--card);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+
+    .feed-event-payment {
+      align-self: flex-start;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-bottom-left-radius: 4px;
+    }
+
+    .feed-event-join {
+      align-self: center;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 12px;
+    }
+
+    .feed-event strong {
+      font-weight: 600;
+    }
+
+    /* --- MODAL --- */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -105,9 +374,20 @@
       font-size: 24px;
       cursor: pointer;
     }
-    
-    /* Form inputs in modal */
-    .chat-form-input {
+
+    /* Form Inputs */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .form-input {
       width: 100%;
       padding: 12px 16px;
       border: 1px solid var(--border);
@@ -115,10 +395,14 @@
       background: rgba(255, 255, 255, 0.05);
       color: var(--text);
       font-size: 16px;
-      margin-bottom: 16px;
     }
-    
-    .chat-form-btn {
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-btn {
       width: 100%;
       padding: 14px;
       border-radius: 12px;
@@ -127,63 +411,300 @@
       font-weight: 600;
       border: none;
       cursor: pointer;
+      margin-top: 8px;
     }
+
+    .form-btn-danger {
+      background: transparent;
+      color: #f87171;
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      margin-top: 24px;
+    }
+
+    /* Participants List in Modal */
+    .participants-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .participant-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 10px;
+    }
+
+    .participant-row-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(61, 220, 151, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .participant-row-info {
+      flex: 1;
+    }
+
+    .participant-row-name {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .participant-row-role {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .participant-row-remove {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    .participant-row-remove:hover {
+      color: #f87171;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Receipt Section */
+    .receipt-section {
+      margin-bottom: 20px;
+    }
+
+    .receipt-thumbnail {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .receipt-thumbnail:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--accent);
+    }
+
+    .receipt-thumbnail img {
+      max-width: 100%;
+      max-height: 100px;
+      border-radius: 8px;
+      object-fit: contain;
+    }
+
+    .receipt-badge {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* Receipt Lightbox */
+    .receipt-lightbox {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      cursor: zoom-out;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .receipt-lightbox img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
   </style>
 </head>
 <body>
-  
-  <div class="chat-container">
+  <div class="container">
+    <!-- Header will be loaded dynamically by header.js -->
+
+    <div class="hub-container">
     
-    <div class="chat-header">
-      <div class="chat-title-row">
-        <a href="/grouptabs" style="text-decoration:none; color:var(--text); font-size:20px; margin-right:8px">←</a>
-        <div class="chat-title-text">
-          <div class="chat-title-main" id="tab-title">Loading...</div>
-          <div class="chat-title-sub" id="tab-subtitle">...</div>
+    <!-- HEADER -->
+    <div class="hub-header">
+      <div class="hub-header-left">
+        <a href="/grouptabs" class="hub-back-btn">←</a>
+        <div>
+          <div class="hub-title" id="tab-title">Loading...</div>
+          <div class="hub-subtitle" id="tab-subtitle">...</div>
         </div>
       </div>
-      <button onclick="showSettingsModal()" style="background:none; border:none; font-size:20px; cursor:pointer">⚙️</button>
+      <button class="hub-edit-btn" onclick="showEditModal()">⚙️</button>
     </div>
 
-    <div id="chat-scroll-area" class="chat-scroll-area">
-      <!-- Messages injected here -->
+    <!-- DASHBOARD SECTION -->
+    <div class="hub-dashboard">
+      
+      <!-- Fairness Ring -->
+      <div class="fairness-hero">
+        <div class="fairness-ring">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle class="fairness-ring-bg" cx="60" cy="60" r="52" fill="none" stroke-width="8"/>
+            <circle id="fairness-ring-fill" class="fairness-ring-fill" cx="60" cy="60" r="52" fill="none" stroke-width="8" stroke-dasharray="327" stroke-dashoffset="327"/>
+          </svg>
+          <span class="fairness-score" id="fairness-score">--</span>
+        </div>
+        <span class="fairness-label">Fairness Score</span>
+      </div>
+
+      <!-- Your Share Box -->
+      <div class="your-share-box">
+        <div class="your-share-label">Your Fair Share</div>
+        <div class="your-share-amount" id="your-share-amount">€ --</div>
+        <div class="your-share-status" id="your-share-status">Loading...</div>
+      </div>
+
+      <!-- Receipt Preview (if available) -->
+      <div id="receipt-section" class="receipt-section" style="display: none;">
+        <div class="receipt-thumbnail" onclick="showReceiptLightbox()">
+          <img id="receipt-img" src="" alt="Receipt">
+          <span class="receipt-badge">📄 View Receipt</span>
+        </div>
+      </div>
+
+      <!-- Participants Row -->
+      <div class="participants-row" id="participants-row">
+        <!-- Dynamically populated -->
+      </div>
+
+      <!-- Primary Action -->
+      <button class="hub-primary-action" id="primary-action-btn" onclick="handlePrimaryAction()">
+        💳 Record Payment
+      </button>
     </div>
 
-    <div class="action-bar" id="action-bar">
-      <button class="action-btn ab-primary" onclick="copyMagicLink()">Share Link</button>
-      <button class="action-btn" id="secondary-action-btn" onclick="handleSecondaryAction()">Add Expense</button>
+    <!-- FEED SECTION -->
+    <div class="hub-feed">
+      <div class="feed-header">
+        ⚡ Activity Feed
+      </div>
+      <div class="feed-scroll" id="feed-scroll">
+        <!-- Dynamically populated -->
+      </div>
     </div>
 
+  </div>
+
+  <!-- EDIT DETAILS MODAL -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Edit Details</div>
+        <button class="modal-close" onclick="hideModal('edit-modal')">&times;</button>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">What is this tab for?</label>
+        <input type="text" id="edit-name" class="form-input" placeholder="e.g. Dinner at Mario's">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" id="edit-date" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Who is involved?</label>
+        <div class="participants-list" id="edit-participants-list">
+          <!-- Dynamically populated -->
+        </div>
+        <button class="form-btn" style="background: transparent; color: var(--accent); border: 1px dashed var(--accent); margin-top: 12px;" onclick="showAddPersonModal()">
+          + Add Person
+        </button>
+      </div>
+
+      <button class="form-btn" onclick="saveTabDetails()">Save Changes</button>
+      
+      <button class="form-btn form-btn-danger" onclick="closeTab()">Close Tab</button>
+    </div>
+  </div>
+
+  <!-- PAYMENT MODAL -->
+  <div class="modal-overlay" id="payment-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Record Payment</div>
+        <button class="modal-close" onclick="hideModal('payment-modal')">&times;</button>
+      </div>
+      
+      <form onsubmit="submitPayment(event)">
+        <div class="form-group">
+          <label class="form-label">Amount</label>
+          <input type="number" id="pay-amount" class="form-input" placeholder="€ 0.00" step="0.01" required>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Method</label>
+          <select id="pay-method" class="form-input">
+            <option value="cash">Cash</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="venmo">Venmo</option>
+            <option value="paypal">PayPal</option>
+          </select>
+        </div>
+        
+        <button type="submit" class="form-btn">Record Payment</button>
+      </form>
+    </div>
   </div>
 
   <!-- Hidden inputs for magic link -->
   <input type="text" id="magic-link-input" style="position:absolute; left:-9999px;" readonly>
 
-  <!-- Generic Modal -->
-  <div class="modal-overlay" id="generic-modal">
-    <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title" id="modal-title">Title</div>
-        <button class="modal-close" onclick="hideModal('generic-modal')">&times;</button>
-      </div>
-      <div id="modal-content">
-        <!-- Dynamic content -->
-      </div>
-    </div>
-  </div>
-
   <script>
+    // ===========================================
+    // STATE
+    // ===========================================
     let tabId = null;
     let tabData = null;
     let participants = [];
     let expenses = [];
     let payments = [];
+    let tiers = [];
     let currentParticipant = null;
+    let fairnessData = null;
 
     // Get tab ID from URL
     const pathParts = window.location.pathname.split('/');
     tabId = parseInt(pathParts[pathParts.length - 1]);
 
+    // ===========================================
+    // LOAD DATA
+    // ===========================================
     async function loadTabData() {
       try {
         const response = await fetch(`/api/grouptabs/${tabId}`);
@@ -194,177 +715,244 @@
         
         const data = await response.json();
         tabData = data.tab;
-        participants = data.participants;
+        participants = data.participants || [];
         expenses = data.expenses || [];
         payments = data.payments || [];
+        tiers = data.tiers || [];
         currentParticipant = data.currentParticipant;
         
-        renderHeader();
-        renderChatStream();
-        updateActionBar();
+        // Calculate fairness using the engine
+        if (window.GroupTabsEngine) {
+          fairnessData = window.GroupTabsEngine.calculateFairnessData(
+            tabData, participants, expenses, payments, tiers
+          );
+        }
         
         // Set magic link
         document.getElementById('magic-link-input').value = `${window.location.origin}/tab/${tabData.magic_token}`;
+        
+        renderAll();
         
       } catch (error) {
         console.error('Error loading tab:', error);
       }
     }
 
+    // ===========================================
+    // RENDER ALL
+    // ===========================================
+    function renderAll() {
+      renderHeader();
+      renderDashboard();
+      renderFeed();
+      renderEditModal();
+    }
+
     function renderHeader() {
       document.getElementById('tab-title').textContent = tabData.name;
       const isOneBill = tabData.tab_type === 'one_bill';
-      document.getElementById('tab-subtitle').textContent = `${participants.length} people • ${isOneBill ? 'One-Bill' : 'Trip'}`;
+      const typeLabel = isOneBill ? 'One-Bill' : 'Trip';
+      document.getElementById('tab-subtitle').textContent = `${participants.length} people · ${typeLabel}`;
     }
 
-    function renderChatStream() {
-      const container = document.getElementById('chat-scroll-area');
-      container.innerHTML = '';
+    // ===========================================
+    // RENDER DASHBOARD
+    // ===========================================
+    function renderDashboard() {
+      // Fairness Score
+      const score = fairnessData ? fairnessData.globalScore : 0;
+      document.getElementById('fairness-score').textContent = score;
       
-      // 1. System message: Created
-      addSystemMessage(`Tab created on ${new Date(tabData.created_at).toLocaleDateString()}`);
-      
-      // 2. Bill Card (Rich Message)
-      const isOneBill = tabData.tab_type === 'one_bill';
-      const total = isOneBill ? tabData.total_amount_cents : expenses.reduce((sum, e) => sum + e.amount_cents, 0);
-      
-      // Calculate my share
+      // Animate the ring
+      const circumference = 2 * Math.PI * 52; // r=52
+      const offset = circumference - (score / 100) * circumference;
+      document.getElementById('fairness-ring-fill').style.strokeDashoffset = offset;
+
+      // Your Share
       let myShare = 0;
       let myPaid = 0;
-      if (currentParticipant) {
-        // This is simplified logic for display; real logic is in engine
-        const sharePerPerson = total / (participants.length || 1);
-        myShare = sharePerPerson; // Just an estimate for now
-        
-        // Calculate what I've paid
-        if (isOneBill) {
-           // Check payments
-           myPaid = payments
-             .filter(p => p.from_participant_id === currentParticipant.id)
-             .reduce((sum, p) => sum + p.amount_cents, 0);
-        } else {
-           // Check expenses paid by me
-           myPaid = expenses
-             .filter(e => e.paid_by_participant_id === currentParticipant.id)
-             .reduce((sum, e) => sum + e.amount_cents, 0);
+      let myStatus = 'You still owe';
+      
+      if (currentParticipant && fairnessData) {
+        const myData = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
+        if (myData) {
+          myShare = myData.fairShare;
+          myPaid = myData.actualPaid;
+          
+          if (myData.status === 'settled') {
+            myStatus = 'All settled!';
+          } else if (myData.status === 'overpaid') {
+            myStatus = `You overpaid by ${formatCurrency2(myData.balance)}`;
+          } else {
+            myStatus = `You still owe ${formatCurrency2(Math.abs(myData.balance))}`;
+          }
         }
       }
       
-      const percentPaid = myShare > 0 ? Math.min(100, (myPaid / myShare) * 100) : 0;
+      document.getElementById('your-share-amount').textContent = formatCurrency2(myShare);
+      document.getElementById('your-share-status').textContent = myStatus;
 
-      const billCard = `
-        <div class="msg msg-bot msg-card">
-          <div class="rich-card">
-            <div class="rc-header">
-              <span>${isOneBill ? 'TOTAL BILL' : 'TOTAL EXPENSES'}</span>
-              <span>${tabData.status === 'open' ? 'Active' : 'Closed'}</span>
-            </div>
-            <div class="rc-value">${formatCurrency2(total)}</div>
-            <div class="rc-row">
-              <span style="opacity:0.7">Your share (est.)</span>
-              <span>${formatCurrency2(myShare)}</span>
-            </div>
-            <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; margin-top:12px; overflow:hidden">
-              <div style="height:100%; width:${percentPaid}%; background:var(--accent)"></div>
-            </div>
-            <div style="font-size:11px; margin-top:6px; opacity:0.7; text-align:right">
-              You paid ${Math.round(percentPaid)}%
-            </div>
-          </div>
-        </div>
-      `;
-      container.insertAdjacentHTML('beforeend', billCard);
-
-      // 3. Timeline events (Expenses, Joins, Payments)
-      // We need to merge and sort these events by date
-      const events = [];
-      
-      // Add join events
-      participants.forEach(p => {
-        // Skip creator (usually first)
-        if (p.user_id !== tabData.created_by && p.created_at) {
-          events.push({
-            type: 'join',
-            date: new Date(p.created_at),
-            data: p
-          });
-        }
-      });
-      
-      // Add expenses
-      expenses.forEach(e => {
-        events.push({
-          type: 'expense',
-          date: new Date(e.created_at),
-          data: e
-        });
-      });
-      
-      // Add payments
-      payments.forEach(p => {
-        events.push({
-          type: 'payment',
-          date: new Date(p.created_at),
-          data: p
-        });
-      });
-      
-      // Sort by date
-      events.sort((a, b) => a.date - b.date);
-      
-      // Render events
-      events.forEach(e => {
-        if (e.type === 'join') {
-          const name = e.data.full_name || e.data.guest_name || 'Someone';
-          addBotMessage(`<strong>${escapeHtml(name)}</strong> joined the tab.`);
-        } else if (e.type === 'expense') {
-          const name = e.data.payer_name || 'Someone';
-          const desc = e.data.description;
-          const amount = formatCurrency2(e.data.amount_cents);
-          addBotMessage(`<strong>${escapeHtml(name)}</strong> added expense: ${escapeHtml(desc)} (${amount}).`);
-        } else if (e.type === 'payment') {
-          const name = e.data.from_name || e.data.from_guest_name || 'Someone';
-          const amount = formatCurrency2(e.data.amount_cents);
-          const method = e.data.method ? ` via ${e.data.method}` : '';
-          addBotMessage(`<strong>${escapeHtml(name)}</strong> paid <strong>${amount}</strong>${method}.`);
-        }
-      });
-      
-      // Scroll to bottom
-      container.scrollTop = container.scrollHeight;
-    }
-
-    function updateActionBar() {
-      const btn = document.getElementById('secondary-action-btn');
-      if (tabData.tab_type === 'one_bill') {
-        btn.textContent = 'Record Payment';
-        btn.onclick = showPaymentModal;
+      // Receipt Section (if available)
+      const receiptSection = document.getElementById('receipt-section');
+      if (tabData.receipt_file_path) {
+        receiptSection.style.display = 'block';
+        document.getElementById('receipt-img').src = tabData.receipt_file_path;
       } else {
-        btn.textContent = 'Add Expense';
+        receiptSection.style.display = 'none';
+      }
+
+      // Participants Row
+      const row = document.getElementById('participants-row');
+      row.innerHTML = '';
+      
+      participants.forEach(p => {
+        const pData = fairnessData ? fairnessData.participants.find(x => x.participantId === p.id) : null;
+        let statusClass = 'owes';
+        if (pData) {
+          if (pData.status === 'settled') statusClass = 'paid';
+          else if (pData.status === 'overpaid') statusClass = 'paid';
+          else if (pData.percentOfFair >= 50) statusClass = 'partial';
+        }
+        
+        const name = p.full_name || p.guest_name || 'Guest';
+        const initials = getInitials(name);
+        
+        const chip = document.createElement('div');
+        chip.className = 'participant-chip';
+        chip.innerHTML = `
+          <div class="participant-avatar">
+            ${initials}
+            <div class="participant-status-dot ${statusClass}"></div>
+          </div>
+          <div class="participant-name">${escapeHtml(name.split(' ')[0])}</div>
+        `;
+        row.appendChild(chip);
+      });
+
+      // Primary Action Button
+      const btn = document.getElementById('primary-action-btn');
+      if (tabData.tab_type === 'one_bill') {
+        btn.innerHTML = '💳 Record Payment';
+        btn.onclick = () => showModal('payment-modal');
+      } else {
+        btn.innerHTML = '➕ Add Expense';
         btn.onclick = showExpenseModal;
       }
     }
 
-    function handleSecondaryAction() {
-      // Logic handled in updateActionBar
+    // ===========================================
+    // RENDER FEED
+    // ===========================================
+    function renderFeed() {
+      const container = document.getElementById('feed-scroll');
+      container.innerHTML = '';
+
+      // Build events list
+      const events = [];
+      
+      // Tab creation
+      events.push({
+        type: 'system',
+        date: new Date(tabData.created_at),
+        text: `Tab created on ${new Date(tabData.created_at).toLocaleDateString()}.`
+      });
+
+      // Participant joins
+      participants.forEach(p => {
+        if (p.user_id !== tabData.created_by && p.created_at) {
+          const name = p.full_name || p.guest_name || 'Someone';
+          events.push({
+            type: 'join',
+            date: new Date(p.created_at),
+            text: `${name} joined the tab.`
+          });
+        }
+      });
+
+      // Expenses
+      expenses.forEach(e => {
+        const name = e.payer_name || 'Someone';
+        const amount = formatCurrency2(e.amount_cents);
+        events.push({
+          type: 'system',
+          date: new Date(e.created_at),
+          text: `<strong>${escapeHtml(name)}</strong> added expense: ${escapeHtml(e.description)} (${amount}).`
+        });
+      });
+
+      // Payments
+      payments.forEach(p => {
+        const name = p.from_name || p.from_guest_name || 'Someone';
+        const amount = formatCurrency2(p.amount_cents);
+        const method = p.method ? ` via ${p.method}` : '';
+        events.push({
+          type: 'payment',
+          date: new Date(p.created_at),
+          text: `<strong>${escapeHtml(name)}</strong> paid <strong>${amount}</strong>${method}.`
+        });
+      });
+
+      // Sort by date
+      events.sort((a, b) => a.date - b.date);
+
+      // Render
+      events.forEach(e => {
+        const div = document.createElement('div');
+        
+        if (e.type === 'join') {
+          div.className = 'feed-event feed-event-join';
+        } else if (e.type === 'payment') {
+          div.className = 'feed-event feed-event-payment';
+        } else {
+          div.className = 'feed-event feed-event-system';
+        }
+        
+        div.innerHTML = e.text;
+        container.appendChild(div);
+      });
+
+      // If empty
+      if (events.length === 0) {
+        container.innerHTML = '<div class="feed-event feed-event-system">No activity yet.</div>';
+      }
     }
 
-    // --- UI Helpers ---
-    function addBotMessage(html) {
-      const div = document.createElement('div');
-      div.className = 'msg msg-bot';
-      div.innerHTML = html;
-      document.getElementById('chat-scroll-area').appendChild(div);
-    }
-    
-    function addSystemMessage(text) {
-      const div = document.createElement('div');
-      div.className = 'msg-system';
-      div.textContent = text;
-      document.getElementById('chat-scroll-area').appendChild(div);
+    // ===========================================
+    // RENDER EDIT MODAL
+    // ===========================================
+    function renderEditModal() {
+      document.getElementById('edit-name').value = tabData.name;
+      
+      // Date (extract from created_at if no explicit date)
+      const dateVal = tabData.event_date || tabData.created_at.split('T')[0];
+      document.getElementById('edit-date').value = dateVal;
+
+      // Participants list
+      const list = document.getElementById('edit-participants-list');
+      list.innerHTML = '';
+      
+      participants.forEach(p => {
+        const name = p.full_name || p.guest_name || 'Guest';
+        const initials = getInitials(name);
+        const isCreator = p.user_id === tabData.created_by;
+        
+        const row = document.createElement('div');
+        row.className = 'participant-row';
+        row.innerHTML = `
+          <div class="participant-row-avatar">${initials}</div>
+          <div class="participant-row-info">
+            <div class="participant-row-name">${escapeHtml(name)}</div>
+            <div class="participant-row-role">${isCreator ? '(Organizer)' : ''}</div>
+          </div>
+          ${!isCreator ? `<button class="participant-row-remove" onclick="removeParticipant(${p.id})">×</button>` : ''}
+        `;
+        list.appendChild(row);
+      });
     }
 
-    // --- Modals (Simplified for Chat UI) ---
+    // ===========================================
+    // MODAL HELPERS
+    // ===========================================
     function showModal(id) {
       document.getElementById(id).classList.add('visible');
     }
@@ -372,48 +960,101 @@
     function hideModal(id) {
       document.getElementById(id).classList.remove('visible');
     }
-    
-    function showPaymentModal() {
-      const content = document.getElementById('modal-content');
-      document.getElementById('modal-title').textContent = 'Record Payment';
-      content.innerHTML = `
-        <form onsubmit="submitPayment(event)">
-          <input type="number" id="pay-amount" class="chat-form-input" placeholder="Amount (€)" step="0.01" required>
-          <select id="pay-method" class="chat-form-input">
-            <option value="cash">Cash</option>
-            <option value="venmo">Venmo</option>
-            <option value="bank_transfer">Bank Transfer</option>
-          </select>
-          <button type="submit" class="chat-form-btn">Record Paid</button>
-        </form>
-      `;
-      showModal('generic-modal');
-    }
-    
-    function showExpenseModal() {
-      const content = document.getElementById('modal-content');
-      document.getElementById('modal-title').textContent = 'Add Expense';
-      content.innerHTML = `
-        <form onsubmit="submitExpense(event)">
-          <input type="text" id="exp-desc" class="chat-form-input" placeholder="Description (e.g. Pizza)" required>
-          <input type="number" id="exp-amount" class="chat-form-input" placeholder="Amount (€)" step="0.01" required>
-          <button type="submit" class="chat-form-btn">Add to Tab</button>
-        </form>
-      `;
-      showModal('generic-modal');
-    }
-    
-    function showSettingsModal() {
-      alert('Settings not implemented in this demo.');
+
+    function showEditModal() {
+      renderEditModal();
+      showModal('edit-modal');
     }
 
-    // --- Actions ---
+    function showExpenseModal() {
+      // TODO: Implement expense modal
+      alert('Add Expense modal coming soon!');
+    }
+
+    function showAddPersonModal() {
+      // TODO: Implement add person modal
+      alert('Add Person modal coming soon!');
+    }
+
+    function handlePrimaryAction() {
+      if (tabData.tab_type === 'one_bill') {
+        showModal('payment-modal');
+      } else {
+        showExpenseModal();
+      }
+    }
+
+    // ===========================================
+    // ACTIONS
+    // ===========================================
+    async function saveTabDetails() {
+      const name = document.getElementById('edit-name').value.trim();
+      const date = document.getElementById('edit-date').value;
+      
+      if (!name) {
+        alert('Please enter a name for the tab.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/grouptabs/${tabId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, eventDate: date })
+        });
+        
+        if (response.ok) {
+          hideModal('edit-modal');
+          loadTabData(); // Reload
+        } else {
+          const data = await response.json();
+          alert(data.error || 'Failed to save changes.');
+        }
+      } catch (err) {
+        alert('Error saving changes.');
+      }
+    }
+
+    async function closeTab() {
+      if (!confirm('Are you sure you want to close this tab? This action cannot be undone.')) return;
+      
+      try {
+        const response = await fetch(`/api/grouptabs/${tabId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'closed' })
+        });
+        
+        if (response.ok) {
+          window.location.href = '/grouptabs';
+        }
+      } catch (err) {
+        alert('Error closing tab.');
+      }
+    }
+
+    async function removeParticipant(participantId) {
+      if (!confirm('Remove this person from the tab?')) return;
+      
+      try {
+        const response = await fetch(`/api/grouptabs/${tabId}/participants/${participantId}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          loadTabData();
+          renderEditModal();
+        }
+      } catch (err) {
+        alert('Error removing participant.');
+      }
+    }
+
     async function submitPayment(e) {
       e.preventDefault();
       const amount = document.getElementById('pay-amount').value;
       const method = document.getElementById('pay-method').value;
       
-      // Call API (Mocked)
       try {
         const formData = new FormData();
         formData.append('amountCents', Math.round(parseFloat(amount) * 100));
@@ -425,48 +1066,38 @@
         });
         
         if (response.ok) {
-          hideModal('generic-modal');
-          loadTabData(); // Reload chat
+          hideModal('payment-modal');
+          document.getElementById('pay-amount').value = '';
+          loadTabData(); // Reload
+        } else {
+          alert('Failed to record payment.');
         }
       } catch (err) {
-        alert('Error recording payment');
-      }
-    }
-    
-    async function submitExpense(e) {
-      e.preventDefault();
-      const desc = document.getElementById('exp-desc').value;
-      const amount = document.getElementById('exp-amount').value;
-      
-      try {
-        const formData = new FormData();
-        formData.append('description', desc);
-        formData.append('amountCents', Math.round(parseFloat(amount) * 100));
-        formData.append('expenseDate', new Date().toISOString().split('T')[0]);
-        
-        const response = await fetch(`/api/grouptabs/${tabId}/expenses`, {
-          method: 'POST',
-          body: formData
-        });
-        
-        if (response.ok) {
-          hideModal('generic-modal');
-          loadTabData(); // Reload chat
-        }
-      } catch (err) {
-        alert('Error adding expense');
+        alert('Error recording payment.');
       }
     }
 
-    function copyMagicLink() {
-      const input = document.getElementById('magic-link-input');
-      input.select();
-      document.execCommand('copy');
+    // ===========================================
+    // RECEIPT LIGHTBOX
+    // ===========================================
+    function showReceiptLightbox() {
+      if (!tabData.receipt_file_path) return;
       
-      const btn = document.querySelector('.ab-primary');
-      const originalText = btn.textContent;
-      btn.textContent = 'Copied!';
-      setTimeout(() => btn.textContent = originalText, 2000);
+      const overlay = document.createElement('div');
+      overlay.className = 'receipt-lightbox';
+      overlay.onclick = () => overlay.remove();
+      overlay.innerHTML = `<img src="${tabData.receipt_file_path}" alt="Receipt">`;
+      document.body.appendChild(overlay);
+    }
+
+    // ===========================================
+    // UTILITIES
+    // ===========================================
+    function getInitials(name) {
+      if (!name) return '?';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
     }
 
     function escapeHtml(str) {
@@ -474,9 +1105,12 @@
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    // Init
+    // ===========================================
+    // INIT
+    // ===========================================
     if (window.PayFriendsHeader) window.PayFriendsHeader.initialize({ hasActivitySection: false });
     loadTabData();
   </script>
+  </div>
 </body>
 </html>
