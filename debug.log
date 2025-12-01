@@ -1,0 +1,7 @@
+2025-12-01T04:39:37.873Z createGroupTab called. User: 1
+2025-12-01T04:39:37.874Z Body: {"name":"Lunch at rere","tabType":"one_bill","template":"restaurant","proofRequired":"optional","totalAmountCents":"4300","splitMode":"price_groups","expectedPayRate":"100","peopleCount":"4","priceGroups":"[{\"id\":1,\"name\":\"Alcohol Drinkers\",\"emoji\":\"🍷\",\"amountCents\":4300},{\"id\":2,\"name\":\"Non-Alcohol\",\"emoji\":\"💧\",\"amountCents\":1200}]"}
+2025-12-01T04:49:04.907Z createGroupTab called. User: 1
+2025-12-01T04:49:04.908Z Body: {"name":"Lunch at reerer","tabType":"one_bill","template":"restaurant","proofRequired":"optional","totalAmountCents":"4300","splitMode":"equal","expectedPayRate":"100","peopleCount":"4"}
+2025-12-01T04:49:04.912Z Creating payment: tab=87, org=97, amt=4300
+2025-12-01T04:49:19.225Z createGroupTab called. User: 1
+2025-12-01T04:49:19.226Z Body: {"name":"Lunch at reerer","tabType":"one_bill","template":"restaurant","proofRequired":"optional","totalAmountCents":"4300","splitMode":"price_groups","expectedPayRate":"100","peopleCount":"5","priceGroups":"[{\"id\":1,\"name\":\"Adults\",\"emoji\":\"👨\",\"amountCents\":300},{\"id\":2,\"name\":\"Kids\",\"emoji\":\"👧\",\"amountCents\":100}]"}

@@ -45,6 +45,133 @@
     .your-share-label{font-size:14px; color:var(--muted); margin-bottom:8px}
     .your-share-amount{font-size:32px; font-weight:700; color:var(--accent)}
     .your-share-status{font-size:14px; color:var(--muted); margin-top:8px}
+    
+    /* Price Group Selector Styles */
+    .price-group-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .price-group-option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .price-group-option:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    
+    .price-group-option.selected {
+      background: rgba(61, 220, 151, 0.1);
+      border-color: var(--accent);
+    }
+    
+    .pg-option-emoji {
+      font-size: 28px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    
+    .pg-option-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .pg-option-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .pg-option-hint {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .pg-option-price {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    
+    .price-group-option.selected .pg-option-price {
+      color: var(--accent);
+    }
+    
+    /* Shortfall/Surplus Banner for Creator */
+    .shortfall-surplus-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .shortfall-surplus-banner.shortfall {
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+    
+    .shortfall-surplus-banner.surplus {
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+    
+    .shortfall-surplus-banner.balanced {
+      background: rgba(61, 220, 151, 0.1);
+      border: 1px solid rgba(61, 220, 151, 0.3);
+    }
+    
+    .ss-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    
+    .ss-content {
+      flex: 1;
+    }
+    
+    .ss-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    .shortfall .ss-title { color: #f87171; }
+    .surplus .ss-title { color: #4ade80; }
+    .balanced .ss-title { color: var(--accent); }
+    
+    .ss-detail {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    
+    .ss-amount {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    .shortfall .ss-amount { color: #f87171; }
+    .surplus .ss-amount { color: #4ade80; }
+    .balanced .ss-amount { color: var(--accent); }
   </style>
 </head>
 <body>
@@ -94,6 +221,16 @@
         <h1 id="tab-title"></h1>
         <p id="tab-description" style="color:var(--muted)"></p>
         
+        <!-- Shortfall/Surplus Banner (for creator with price_groups) -->
+        <div id="shortfall-surplus-banner" class="shortfall-surplus-banner" style="display:none">
+          <span class="ss-icon" id="ss-icon">📊</span>
+          <div class="ss-content">
+            <div class="ss-title" id="ss-title">Collection Status</div>
+            <div class="ss-detail" id="ss-detail">Bill: €0 | Collected: €0</div>
+          </div>
+          <div class="ss-amount" id="ss-amount">€0</div>
+        </div>
+        
         <!-- Your Share Card -->
         <div class="your-share-card">
           <div class="your-share-label">Your Fair Share</div>
@@ -125,7 +262,7 @@
         <div class="participant-fairness-grid" id="participant-fairness-grid"></div>
       </div>
 
-      <!-- One-Bill: Seat/Tier Selection -->
+      <!-- One-Bill: Seat/Tier/PriceGroup Selection -->
       <div class="card section" id="seat-tier-section" style="display:none">
         <h2>Your Selection</h2>
         
@@ -137,6 +274,15 @@
         <div id="tier-selector-container" style="display:none">
           <p style="color:var(--muted); font-size:14px; margin-bottom:16px">Select your tier:</p>
           <div class="tier-selector" id="tier-selector"></div>
+        </div>
+        
+        <!-- Price Groups Selector -->
+        <div id="price-group-selector-container" style="display:none">
+          <p style="color:var(--muted); font-size:14px; margin-bottom:16px">Choose your price group:</p>
+          <div class="price-group-selector" id="price-group-selector"></div>
+          <p style="color:var(--muted); font-size:12px; margin-top:12px; font-style:italic">
+            💡 You can adjust the amount when paying if needed.
+          </p>
         </div>
         
         <button class="grouptabs-btn grouptabs-btn-secondary" style="margin-top:16px" onclick="updateSelection()">Update Selection</button>
@@ -206,6 +352,7 @@
     let fairnessData = null;
     let payments = [];
     let tiers = [];
+    let priceGroups = [];  // Price groups for price_groups split mode
     let isLoggedIn = false;
     let myFairnessInfo = null;
 
@@ -238,6 +385,7 @@
         participants = data.participants;
         currentParticipant = data.currentParticipant;
         tiers = data.tiers || [];
+        priceGroups = data.priceGroups || [];  // Load price groups
         isLoggedIn = data.isLoggedIn;
         
         document.getElementById('loading').style.display = 'none';
@@ -358,18 +506,26 @@
         proofLabel.textContent = '(optional)';
       }
       
-      // Setup seat/tier selection for one-bill
+      // Setup seat/tier/price-group selection for one-bill
       if (tabData.tab_type === 'one_bill') {
-        document.getElementById('seat-tier-section').style.display = 'block';
         
         if (tabData.seat_count) {
+          document.getElementById('seat-tier-section').style.display = 'block';
           document.getElementById('seat-picker-container').style.display = 'block';
           renderSeatPicker();
         }
         
         if (tabData.split_mode === 'tiered' && tiers.length > 0) {
+          document.getElementById('seat-tier-section').style.display = 'block';
           document.getElementById('tier-selector-container').style.display = 'block';
           renderTierSelector();
+        }
+        
+        // Price Groups mode
+        if (tabData.split_mode === 'price_groups' && priceGroups.length > 0) {
+          document.getElementById('seat-tier-section').style.display = 'block';
+          document.getElementById('price-group-selector-container').style.display = 'block';
+          renderPriceGroupSelector();
         }
       }
       
@@ -450,6 +606,9 @@
         circle.style.stroke = '#f87171';
       }
       
+      // Render shortfall/surplus banner for price_groups mode
+      renderShortfallSurplusBanner();
+      
       // Participant donuts
       const grid = document.getElementById('participant-fairness-grid');
       grid.innerHTML = fairnessData.participants.map(p => {
@@ -502,6 +661,70 @@
           });
         }
       });
+    }
+
+    function renderShortfallSurplusBanner() {
+      const banner = document.getElementById('shortfall-surplus-banner');
+      
+      // Only show for price_groups split mode
+      if (tabData.split_mode !== 'price_groups' || !fairnessData?.summary) {
+        banner.style.display = 'none';
+        return;
+      }
+      
+      const billTotal = fairnessData.summary.tabTotal || 0;
+      const projectedTotal = fairnessData.summary.projectedTotal || 0;
+      const totalPayments = fairnessData.summary.totalPayments || 0;
+      const shortfallSurplus = fairnessData.summary.shortfallSurplus || (projectedTotal - billTotal);
+      
+      // Calculate actual collected vs bill
+      const collectedVsBill = totalPayments - billTotal;
+      
+      banner.style.display = 'flex';
+      
+      const iconEl = document.getElementById('ss-icon');
+      const titleEl = document.getElementById('ss-title');
+      const detailEl = document.getElementById('ss-detail');
+      const amountEl = document.getElementById('ss-amount');
+      
+      // Show collection progress
+      detailEl.textContent = `Bill: ${formatCurrency2(billTotal)} | Collected: ${formatCurrency2(totalPayments)}`;
+      
+      if (totalPayments >= billTotal) {
+        // Bill is fully covered
+        banner.className = 'shortfall-surplus-banner surplus';
+        iconEl.textContent = '✅';
+        titleEl.textContent = 'Bill Covered!';
+        if (collectedVsBill > 50) {
+          amountEl.textContent = `+${formatCurrency2(collectedVsBill)}`;
+          detailEl.textContent += ' (Extra goes to you)';
+        } else {
+          amountEl.textContent = formatCurrency2(0);
+        }
+      } else if (projectedTotal < billTotal) {
+        // Projected shortfall based on group prices
+        banner.className = 'shortfall-surplus-banner shortfall';
+        iconEl.textContent = '⚠️';
+        titleEl.textContent = 'Projected Shortfall';
+        const remaining = billTotal - totalPayments;
+        amountEl.textContent = `-${formatCurrency2(remaining)}`;
+        detailEl.textContent = `Bill: ${formatCurrency2(billTotal)} | Still needed: ${formatCurrency2(remaining)}`;
+      } else {
+        // In progress - show remaining
+        const remaining = billTotal - totalPayments;
+        if (remaining > 50) {
+          banner.className = 'shortfall-surplus-banner shortfall';
+          iconEl.textContent = '📊';
+          titleEl.textContent = 'Collection in Progress';
+          amountEl.textContent = formatCurrency2(remaining);
+          detailEl.textContent = `Bill: ${formatCurrency2(billTotal)} | Still needed: ${formatCurrency2(remaining)}`;
+        } else {
+          banner.className = 'shortfall-surplus-banner balanced';
+          iconEl.textContent = '✅';
+          titleEl.textContent = 'Almost There!';
+          amountEl.textContent = formatCurrency2(0);
+        }
+      }
     }
 
     function renderParticipants() {
@@ -632,6 +855,41 @@
       });
     }
 
+    // Price Groups Selector
+    function renderPriceGroupSelector() {
+      const selector = document.getElementById('price-group-selector');
+      const currentGroupId = currentParticipant?.price_group_id;
+      
+      selector.innerHTML = priceGroups.map(group => `
+        <div class="price-group-option ${group.id === currentGroupId ? 'selected' : ''}" 
+             data-group-id="${group.id}" 
+             onclick="selectPriceGroup(${group.id})">
+          <span class="pg-option-emoji">${group.emoji || '📦'}</span>
+          <div class="pg-option-info">
+            <span class="pg-option-name">${escapeHtml(group.name)}</span>
+            <span class="pg-option-hint">Suggested amount</span>
+          </div>
+          <span class="pg-option-price">${formatCurrency2(group.amount_cents)}</span>
+        </div>
+      `).join('');
+    }
+
+    function selectPriceGroup(groupId) {
+      document.querySelectorAll('.price-group-option').forEach(opt => {
+        opt.classList.remove('selected');
+        if (parseInt(opt.getAttribute('data-group-id')) === groupId) {
+          opt.classList.add('selected');
+        }
+      });
+      
+      // Update the "Your Share" display immediately for better UX
+      const group = priceGroups.find(g => g.id === groupId);
+      if (group) {
+        document.getElementById('your-share-amount').textContent = formatCurrency2(group.amount_cents);
+        document.getElementById('suggested-amount').textContent = formatCurrency2(group.amount_cents);
+      }
+    }
+
     async function updateSelection() {
       try {
         const updates = {};
@@ -651,6 +909,12 @@
           updates.tierId = parseInt(selectedTier.getAttribute('data-tier'));
         }
         
+        // Get selected price group
+        const selectedPriceGroup = document.querySelector('.price-group-option.selected');
+        if (selectedPriceGroup) {
+          updates.priceGroupId = parseInt(selectedPriceGroup.getAttribute('data-group-id'));
+        }
+        
         const response = await fetch(`/api/grouptabs/${tabData.id}/participants/${currentParticipant.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -660,6 +924,11 @@
         if (!response.ok) {
           const data = await response.json();
           throw new Error(data.error || 'Failed to update');
+        }
+        
+        // Update local participant data
+        if (updates.priceGroupId) {
+          currentParticipant.price_group_id = updates.priceGroupId;
         }
         
         // Reload fairness to update share

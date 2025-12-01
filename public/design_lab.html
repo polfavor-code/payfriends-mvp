@@ -3,527 +3,305 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PayFriends Design Proposals</title>
+  <title>PayFriends Design Lab</title>
   <style>
     :root {
       --bg: #0e1116;
-      --card: #151a21;
+      --card-bg: #1c212b;
       --text: #e6eef6;
       --muted: #a7b0bd;
       --accent: #3ddc97;
       --accent-dim: rgba(61, 220, 151, 0.1);
-      --border: rgba(255, 255, 255, 0.1);
+      --font: 'Inter', system-ui, sans-serif;
     }
-    
+
     body {
-      margin: 0;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: var(--bg);
+      background-color: var(--bg);
       color: var(--text);
-      padding-bottom: 100px;
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
-    
-    header {
-      text-align: center;
-      margin-bottom: 60px;
-    }
-    
-    h1 {
-      font-size: 36px;
-      margin: 0 0 16px 0;
-      background: linear-gradient(135deg, #fff, #a7b0bd);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    
-    p.subtitle {
-      color: var(--muted);
-      font-size: 18px;
-      max-width: 600px;
-      margin: 0 auto;
-      line-height: 1.6;
+      font-family: var(--font);
+      padding: 40px;
+      margin: 0;
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 40px;
+    h1 { margin-bottom: 8px; color: var(--text); }
+    p.intro { color: var(--muted); margin-bottom: 40px; max-width: 600px; }
+
+    .concept-section {
+      margin-bottom: 80px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
     }
 
-    .proposal-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      overflow: hidden;
-      transition: transform 0.3s ease, border-color 0.3s ease;
-      position: relative;
-    }
-
-    .proposal-card:hover {
-      transform: translateY(-5px);
-      border-color: var(--accent);
-    }
-
-    .preview-window {
-      height: 400px; /* Fixed height for mobile preview */
-      background: #000;
-      position: relative;
-      overflow: hidden;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .card-content {
-      padding: 24px;
-    }
-
-    .card-title {
+    .concept-title {
       font-size: 24px;
-      font-weight: 700;
-      margin: 0 0 8px 0;
       color: var(--accent);
-    }
-
-    .card-desc {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.6;
-      margin-bottom: 16px;
-    }
-
-    .tags {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .tag {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      background: var(--accent-dim);
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    /* --- PROPOSAL 1: SMART RECEIPT --- */
-    .p1-bg { background: #1a1d24; display: flex; align-items: center; justify-content: center; }
-    .receipt {
-      background: #fff;
-      width: 240px;
-      padding: 20px;
-      font-family: 'Courier Prime', monospace;
-      color: #000;
-      position: relative;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      filter: invert(1) hue-rotate(180deg); /* Dark mode receipt */
-    }
-    .receipt::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      left: 0;
-      right: 0;
-      height: 10px;
-      background: radial-gradient(circle, transparent 5px, #fff 6px) repeat-x;
-      background-size: 10px 10px;
-      background-position: 0 -5px; /* Jagged edge */
-    }
-    .r-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; }
-    .r-total { border-top: 1px dashed #000; padding-top: 8px; margin-top: 8px; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; }
-    .r-stamp {
-      position: absolute;
-      bottom: 40px;
-      right: 20px;
-      border: 2px solid #ff4757;
-      color: #ff4757;
-      padding: 2px 8px;
-      transform: rotate(-15deg);
-      font-size: 10px;
-      font-weight: bold;
-      border-radius: 4px;
-    }
-
-    /* --- PROPOSAL 2: SOCIAL ORBIT --- */
-    .p2-bg { background: radial-gradient(circle at center, #1a2333 0%, #0e1116 100%); position: relative; overflow: hidden; }
-    .sun {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80px; height: 80px;
-      background: #ffd700;
-      border-radius: 50%;
-      box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: bold; color: #000;
-    }
-    .orbit-ring {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 50%;
-    }
-    .ring-1 { width: 160px; height: 160px; }
-    .ring-2 { width: 260px; height: 260px; }
-    .planet {
-      position: absolute;
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 15px var(--accent);
-    }
-    .pl-1 { top: -16px; left: 50%; transform: translateX(-50%); }
-    .pl-2 { bottom: 20px; right: 20px; background: #ff6b6b; box-shadow: 0 0 15px #ff6b6b; }
-
-    /* --- PROPOSAL 3: CHAT STREAM --- */
-    .p3-bg { background: #0e1116; padding: 20px; display: flex; flex-direction: column; justify-content: flex-end; gap: 12px; }
-    .chat-bubble {
-      padding: 10px 14px;
-      border-radius: 16px;
-      font-size: 13px;
-      max-width: 80%;
-      line-height: 1.4;
-    }
-    .cb-left { background: #1c212b; color: var(--text); border-bottom-left-radius: 4px; align-self: flex-start; }
-    .cb-right { background: var(--accent); color: #000; border-bottom-right-radius: 4px; align-self: flex-end; }
-    .chat-input {
-      margin-top: 10px;
-      background: #1c212b;
-      height: 40px;
-      border-radius: 20px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
-      padding: 0 16px;
+      gap: 10px;
+    }
+    
+    .concept-desc {
       color: var(--muted);
-      font-size: 12px;
+      margin-bottom: 24px;
+      font-size: 14px;
     }
 
-    /* --- PROPOSAL 4: STORY MODE --- */
-    .p4-bg { 
-      background: linear-gradient(135deg, #2d3436, #000000); 
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      color: #fff; text-align: center;
-    }
-    .story-bars {
-      position: absolute; top: 10px; left: 10px; right: 10px;
-      display: flex; gap: 4px;
-    }
-    .s-bar { height: 2px; background: rgba(255,255,255,0.3); flex: 1; border-radius: 2px; }
-    .s-bar.active { background: #fff; }
-    .story-q { font-size: 24px; font-weight: 800; margin-bottom: 20px; }
-    .story-input { font-size: 48px; font-weight: 300; color: var(--accent); border-bottom: 2px solid var(--accent); }
-    .story-btn {
-      margin-top: 40px; width: 60px; height: 60px; border-radius: 50%;
-      background: #fff; color: #000; display: flex; align-items: center; justify-content: center;
-      font-size: 24px;
+    /* Container for the cards */
+    .cards-row {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding: 20px 10px;
     }
 
-    /* --- PROPOSAL 5: NEON ARCADE --- */
-    .p5-bg { 
-      background: #120429; 
-      background-image: linear-gradient(transparent 95%, rgba(61, 220, 151, 0.2) 95%),
-                        linear-gradient(90deg, transparent 95%, rgba(61, 220, 151, 0.2) 95%);
-      background-size: 20px 20px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    /* =========================================
+       OPTION 1: NEO-FINTECH (Clean, Structured)
+       ========================================= */
+    .card-v1 {
+      width: 200px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
-    .boss-hp {
-      width: 80%; height: 20px; background: #333; border: 2px solid #fff;
-      margin-bottom: 10px; position: relative;
-    }
-    .hp-fill { width: 60%; height: 100%; background: #ff0055; }
-    .boss-sprite { font-size: 64px; margin-bottom: 20px; filter: drop-shadow(0 0 10px #ff0055); }
-    .arcade-btn {
-      background: #00d2ff; color: #000; font-family: monospace; padding: 10px 20px;
-      border: 2px solid #fff; box-shadow: 4px 4px 0 #fff; font-weight: bold;
+    
+    .card-v1:hover {
+      border-color: var(--accent);
+      background: rgba(61, 220, 151, 0.05);
+      transform: translateY(-2px);
     }
 
-    /* --- PROPOSAL 6: SWISS MINIMALIST --- */
-    .p6-bg { background: #000; color: #fff; padding: 30px; font-family: 'Helvetica', sans-serif; }
-    .swiss-grid { display: grid; grid-template-columns: 1fr auto; gap: 10px; border-bottom: 1px solid #333; padding: 15px 0; }
-    .swiss-label { font-size: 12px; color: #666; text-transform: uppercase; }
-    .swiss-val { font-size: 18px; font-weight: 300; }
-    .swiss-action { margin-top: 40px; background: #fff; color: #000; border: none; padding: 15px; width: 100%; text-align: center; font-size: 14px; font-weight: bold; }
+    .icon-v1 {
+      width: 40px;
+      height: 40px;
+      background: var(--accent-dim);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
 
-    /* --- PROPOSAL 7: CARD STACK --- */
-    .p7-bg { background: #1e272e; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
-    .stack-card {
-      width: 200px; height: 280px; background: #fff; border-radius: 16px;
-      position: absolute; box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-      display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;
+    .badge-v1 {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 20px;
+      background: var(--accent);
+      color: #000;
     }
-    .c-1 { transform: translateZ(0) rotate(0deg); color: #000; z-index: 3; }
-    .c-2 { transform: translateZ(-20px) rotate(5deg) translateY(10px); background: #f1f2f6; z-index: 2; }
-    .c-3 { transform: translateZ(-40px) rotate(-5deg) translateY(20px); background: #dfe4ea; z-index: 1; }
-    .card-q { font-size: 18px; font-weight: bold; margin-bottom: 20px; }
-    .card-opt { background: #000; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 12px; }
 
-    /* --- PROPOSAL 8: SPLIT BRAIN --- */
-    .p8-bg { background: #0b0e11; display: flex; align-items: center; justify-content: center; }
-    .chart-container { position: relative; width: 200px; height: 200px; }
-    .slice { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; }
-    .s1 { background: conic-gradient(var(--accent) 0% 25%, transparent 25% 100%); opacity: 0.8; }
-    .s2 { background: conic-gradient(transparent 25%, #ff6b6b 25% 60%, transparent 60% 100%); opacity: 0.8; }
-    .s3 { background: conic-gradient(transparent 60%, #54a0ff 60% 100%); opacity: 0.8; }
-    .center-data {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: #0b0e11; width: 120px; height: 120px; border-radius: 50%;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    /* =========================================
+       OPTION 2: STICKER SLAP (Funky, Rotated)
+       ========================================= */
+    .card-v2 {
+      width: 200px;
+      background: #161b24;
+      border: 2px solid #2a303c;
+      border-radius: 24px;
+      padding: 24px 20px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      overflow: visible;
     }
-    .data-label { font-size: 10px; color: var(--muted); font-family: monospace; }
-    .data-val { font-size: 24px; font-weight: bold; color: #fff; font-family: monospace; }
 
-    /* --- PROPOSAL 9: TABLE MAP --- */
-    .p9-bg { background: #2f3542; display: flex; align-items: center; justify-content: center; position: relative; }
-    .table {
-      width: 160px; height: 160px; background: #dfe4ea; border-radius: 50%;
-      position: relative; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    .card-v2:hover {
+      transform: rotate(-2deg) scale(1.05);
+      border-color: var(--accent);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      z-index: 10;
     }
-    .seat {
-      width: 40px; height: 40px; background: #57606f; border-radius: 50%;
-      position: absolute; display: flex; align-items: center; justify-content: center;
-      color: #fff; font-size: 12px; font-weight: bold; border: 2px solid #2f3542;
+
+    /* The "Ink Stamp" Badge */
+    .stamp-v2 {
+      position: absolute;
+      top: -15px;
+      right: -15px;
+      width: 60px;
+      height: 60px;
+      z-index: 20;
+      transform: rotate(15deg);
+      opacity: 0.9;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
     }
-    .seat-1 { top: -20px; left: 50%; transform: translateX(-50%); }
-    .seat-2 { bottom: -20px; left: 50%; transform: translateX(-50%); }
-    .seat-3 { left: -20px; top: 50%; transform: translateY(-50%); }
-    .seat-4 { right: -20px; top: 50%; transform: translateY(-50%); }
-    .dish {
-      width: 30px; height: 30px; background: var(--accent); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; font-size: 16px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+
+    .icon-v2 {
+      font-size: 32px;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 4px 0 rgba(0,0,0,0.2));
     }
+
+    /* =========================================
+       OPTION 3: UBER MINIMAL (Airy, Soft)
+       ========================================= */
+    .card-v3 {
+      width: 200px;
+      background: transparent; /* No bg! */
+      border: 1px solid transparent;
+      border-radius: 30px;
+      padding: 30px 20px;
+      position: relative;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .card-v3:hover {
+      background: rgba(255,255,255,0.03);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .icon-v3 {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.05);
+      font-size: 32px;
+    }
+
+    .badge-v3 {
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2a303c;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Typography Shared */
+    h3 { margin: 0 0 4px 0; font-size: 16px; font-weight: 700; color: #fff; }
+    .sub { font-size: 12px; color: var(--accent); margin-bottom: 8px; display: block; font-weight: 500; }
+    .desc { font-size: 12px; color: var(--muted); line-height: 1.4; margin: 0; }
 
   </style>
 </head>
 <body>
 
-<div class="container">
-  <header>
-    <h1>PayFriends Design Lab</h1>
-    <p class="subtitle">Explore 9 distinct design directions for the GroupTabs "Restaurant Dinner" flow. <br>Which one feels right for PayFriends?</p>
-  </header>
+  <h1>PayFriends Design Lab 🧪</h1>
+  <p class="intro">Which split-mode vibe fits "Funky & Simple" best? Hover over cards to see interactions.</p>
 
-  <div class="grid">
-
-    <!-- 1 -->
-    <div class="proposal-card">
-      <div class="preview-window p1-bg">
-        <div class="receipt">
-          <div style="text-align:center; margin-bottom:15px; font-weight:bold; font-size:16px;">PAYFRIENDS</div>
-          <div class="r-line"><span>DATE</span><span>29 NOV</span></div>
-          <div class="r-line"><span>TIME</span><span>20:42</span></div>
-          <div style="border-bottom:1px dashed #000; margin: 10px 0;"></div>
-          <div class="r-line"><span>PIZZA MARGHERITA</span><span>12.00</span></div>
-          <div class="r-line"><span>CRAFT BEER x4</span><span>24.00</span></div>
-          <div class="r-line"><span>TIRAMISU</span><span>8.00</span></div>
-          <div class="r-total"><span>TOTAL</span><span>€44.00</span></div>
-          <div class="r-stamp">PAID</div>
+  <!-- VARIATION 1 -->
+  <div class="concept-section">
+    <div class="concept-title">1. Neo-Fintech (The Safe Bet)</div>
+    <div class="concept-desc">Clean lines, consistent stroke icons, gradient pills. Safe, polished, readable.</div>
+    
+    <div class="cards-row">
+      <!-- Card 1 -->
+      <div class="card-v1">
+        <div class="badge-v1">SUPER EASY</div>
+        <div class="icon-v1">
+          <!-- Pizza SVG -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 22h20L12 2z"/><circle cx="12" cy="12" r="1"/><circle cx="10" cy="16" r="1"/><circle cx="14" cy="16" r="1"/></svg>
         </div>
+        <h3>Equal Split</h3>
+        <span class="sub">€ 25.00 each</span>
+        <p class="desc">Fastest way. Everyone pays exactly the same.</p>
       </div>
-      <div class="card-content">
-        <div class="card-title">1. The Smart Receipt</div>
-        <div class="card-desc">Skeuomorphic design that grounds the abstract digital split in a familiar physical object. Uses a "glowing" receipt effect.</div>
-        <div class="tags">
-          <span class="tag">Tangible</span>
-          <span class="tag">Retro-Tech</span>
-          <span class="tag">Clear</span>
+
+      <!-- Card 2 -->
+      <div class="card-v1">
+        <div class="badge-v1" style="background:rgba(255,255,255,0.15); color:#fff;">FAIR PLAY</div>
+        <div class="icon-v1">
+          <!-- Wine SVG -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8M12 15v7M6.5 2h11l-.5 5a6 6 0 0 1-10 0L6.5 2z"/></svg>
         </div>
+        <h3>Price Groups</h3>
+        <span class="sub">Luxury vs. Economy</span>
+        <p class="desc">Split drinkers vs non-drinkers, or steak vs salad.</p>
       </div>
     </div>
-
-    <!-- 2 -->
-    <div class="proposal-card">
-      <div class="preview-window p2-bg">
-        <div class="orbit-ring ring-1"></div>
-        <div class="orbit-ring ring-2"></div>
-        <div class="sun">€120</div>
-        <div class="planet pl-1"></div>
-        <div class="planet pl-2"></div>
-      </div>
-      <div class="card-content">
-        <div class="card-title">2. Social Orbit</div>
-        <div class="card-desc">Visualizes the group as a solar system. The Bill is the sun, friends are planets. Distance represents payment status.</div>
-        <div class="tags">
-          <span class="tag">Spatial</span>
-          <span class="tag">Visual</span>
-          <span class="tag">Gamified</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3 -->
-    <div class="proposal-card">
-      <div class="preview-window p3-bg">
-        <div class="chat-bubble cb-left">Hey! How much was dinner? 🍕</div>
-        <div class="chat-bubble cb-right">It was €85 total.</div>
-        <div class="chat-bubble cb-left">Split 4 ways?</div>
-        <div class="chat-bubble cb-right">Yup! Sending link now.</div>
-        <div class="chat-input">Type a message...</div>
-      </div>
-      <div class="card-content">
-        <div class="card-title">3. Chat Stream</div>
-        <div class="card-desc">Treats the bill split as a familiar chat conversation. Uses a chatbot-style wizard to gather details naturally.</div>
-        <div class="tags">
-          <span class="tag">Conversational</span>
-          <span class="tag">Zero Friction</span>
-          <span class="tag">Familiar</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4 -->
-    <div class="proposal-card">
-      <div class="preview-window p4-bg">
-        <div class="story-bars">
-          <div class="s-bar active"></div>
-          <div class="s-bar active"></div>
-          <div class="s-bar"></div>
-        </div>
-        <div class="story-q">How much?</div>
-        <div class="story-input">€120</div>
-        <div class="story-btn">→</div>
-      </div>
-      <div class="card-content">
-        <div class="card-title">4. Story Mode</div>
-        <div class="card-desc">Immersive, full-screen steps inspired by Instagram Stories. Linear flow with huge tap targets.</div>
-        <div class="tags">
-          <span class="tag">Mobile-First</span>
-          <span class="tag">Immersive</span>
-          <span class="tag">Fast</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 5 -->
-    <div class="proposal-card">
-      <div class="preview-window p5-bg">
-        <div class="boss-sprite">👹</div>
-        <div class="boss-hp"><div class="hp-fill"></div></div>
-        <div style="color:#ff0055; font-family:monospace; margin-bottom:20px; font-weight:bold;">BOSS HP: €450</div>
-        <button class="arcade-btn">ATTACK (PAY)</button>
-      </div>
-      <div class="card-content">
-        <div class="card-title">5. Neon Arcade</div>
-        <div class="card-desc">Cyberpunk aesthetic that turns paying the bill into a "Boss Battle". Friends deal damage by paying.</div>
-        <div class="tags">
-          <span class="tag">Gamified</span>
-          <span class="tag">Fun</span>
-          <span class="tag">Gen Z</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 6 -->
-    <div class="proposal-card">
-      <div class="preview-window p6-bg">
-        <div style="font-size:24px; font-weight:bold; margin-bottom:30px;">Dinner at Mario's</div>
-        <div class="swiss-grid">
-          <div class="swiss-label">Total Amount</div>
-          <div class="swiss-val">€142.50</div>
-        </div>
-        <div class="swiss-grid">
-          <div class="swiss-label">Split By</div>
-          <div class="swiss-val">4 People</div>
-        </div>
-        <div class="swiss-grid">
-          <div class="swiss-label">Per Person</div>
-          <div class="swiss-val">€35.62</div>
-        </div>
-        <button class="swiss-action">CONFIRM SPLIT</button>
-      </div>
-      <div class="card-content">
-        <div class="card-title">6. Swiss Minimalist</div>
-        <div class="card-desc">Radical simplicity. Black and white, precision grids, no decoration. Focuses purely on speed and utility.</div>
-        <div class="tags">
-          <span class="tag">Professional</span>
-          <span class="tag">Clean</span>
-          <span class="tag">Utility</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 7 -->
-    <div class="proposal-card">
-      <div class="preview-window p7-bg">
-        <div class="stack-card c-3"></div>
-        <div class="stack-card c-2"></div>
-        <div class="stack-card c-1">
-          <div class="card-q">Who is paying?</div>
-          <div style="font-size:40px; margin:20px 0;">👤</div>
-          <div class="card-opt">ME</div>
-        </div>
-      </div>
-      <div class="card-content">
-        <div class="card-title">7. Card Stack</div>
-        <div class="card-desc">Tinder-like interface that focuses on one decision at a time. Swipe through questions or expenses.</div>
-        <div class="tags">
-          <span class="tag">Focused</span>
-          <span class="tag">Gesture-based</span>
-          <span class="tag">Mobile</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 8 -->
-    <div class="proposal-card">
-      <div class="preview-window p8-bg">
-        <div class="chart-container">
-          <div class="slice s1"></div>
-          <div class="slice s2"></div>
-          <div class="slice s3"></div>
-          <div class="center-data">
-            <span class="data-label">TOTAL</span>
-            <span class="data-val">120</span>
-          </div>
-        </div>
-      </div>
-      <div class="card-content">
-        <div class="card-title">8. Split-Brain</div>
-        <div class="card-desc">The interface IS the data. Interactive charts that users manipulate directly to change split percentages.</div>
-        <div class="tags">
-          <span class="tag">Data Viz</span>
-          <span class="tag">Technical</span>
-          <span class="tag">Interactive</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 9 -->
-    <div class="proposal-card">
-      <div class="preview-window p9-bg">
-        <div class="table">
-          <div class="dish">🍕</div>
-          <div class="seat seat-1">MJ</div>
-          <div class="seat seat-2">PS</div>
-          <div class="seat seat-3">AL</div>
-          <div class="seat seat-4">BO</div>
-        </div>
-      </div>
-      <div class="card-content">
-        <div class="card-title">9. Table Map</div>
-        <div class="card-desc">Mimics the physical reality of a dinner table. Drag items (pizza, wine) to specific seats or the center.</div>
-        <div class="tags">
-          <span class="tag">Skeuomorphic</span>
-          <span class="tag">Intuitive</span>
-          <span class="tag">Fair</span>
-        </div>
-      </div>
-    </div>
-
   </div>
-</div>
+
+
+  <!-- VARIATION 2 -->
+  <div class="concept-section">
+    <div class="concept-title">2. Sticker Slap (Funky & Tactile) 🏆 Recommended</div>
+    <div class="concept-desc">Chunky borders, rotated "Stamp" badges (SVGs), bold icons. Feels like a passport or ticket.</div>
+    
+    <div class="cards-row">
+      <!-- Card 1 -->
+      <div class="card-v2">
+        <!-- STAMP SVG -->
+        <div class="stamp-v2">
+          <svg viewBox="0 0 100 100" fill="none">
+            <path d="M50 0L60 15L75 10L80 25L95 30L90 45L100 55L85 65L90 80L75 80L65 95L50 85L35 95L25 80L10 80L15 65L0 55L10 45L5 30L20 25L25 10L40 15L50 0Z" fill="#3ddc97"/>
+            <circle cx="50" cy="50" r="40" stroke="#0e1116" stroke-width="2" fill="none" opacity="0.2"/>
+            <text x="50" y="45" text-anchor="middle" fill="#0e1116" font-size="16" font-weight="900" font-family="Arial">SUPER</text>
+            <text x="50" y="62" text-anchor="middle" fill="#0e1116" font-size="16" font-weight="900" font-family="Arial">EASY</text>
+          </svg>
+        </div>
+        <div class="icon-v2">🍕</div>
+        <h3>Equal Split</h3>
+        <span class="sub">€ 25.00 each</span>
+        <p class="desc">Fastest way. Everyone pays exactly the same.</p>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="card-v2">
+        <!-- STAMP SVG -->
+        <div class="stamp-v2" style="transform:rotate(-10deg); right:-10px;">
+          <svg viewBox="0 0 100 100" fill="none">
+            <circle cx="50" cy="50" r="45" fill="#6366f1" stroke="white" stroke-width="3" stroke-dasharray="5 5"/>
+            <text x="50" y="55" text-anchor="middle" fill="white" font-size="18" font-weight="800" font-family="Arial" transform="rotate(-5 50 50)">FAIR!</text>
+          </svg>
+        </div>
+        <div class="icon-v2">🦞🍾</div>
+        <h3>Price Groups</h3>
+        <span class="sub">Luxury vs. Economy</span>
+        <p class="desc">Split drinkers vs non-drinkers, or steak vs salad.</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- VARIATION 3 -->
+  <div class="concept-section">
+    <div class="concept-title">3. Uber Minimal (Floating)</div>
+    <div class="concept-desc">No card borders, large central visuals, bottom floating tags. Very airy.</div>
+    
+    <div class="cards-row">
+      <!-- Card 1 -->
+      <div class="card-v3">
+        <div class="icon-v3">
+          <span style="font-size:40px;">⚡</span>
+        </div>
+        <h3>Equal Split</h3>
+        <p class="desc">Everyone pays the same.</p>
+        <div class="badge-v3">MOST POPULAR</div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="card-v3">
+        <div class="icon-v3">
+          <span style="font-size:40px;">⚖️</span>
+        </div>
+        <h3>Price Groups</h3>
+        <p class="desc">Fair for mixed orders.</p>
+        <div class="badge-v3">FAIR PLAY</div>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
-

@@ -12,9 +12,10 @@
    * @param {Array} participants - Array of participant objects
    * @param {Array} tiers - Array of tier objects (for tiered split)
    * @param {Array} expenses - Array of expense objects (for multi-bill)
+   * @param {Array} priceGroups - Array of price group objects (for price_groups split)
    * @returns {Object} Map of participantId -> fairShareCents
    */
-  function calculateFairShares(tab, participants, tiers = [], expenses = []) {
+  function calculateFairShares(tab, participants, tiers = [], expenses = [], priceGroups = []) {
     const fairShares = {};
     
     if (participants.length === 0) {
@@ -42,6 +43,24 @@
       const sharePerPerson = Math.round(totalCents / participants.length);
       participants.forEach(p => {
         fairShares[p.id] = sharePerPerson;
+      });
+    } else if (splitMode === 'price_groups' && priceGroups.length > 0) {
+      // Price Groups: Each participant pays their group's fixed price
+      // Note: Total collected may differ from bill total (handled by creator)
+      const groupMap = {};
+      priceGroups.forEach(g => { groupMap[g.id] = g; });
+
+      // Default to first group's price if participant has no group assigned
+      const defaultPrice = priceGroups[0]?.amount_cents || Math.round(totalCents / participants.length);
+
+      participants.forEach(p => {
+        const group = groupMap[p.price_group_id];
+        if (group) {
+          fairShares[p.id] = group.amount_cents;
+        } else {
+          // Participant hasn't selected a group yet - use default
+          fairShares[p.id] = defaultPrice;
+        }
       });
     } else if (splitMode === 'tiered' && tiers.length > 0) {
       // Tiered split: calculate weighted shares
@@ -273,11 +292,12 @@
    * @param {Array} expenses - Expense array
    * @param {Array} payments - Payment array
    * @param {Array} tiers - Tier array
+   * @param {Array} priceGroups - Price groups array (for price_groups split)
    * @returns {Object} Complete fairness analysis
    */
-  function calculateFairnessData(tab, participants, expenses, payments, tiers = []) {
+  function calculateFairnessData(tab, participants, expenses, payments, tiers = [], priceGroups = []) {
     // Calculate fair shares
-    const fairShares = calculateFairShares(tab, participants, tiers, expenses);
+    const fairShares = calculateFairShares(tab, participants, tiers, expenses, priceGroups);
     
     // Calculate actual paid
     const actualPaid = calculateActualPaid(payments, expenses, tab.tab_type);
@@ -299,6 +319,11 @@
     const totalPayments = payments.reduce((sum, p) => sum + (p.amount_cents || 0), 0);
     const tabTotal = tab.tab_type === 'one_bill' ? (tab.total_amount_cents || 0) : totalExpenses;
 
+    // For price_groups: calculate projected total (sum of all fair shares)
+    // This may differ from billTotal - the creator handles the difference
+    const projectedTotal = Object.values(fairShares).reduce((sum, share) => sum + share, 0);
+    const shortfallSurplus = projectedTotal - tabTotal; // Positive = surplus, Negative = shortfall
+
     return {
       globalScore,
       participants: participantData,
@@ -307,9 +332,13 @@
         tabTotal,
         totalExpenses,
         totalPayments,
+        projectedTotal,
+        shortfallSurplus,
         participantCount: participants.length,
         unsettledCount: balances.filter(b => Math.abs(b.balance) > 50).length
-      }
+      },
+      // Include price groups info for UI
+      priceGroups: tab.split_mode === 'price_groups' ? priceGroups : []
     };
   }
 
