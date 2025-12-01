@@ -241,6 +241,26 @@ db.exec(`
     FOREIGN KEY (from_participant_id) REFERENCES group_tab_participants(id),
     FOREIGN KEY (to_participant_id) REFERENCES group_tab_participants(id)
   );
+
+  CREATE TABLE IF NOT EXISTS group_tab_price_groups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_tab_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    emoji TEXT,
+    amount_cents INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (group_tab_id) REFERENCES group_tabs(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS group_tab_tiers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_tab_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    multiplier REAL NOT NULL,
+    sort_order INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (group_tab_id) REFERENCES group_tabs(id)
+  );
 `);
 
 // Add proof of payment columns if they don't exist (for existing databases)
@@ -474,6 +494,27 @@ try {
 // Add receipt_file_path column to group_tabs table (for one-bill receipt uploads)
 try {
   db.exec(`ALTER TABLE group_tabs ADD COLUMN receipt_file_path TEXT;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add price_group_id column to group_tab_participants table
+try {
+  db.exec(`ALTER TABLE group_tab_participants ADD COLUMN price_group_id INTEGER;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add tier_id column to group_tab_participants table
+try {
+  db.exec(`ALTER TABLE group_tab_participants ADD COLUMN tier_id INTEGER;`);
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add assigned_seats column to group_tab_participants table
+try {
+  db.exec(`ALTER TABLE group_tab_participants ADD COLUMN assigned_seats TEXT;`);
 } catch (e) {
   // Column already exists, ignore
 }
@@ -5660,6 +5701,18 @@ app.post('/api/grouptabs', requireAuth, (req, res) => {
 function createGroupTab(req, res) {
   const { name, tabType, template, totalAmountCents, splitMode, expectedPayRate, seatCount, proofRequired, description, peopleCount, tiers } = req.body;
   
+  // Parse priceGroups if present (it might be a JSON string from FormData)
+  let priceGroups = [];
+  if (req.body.priceGroups) {
+    try {
+      priceGroups = typeof req.body.priceGroups === 'string' 
+        ? JSON.parse(req.body.priceGroups) 
+        : req.body.priceGroups;
+    } catch (e) {
+      console.warn('Failed to parse priceGroups:', e);
+    }
+  }
+  
   if (!name || !tabType) {
     return res.status(400).json({ error: 'Name and tab type are required' });
   }
@@ -5710,6 +5763,16 @@ function createGroupTab(req, res) {
           INSERT INTO group_tab_tiers (group_tab_id, name, multiplier, sort_order, created_at)
           VALUES (?, ?, ?, ?, ?)
         `).run(tabId, tier.name, tier.multiplier, index, createdAt);
+      });
+    }
+    
+    // Create price groups if price_groups split mode
+    if (splitMode === 'price_groups' && priceGroups && Array.isArray(priceGroups)) {
+      priceGroups.forEach((group) => {
+        db.prepare(`
+          INSERT INTO group_tab_price_groups (group_tab_id, name, emoji, amount_cents, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(tabId, group.name, group.emoji || '🏷️', group.amountCents, createdAt);
       });
     }
     
@@ -5834,6 +5897,28 @@ app.get('/api/grouptabs/:id', (req, res) => {
       WHERE gtp.group_tab_id = ?
       ORDER BY gtp.created_at DESC
     `).all(tabId);
+
+    // Get tiers (if applicable)
+    let tiers = [];
+    try {
+      const tiersTableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'`).get();
+      if (tiersTableExists) {
+        tiers = db.prepare(`SELECT * FROM group_tab_tiers WHERE group_tab_id = ? ORDER BY sort_order`).all(tabId);
+      }
+    } catch (e) {
+      console.warn('Error fetching tiers:', e);
+    }
+    
+    // Get price groups (if applicable)
+    let priceGroups = [];
+    try {
+      const pgTableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_price_groups'`).get();
+      if (pgTableExists) {
+        priceGroups = db.prepare(`SELECT * FROM group_tab_price_groups WHERE group_tab_id = ?`).all(tabId);
+      }
+    } catch (e) {
+      console.warn('Error fetching price groups:', e);
+    }
     
     res.json({
       success: true,
@@ -5841,7 +5926,9 @@ app.get('/api/grouptabs/:id', (req, res) => {
       participants,
       expenses,
       payments,
-      currentParticipant
+      currentParticipant,
+      tiers,
+      priceGroups
     });
   } catch (err) {
     console.error('Error getting tab:', err);
@@ -6049,8 +6136,27 @@ app.get('/api/tabs/token/:token', (req, res) => {
       },
       participants,
       currentParticipant,
-      isLoggedIn: !!req.user
+      isLoggedIn: !!req.user,
+      tiers: [],
+      priceGroups: []
     });
+    
+    // Attempt to load tiers and price groups if tables exist
+    try {
+      const tiersTableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'`).get();
+      if (tiersTableExists) {
+        responseObj.tiers = db.prepare(`SELECT * FROM group_tab_tiers WHERE group_tab_id = ? ORDER BY sort_order`).all(tab.id);
+      }
+      
+      const pgTableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_price_groups'`).get();
+      if (pgTableExists) {
+        responseObj.priceGroups = db.prepare(`SELECT * FROM group_tab_price_groups WHERE group_tab_id = ?`).all(tab.id);
+      }
+    } catch (e) {
+      console.warn('Error loading extra tab data:', e);
+    }
+    
+    res.json(responseObj);
   } catch (err) {
     console.error('Error getting tab by token:', err);
     res.status(500).json({ error: 'Failed to get tab' });
@@ -6174,6 +6280,11 @@ app.get('/api/tabs/token/:token/fairness', (req, res) => {
       WHERE gtp.group_tab_id = ?
     `).all(tab.id);
     
+    // Get price groups if applicable
+    const priceGroups = db.prepare('SELECT * FROM group_tab_price_groups WHERE group_tab_id = ?').all(tab.id);
+    const priceGroupMap = {};
+    priceGroups.forEach(pg => priceGroupMap[pg.id] = pg);
+    
     // Calculate total
     let totalAmount = 0;
     if (tab.tab_type === 'one_bill') {
@@ -6202,7 +6313,22 @@ app.get('/api/tabs/token/:token/fairness', (req, res) => {
     let totalDeviation = 0;
     
     for (const p of participants) {
-      let fairShare = totalWeight > 0 ? Math.round((totalAmount * p._weight / totalWeight) * payRateMultiplier) : 0;
+      let fairShare = 0;
+      
+      if (tab.split_mode === 'price_groups') {
+        // Price Groups Mode
+        if (p.price_group_id && priceGroupMap[p.price_group_id]) {
+          fairShare = priceGroupMap[p.price_group_id].amount_cents;
+        } else {
+          // Default to first group or equal split if no groups
+          fairShare = priceGroups.length > 0 
+            ? priceGroups[0].amount_cents 
+            : Math.round((totalAmount / participants.length) * payRateMultiplier);
+        }
+      } else {
+        // Standard Weighted/Equal Mode
+        fairShare = totalWeight > 0 ? Math.round((totalAmount * p._weight / totalWeight) * payRateMultiplier) : 0;
+      }
       
       let actualContribution;
       if (tab.tab_type === 'multi_bill') {
@@ -6258,6 +6384,12 @@ app.get('/api/tabs/token/:token/fairness', (req, res) => {
       if (creditor.balance < 50) creditors.shift();
     }
     
+    // Calculate summary stats
+    const totalPayments = participants.reduce((sum, p) => sum + (p.payments_made_cents || 0), 0);
+    const projectedTotal = tab.split_mode === 'price_groups' 
+      ? fairnessData.reduce((sum, p) => sum + p.fairShare, 0) 
+      : totalAmount;
+
     res.json({
       success: true,
       tabType: tab.tab_type,
@@ -6266,7 +6398,14 @@ app.get('/api/tabs/token/:token/fairness', (req, res) => {
       expectedPayRate: tab.expected_pay_rate,
       globalScore,
       participants: fairnessData,
-      settlements
+      settlements,
+      priceGroups,
+      summary: {
+        tabTotal: totalAmount,
+        projectedTotal,
+        totalPayments,
+        shortfallSurplus: projectedTotal - totalAmount
+      }
     });
   } catch (err) {
     console.error('Error calculating fairness:', err);
@@ -6330,6 +6469,86 @@ app.post('/api/grouptabs/:id/participants', requireAuth, (req, res) => {
   } catch (err) {
     console.error('Error adding participant:', err);
     res.status(500).json({ error: 'Failed to add participant' });
+  }
+});
+
+// Update participant (seats, tier, price group)
+app.patch('/api/grouptabs/:id/participants/:participantId', (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const participantId = parseInt(req.params.participantId);
+  const { assignedSeats, tierId, priceGroupId, customAmountCents } = req.body;
+  
+  try {
+    const tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+    if (!tab) {
+      return res.status(404).json({ error: 'Tab not found' });
+    }
+    
+    // Verify participant exists and belongs to tab
+    const participant = db.prepare(`
+      SELECT * FROM group_tab_participants WHERE id = ? AND group_tab_id = ?
+    `).get(participantId, tabId);
+    
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+    
+    // Access control
+    let isAuthorized = false;
+    if (req.user && participant.user_id === req.user.id) {
+      isAuthorized = true;
+    } else if (req.cookies.grouptab_guest_session && participant.guest_session_token === req.cookies.grouptab_guest_session) {
+      isAuthorized = true;
+    } else if (req.user) {
+      // Check if organizer
+      const organizer = db.prepare(`
+        SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ? AND role = 'organizer'
+      `).get(tabId, req.user.id);
+      if (organizer) isAuthorized = true;
+    }
+    
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'Not authorized to update this participant' });
+    }
+    
+    const updates = [];
+    const params = [];
+    
+    if (assignedSeats !== undefined) {
+      updates.push('assigned_seats = ?');
+      params.push(JSON.stringify(assignedSeats));
+      
+      // Also update seats_claimed count
+      if (Array.isArray(assignedSeats)) {
+        updates.push('seats_claimed = ?');
+        params.push(assignedSeats.length);
+      }
+    }
+    
+    if (tierId !== undefined) { 
+      updates.push('tier_id = ?'); 
+      params.push(tierId); 
+    }
+    
+    if (priceGroupId !== undefined) { 
+      updates.push('price_group_id = ?'); 
+      params.push(priceGroupId); 
+    }
+    
+    if (customAmountCents !== undefined) { 
+      updates.push('custom_amount_cents = ?'); 
+      params.push(customAmountCents); 
+    }
+    
+    if (updates.length > 0) {
+      params.push(participantId);
+      db.prepare(`UPDATE group_tab_participants SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+    }
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating participant:', err);
+    res.status(500).json({ error: 'Failed to update participant' });
   }
 });
 
@@ -6599,6 +6818,11 @@ app.get('/api/grouptabs/:id/fairness', (req, res) => {
       WHERE gtp.group_tab_id = ?
     `).all(tabId);
     
+    // Get price groups if applicable
+    const priceGroups = db.prepare('SELECT * FROM group_tab_price_groups WHERE group_tab_id = ?').all(tabId);
+    const priceGroupMap = {};
+    priceGroups.forEach(pg => priceGroupMap[pg.id] = pg);
+
     // Calculate total
     let totalAmount = 0;
     if (tab.tab_type === 'one_bill') {
@@ -6627,7 +6851,22 @@ app.get('/api/grouptabs/:id/fairness', (req, res) => {
     let totalDeviation = 0;
     
     for (const p of participants) {
-      let fairShare = totalWeight > 0 ? Math.round((totalAmount * p._weight / totalWeight) * payRateMultiplier) : 0;
+      let fairShare = 0;
+      
+      if (tab.split_mode === 'price_groups') {
+        // Price Groups Mode
+        if (p.price_group_id && priceGroupMap[p.price_group_id]) {
+          fairShare = priceGroupMap[p.price_group_id].amount_cents;
+        } else {
+          // Default to first group or equal split if no groups
+          fairShare = priceGroups.length > 0 
+            ? priceGroups[0].amount_cents 
+            : Math.round((totalAmount / participants.length) * payRateMultiplier);
+        }
+      } else {
+        // Standard Weighted/Equal Mode
+        fairShare = totalWeight > 0 ? Math.round((totalAmount * p._weight / totalWeight) * payRateMultiplier) : 0;
+      }
       
       let actualContribution;
       if (tab.tab_type === 'multi_bill') {
@@ -6683,6 +6922,12 @@ app.get('/api/grouptabs/:id/fairness', (req, res) => {
       if (creditor.balance < 50) creditors.shift();
     }
     
+    // Calculate summary stats
+    const totalPayments = participants.reduce((sum, p) => sum + (p.payments_made_cents || 0), 0);
+    const projectedTotal = tab.split_mode === 'price_groups' 
+      ? fairnessData.reduce((sum, p) => sum + p.fairShare, 0) 
+      : totalAmount;
+
     res.json({
       success: true,
       tabType: tab.tab_type,
@@ -6691,7 +6936,14 @@ app.get('/api/grouptabs/:id/fairness', (req, res) => {
       expectedPayRate: tab.expected_pay_rate,
       globalScore,
       participants: fairnessData,
-      settlements
+      settlements,
+      priceGroups,
+      summary: {
+        tabTotal: totalAmount,
+        projectedTotal,
+        totalPayments,
+        shortfallSurplus: projectedTotal - totalAmount
+      }
     });
   } catch (err) {
     console.error('Error calculating fairness:', err);
