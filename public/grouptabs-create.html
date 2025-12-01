@@ -31,6 +31,15 @@
       max-width: 1000px;
       margin: 0 auto;
     }
+    
+    /* Make chat-header full width like the main header */
+    .chat-header {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      padding-left: max(20px, calc(50vw - 500px + 20px));
+      padding-right: max(20px, calc(50vw - 500px + 20px));
+      box-sizing: border-box;
+    }
 
     /* Extra styles specific to the Wizard */
     .chat-input {
@@ -69,6 +78,567 @@
     /* Hide input bar when card is active */
     .input-container.hidden {
       display: none;
+    }
+    
+    /* =============================================
+       PRICE GROUPS CARD STYLES - "Presets First" Design
+       ============================================= */
+    
+    /* Force full width for the price groups card container */
+    .chat-card.price-groups-card {
+      max-width: 100% !important;
+      width: 100% !important;
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      align-self: stretch !important;
+    }
+
+    .price-groups-card .form-card {
+      max-width: 480px;
+      background: var(--card-bg, #1e2329);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 16px;
+    }
+    
+    /* ===== PRESETS VIEW (Option 4: List Style) ===== */
+    .pg-presets-view {
+      width: 100%;
+      padding: 0;
+    }
+    
+    .pg-preset-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      width: 100%;
+    }
+    
+    @media (max-width: 480px) {
+      .pg-preset-list {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .pg-preset-chip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 14px;
+      background: #161b24;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      min-height: 100%; /* Ensure equal height in grid */
+    }
+    
+    .pg-preset-chip:hover {
+      background: #1c212b;
+      border-color: var(--accent);
+      transform: translateX(2px);
+    }
+    
+    .pg-preset-chip-icon {
+      font-size: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .pg-preset-chip-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .pg-preset-chip-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    
+    .pg-preset-chip-desc {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .pg-preset-chip-arrow {
+      color: var(--muted);
+      opacity: 0.4;
+      font-size: 16px;
+    }
+    
+    /* More... dropdown wrapper */
+    .pg-preset-more-wrapper {
+      position: relative;
+      width: 100%;
+    }
+    
+    .pg-more-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 8px;
+      background: #1e2329;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 8px;
+      z-index: 10;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    
+    .pg-more-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 14px;
+      background: transparent;
+      border: none;
+      border-radius: 12px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+    
+    .pg-more-option:hover {
+      background: rgba(61, 220, 151, 0.1);
+    }
+    
+    .pg-more-option-icon {
+      font-size: 20px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+    
+    .pg-more-option-info {
+      flex: 1;
+    }
+    
+    .pg-more-option-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .pg-more-option-desc {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    
+    /* ===== CONFIG VIEW ===== */
+    .pg-config-view {
+      /* Shown after preset selection */
+      display: block;
+    }
+    
+    .pg-config-header {
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .pg-preset-name {
+      color: var(--text);
+      font-weight: 600;
+    }
+    
+    /* ===== NEW GRID LAYOUT ===== */
+    .pg-groups-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* 3 columns */
+      gap: 12px;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+
+    /* Individual Group Card */
+    .pg-group-card {
+      position: relative;
+      background: #161b24;
+      border: 2px solid #2a303c;
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .pg-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pg-card-emoji {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .pg-card-name-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 4px 0;
+      min-width: 0;
+      border-radius: 0;
+    }
+    
+    .pg-card-name-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .pg-card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pg-card-label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .pg-card-price-wrapper {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      border: 1px solid transparent;
+    }
+    
+    .pg-card-price-wrapper:focus-within {
+      border-color: var(--accent);
+    }
+
+    .pg-card-currency {
+      color: var(--muted);
+      font-size: 14px;
+      margin-right: 4px;
+    }
+    
+    .pg-card-price-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 600;
+      min-width: 0;
+    }
+    
+    .pg-card-price-input:focus {
+      outline: none;
+    }
+
+    .pg-card-remove-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      border-radius: 50%;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .pg-card-remove-btn:hover {
+      background: rgba(248, 113, 113, 0.2);
+      color: #f87171;
+    }
+
+    /* Add Group Card (Button) */
+    .pg-add-group-card {
+      background: transparent;
+      border: 2px dashed #2a303c;
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.2s;
+      min-height: 130px; /* Match approx height of other cards */
+    }
+    
+    .pg-add-group-card:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(61, 220, 151, 0.05);
+    }
+    
+    .pg-add-icon {
+      font-size: 24px;
+      font-weight: 300;
+    }
+    
+    .pg-add-label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    /* Bill Summary Compact */
+    .pg-bill-summary-compact {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 16px;
+      color: var(--muted);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      width: 100%;
+    }
+    
+    .pg-summary-dot { opacity: 0.4; }
+    .pg-avg-highlight b { color: var(--accent); }
+    
+    /* Price Comparison Hint */
+    .pg-price-comparison {
+      min-height: 16px;
+      margin-top: 4px;
+    }
+    
+    .pg-price-hint {
+      font-size: 11px;
+      display: block;
+    }
+    
+    .pg-price-hint.neutral { color: var(--muted); opacity: 0.7; }
+    .pg-price-hint.positive { color: #fbbf24; } /* Yellow/Orange for paying more */
+    .pg-price-hint.negative { color: #4ade80; } /* Green for paying less */
+    
+    /* Group Type Dropdown Select */
+    .pg-card-type-select {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 12px;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      min-width: 0;
+    }
+    
+    .pg-card-type-select:hover {
+      border-color: var(--accent);
+    }
+    
+    .pg-card-type-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    
+    .pg-card-type-select option {
+      background: #1e2329;
+      color: var(--text);
+      padding: 8px;
+    }
+    
+    /* Warning Footer - Subtle Version */
+    .pg-warning-footer {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .pg-warning-icon {
+      font-size: 14px;
+      flex-shrink: 0;
+      line-height: 1.5;
+      color: var(--muted);
+      opacity: 0.8;
+    }
+    
+    .pg-warning-text {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    
+    /* Error Message */
+    .pg-error-message {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+    
+    .pg-error-text {
+      font-size: 13px;
+      color: #f87171;
+    }
+    
+    /* Create Button */
+    .pg-create-btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      background: var(--accent);
+      color: #0e1116;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .pg-create-btn:hover {
+      background: #4ade80;
+      transform: translateY(-1px);
+    }
+    
+    .pg-create-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    /* Launch Card Price Groups Display */
+    .launch-card-groups {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin: 16px 0;
+    }
+    
+    .launch-group-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+    }
+    
+    .lg-emoji {
+      font-size: 16px;
+    }
+    
+    .lg-name {
+      font-size: 13px;
+      color: var(--text);
+    }
+    
+    .lg-price {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    
+    /* Go Dutch Coming Soon Card */
+    .coming-soon-card {
+      background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 165, 0, 0.08) 100%);
+      border: 2px dashed rgba(255, 165, 0, 0.4);
+      border-radius: 20px;
+      padding: 32px 24px;
+      text-align: center;
+      max-width: 340px;
+      margin: 16px 0;
+      animation: cardPop 0.3s ease-out;
+    }
+    
+    @keyframes cardPop {
+      0% { opacity: 0; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    
+    .coming-soon-flag {
+      font-size: 56px;
+      margin-bottom: 12px;
+      animation: flagWave 2s ease-in-out infinite;
+    }
+    
+    @keyframes flagWave {
+      0%, 100% { transform: rotate(-5deg); }
+      50% { transform: rotate(5deg); }
+    }
+    
+    .coming-soon-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffa500;
+      margin-bottom: 12px;
+    }
+    
+    .coming-soon-text {
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    
+    .coming-soon-back-btn {
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .coming-soon-back-btn:hover {
+      background: var(--accent);
+      color: #0e1116;
+      transform: translateY(-2px);
     }
   </style>
 </head>
@@ -129,9 +699,9 @@
 
   <script>
     // ===========================================
-    // STATE MACHINE (6-Step Hybrid Wizard)
+    // STATE MACHINE (7-Step Hybrid Wizard)
     // ===========================================
-    // Steps: INTENT -> NAME -> AMOUNT -> PEOPLE -> SPLIT -> CREATING
+    // Steps: INTENT -> NAME -> AMOUNT -> PEOPLE -> SPLIT -> [PRICE_GROUPS] -> CREATING
     
     const state = {
       step: 'INTENT',
@@ -143,10 +713,79 @@
         totalCents: 0,     // Bill total in cents
         tipCents: 0,       // Tip amount in cents
         people: 4,         // Number of people
-        splitMode: 'equal', // 'equal', 'tiered', 'open'
-        receiptFile: null  // Optional receipt image file
+        splitMode: 'equal', // 'equal', 'price_groups', 'open'
+        receiptFile: null, // Optional receipt image file
+        // Price Groups configuration (for price_groups split mode)
+        priceGroups: []    // Array of { id, name, emoji, amountCents }
       }
     };
+    
+    // Default emoji options for price groups (for custom groups)
+    const GROUP_EMOJI_OPTIONS = ['🍷', '💧', '🥩', '🥗', '🍽', '👶', '🍭', '🍺', '☕', '🍔'];
+    
+    // Price Group Presets - matches the Horizontal Chips (List Style) Design
+    const PRICE_GROUP_PRESETS = {
+      alcohol: {
+        title: 'Alcohol vs Non-Alcohol',
+        desc: 'Split by drinking preference',
+        icon: '🍷',
+        groups: [
+          { name: 'Alcohol Drinkers', emoji: '🍷' },
+          { name: 'Non-Alcohol', emoji: '💧' }
+        ]
+      },
+      meat: {
+        title: 'Meat vs Vegetarian',
+        desc: 'Split by dietary preference',
+        icon: '🥩',
+        groups: [
+          { name: 'Meat Eaters', emoji: '🥩' },
+          { name: 'Vegetarians', emoji: '🥗' }
+        ]
+      },
+      portion: {
+        title: 'Heavy vs Light Eaters',
+        desc: 'Split by portion size',
+        icon: '🍽',
+        groups: [
+          { name: 'Heavy Eaters', emoji: '🍽' },
+          { name: 'Light Eaters', emoji: '🥗' }
+        ]
+      },
+      age: {
+        title: 'Adults vs Kids',
+        desc: 'Split by age group',
+        icon: '👨‍👩‍👧',
+        groups: [
+          { name: 'Adults', emoji: '👨' },
+          { name: 'Kids', emoji: '👧' }
+        ]
+      },
+      drinks_only: {
+        title: 'Full Dinner vs Drinks',
+        desc: 'Split by meal participation',
+        icon: '🍻',
+        groups: [
+          { name: 'Full Dinner', emoji: '🍽' },
+          { name: 'Drinks Only', emoji: '🍻' }
+        ]
+      },
+      custom: {
+        title: 'Custom Groups',
+        desc: 'Create your own groups',
+        icon: '⚙️',
+        groups: [
+          { name: 'Group 1', emoji: '⚙️' },
+          { name: 'Group 2', emoji: '⚙️' }
+        ]
+      }
+    };
+    
+    // Main presets shown as buttons (first 6)
+    const MAIN_PRESET_KEYS = ['alcohol', 'meat', 'portion', 'age', 'drinks_only', 'custom'];
+    
+    // Track selected preset for the Price Groups step
+    let selectedPresetKey = null;
 
     // DOM References
     const chatHistory = document.getElementById('chat-scroll-area');
@@ -238,6 +877,11 @@
         case 'SPLIT':
           // Restore Split Blocks
           addSplitBlocks();
+          break;
+          
+        case 'PRICE_GROUPS':
+          // Restore Price Groups Configuration Card
+          addPriceGroupsCard();
           break;
       }
     }
@@ -377,12 +1021,13 @@
       // Match various inputs for restaurant
       if (id === 'restaurant' || id === 'restaurant bill' || id.includes('dinner') || id.includes('lunch')) {
         state.data.template = 'restaurant';
-        state.data.type = 'one_bill';
+            state.data.type = 'one_bill';
         
         addBotMessage("How shall we name this GroupTab?");
         setSuggestions([
           { icon: '🌙', text: 'Dinner at', isPrefix: true },
           { icon: '☀️', text: 'Lunch at', isPrefix: true },
+          { icon: '🌅', text: 'Breakfast at', isPrefix: true },
           { icon: '🍺', text: 'Drinks at', isPrefix: true }
         ]);
         state.step = 'NAME';
@@ -432,14 +1077,14 @@
       
       // For restaurant bills, proceed to amount
       if (state.data.type === 'one_bill') {
-        setTimeout(() => {
+            setTimeout(() => {
           addBotMessage("How much was the bill?");
           addAmountCard();
           state.step = 'AMOUNT';
         }, 500);
-      } else {
+          } else {
         // For trips, skip directly to creation (no upfront amount)
-        setTimeout(() => {
+            setTimeout(() => {
           createTab();
         }, 500);
       }
@@ -458,10 +1103,10 @@
       removeActiveCard();
       showInputContainer();
       
-      setTimeout(() => {
+          setTimeout(() => {
         addBotMessage("How many people?");
         addPeopleCard();
-        state.step = 'PEOPLE';
+            state.step = 'PEOPLE';
       }, 400);
     }
     
@@ -493,23 +1138,38 @@
       if (id === 'equal' || id === 'equal split' || id.includes('equal')) {
         splitMode = 'equal';
       } else if (id === 'tiered' || id === 'price groups' || id.includes('price') || id.includes('tier')) {
-        splitMode = 'tiered';
+        splitMode = 'price_groups';
       } else if (id === 'open' || id === 'go dutch' || id.includes('dutch') || id.includes('open')) {
         splitMode = 'open';
       }
       
       if (splitMode) {
-        pushHistory(); // Save state before transitioning to CREATING
+        pushHistory(); // Save state before transitioning
         state.data.splitMode = splitMode;
         
         // Note: User message is already added by handleBlockClick, so we don't add it here
         
-        // Create the tab
-        setTimeout(() => {
-          createTab();
-        }, 400);
+        if (splitMode === 'price_groups') {
+          // Show Price Groups configuration step
+          setTimeout(() => {
+            addBotMessage("Please select price groups or create your own custom groups.");
+            addPriceGroupsCard();
+            state.step = 'PRICE_GROUPS';
+          }, 400);
+        } else if (splitMode === 'open') {
+          // Go Dutch - Coming Soon!
+          setTimeout(() => {
+            showGoDutchComingSoon();
+            state.step = 'GO_DUTCH_SOON';
+          }, 400);
+        } else {
+          // Create the tab directly for equal
+          setTimeout(() => {
+            createTab();
+          }, 400);
+        }
         
-      } else {
+          } else {
         addBotMessage("Please select one of the split options.");
       }
     }
@@ -642,7 +1302,7 @@
             <div id="${cardId}-preview" class="amount-preview"></div>
             
             <button id="${cardId}-tip-btn" class="tip-toggle-btn" onclick="toggleTip('${cardId}')">
-              + Add Separate Tip
+              Separate tip? Add it here.
             </button>
             
             <div id="${cardId}-tip-row" class="tip-input-row">
@@ -773,7 +1433,7 @@
       if (row.classList.contains('visible')) {
         row.classList.remove('visible');
         btn.classList.remove('active');
-        btn.textContent = '+ Add Separate Tip';
+        btn.textContent = 'Separate tip? Add it here.';
         // Clear tip and update preview
         document.getElementById(`${cardId}-tip-input`).value = '';
         updateAmountPreview(cardId);
@@ -885,10 +1545,6 @@
               <span id="${cardId}-per-person" class="price-amount">${perPersonAmount}</span>
               <span class="price-label">per person</span>
             </div>
-            <div class="price-summary-line-total">
-              Total: <span id="${cardId}-total">${totalAmount}</span>
-            </div>
-            <div class="price-summary-line-hint">Auto-updates when people change</div>
           </div>
           
           <!-- Confirm Button -->
@@ -919,14 +1575,12 @@
     window.updatePeopleSummary = function(cardId) {
       const valueEl = document.getElementById(`${cardId}-value`);
       const perPersonEl = document.getElementById(`${cardId}-per-person`);
-      const totalEl = document.getElementById(`${cardId}-total`);
       
       let current = parseInt(valueEl.value) || 1;
       current = Math.max(1, Math.min(99, current));
       valueEl.value = current;
       
       perPersonEl.textContent = calculatePerPerson(current);
-      totalEl.textContent = calculateTotal();
     };
     
     window.adjustPeople = function(cardId, delta) {
@@ -1001,7 +1655,7 @@
         },
         {
           id: 'open',
-          icon: '🇳🇱',
+          icon: '<span class="flag-wave">🇳🇱</span>',
           title: 'Go Dutch!',
           subtext: 'Everyone picks their own items.',
           desc: `<em>Note: Risk of underpayment.</em>${tipReminder}`,
@@ -1009,6 +1663,484 @@
         }
       ]);
     }
+
+    // ===========================================
+    // UI HELPER: Price Groups Configuration Card
+    // ===========================================
+    // "Presets First" Design - User must select a preset before configuring groups
+    
+    function addPriceGroupsCard() {
+      hideInputContainer();
+      
+      const cardId = 'price-groups-card-' + Date.now();
+      const totalCents = state.data.totalCents + state.data.tipCents;
+      const people = state.data.people;
+      const avgPerPerson = Math.round(totalCents / people);
+      
+      // Reset state for fresh start
+      state.data.priceGroups = [];
+      selectedPresetKey = null;
+      
+      const cardHtml = `
+        <div id="${cardId}" class="chat-card price-groups-card">
+          <!-- PHASE 1: Presets Selection - List Style (Option 4) -->
+          <div id="${cardId}-presets-view" class="pg-presets-view">
+            <div class="pg-preset-list">
+              ${renderPresetsGrid(cardId)}
+            </div>
+          </div>
+          
+          <!-- PHASE 2: Groups Configuration (Hidden initially) -->
+          <div id="${cardId}-config-view" class="pg-config-view" style="display:none; width: 100%;">
+            
+            <!-- Bill Summary Header (NEW) -->
+            <div class="pg-bill-summary-compact">
+              <span>Bill: <b>${formatCurrency2(totalCents)}</b></span>
+              <span class="pg-summary-dot">•</span>
+              <span>People: <b>${people}</b></span>
+              <span class="pg-summary-dot">•</span>
+              <span class="pg-avg-highlight">Equal split per person: <b>${formatCurrency2(avgPerPerson)}</b></span>
+            </div>
+            
+            <!-- Grid of Groups + Add Button -->
+            <div id="${cardId}-groups" class="pg-groups-grid">
+              <!-- Rendered dynamically -->
+            </div>
+            
+            <!-- Warning Footer (Always visible) -->
+            <div class="pg-warning-footer">
+              <span class="pg-warning-icon">⚠️</span>
+              <span class="pg-warning-text">Guests choose their own group. Total collected may differ from the bill if chosen incorrectly.</span>
+            </div>
+            
+            <!-- Validation Error (Hidden by default) -->
+            <div id="${cardId}-error" class="pg-error-message" style="display:none">
+              <span class="pg-error-text"></span>
+            </div>
+            
+            <!-- Create Button -->
+            <button id="${cardId}-submit-btn" class="pg-create-btn" onclick="submitPriceGroups('${cardId}')">
+              Create Tab
+            </button>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const cardElement = wrapper.firstElementChild;
+      cardElement.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(cardElement);
+      scrollToBottom();
+    }
+    
+    // Render the presets list (Horizontal Chips Style)
+    function renderPresetsGrid(cardId) {
+      // Render main preset chips
+      return MAIN_PRESET_KEYS.map(key => {
+        const preset = PRICE_GROUP_PRESETS[key];
+        return `
+          <button class="pg-preset-chip" onclick="selectPreset('${cardId}', '${key}')">
+            <div class="pg-preset-chip-icon">${preset.icon}</div>
+            <div class="pg-preset-chip-info">
+              <div class="pg-preset-chip-title">${preset.title}</div>
+              <div class="pg-preset-chip-desc">${preset.desc}</div>
+            </div>
+            <div class="pg-preset-chip-arrow">→</div>
+          </button>
+        `;
+      }).join('');
+    }
+    
+    // Handle preset selection - transition from presets view to config view
+    window.selectPreset = function(cardId, presetKey) {
+      const preset = PRICE_GROUP_PRESETS[presetKey];
+      if (!preset) return;
+      
+      selectedPresetKey = presetKey;
+      
+      // Populate groups from preset (no auto-calculated amounts)
+      state.data.priceGroups = preset.groups.map((g, i) => ({
+        id: i + 1,
+        name: g.name,
+        emoji: g.emoji,
+        amountCents: 0 // User must enter amount
+      }));
+      
+      // Hide presets view, show config view
+      document.getElementById(`${cardId}-presets-view`).style.display = 'none';
+      document.getElementById(`${cardId}-config-view`).style.display = 'block';
+      
+      // Render groups
+      renderGroupConfigForm(cardId);
+      scrollToBottom();
+    };
+    
+    // Render the grid layout for groups
+    function renderGroupConfigForm(cardId) {
+      const container = document.getElementById(`${cardId}-groups`);
+      if (!container) return;
+      
+      try {
+        // Calculate average for comparison
+        const totalCents = (state.data.totalCents || 0) + (state.data.tipCents || 0);
+        const people = state.data.people || 1;
+        const avgPerPerson = Math.round(totalCents / people);
+        
+        // Safe formatter
+        const safeFormat = (amount) => {
+            try { return typeof formatCurrency2 === 'function' ? formatCurrency2(amount) : (amount/100).toFixed(2); }
+            catch (e) { return (amount/100).toFixed(2); }
+        };
+        
+        const avgFormatted = safeFormat(avgPerPerson);
+
+        // Generate HTML for existing groups
+        const groups = state.data.priceGroups || [];
+        const groupsHtml = groups.map((group, index) => {
+          // Calculate comparison text
+          let comparisonHtml = `<span class="pg-price-hint neutral">Equal split = ${avgFormatted}</span>`;
+          
+          if (group.amountCents > 0) {
+            const diff = group.amountCents - avgPerPerson;
+            if (diff > 50) { // > 0.50 diff
+              comparisonHtml = `<span class="pg-price-hint positive">${safeFormat(diff)} above equal split</span>`;
+            } else if (diff < -50) {
+              comparisonHtml = `<span class="pg-price-hint negative">${safeFormat(Math.abs(diff))} below equal split</span>`;
+            }
+          }
+
+          // Check if this is a new group that needs type selection
+          if (group.isNew) {
+            // Get names of groups already in use (excluding this new one)
+            const usedNames = groups
+              .filter(g => !g.isNew && g.name)
+              .map(g => g.name.toLowerCase());
+            
+            // Filter out already-used group types (but always show Custom)
+            const availableOptions = NEW_GROUP_OPTIONS.filter(opt => 
+              opt.key === 'custom' || !usedNames.includes(opt.name.toLowerCase())
+            );
+            
+            return `
+            <div class="pg-group-card" data-group-id="${group.id}">
+              <button class="pg-card-remove-btn" onclick="removePriceGroup('${cardId}', ${group.id})">×</button>
+              
+              <div class="pg-card-header">
+                <span class="pg-card-emoji">🍽</span>
+                <select class="pg-card-type-select" onchange="selectGroupType('${cardId}', ${group.id}, this.value)">
+                  <option value="" disabled selected>Select group type...</option>
+                  ${availableOptions.map(opt => `
+                    <option value="${opt.key}" data-emoji="${opt.emoji}">${opt.emoji} ${opt.name}</option>
+                  `).join('')}
+                </select>
+              </div>
+              
+              <div class="pg-card-body">
+                <label class="pg-card-label">Price per person</label>
+                <div class="pg-card-price-wrapper">
+                  <span class="pg-card-currency">€</span>
+                  <input type="text" 
+                         class="pg-card-price-input" 
+                         value=""
+                         placeholder="0.00"
+                         inputmode="decimal"
+                         data-group-id="${group.id}">
+                </div>
+                <div class="pg-price-comparison" id="pg-comp-${cardId}-${group.id}">
+                  <span class="pg-price-hint neutral">Equal split = ${avgFormatted}</span>
+                </div>
+              </div>
+            </div>
+          `;
+          }
+
+          return `
+          <div class="pg-group-card" data-group-id="${group.id}">
+            ${groups.length > 2 ? `
+              <button class="pg-card-remove-btn" onclick="removePriceGroup('${cardId}', ${group.id})">×</button>
+            ` : ''}
+            
+            <div class="pg-card-header">
+              <span class="pg-card-emoji">${group.emoji}</span>
+              <input type="text" 
+                     class="pg-card-name-input" 
+                     value="${escapeHtml(group.name || '')}" 
+                     placeholder="Group name"
+                     maxlength="25"
+                     data-group-id="${group.id}"
+                     onchange="updateGroupName('${cardId}', ${group.id}, this.value)">
+            </div>
+            
+            <div class="pg-card-body">
+              <label class="pg-card-label">Price per person</label>
+              <div class="pg-card-price-wrapper">
+                <span class="pg-card-currency">€</span>
+                <input type="text" 
+                       class="pg-card-price-input" 
+                       value="${group.amountCents > 0 ? (group.amountCents / 100).toFixed(2) : ''}"
+                       placeholder="0.00"
+                       inputmode="decimal"
+                       data-group-id="${group.id}">
+              </div>
+              <div class="pg-price-comparison" id="pg-comp-${cardId}-${group.id}">
+                ${comparisonHtml}
+              </div>
+            </div>
+          </div>
+        `;
+        }).join('');
+
+        // Add the "Add Group" button as the last card in the grid
+        const addBtnHtml = `
+          <button class="pg-add-group-card" onclick="addPriceGroup('${cardId}')" ${groups.length >= 5 ? 'disabled' : ''}>
+            <span class="pg-add-icon">+</span>
+            <span class="pg-add-label">Add another group</span>
+          </button>
+        `;
+
+        container.innerHTML = groupsHtml + addBtnHtml;
+        
+        // Update warning text
+        const warningText = document.querySelector(`#${cardId}-config-view .pg-warning-text`);
+        if (warningText) {
+          warningText.textContent = "Guests choose their own group. Total collected may differ from the bill if chosen incorrectly.";
+        }
+
+        // Update submit button text
+        const submitBtn = document.getElementById(`${cardId}-submit-btn`);
+        if (submitBtn) {
+          submitBtn.textContent = "Create Tab";
+        }
+        
+        // Setup input handlers
+        setupPriceGroupInputs(cardId);
+        
+      } catch (e) {
+        console.error("Error rendering group config form:", e);
+        container.innerHTML = `<div style="color:#f87171; padding:20px; grid-column:1/-1;">
+          Error rendering options: ${e.message}<br>
+          Please try selecting the preset again.
+        </div>`;
+      }
+    }
+    
+    function setupPriceGroupInputs(cardId) {
+      const container = document.getElementById(`${cardId}-groups`);
+      if (!container) return;
+      
+      container.querySelectorAll('.pg-card-price-input').forEach(input => {
+        input.addEventListener('input', () => {
+          formatAmountInput(input);
+          clearError(cardId);
+          // Update comparison text in real-time
+          const groupId = parseInt(input.dataset.groupId);
+          updateComparisonText(cardId, groupId, input.value);
+        });
+        input.addEventListener('blur', () => {
+          formatAmountOnBlur(input);
+          const groupId = parseInt(input.dataset.groupId);
+          updateGroupAmount(cardId, groupId, input.value);
+        });
+      });
+      
+      container.querySelectorAll('.pg-card-name-input').forEach(input => {
+        input.addEventListener('input', () => {
+          clearError(cardId);
+        });
+      });
+    }
+    
+    // Update comparison text in real-time while typing
+    function updateComparisonText(cardId, groupId, value) {
+      const totalCents = (state.data.totalCents || 0) + (state.data.tipCents || 0);
+      const avgPerPerson = Math.round(totalCents / (state.data.people || 1));
+      const compEl = document.getElementById(`pg-comp-${cardId}-${groupId}`);
+      
+      if (!compEl) return;
+      
+      // Parse the current input value
+      const amount = parseAmountValue(value);
+      const amountCents = Math.round(amount * 100);
+      
+      if (amountCents <= 0) {
+        compEl.innerHTML = `<span class="pg-price-hint neutral">Equal split = ${formatCurrency2(avgPerPerson)}</span>`;
+      } else {
+        const diff = amountCents - avgPerPerson;
+        if (diff > 50) {
+          compEl.innerHTML = `<span class="pg-price-hint positive">${formatCurrency2(diff)} above equal split</span>`;
+        } else if (diff < -50) {
+          compEl.innerHTML = `<span class="pg-price-hint negative">${formatCurrency2(Math.abs(diff))} below equal split</span>`;
+        } else {
+          compEl.innerHTML = `<span class="pg-price-hint neutral">Equal split = ${formatCurrency2(avgPerPerson)}</span>`;
+        }
+      }
+    }
+    
+    window.updateGroupName = function(cardId, groupId, value) {
+      const group = state.data.priceGroups.find(g => g.id === groupId);
+      if (group) {
+        group.name = value.trim();
+      }
+    };
+    
+    window.updateGroupAmount = function(cardId, groupId, value) {
+      const group = state.data.priceGroups.find(g => g.id === groupId);
+      if (group) {
+        const amount = parseAmountValue(value);
+        group.amountCents = Math.round(amount * 100);
+        
+        // Update comparison text immediately
+        const totalCents = state.data.totalCents + state.data.tipCents;
+        const avgPerPerson = Math.round(totalCents / state.data.people);
+        const compEl = document.getElementById(`pg-comp-${cardId}-${groupId}`);
+        
+        if (compEl) {
+          if (group.amountCents <= 0) {
+            compEl.innerHTML = `<span class="pg-price-hint neutral">Equal split = ${formatCurrency2(avgPerPerson)}</span>`;
+          } else {
+            const diff = group.amountCents - avgPerPerson;
+            if (diff > 50) {
+              compEl.innerHTML = `<span class="pg-price-hint positive">${formatCurrency2(diff)} above equal split</span>`;
+            } else if (diff < -50) {
+              compEl.innerHTML = `<span class="pg-price-hint negative">${formatCurrency2(Math.abs(diff))} below equal split</span>`;
+            } else {
+              compEl.innerHTML = `<span class="pg-price-hint neutral">Equal split = ${formatCurrency2(avgPerPerson)}</span>`;
+            }
+          }
+        }
+      }
+    };
+    
+    // Preset options for new group dropdown
+    const NEW_GROUP_OPTIONS = [
+      { key: 'adults', name: 'Adults', emoji: '👨' },
+      { key: 'kids', name: 'Kids', emoji: '👧' },
+      { key: 'alcohol', name: 'Alcohol Drinkers', emoji: '🍷' },
+      { key: 'non_alcohol', name: 'Non-Alcohol', emoji: '💧' },
+      { key: 'drinks_only', name: 'Drinks Only', emoji: '🍻' },
+      { key: 'full_dinner', name: 'Full Dinner', emoji: '🍽' },
+      { key: 'meat', name: 'Meat Eaters', emoji: '🥩' },
+      { key: 'veggie', name: 'Vegetarians', emoji: '🥗' },
+      { key: 'heavy', name: 'Heavy Eaters', emoji: '🍽' },
+      { key: 'light', name: 'Light Eaters', emoji: '🥗' },
+      { key: 'custom', name: 'Custom...', emoji: '✏️' }
+    ];
+
+    window.addPriceGroup = function(cardId) {
+      if (state.data.priceGroups.length >= 5) return; // Allow up to 5 groups
+      
+      const newId = Math.max(...state.data.priceGroups.map(g => g.id)) + 1;
+      state.data.priceGroups.push({
+        id: newId,
+        name: '', // Empty name triggers dropdown selector
+        emoji: '🍽',
+        amountCents: 0,
+        isNew: true // Flag to show dropdown
+      });
+      
+      // Re-render groups
+      renderGroupConfigForm(cardId);
+      scrollToBottom();
+    };
+    
+    window.selectGroupType = function(cardId, groupId, optionKey) {
+      const group = state.data.priceGroups.find(g => g.id === groupId);
+      if (!group || !optionKey) return;
+      
+      if (optionKey === 'custom') {
+        // Show custom input - keep as regular card but with empty name for user to type
+        group.isNew = false;
+        group.name = '';
+        group.emoji = '🍭';
+        renderGroupConfigForm(cardId);
+        // Focus the name input
+        setTimeout(() => {
+          const input = document.querySelector(`.pg-group-card[data-group-id="${groupId}"] .pg-card-name-input`);
+          if (input) input.focus();
+        }, 50);
+      } else {
+        const option = NEW_GROUP_OPTIONS.find(o => o.key === optionKey);
+        if (option) {
+          group.name = option.name;
+          group.emoji = option.emoji;
+          group.isNew = false;
+          renderGroupConfigForm(cardId);
+        }
+      }
+    };
+    
+    window.removePriceGroup = function(cardId, groupId) {
+      if (state.data.priceGroups.length <= 2) return;
+      
+      state.data.priceGroups = state.data.priceGroups.filter(g => g.id !== groupId);
+      
+      // Re-render groups
+      renderGroupConfigForm(cardId);
+    };
+    
+    function showError(cardId, message) {
+      const errorEl = document.getElementById(`${cardId}-error`);
+      if (errorEl) {
+        errorEl.style.display = 'flex';
+        errorEl.querySelector('.pg-error-text').textContent = message;
+      }
+    }
+    
+    function clearError(cardId) {
+      const errorEl = document.getElementById(`${cardId}-error`);
+      if (errorEl) {
+        errorEl.style.display = 'none';
+      }
+    }
+    
+    window.submitPriceGroups = function(cardId) {
+      // Validate all groups have names and amounts
+      const emptyName = state.data.priceGroups.some(g => !g.name.trim());
+      const emptyPrice = state.data.priceGroups.some(g => g.amountCents <= 0);
+      
+      if (emptyName) {
+        showError(cardId, 'Please enter a name for all groups.');
+        // Highlight empty name inputs
+        document.querySelectorAll('.pg-card-name-input').forEach(input => {
+          if (!input.value.trim()) {
+            input.style.borderColor = '#f87171';
+          }
+        });
+        return;
+      }
+      
+      if (emptyPrice) {
+        showError(cardId, 'Please enter a price for all groups.');
+        // Highlight empty price inputs
+        document.querySelectorAll('.pg-card-price-input').forEach(input => {
+          const groupId = parseInt(input.dataset.groupId);
+          const group = state.data.priceGroups.find(g => g.id === groupId);
+          if (group && group.amountCents <= 0) {
+            input.closest('.pg-card-price-wrapper').style.borderColor = '#f87171';
+          }
+        });
+        return;
+      }
+      
+      pushHistory();
+      
+      // Build summary message
+      const groupSummary = state.data.priceGroups
+        .map(g => `${g.emoji} ${g.name}: ${formatCurrency2(g.amountCents)}`)
+        .join(' · ');
+      
+      addUserMessage(groupSummary);
+      
+      // Remove the card
+      removeActiveCard();
+      showInputContainer();
+      
+      // Create the tab
+      setTimeout(() => {
+        createTab();
+      }, 400);
+    };
 
     // ===========================================
     // UI HELPER: Remove Active Card
@@ -1046,6 +2178,11 @@
           formData.append('splitMode', state.data.splitMode);
           formData.append('expectedPayRate', 100);
           formData.append('peopleCount', state.data.people);
+          
+          // Include price groups if using price_groups split mode
+          if (state.data.splitMode === 'price_groups' && state.data.priceGroups.length > 0) {
+            formData.append('priceGroups', JSON.stringify(state.data.priceGroups));
+          }
         }
         
         // Add receipt file if present
@@ -1088,10 +2225,40 @@
       }
     }
     
+    function showGoDutchComingSoon() {
+      hideInputContainer();
+      
+      const card = document.createElement('div');
+      card.className = 'coming-soon-card';
+      card.id = 'go-dutch-coming-soon';
+      card.dataset.historyIndex = historyIndex;
+      
+      card.innerHTML = `
+        <div class="coming-soon-flag">🇳🇱</div>
+        <div class="coming-soon-title">Going Dutch? Not Yet!</div>
+        <div class="coming-soon-text">This one's still in the oven.<br>Try Equal Split or Price Groups instead!</div>
+        <button class="coming-soon-back-btn" onclick="goBackFromComingSoon()">← Back to Options</button>
+      `;
+      
+      chatHistory.appendChild(card);
+      scrollToBottom();
+    }
+    
+    function goBackFromComingSoon() {
+      // Remove the coming soon card
+      const card = document.getElementById('go-dutch-coming-soon');
+      if (card) card.remove();
+      
+      // Use the undo functionality to go back to split selection
+      undoStep();
+    }
+    
     function showLaunchCard(tab) {
       hideInputContainer();
       
-      const shareUrl = `${window.location.origin}/grouptabs/${tab.id}`;
+      // Use magic link for sharing (public token), owner link for creator view
+      const shareUrl = tab.magicLink || `${window.location.origin}/tab/${tab.magicToken}`;
+      const ownerUrl = tab.ownerLink || `${window.location.origin}/grouptabs/manage/${tab.ownerToken}`;
       const totalCents = state.data.totalCents + state.data.tipCents;
       const perPerson = formatCurrency2(totalCents / state.data.people);
       
@@ -1106,6 +2273,25 @@
         `;
       }
       
+      // Build price groups display if applicable
+      let priceGroupsHtml = '';
+      let detailHtml = `${state.data.people} people · ${perPerson} each`;
+      
+      if (state.data.splitMode === 'price_groups' && state.data.priceGroups.length > 0) {
+        priceGroupsHtml = `
+          <div class="launch-card-groups">
+            ${state.data.priceGroups.map(g => `
+              <div class="launch-group-chip">
+                <span class="lg-emoji">${g.emoji}</span>
+                <span class="lg-name">${escapeHtml(g.name)}</span>
+                <span class="lg-price">${formatCurrency2(g.amountCents)}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        detailHtml = `${state.data.people} people · Price Groups`;
+      }
+      
       addBotMessage("Tab created! 🚀");
       
       const cardHtml = `
@@ -1114,15 +2300,14 @@
             ${receiptHtml}
             <div class="launch-card-title">${escapeHtml(state.data.name)}</div>
             <div class="launch-card-amount">${formatCurrency2(totalCents)}</div>
-            <div class="launch-card-detail">
-              ${state.data.people} people · ${perPerson} each
-            </div>
+            <div class="launch-card-detail">${detailHtml}</div>
+            ${priceGroupsHtml}
             
             <button class="share-btn" onclick="copyShareLink('${shareUrl}')">
               📋 Copy Share Link
             </button>
             
-            <button class="share-btn" style="background:transparent; border:1px solid var(--accent); color:var(--accent); margin-top:8px;" onclick="window.location.href='/grouptabs/${tab.id}'">
+            <button class="share-btn" style="background:transparent; border:1px solid var(--accent); color:var(--accent); margin-top:8px;" onclick="window.location.href='${ownerUrl}'">
               👀 View GroupTab
             </button>
           </div>

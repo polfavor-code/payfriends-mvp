@@ -244,10 +244,6 @@
       filter: drop-shadow(0 0 8px rgba(129, 140, 248, 0.25));
     }
 
-    .progress-ring {
-      transform: rotate(-90deg);
-    }
-
     .progress-ring-bg {
       fill: transparent;
       stroke: rgba(255, 255, 255, 0.06);
@@ -258,6 +254,8 @@
       stroke: #3ddc97;
       stroke-linecap: round;
       transition: stroke-dashoffset 0.5s ease;
+      transform-origin: 50% 50%; /* Ensure rotation happens around center */
+      transform: rotate(-90deg); /* Rotate start to top */
     }
 
     .progress-ring-fill.settled {
@@ -438,8 +436,8 @@
       </div>
       <select class="sort-select" onchange="sortTabs(this.value)">
         <option value="newest">Newest first</option>
+        <option value="payment_date">Last Payment</option>
         <option value="oldest">Oldest first</option>
-        <option value="unpaid">Highest unpaid</option>
       </select>
     </div>
 
@@ -549,10 +547,17 @@
           return new Date(b.created_at) - new Date(a.created_at);
         } else if (currentSort === 'oldest') {
           return new Date(a.created_at) - new Date(b.created_at);
-        } else if (currentSort === 'unpaid') {
-          const aUnpaid = (a.total_amount_cents || 0) - (a.paid_amount_cents || 0);
-          const bUnpaid = (b.total_amount_cents || 0) - (b.paid_amount_cents || 0);
-          return bUnpaid - aUnpaid;
+        } else if (currentSort === 'payment_date') {
+          // Sort by last_payment_at DESC
+          const dateA = a.last_payment_at ? new Date(a.last_payment_at) : 0;
+          const dateB = b.last_payment_at ? new Date(b.last_payment_at) : 0;
+          // If payments exist, sort by payment date. If not, fallback to creation date?
+          // Or just put ones with payments on top.
+          if (dateA !== 0 || dateB !== 0) {
+            return dateB - dateA;
+          }
+          // Fallback to newest created if no payments
+          return new Date(b.created_at) - new Date(a.created_at);
         }
         return 0;
       });
@@ -573,6 +578,18 @@
 
       // Creator info - dynamic logic
       const isCreatedByMe = tab.creator_user_id === currentUserId;
+      
+      // Determine the correct link based on creator status
+      let tabUrl;
+      if (isCreatedByMe && tab.owner_token) {
+        tabUrl = `/grouptabs/manage/${tab.owner_token}`;
+      } else if (tab.magic_token) {
+        tabUrl = `/grouptabs/view/${tab.magic_token}`;
+      } else {
+        // Fallback to legacy numeric ID
+        tabUrl = `/grouptabs/${tab.id}`;
+      }
+      
       let creatorDisplay;
       if (isCreatedByMe) {
         creatorDisplay = `Created by <span class="creator-you">You</span>`;
@@ -601,7 +618,7 @@
         : `<span class="tab-amount">${formatCurrency2(unpaidCents)} unpaid</span>`;
 
       return `
-        <a href="/grouptabs/${tab.id}" class="tab-card">
+        <a href="${tabUrl}" class="tab-card">
           <div class="tab-icon">${emoji}</div>
           
           <div class="tab-info">
@@ -617,7 +634,7 @@
           </div>
 
           <div class="progress-ring-container ${isSettled ? 'glow-settled' : 'glow'}">
-            <svg class="progress-ring" width="64" height="64">
+            <svg width="64" height="64">
               <circle class="progress-ring-bg" stroke-width="4" r="${radius}" cx="32" cy="32"/>
               <circle class="progress-ring-fill ${isSettled ? 'settled' : ''}" 
                       stroke-width="4" 
