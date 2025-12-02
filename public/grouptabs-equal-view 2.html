@@ -1,0 +1,1677 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>PayFriends — Receipt</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script src="/js/formatters.js"></script>
+  
+  <style>
+    :root {
+      --bg: #2c2c2c;
+      --paper: #fff;
+      --ink: #000;
+      --muted: #555;
+      --font-mono: 'Courier New', Courier, monospace;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      font-family: var(--font-mono);
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding-top: 40px;
+      padding-bottom: 40px;
+    }
+    
+    /* --- Receipt Container --- */
+    .receipt-paper {
+      background: var(--paper);
+      width: 100%;
+      max-width: 380px;
+      min-height: 600px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      position: relative;
+      /* Zigzag bottom edge */
+      --mask: conic-gradient(from -45deg at bottom,#0000,#000 1deg 90deg,#0000 91deg) 50% / 20px 100%;
+      -webkit-mask: var(--mask);
+      mask: var(--mask);
+      -webkit-mask-repeat: repeat-x;
+      mask-repeat: repeat-x;
+      padding-bottom: 60px;
+      margin-bottom: 40px;
+    }
+    
+    /* --- Typography & Utils --- */
+    .r-header { text-align: center; margin-bottom: 24px; }
+    .r-logo {
+      font-weight: 900; font-size: 24px; letter-spacing: -1px;
+      border: 2px solid #000; padding: 4px 8px; display: inline-block; margin-bottom: 8px;
+    }
+    .r-meta { font-size: 12px; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 16px; line-height: 1.4; }
+    .r-line { border-bottom: 1px dashed #000; margin: 16px 0; width: 100%; }
+    .r-bold { font-weight: 700; }
+    .r-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+    .r-center { text-align: center; }
+    
+    /* --- Buttons --- */
+    .r-btn {
+      background: #000; color: #fff; width: 100%; padding: 12px;
+      font-family: var(--font-mono); font-weight: 700; border: none;
+      cursor: pointer; text-transform: uppercase; margin-top: 8px;
+      transition: background 0.2s;
+    }
+    .r-btn:hover { background: #333; }
+    .r-btn-outline {
+      background: transparent; color: #000; border: 2px solid #000;
+    }
+    .r-btn-outline:hover { background: #f0f0f0; }
+    
+    /* --- Tab Header Actions --- */
+    .r-actions-row {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+    }
+    .r-tab-name { font-weight: 700; font-size: 16px; text-transform: uppercase; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .r-icon-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px; }
+    
+    /* --- Participant List (Refactoring existing classes) --- */
+    .participant-item {
+      display: flex; align-items: flex-start; margin-bottom: 12px;
+      font-size: 13px;
+    }
+    .participant-avatar { 
+      display: none; /* Hide avatars for receipt look */ 
+    }
+    .participant-info { flex: 1; }
+    .participant-name { font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
+    .participant-status-line { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    
+    /* Progress bar as text/line */
+    .participant-progress-container { margin-top: 4px; height: 4px; background: #eee; width: 100%; position: relative; display: none; }
+    
+    /* Status badges mapped to text */
+    .participant-badge { display: none; } /* Hide colorful badges */
+    .participant-checkmark { margin-left: 8px; font-weight: 900; }
+    
+    /* Badges */
+    .organizer-badge { font-size: 10px; background: #000; color: #fff; padding: 1px 4px; border-radius: 0; margin-left: 4px; }
+    .you-badge { font-size: 10px; border: 1px solid #000; padding: 0 4px; margin-left: 4px; }
+    .member-badge { display: none; }
+    
+    /* Action Buttons in list */
+    .participant-action {
+      background: none; border: 1px solid #000; font-size: 10px; padding: 2px 6px;
+      font-family: var(--font-mono); cursor: pointer; margin-left: 8px; text-transform: uppercase;
+    }
+    
+    /* --- Activity Feed --- */
+    .activity-item { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; gap: 4px; }
+    .activity-icon { display: none; }
+    .activity-time { display: none; } /* Simplify log */
+    .activity-message::before { content: '> '; }
+    
+    /* --- Receipt Image --- */
+    .receipt-preview { border: 2px dashed #ccc; padding: 12px; text-align: center; cursor: pointer; margin: 12px 0; }
+    .receipt-preview img { max-height: 100px; filter: grayscale(100%); opacity: 0.7; }
+    
+    /* --- Collection Status --- */
+    .collection-status-message { text-align: center; font-weight: 700; margin: 8px 0; font-size: 12px; }
+    .collection-progress-fill { background: #000 !important; } /* Always black */
+    .collection-percent { color: #000; font-weight: 700; }
+    #collection-progress { height: 8px; background: #eee; border: 1px solid #000; margin-top: 4px; }
+    
+    /* --- Modals (adapted) --- */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8); z-index: 1000;
+      display: none; justify-content: center; align-items: center;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal-card {
+      background: #fff; width: 90%; max-width: 320px; padding: 24px;
+      font-family: var(--font-mono); border: 4px solid #000;
+    }
+    .modal-title { text-transform: uppercase; text-align: center; margin-bottom: 16px; font-weight: 900; border-bottom: 2px solid #000; padding-bottom: 8px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: 8px; border: 2px solid #000; font-family: var(--font-mono);
+      font-size: 14px; background: #fff;
+    }
+    .btn { 
+      width: 100%; padding: 12px; background: #000; color: #fff; border: none;
+      font-family: var(--font-mono); font-weight: 700; text-transform: uppercase; cursor: pointer;
+    }
+    .btn-secondary { background: #fff; color: #000; border: 2px solid #000; margin-top: 8px; }
+    
+    /* --- Footer Barcode --- */
+    .r-barcode {
+      height: 40px; margin-top: 32px; opacity: 0.8;
+      background: repeating-linear-gradient(90deg, #000, #000 2px, #fff 2px, #fff 4px);
+    }
+    
+    /* --- Loading/Error --- */
+    #loading-state { text-align: center; padding: 40px; }
+    .loading-spinner { border: 4px solid #eee; border-top: 4px solid #000; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Hide original styling elements */
+    .page-header, .bill-summary-card, .card { background: transparent; border: none; padding: 0; margin: 0; box-shadow: none; border-radius: 0; }
+    #back-btn, #edit-btn { display: none; } /* We use custom header */
+    
+    /* Specific Override for generated participant row structure */
+    .participant-progress { display: none !important; }
+    .participant-percent { display: none !important; }
+    .participant-item.unknown { opacity: 0.5; font-style: italic; }
+    
+    /* Overpaid highlight */
+    .overpaid-text { background: #000; color: #fff; padding: 0 4px; }
+    
+    /* Price Group Chips (Minimal) */
+    .group-chip { border: 1px solid #000; padding: 4px 8px; margin: 2px; display: inline-block; cursor: pointer; }
+    .group-chip.selected { background: #000; color: #fff; }
+    
+  </style>
+</head>
+<body>
+
+<div class="receipt-paper" id="main-content" style="display:none;">
+  
+  <!-- Receipt Header -->
+  <div class="r-header">
+    <div class="r-logo">PayFriends</div>
+    <div style="font-size: 10px; letter-spacing: 2px;">TRANSACTION RECORD</div>
+  </div>
+  
+  <!-- Navigation / Meta -->
+  <div class="r-actions-row">
+    <button class="r-icon-btn" id="back-btn-custom" onclick="window.history.back()">←</button>
+    <div class="r-tab-name" id="tab-name">Loading...</div>
+    <button class="r-icon-btn" onclick="showEditModal()" id="edit-btn-custom" style="display:none;">✎</button>
+    <button class="r-icon-btn" onclick="showShareModal()">↗</button>
+  </div>
+  
+  <div class="r-meta">
+    DATE: <span id="receipt-date">...</span><br>
+    GUESTS: <span id="people-count">...</span>
+  </div>
+  
+  <div class="r-line"></div>
+  
+  <!-- Bill Summary -->
+  <div class="r-row r-bold">
+    <span>TOTAL BILL</span>
+    <span id="total-amount">...</span>
+  </div>
+  
+  <!-- Collection Status -->
+  <div class="r-row" style="font-size: 12px;">
+    <span>COLLECTED</span>
+    <span id="collected-amount">...</span>
+  </div>
+  
+  <div id="collection-progress">
+    <div id="collection-progress-fill" class="collection-progress-fill" style="height:100%; width:0%"></div>
+  </div>
+  <div id="collection-message" class="collection-status-message"></div>
+  
+  <div class="r-line"></div>
+  
+  <!-- Price Groups Breakdown (if active) -->
+  <div id="groups-breakdown" style="display:none; margin-bottom: 16px;">
+    <div class="r-center r-bold" style="margin-bottom:8px;">ITEM BREAKDOWN</div>
+    <div id="groups-list"></div>
+    <div class="r-line"></div>
+  </div>
+  
+  <!-- Participants List -->
+  <div class="r-center r-bold" style="margin-bottom: 12px;">PAYMENT STATUS</div>
+  <div id="participants-list"></div>
+  
+  <div class="r-line"></div>
+  
+  <!-- Primary Action -->
+  <button id="report-payment-btn" class="r-btn" onclick="showPaymentModal()">REPORT PAYMENT</button>
+  
+  <!-- Receipt Attachment -->
+  <div style="margin-top: 24px;">
+    <div class="r-bold" style="font-size: 12px;">ATTACHMENTS:</div>
+    <div id="receipt-container"></div>
+  </div>
+  
+  <!-- Footer Log -->
+  <div class="r-line"></div>
+  <div style="font-size: 10px; text-align: center; margin-bottom: 8px;">SYSTEM LOG</div>
+  <div id="activity-feed" style="opacity: 0.7;"></div>
+  
+  <div class="r-barcode"></div>
+  <div class="r-center" style="margin-top: 8px; font-size: 10px;">THANK YOU FOR USING PAYFRIENDS</div>
+
+</div>
+
+<div id="loading-state">
+  <div class="loading-spinner"></div>
+  <div>PRINTING RECEIPT...</div>
+</div>
+
+<!-- Hidden Inputs for Logic -->
+<input type="hidden" id="share-link-input">
+<input type="file" id="edit-receipt" style="display:none;">
+
+<!-- ================= MODALS ================= -->
+
+<!-- Name Capture Modal -->
+<div id="name-capture-overlay" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-title">GUEST CHECK</div>
+    <p class="r-center" style="margin-bottom: 16px; font-size: 12px;">PLEASE IDENTIFY YOURSELF</p>
+    
+    <div class="form-group">
+      <label class="form-label">NAME</label>
+      <input type="text" id="guest-name-input" class="form-input" placeholder="ENTER NAME">
+    </div>
+    
+    <div id="name-capture-group-selection" style="display:none; margin-bottom: 16px;">
+      <label class="form-label">SELECT GROUP</label>
+      <div id="name-capture-group-chips"></div>
+      <input type="hidden" id="selected-group-id">
+    </div>
+    
+    <div class="form-group">
+      <label style="display:flex; align-items:center; font-size:12px;">
+        <input type="checkbox" id="remember-checkbox" style="margin-right:8px;"> REMEMBER ME
+      </label>
+    </div>
+    
+    <div id="name-error" style="color:red; font-size:12px; margin-bottom:8px; display:none;"></div>
+    
+    <button class="btn" onclick="submitNameCapture()">PRINT TICKET</button>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="payment-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-title" id="payment-modal-title">REPORT PAYMENT</div>
+    
+    <div id="payment-greeting" class="r-center" style="margin-bottom:16px; font-size:12px;">
+      HI <span id="greeting-name">THERE</span>
+    </div>
+    
+    <form id="payment-form" onsubmit="submitPayment(event)">
+      <div class="form-group" id="participant-selector-group" style="display:none;">
+        <label class="form-label">WHO PAID?</label>
+        <select id="payment-participant-select" class="form-select"></select>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">AMOUNT</label>
+        <input type="number" id="payment-amount" class="form-input" step="0.01" min="0.01">
+        <div style="font-size:10px; color:var(--muted); margin-top:4px;">SUGGESTED: <span id="suggested-payment-amount"></span></div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">METHOD</label>
+        <select id="payment-method" class="form-select">
+          <option value="cash">CASH</option>
+          <option value="card">CARD</option>
+          <option value="transfer">TRANSFER</option>
+          <option value="other">OTHER</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">NOTE (OPTIONAL)</label>
+        <input type="text" id="payment-note" class="form-input">
+      </div>
+      
+      <div id="payment-error" style="color:red; font-size:12px; margin-bottom:8px; display:none;"></div>
+      
+      <button type="submit" class="btn">CONFIRM</button>
+      <button type="button" class="btn btn-secondary" onclick="hideModal('payment-modal')">CANCEL</button>
+    </form>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div id="share-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-title">SHARE RECEIPT</div>
+    <p class="r-center" style="font-size:12px; margin-bottom:16px;">USE THIS LINK TO INVITE GUESTS</p>
+    
+    <div class="form-group">
+      <input type="text" id="share-link-input" class="form-input" readonly onclick="this.select()">
+    </div>
+    
+    <button id="copy-btn" class="btn" onclick="copyShareLink()">COPY LINK</button>
+    <button class="btn btn-secondary" onclick="hideModal('share-modal')">CLOSE</button>
+  </div>
+</div>
+
+<!-- Receipt Modal (View/Download) -->
+<div id="receipt-modal" class="modal-overlay">
+  <div class="modal-card" style="max-width: 500px;">
+    <div class="modal-title">ATTACHMENT</div>
+    <div id="receipt-modal-body" style="overflow:auto; max-height:60vh;"></div>
+    <button class="btn btn-secondary" onclick="hideModal('receipt-modal')">CLOSE</button>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="edit-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-title">EDIT RECEIPT</div>
+    <form id="edit-form" onsubmit="submitEdit(event)">
+      <div class="form-group">
+        <label class="form-label">TITLE</label>
+        <input type="text" id="edit-name" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">TOTAL AMOUNT</label>
+        <input type="number" id="edit-total" class="form-input" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">GUEST COUNT</label>
+        <input type="number" id="edit-people" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">NOTES</label>
+        <textarea id="edit-description" class="form-textarea"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">RECEIPT IMAGE</label>
+        <input type="file" id="edit-receipt" class="form-input">
+        <div id="current-receipt-hint" style="font-size:10px; margin-top:4px;"></div>
+      </div>
+      <div id="edit-error" style="color:red; font-size:12px; display:none;"></div>
+      
+      <button type="submit" class="btn">SAVE CHANGES</button>
+      <button type="button" class="btn btn-secondary" style="color:red; border-color:red;" onclick="closeTab()">CLOSE TAB</button>
+      <button type="button" class="btn btn-secondary" onclick="hideModal('edit-modal')">CANCEL</button>
+    </form>
+  </div>
+</div>
+
+<!-- Add Guest Modal -->
+<div id="add-guest-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-title">ADD GUEST</div>
+    <form id="add-guest-form" onsubmit="submitAddGuest(event)">
+      <div class="form-group">
+        <label class="form-label">NAME</label>
+        <input type="text" id="guest-name" class="form-input">
+      </div>
+      
+      <div id="add-guest-group-selection" style="display:none; margin-bottom:16px;">
+        <label class="form-label">GROUP</label>
+        <div id="add-guest-group-chips"></div>
+        <input type="hidden" id="add-guest-selected-group-id">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">PAID AMOUNT</label>
+        <input type="number" id="guest-amount" class="form-input" step="0.01">
+        <div style="font-size:10px; margin-top:4px;">EXPECTED: <span id="guest-share-amount"></span></div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">METHOD</label>
+        <select id="guest-payment-method" class="form-select">
+          <option value="cash">CASH</option>
+          <option value="card">CARD</option>
+          <option value="transfer">TRANSFER</option>
+          <option value="other">OTHER</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">NOTE</label>
+        <input type="text" id="guest-note" class="form-input">
+      </div>
+      
+      <div id="add-guest-error" style="color:red; font-size:12px; display:none;"></div>
+      
+      <button type="submit" class="btn">ADD & REPORT</button>
+      <button type="button" class="btn btn-secondary" onclick="hideModal('add-guest-modal')">CANCEL</button>
+    </form>
+  </div>
+</div>
+
+<!-- Change Group Modal -->
+<div id="change-group-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-title">CHANGE GROUP</div>
+    <input type="hidden" id="change-group-participant-id">
+    <div id="change-group-chips" style="margin-bottom:16px;"></div>
+    <input type="hidden" id="change-group-selected-id">
+    
+    <div id="change-group-error" style="color:red; font-size:12px; display:none;"></div>
+    
+    <button type="button" class="btn" onclick="submitChangeGroup()">UPDATE</button>
+    <button type="button" class="btn btn-secondary" onclick="hideModal('change-group-modal')">CANCEL</button>
+  </div>
+</div>
+
+  <script>
+    // =============================================
+    // STATE
+    // =============================================
+    let token = null;
+    let isCreator = false;
+    let tabData = null;
+    let participants = [];
+    let payments = [];
+    let priceGroups = [];
+    let currentParticipant = null;
+    let activityFeed = [];
+    let summary = null;
+    
+    // Helper to check if we're in price groups mode
+    function isPriceGroupsMode() {
+      return tabData && tabData.splitMode === 'price_groups';
+    }
+    
+    // Get token from URL
+    const pathParts = window.location.pathname.split('/');
+    const routeType = pathParts[2]; // 'manage' or 'view'
+    token = pathParts[3];
+    
+    // Local storage key for remembering identity
+    const getStorageKey = (tabId) => `grouptab_identity_${tabId}`;
+    
+    // =============================================
+    // INITIALIZATION
+    // =============================================
+    async function init() {
+      try {
+        await loadTabData();
+        
+        if (!tabData) return;
+        
+        // Initialize site header for logged-in users (creators)
+        // Use a try-catch because guests won't be authenticated
+        if (isCreator && typeof PayFriendsHeader !== 'undefined') {
+          try {
+            await PayFriendsHeader.initialize();
+          } catch (headerError) {
+            console.log('Header init skipped (guest mode):', headerError);
+          }
+        }
+        
+        // Check if we need name capture for non-creators
+        if (!isCreator && !currentParticipant) {
+          // Check localStorage first
+          const storedIdentity = localStorage.getItem(getStorageKey(tabData.id));
+          if (storedIdentity) {
+            // Try to restore session - if the server still has us, great
+            // Otherwise we'll need to re-capture
+            await loadTabData(); // Refresh to check
+          }
+          
+          if (!currentParticipant) {
+            showNameCapture();
+            return;
+          }
+        }
+        
+        renderPage();
+        
+      } catch (error) {
+        console.error('Init error:', error);
+        showError('Failed to load tab. Please try again.');
+      }
+    }
+    
+    // =============================================
+    // DATA LOADING
+    // =============================================
+    async function loadTabData() {
+      const response = await fetch(`/api/grouptabs/token/${token}`);
+      
+      if (!response.ok) {
+        const data = await response.json();
+        if (data.closed) {
+          showError('This tab has been closed.');
+        } else {
+          showError(data.error || 'Tab not found');
+        }
+        return;
+      }
+      
+      const data = await response.json();
+      
+      isCreator = data.isCreator;
+      tabData = data.tab;
+      participants = data.participants || [];
+      payments = data.payments || [];
+      priceGroups = data.priceGroups || [];
+      currentParticipant = data.currentParticipant;
+      activityFeed = data.activityFeed || [];
+      summary = data.summary;
+      
+      // Update share link
+      const shareLink = `${window.location.origin}/grouptabs/view/${tabData.magicToken || token}`;
+      document.getElementById('share-link-input').value = shareLink;
+    }
+    
+    // =============================================
+    // RENDERING
+    // =============================================
+    function renderPage() {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+      
+      // Header
+      document.getElementById('tab-name').textContent = tabData.name;
+      document.getElementById('receipt-date').textContent = new Date(tabData.createdAt).toLocaleDateString();
+      
+      if (isCreator) {
+        document.getElementById('back-btn-custom').style.display = 'block'; // Keep visible for nav
+        document.getElementById('edit-btn-custom').style.display = 'block';
+      }
+      
+      // Bill Summary
+      const totalCents = tabData.totalAmountCents || 0;
+      const peopleCount = tabData.peopleCount || summary.peopleCount || 1;
+      const perPersonCents = tabData.perPersonCents || Math.round(totalCents / peopleCount);
+      
+      document.getElementById('total-amount').textContent = formatCurrency2(totalCents);
+      document.getElementById('people-count').textContent = peopleCount;
+      
+      // Mode-specific rendering
+      const groupsBreakdown = document.getElementById('groups-breakdown');
+      
+      if (isPriceGroupsMode()) {
+        groupsBreakdown.style.display = 'block';
+        renderGroupsBreakdown();
+      } else {
+        groupsBreakdown.style.display = 'none';
+      }
+      
+      // Collection Status (integrated into bill summary)
+      renderCollectionStatus();
+      
+      // Receipt
+      renderReceipt();
+      
+      // Participants (sorted)
+      renderParticipants();
+      
+      // Activity Feed
+      renderActivityFeed();
+      
+      // Suggested payment amount
+      if (currentParticipant) {
+        const remaining = Math.max(0, (currentParticipant.fairShareCents || perPersonCents) - (currentParticipant.totalPaidCents || 0));
+        document.getElementById('suggested-payment-amount').textContent = formatCurrency2(remaining);
+        document.getElementById('payment-amount').value = (remaining / 100).toFixed(2);
+      }
+    }
+    
+    function renderReceipt() {
+      const container = document.getElementById('receipt-container');
+      
+      if (tabData.receiptFilePath) {
+        const receiptUrl = getReceiptUrl(tabData.receiptFilePath);
+        const isPdf = tabData.receiptFilePath.toLowerCase().endsWith('.pdf');
+        const removeBtn = isCreator ? `<button class="r-btn r-btn-outline" style="margin-top:8px; font-size:10px; padding:4px;" onclick="event.stopPropagation(); removeReceipt()">[X] REMOVE</button>` : '';
+        container.innerHTML = `
+          <div class="receipt-preview" onclick="showReceiptModal()">
+            ${isPdf 
+              ? '<span style="font-size: 32px;">📄</span>'
+              : `<img src="${receiptUrl}" alt="Receipt" onerror="this.style.display='none'">`
+            }
+            <div style="font-size:10px; margin-top:4px;">${isPdf ? '[VIEW PDF]' : '[VIEW IMAGE]'}</div>
+          </div>
+          ${removeBtn}
+        `;
+      } else if (isCreator) {
+        // Show upload form for organizer
+        container.innerHTML = `
+          <div style="border:2px dashed #000; padding:16px; text-align:center; cursor:pointer;" id="receipt-drop-zone" onclick="document.getElementById('receipt-upload-input').click()">
+            <div>[+] ATTACH RECEIPT</div>
+            <div style="font-size:10px; margin-top:4px;">CLICK OR DRAG</div>
+          </div>
+          <input type="file" id="receipt-upload-input" style="display:none;" accept="image/*,.pdf" onchange="uploadReceipt(this.files[0])">
+        `;
+        setupReceiptDragDrop();
+      } else {
+        container.innerHTML = '<div style="font-style:italic; text-align:center; opacity:0.5;">NO ATTACHMENT</div>';
+      }
+    }
+    
+    function setupReceiptDragDrop() {
+      const dropZone = document.getElementById('receipt-drop-zone');
+      if (!dropZone) return;
+      
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
+      });
+      
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.style.backgroundColor = '#eee';
+        });
+      });
+      
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.style.backgroundColor = '';
+        });
+      });
+      
+      dropZone.addEventListener('drop', (e) => {
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          uploadReceipt(file);
+        }
+      });
+    }
+    
+    async function uploadReceipt(file) {
+      if (!file) return;
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+      if (!validTypes.includes(file.type)) {
+        alert('Please upload an image (PNG, JPG) or PDF file');
+        return;
+      }
+      
+      // Show uploading state
+      const container = document.getElementById('receipt-container');
+      container.innerHTML = `
+        <div style="text-align:center; padding:16px;">
+          <div class="loading-spinner" style="width: 20px; height: 20px;"></div>
+          <span style="font-size:10px;">UPLOADING...</span>
+        </div>
+      `;
+      
+      try {
+        const formData = new FormData();
+        formData.append('receipt', file);
+        
+        const response = await fetch(`/api/grouptabs/token/${tabData.ownerToken}`, {
+          method: 'PATCH',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Failed to upload receipt');
+        }
+        
+        // Reload data and re-render
+        await loadTabData();
+        renderReceipt();
+        
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert('Failed to upload receipt: ' + error.message);
+        renderReceipt(); // Re-render to show upload form again
+      }
+    }
+    
+    async function removeReceipt() {
+      if (!confirm('Remove the receipt from this tab?')) return;
+      
+      try {
+        const response = await fetch(`/api/grouptabs/token/${tabData.ownerToken}/remove-receipt`, {
+          method: 'POST'
+        });
+        
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Failed to remove receipt');
+        }
+        
+        // Reload data and re-render
+        await loadTabData();
+        renderReceipt();
+        
+      } catch (error) {
+        console.error('Remove receipt error:', error);
+        alert('Failed to remove receipt: ' + error.message);
+      }
+    }
+    
+    // Calculate expected total based on assigned price groups
+    function calculateExpectedFromGroups() {
+      if (!priceGroups.length) return 0;
+      
+      let total = 0;
+      participants.forEach(p => {
+        if (p.priceGroupId) {
+          const group = priceGroups.find(g => g.id === p.priceGroupId);
+          if (group) {
+            total += group.amountCents || 0;
+          }
+        }
+      });
+      return total;
+    }
+    
+    // Get a participant's fair share (price group amount or equal split)
+    function getParticipantFairShare(participant) {
+      if (isPriceGroupsMode() && participant.priceGroupId) {
+        const group = priceGroups.find(g => g.id === participant.priceGroupId);
+        return group ? group.amountCents : 0;
+      }
+      // Default to equal split
+      const totalCents = tabData.totalAmountCents || 0;
+      const peopleCount = tabData.peopleCount || 1;
+      return Math.round(totalCents / peopleCount);
+    }
+    
+    function renderGroupsBreakdown() {
+      const container = document.getElementById('groups-list');
+      if (!container || !priceGroups.length) return;
+      
+      // Count participants in each group
+      const groupCounts = {};
+      priceGroups.forEach(g => { groupCounts[g.id] = 0; });
+      
+      let unassignedCount = 0;
+      participants.forEach(p => {
+        if (p.priceGroupId && groupCounts.hasOwnProperty(p.priceGroupId)) {
+          groupCounts[p.priceGroupId]++;
+        } else if (!p.priceGroupId) {
+          unassignedCount++;
+        }
+      });
+      
+      // Also count empty slots that haven't joined yet
+      const totalPeople = tabData.peopleCount || 1;
+      const joinedCount = participants.length;
+      const waitingCount = Math.max(0, totalPeople - joinedCount);
+      unassignedCount += waitingCount;
+      
+      let html = '';
+      
+      priceGroups.forEach(group => {
+        const count = groupCounts[group.id] || 0;
+        
+        html += `
+          <div class="r-row">
+            <div style="display:flex; gap:8px;">
+              <span>[${count}]</span>
+              <span>${escapeHtml(group.name)}</span>
+            </div>
+            <span>${formatCurrency2(group.amountCents)}</span>
+          </div>
+        `;
+      });
+      
+      // Show unassigned if any
+      if (unassignedCount > 0) {
+        html += `
+          <div class="r-row" style="opacity: 0.6; font-style:italic;">
+            <span>[${unassignedCount}] UNASSIGNED</span>
+            <span>---</span>
+          </div>
+        `;
+      }
+      
+      container.innerHTML = html;
+    }
+    
+    function renderCollectionStatus() {
+      if (!summary) return;
+      
+      const billTotal = summary.totalBillCents || 0;
+      const collected = summary.collectedTotalCents || 0;
+      
+      const actualPercent = billTotal > 0 ? Math.round((collected / billTotal) * 100) : 0;
+      const percentCapped = Math.min(100, actualPercent);
+      
+      document.getElementById('collected-amount').textContent = formatCurrency2(collected);
+      
+      const progressFill = document.getElementById('collection-progress-fill');
+      if (progressFill) {
+        progressFill.style.width = `${percentCapped}%`;
+      }
+      
+      const messageEl = document.getElementById('collection-message');
+      
+      if (collected >= billTotal) {
+        const surplus = collected - billTotal;
+        if (surplus > 50) {
+          messageEl.innerHTML = `PAID IN FULL + EXTRA ${formatCurrency2(surplus)}`;
+        } else {
+          messageEl.innerHTML = 'PAID IN FULL';
+        }
+      } else {
+        const shortfall = billTotal - collected;
+        messageEl.innerHTML = `DUE: ${formatCurrency2(shortfall)}`;
+      }
+    }
+    
+    // Current sort option
+    let currentSort = 'amount-desc';
+    
+    function getSortedParticipants() {
+      const perPersonCents = tabData.perPersonCents || Math.round((tabData.totalAmountCents || 0) / (tabData.peopleCount || 1));
+      
+      // Create a copy and add computed fields
+      const sorted = [...participants].map(p => ({
+        ...p,
+        paid: p.totalPaidCents || 0,
+        fairShare: p.fairShareCents || perPersonCents,
+        balance: (p.totalPaidCents || 0) - (p.fairShareCents || perPersonCents)
+      }));
+      
+      // Default sort: Highest paid first
+      sorted.sort((a, b) => b.paid - a.paid);
+      return sorted;
+    }
+    
+    function renderParticipants() {
+      const container = document.getElementById('participants-list');
+      const perPersonCents = tabData.perPersonCents || Math.round((tabData.totalAmountCents || 0) / (tabData.peopleCount || 1));
+      const totalPeople = tabData.peopleCount || 1;
+      
+      // Populate payment modal participant selector (for creator)
+      if (isCreator) {
+        const select = document.getElementById('payment-participant-select');
+        select.innerHTML = participants.map(p => 
+          `<option value="${p.id}">${escapeHtml(p.displayName)}</option>`
+        ).join('');
+        document.getElementById('participant-selector-group').style.display = 'block';
+      }
+      
+      // Get sorted participants
+      const sortedParticipants = getSortedParticipants();
+      
+      // Build list of all participant slots
+      let allSlots = [];
+      
+      // Add sorted participants first
+      sortedParticipants.forEach(p => {
+        allSlots.push(renderParticipantRow(p, perPersonCents));
+      });
+      
+      // Add empty slots for remaining people (always at the end)
+      const remainingSlots = totalPeople - participants.length;
+      for (let i = 0; i < remainingSlots; i++) {
+        allSlots.push(renderEmptySlot(i + 1, perPersonCents));
+      }
+      
+      container.innerHTML = allSlots.join('');
+    }
+    
+    function renderParticipantRow(p, perPersonCents) {
+      // For price groups, use their assigned group amount; for equal split, use perPersonCents
+      const fairShare = isPriceGroupsMode() ? getParticipantFairShare(p) : (p.fairShareCents || perPersonCents);
+      const paid = p.totalPaidCents || 0;
+      const balance = paid - fairShare;
+      
+      // Check Status: [X] or [ ]
+      let checkMark = '[ ]';
+      let statusText = 'PENDING';
+      
+      if (balance >= 0) {
+        checkMark = '[X]';
+        statusText = 'PAID';
+      } else if (paid > 0) {
+        checkMark = '[/]';
+        statusText = 'PARTIAL';
+      }
+      
+      const youLabel = p.isCurrentUser ? '(YOU)' : '';
+      const organizerLabel = (p.role === 'organizer') ? '(HOST)' : '';
+      
+      // Price Groups mode: show group name
+      let groupInfo = '';
+      let changeGroupBtn = '';
+      if (isPriceGroupsMode()) {
+        const group = p.priceGroupId ? priceGroups.find(g => g.id === p.priceGroupId) : null;
+        if (group) {
+          groupInfo = `<div style="font-size:10px; margin-left:24px; opacity:0.7;">${escapeHtml(group.name)}</div>`;
+        } else {
+          groupInfo = `<div style="font-size:10px; margin-left:24px; color:red;">UNASSIGNED</div>`;
+        }
+        
+        // Show change group button logic
+        if (isCreator || p.isCurrentUser) {
+           // We will implement a simpler text button for receipt style
+           changeGroupBtn = `<button onclick="showChangeGroupModal(${p.id}, ${p.priceGroupId || 'null'})" style="background:none; border:none; text-decoration:underline; font-size:10px; cursor:pointer; margin-left:8px;">CHANGE</button>`;
+        }
+      }
+      
+      // Action button (Report)
+      let actionBtn = '';
+      const isFullyPaid = balance >= 0;
+      if (!isFullyPaid) {
+        if (isCreator) {
+          actionBtn = `<button onclick="showPaymentModalFor(${p.id})" style="background:none; border:1px solid #000; font-size:10px; cursor:pointer; margin-left:auto;">PAY</button>`;
+        } else if (p.isCurrentUser) {
+          actionBtn = `<button onclick="showPaymentModal()" style="background:none; border:1px solid #000; font-size:10px; cursor:pointer; margin-left:auto;">PAY</button>`;
+        }
+      }
+      
+      return `
+        <div class="participant-item">
+          <div style="font-weight:900; width:24px;">${checkMark}</div>
+          <div style="flex:1;">
+             <div>${escapeHtml(p.displayName)} ${youLabel} ${organizerLabel}</div>
+             ${groupInfo}
+             <div style="font-size:10px; opacity:0.7;">
+                SHARE: ${formatCurrency2(fairShare)} 
+                ${paid > 0 ? `| PAID: ${formatCurrency2(paid)}` : ''}
+                ${changeGroupBtn}
+             </div>
+          </div>
+          ${actionBtn}
+        </div>
+      `;
+    }
+    
+    function renderEmptySlot(slotNumber, perPersonCents) {
+      // Creator can add a guest to empty slots
+      const actionBtn = isCreator 
+        ? `<button onclick="showAddGuestModal(${slotNumber})" style="background:none; border:1px dashed #000; font-size:10px; cursor:pointer; margin-left:auto;">+ ADD</button>`
+        : '';
+      
+      return `
+        <div class="participant-item" style="opacity:0.5;">
+          <div style="font-weight:900; width:24px;">[?]</div>
+          <div style="flex:1;">
+             <div>WAITING FOR GUEST...</div>
+          </div>
+          ${actionBtn}
+        </div>
+      `;
+    }
+    
+    function renderActivityFeed() {
+      const container = document.getElementById('activity-feed');
+      
+      if (activityFeed.length === 0) {
+        container.innerHTML = '<div style="text-align:center; font-size:10px;">NO ACTIVITY</div>';
+        return;
+      }
+      
+      // Only show last 5 items for receipt compactness
+      const recentFeed = activityFeed.slice(0, 5);
+      
+      container.innerHTML = recentFeed.map(a => {
+        const time = new Date(a.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        return `
+          <div class="activity-item">
+            <span>${time}</span>
+            <span>${escapeHtml(a.message)}</span>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // =============================================
+    // NAME CAPTURE
+    // =============================================
+    function showNameCapture() {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('name-capture-overlay').style.display = 'flex';
+      document.getElementById('guest-name-input').focus();
+      
+      // If price groups mode, show group selection
+      const groupSelectionDiv = document.getElementById('name-capture-group-selection');
+      if (isPriceGroupsMode() && priceGroups.length > 0) {
+        groupSelectionDiv.style.display = 'block';
+        renderGroupChips('name-capture-group-chips', 'selected-group-id');
+      } else {
+        groupSelectionDiv.style.display = 'none';
+      }
+    }
+    
+    // Render group selection chips into a container (Receipt Style)
+    function renderGroupChips(containerId, hiddenInputId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      
+      let html = '';
+      priceGroups.forEach((group, index) => {
+        html += `
+          <div class="group-chip" data-group-id="${group.id}" onclick="selectGroupChip('${containerId}', '${hiddenInputId}', ${group.id})">
+            <span>${escapeHtml(group.name)}</span>
+            <span style="font-weight:bold;">${formatCurrency2(group.amountCents)}</span>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+    
+    // Handle chip selection
+    function selectGroupChip(containerId, hiddenInputId, groupId) {
+      const container = document.getElementById(containerId);
+      const hiddenInput = document.getElementById(hiddenInputId);
+      
+      // Remove selection from all chips
+      container.querySelectorAll('.group-chip').forEach(chip => {
+        chip.classList.remove('selected');
+      });
+      
+      // Select the clicked chip
+      const selectedChip = container.querySelector(`[data-group-id="${groupId}"]`);
+      if (selectedChip) {
+        selectedChip.classList.add('selected');
+      }
+      
+      // Update hidden input
+      hiddenInput.value = groupId;
+      
+      // If this is the add-guest modal, update the suggested amount
+      if (containerId === 'add-guest-group-chips') {
+        onAddGuestGroupSelected(groupId);
+      }
+    }
+    
+    // Change Group Modal
+    let changeGroupParticipantId = null;
+    
+    function showChangeGroupModal(participantId, currentGroupId) {
+      changeGroupParticipantId = participantId;
+      
+      // Reset error
+      document.getElementById('change-group-error').style.display = 'none';
+      
+      // Store participant ID
+      document.getElementById('change-group-participant-id').value = participantId;
+      
+      // Render group chips
+      renderGroupChips('change-group-chips', 'change-group-selected-id');
+      
+      // Pre-select current group if exists
+      if (currentGroupId) {
+        selectGroupChip('change-group-chips', 'change-group-selected-id', currentGroupId);
+      }
+      
+      showModal('change-group-modal');
+    }
+    
+    async function submitChangeGroup() {
+      const participantId = changeGroupParticipantId;
+      const container = document.getElementById('change-group-chips');
+      const selectedChip = container.querySelector('.group-chip.selected');
+      const errorDiv = document.getElementById('change-group-error');
+      
+      if (!selectedChip) {
+        errorDiv.textContent = 'Please select a group';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      const newGroupId = parseInt(selectedChip.dataset.groupId, 10);
+      
+      try {
+        const response = await fetch(`/api/grouptabs/token/${token}/participant/${participantId}/group`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ priceGroupId: newGroupId })
+        });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to change group');
+        }
+        
+        // Success - reload data and close modal
+        await loadTabData();
+        renderPage();
+        hideModal('change-group-modal');
+        
+      } catch (error) {
+        console.error('Change group error:', error);
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+      }
+    }
+    
+    async function submitNameCapture() {
+      const name = document.getElementById('guest-name-input').value.trim();
+      const remember = document.getElementById('remember-checkbox').checked;
+      const errorDiv = document.getElementById('name-error');
+      
+      if (!name) {
+        errorDiv.textContent = 'Please enter your name';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      // For price groups mode, require group selection (only if groups are available)
+      const selectedGroupId = document.getElementById('selected-group-id').value;
+      if (isPriceGroupsMode() && priceGroups.length > 0 && !selectedGroupId) {
+        errorDiv.textContent = 'Please select which group you belong to';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      try {
+        const body = { guestName: name };
+        if (selectedGroupId) {
+          body.priceGroupId = parseInt(selectedGroupId, 10);
+        }
+        
+        const response = await fetch(`/api/grouptabs/token/${token}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          errorDiv.textContent = data.error || 'Failed to join';
+          errorDiv.style.display = 'block';
+          return;
+        }
+        
+        // Store in localStorage if remember is checked
+        if (remember && tabData) {
+          localStorage.setItem(getStorageKey(tabData.id), JSON.stringify({
+            name: name,
+            participantId: data.participant.id,
+            timestamp: Date.now()
+          }));
+        }
+        
+        // Reload data and render
+        document.getElementById('name-capture-overlay').style.display = 'none';
+        await loadTabData();
+        renderPage();
+        
+      } catch (error) {
+        console.error('Join error:', error);
+        errorDiv.textContent = 'Failed to join. Please try again.';
+        errorDiv.style.display = 'block';
+      }
+    }
+    
+    // =============================================
+    // MODALS
+    // =============================================
+    function showModal(id) {
+      document.getElementById(id).classList.add('visible');
+    }
+    
+    function hideModal(id) {
+      document.getElementById(id).classList.remove('visible');
+    }
+    
+    function showShareModal() {
+      showModal('share-modal');
+    }
+    
+    function showPaymentModal() {
+      document.getElementById('payment-modal-title').textContent = isCreator ? 'REPORT PAYMENT' : 'REPORT MY PAYMENT';
+      
+      // Show/hide greeting and selector based on role
+      const greetingEl = document.getElementById('payment-greeting');
+      const selectorEl = document.getElementById('participant-selector-group');
+      
+      if (isCreator) {
+        // Creator sees the participant selector
+        greetingEl.style.display = 'none';
+        selectorEl.style.display = 'block';
+      } else {
+        // Non-creator sees the friendly greeting
+        selectorEl.style.display = 'none';
+        greetingEl.style.display = 'block';
+        
+        // Set the name in greeting
+        const name = currentParticipant?.displayName || 'THERE';
+        document.getElementById('greeting-name').textContent = name.toUpperCase();
+      }
+      
+      // Set suggested amount
+      if (currentParticipant) {
+        const perPerson = tabData.perPersonCents || Math.round((tabData.totalAmountCents || 0) / (tabData.peopleCount || 1));
+        const remaining = Math.max(0, perPerson - (currentParticipant.totalPaidCents || 0));
+        document.getElementById('payment-amount').value = (remaining / 100).toFixed(2);
+        document.getElementById('suggested-payment-amount').textContent = formatCurrency2(remaining);
+      }
+      
+      showModal('payment-modal');
+    }
+    
+    function showPaymentModalFor(participantId) {
+      document.getElementById('payment-participant-select').value = participantId;
+      
+      // Set suggested amount for this participant
+      const participant = participants.find(p => p.id === participantId);
+      if (participant) {
+        const remaining = Math.max(0, (participant.fairShareCents || 0) - (participant.totalPaidCents || 0));
+        document.getElementById('payment-amount').value = (remaining / 100).toFixed(2);
+        document.getElementById('suggested-payment-amount').textContent = formatCurrency2(remaining);
+      }
+      
+      showPaymentModal();
+    }
+    
+    // Add Guest Modal (for empty slots)
+    let currentSlotNumber = null;
+    
+    function showAddGuestModal(slotNumber) {
+      currentSlotNumber = slotNumber;
+      
+      // Reset form
+      document.getElementById('add-guest-form').reset();
+      document.getElementById('add-guest-error').style.display = 'none';
+      document.getElementById('add-guest-selected-group-id').value = '';
+      
+      // Show group selection for price groups mode
+      const groupSelectionDiv = document.getElementById('add-guest-group-selection');
+      if (isPriceGroupsMode() && priceGroups.length > 0) {
+        groupSelectionDiv.style.display = 'block';
+        renderGroupChips('add-guest-group-chips', 'add-guest-selected-group-id');
+        
+        // For price groups, show "varies" until group is selected
+        document.getElementById('guest-share-amount').textContent = 'SELECT A GROUP';
+        document.getElementById('guest-amount').value = '';
+      } else {
+        groupSelectionDiv.style.display = 'none';
+        // Set suggested amount to per-person share for equal split
+        const perPersonCents = tabData.perPersonCents || Math.round((tabData.totalAmountCents || 0) / (tabData.peopleCount || 1));
+        document.getElementById('guest-share-amount').textContent = formatCurrency2(perPersonCents);
+        document.getElementById('guest-amount').value = (perPersonCents / 100).toFixed(2);
+      }
+      
+      showModal('add-guest-modal');
+    }
+    
+    // Update suggested amount when group chip is selected in add-guest modal
+    function onAddGuestGroupSelected(groupId) {
+      const group = priceGroups.find(g => g.id === groupId);
+      if (group) {
+        document.getElementById('guest-share-amount').textContent = formatCurrency2(group.amountCents);
+        document.getElementById('guest-amount').value = (group.amountCents / 100).toFixed(2);
+      }
+    }
+    
+    async function submitAddGuest(e) {
+      e.preventDefault();
+      
+      const guestName = document.getElementById('guest-name').value.trim();
+      const amountPaid = parseFloat(document.getElementById('guest-amount').value) || 0;
+      const paymentMethod = document.getElementById('guest-payment-method').value;
+      const note = document.getElementById('guest-note').value.trim();
+      const selectedGroupId = document.getElementById('add-guest-selected-group-id').value;
+      
+      if (!guestName) {
+        document.getElementById('add-guest-error').textContent = 'Please enter a guest name';
+        document.getElementById('add-guest-error').style.display = 'block';
+        return;
+      }
+      
+      // For price groups mode, require group selection
+      if (isPriceGroupsMode() && !selectedGroupId) {
+        document.getElementById('add-guest-error').textContent = 'Please select a group for this guest';
+        document.getElementById('add-guest-error').style.display = 'block';
+        return;
+      }
+      
+      if (amountPaid <= 0) {
+        document.getElementById('add-guest-error').textContent = 'Please enter a valid amount';
+        document.getElementById('add-guest-error').style.display = 'block';
+        return;
+      }
+      
+      try {
+        // Build the request body
+        const addBody = { 
+          guestName: guestName,
+          token: tabData.ownerToken
+        };
+        if (selectedGroupId) {
+          addBody.priceGroupId = parseInt(selectedGroupId, 10);
+        }
+        
+        // First, add the guest using the owner token
+        const addRes = await fetch(`/api/grouptabs/${tabData.id}/add-guest`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(addBody)
+        });
+        
+        if (!addRes.ok) {
+          const err = await addRes.json();
+          throw new Error(err.error || 'Failed to add guest');
+        }
+        
+        const addData = await addRes.json();
+        const newParticipantId = addData.participant.id;
+        
+        // Now report payment for this new guest
+        const paymentRes = await fetch(`/api/grouptabs/${tabData.id}/report-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participantId: newParticipantId,
+            amountCents: Math.round(amountPaid * 100),
+            method: paymentMethod || 'other',
+            note: note,
+            token: tabData.ownerToken,
+            reportedByCreator: true
+          })
+        });
+        
+        if (!paymentRes.ok) {
+          const err = await paymentRes.json();
+          throw new Error(err.error || 'Guest added but failed to record payment');
+        }
+        
+        // Success - reload data and close modal
+        await loadTabData();
+        renderPage();
+        hideModal('add-guest-modal');
+        
+      } catch (error) {
+        console.error('Error adding guest:', error);
+        document.getElementById('add-guest-error').textContent = error.message;
+        document.getElementById('add-guest-error').style.display = 'block';
+      }
+    }
+    
+    function showEditModal() {
+      document.getElementById('edit-name').value = tabData.name || '';
+      document.getElementById('edit-total').value = ((tabData.totalAmountCents || 0) / 100).toFixed(2);
+      document.getElementById('edit-people').value = tabData.peopleCount || 2;
+      document.getElementById('edit-description').value = tabData.description || '';
+      
+      if (tabData.receiptFilePath) {
+        document.getElementById('current-receipt-hint').textContent = 'CURRENT RECEIPT ATTACHED.';
+      } else {
+        document.getElementById('current-receipt-hint').textContent = '';
+      }
+      
+      showModal('edit-modal');
+    }
+    
+    // =============================================
+    // ACTIONS
+    // =============================================
+    function copyShareLink() {
+      const input = document.getElementById('share-link-input');
+      const btn = document.getElementById('copy-btn');
+      
+      navigator.clipboard.writeText(input.value).then(() => {
+        btn.textContent = 'COPIED!';
+        setTimeout(() => {
+          btn.textContent = 'COPY LINK';
+        }, 2000);
+      });
+    }
+    
+    async function submitPayment(e) {
+      e.preventDefault();
+      
+      const amount = parseFloat(document.getElementById('payment-amount').value);
+      const method = document.getElementById('payment-method').value;
+      const note = document.getElementById('payment-note').value;
+      const errorDiv = document.getElementById('payment-error');
+      
+      if (!amount || amount <= 0) {
+        errorDiv.textContent = 'Please enter a valid amount';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      const amountCents = Math.round(amount * 100);
+      
+      // Get participant ID (for creator, from select; for viewer, use current)
+      let participantId = null;
+      if (isCreator) {
+        participantId = parseInt(document.getElementById('payment-participant-select').value);
+      } else if (currentParticipant) {
+        participantId = currentParticipant.id;
+      }
+      
+      try {
+        const response = await fetch(`/api/grouptabs/${tabData.id}/report-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participantId,
+            amountCents,
+            method,
+            note,
+            token
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          errorDiv.textContent = data.error || 'Failed to report payment';
+          errorDiv.style.display = 'block';
+          return;
+        }
+        
+        hideModal('payment-modal');
+        
+        // Reset form
+        document.getElementById('payment-form').reset();
+        errorDiv.style.display = 'none';
+        
+        // Reload and re-render
+        await loadTabData();
+        renderPage();
+        
+      } catch (error) {
+        console.error('Payment error:', error);
+        errorDiv.textContent = 'Failed to report payment. Please try again.';
+        errorDiv.style.display = 'block';
+      }
+    }
+    
+    async function submitEdit(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('edit-name').value.trim();
+      const totalAmount = parseFloat(document.getElementById('edit-total').value);
+      const peopleCount = parseInt(document.getElementById('edit-people').value);
+      const description = document.getElementById('edit-description').value.trim();
+      const receiptFile = document.getElementById('edit-receipt').files[0];
+      const errorDiv = document.getElementById('edit-error');
+      
+      if (!name) {
+        errorDiv.textContent = 'Please enter a tab name';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      try {
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('totalAmountCents', Math.round(totalAmount * 100));
+        formData.append('peopleCount', peopleCount);
+        formData.append('description', description);
+        
+        if (receiptFile) {
+          formData.append('receipt', receiptFile);
+        }
+        
+        const response = await fetch(`/api/grouptabs/token/${tabData.ownerToken}`, {
+          method: 'PATCH',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          errorDiv.textContent = data.error || 'Failed to update tab';
+          errorDiv.style.display = 'block';
+          return;
+        }
+        
+        hideModal('edit-modal');
+        errorDiv.style.display = 'none';
+        
+        // Reload and re-render
+        await loadTabData();
+        renderPage();
+        
+      } catch (error) {
+        console.error('Edit error:', error);
+        errorDiv.textContent = 'Failed to update tab. Please try again.';
+        errorDiv.style.display = 'block';
+      }
+    }
+    
+    async function closeTab() {
+      if (!confirm('Are you sure you want to close this tab? This cannot be undone.')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/grouptabs/token/${tabData.ownerToken}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'closed' })
+        });
+        
+        if (response.ok) {
+          window.location.href = '/grouptabs';
+        } else {
+          alert('Failed to close tab');
+        }
+      } catch (error) {
+        console.error('Close error:', error);
+        alert('Failed to close tab');
+      }
+    }
+    
+    // =============================================
+    // UTILITIES
+    // =============================================
+    function showError(message) {
+      document.getElementById('loading-state').innerHTML = `
+        <div class="error-container">
+          <h2>ERROR</h2>
+          <p>${message}</p>
+          <a href="/grouptabs" class="btn btn-primary" style="margin-top: 16px;">BACK</a>
+        </div>
+      `;
+    }
+    
+    function getInitials(name) {
+      if (!name) return '?';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+    
+    // Convert receipt file path to API URL
+    function getReceiptUrl(filePath) {
+      if (!filePath) return null;
+      // Extract filename from path like /uploads/grouptabs/filename.jpg
+      const filename = filePath.split('/').pop();
+      return `/api/grouptabs/receipt/${filename}`;
+    }
+    
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+    
+    function formatRelativeTime(timestamp) {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 1) return 'JUST NOW';
+      if (diffMins < 60) return `${diffMins}M AGO`;
+      if (diffHours < 24) return `${diffHours}H AGO`;
+      if (diffDays < 7) return `${diffDays}D AGO`;
+      
+      return date.toLocaleDateString();
+    }
+    
+    function formatAbsoluteTime(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    function showReceiptModal() {
+      if (!tabData.receiptFilePath) return;
+      
+      const receiptUrl = getReceiptUrl(tabData.receiptFilePath);
+      const body = document.getElementById('receipt-modal-body');
+      const isPdf = tabData.receiptFilePath.toLowerCase().endsWith('.pdf');
+      
+      // Download button HTML
+      const downloadBtn = `
+        <div class="receipt-actions-modal" style="margin-top:16px;">
+          <a href="${receiptUrl}" download class="btn">
+            DOWNLOAD RECEIPT
+          </a>
+        </div>
+      `;
+      
+      if (isPdf) {
+        // For PDFs, try to embed, with fallback link
+        body.innerHTML = `
+          <iframe src="${receiptUrl}" title="Receipt PDF" style="width:100%; height:400px; border:2px solid #000;"></iframe>
+          ${downloadBtn}
+        `;
+      } else {
+        // For images
+        body.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = receiptUrl;
+        img.alt = 'Receipt';
+        img.style.maxWidth = '100%';
+        img.style.border = '2px solid #000';
+        img.onerror = function() {
+          body.innerHTML = '<p style="text-align: center; padding: 40px;">Failed to load receipt image</p>';
+        };
+        body.appendChild(img);
+        
+        // Add download button
+        const downloadDiv = document.createElement('div');
+        downloadDiv.innerHTML = downloadBtn;
+        body.appendChild(downloadDiv);
+      }
+      
+      showModal('receipt-modal');
+    }
+    
+    // Fallback formatCurrency2 if not loaded
+    if (typeof formatCurrency2 === 'undefined') {
+      window.formatCurrency2 = function(cents) {
+        return '€' + (cents / 100).toFixed(2);
+      };
+    }
+    
+    // Enter key to submit name capture
+    document.getElementById('guest-name-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitNameCapture();
+      }
+    });
+    
+    // =============================================
+    // INIT
+    // =============================================
+    init();
+  </script>
+</body>
+</html>

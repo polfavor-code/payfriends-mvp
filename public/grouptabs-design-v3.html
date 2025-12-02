@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFriends Design V3: 3-View System</title>
+  
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="/css/shared-controls.css">
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/chat-theme.css">
+  <link rel="stylesheet" href="/css/grouptabs.css">
+  
+  <style>
+    :root {
+      --bg-dark: #0e1116;
+      --card-dark: #161b22;
+      --border-dark: #30363d;
+      --accent: #3ddc97;
+      --accent-dim: rgba(61, 220, 151, 0.1);
+      --paper: #fff;
+    }
+    
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* --- Control Bar --- */
+    .control-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(22, 27, 34, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-dark);
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      z-index: 1000;
+    }
+
+    .view-btn {
+      background: transparent;
+      border: 1px solid var(--border-dark);
+      color: #8b949e;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .view-btn:hover {
+      background: var(--border-dark);
+      color: #fff;
+    }
+
+    .view-btn.active {
+      background: var(--accent);
+      color: #0e1116;
+      border-color: var(--accent);
+    }
+
+    /* --- Main Container --- */
+    .main-container {
+      margin-top: 80px;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      min-height: calc(100vh - 80px);
+    }
+
+    .view-wrapper {
+      display: none;
+      width: 100%;
+      max-width: 600px; /* Default max width */
+    }
+    
+    /* Make receipt view specifically wider as requested */
+    #view-receipt { max-width: 500px; } 
+
+    .view-wrapper.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* =========================================
+       VIEW 1: RECEIPT (Single Bill)
+       ========================================= */
+    
+    /* Hero Section above receipt */
+    .hero-header {
+      background: var(--card-dark);
+      border-radius: 24px;
+      padding: 32px;
+      margin-bottom: -24px; /* Overlap effect */
+      position: relative;
+      z-index: 10;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid var(--border-dark);
+    }
+
+    .hero-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+
+    .hero-subtitle {
+      font-size: 13px;
+      color: #8b949e;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .hero-card {
+      background: var(--accent-dim);
+      border: 1px solid rgba(61, 220, 151, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .hero-amount-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #aaa;
+      margin-bottom: 4px;
+    }
+
+    .hero-amount-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .hero-amount-val {
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .hero-status-badge {
+      background: #fbbf24;
+      color: #000;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .progress-bar-bg {
+      background: rgba(255,255,255,0.1);
+      height: 6px;
+      border-radius: 3px;
+      margin-top: 16px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: var(--accent);
+      height: 100%;
+      width: 65%;
+    }
+    .progress-text {
+      text-align: right;
+      font-size: 11px;
+      color: #8b949e;
+      margin-top: 4px;
+    }
+
+    .hero-btn {
+      width: 100%;
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 14px;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .hero-link {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 12px;
+      color: #8b949e;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* The Paper Receipt */
+    .receipt-paper {
+      background: #fff;
+      color: #000;
+      font-family: 'Courier New', Courier, monospace;
+      padding: 48px 32px 32px 32px; /* Top padding handles overlap */
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      position: relative;
+      z-index: 5;
+      /* Zigzag bottom */
+      --mask: conic-gradient(from -45deg at bottom,#0000,#000 1deg 90deg,#0000 91deg) 50% / 20px 100%;
+      -webkit-mask: var(--mask);
+      mask: var(--mask);
+      -webkit-mask-repeat: repeat-x;
+      mask-repeat: repeat-x;
+      padding-bottom: 60px;
+      margin-bottom: 40px;
+    }
+
+    .r-header { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px dashed #eee; }
+    .r-logo { border: 2px solid #000; display: inline-block; padding: 4px 8px; font-weight: 900; font-size: 20px; margin-bottom: 8px; }
+    .r-meta { font-size: 12px; color: #555; }
+
+    .r-section { margin-bottom: 24px; }
+    .r-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #999; margin-bottom: 8px; }
+    
+    .r-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+    .r-row.total { font-weight: 700; font-size: 16px; border-top: 1px dashed #000; padding-top: 8px; margin-top: 8px; }
+    
+    .r-list-item { display: flex; align-items: center; margin-bottom: 8px; }
+    .r-checkbox { width: 16px; height: 16px; border: 1px solid #000; margin-right: 12px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+    .r-checkbox.checked { background: #000; color: #fff; }
+    
+    .r-chip { background: #000; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-right: 6px; }
+    
+    .r-attachment { border: 2px solid #eee; padding: 12px; text-align: center; cursor: pointer; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .r-attachment:hover { background: #f9f9f9; }
+
+    /* =========================================
+       VIEW 2: DETAILS (Single Bill)
+       ========================================= */
+    
+    .detail-page {
+      background: var(--bg-dark);
+      min-height: 100%;
+      border-radius: 24px; /* Simulating app container */
+    }
+    
+    .app-header {
+      padding: 24px 24px 0 24px;
+      margin-bottom: 24px;
+    }
+    
+    .app-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .app-subtitle { font-size: 14px; color: #8b949e; }
+    
+    .detail-card {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 0 24px 24px 24px;
+    }
+    
+    .fairness-viz {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 0;
+    }
+    
+    .detail-list { display: flex; flex-direction: column; gap: 12px; }
+    .detail-item { 
+      display: flex; align-items: center; padding: 12px; 
+      background: rgba(255,255,255,0.03); border-radius: 12px;
+    }
+    .detail-avatar {
+      width: 40px; height: 40px; background: #333; border-radius: 50%; margin-right: 12px;
+      display: flex; align-items: center; justify-content: center; font-weight: 600;
+    }
+    .detail-info { flex: 1; }
+    .detail-name { font-weight: 600; font-size: 14px; }
+    .detail-sub { font-size: 12px; color: #8b949e; }
+    .detail-status { text-align: right; }
+    .status-paid { color: var(--accent); font-weight: 600; font-size: 13px; }
+    .status-pending { color: #fbbf24; font-size: 13px; }
+    
+    .activity-section { margin: 0 24px; }
+    .activity-title { font-size: 13px; font-weight: 600; color: #8b949e; margin-bottom: 12px; text-transform: uppercase; }
+    .activity-feed { display: flex; flex-direction: column; gap: 12px; }
+    .feed-item { font-size: 13px; color: #c9d1d9; line-height: 1.4; padding-bottom: 12px; border-bottom: 1px solid var(--border-dark); }
+    .feed-time { font-size: 11px; color: #8b949e; margin-top: 4px; }
+
+    /* =========================================
+       VIEW 3: DETAILS (Multi-Bill / Trip)
+       ========================================= */
+    
+    .trip-hero {
+      background: linear-gradient(135deg, #2e004f, #570036);
+      padding: 32px 24px;
+      border-radius: 24px 24px 0 0;
+      margin: 0 24px;
+    }
+    
+    .trip-stats-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 24px;
+    }
+    
+    .trip-stat { text-align: center; }
+    .trip-stat-val { font-size: 20px; font-weight: 700; }
+    .trip-stat-lbl { font-size: 11px; opacity: 0.7; text-transform: uppercase; }
+    
+    .balance-card {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      margin: -20px 24px 24px 24px;
+      padding: 24px;
+      border-radius: 16px;
+      position: relative;
+      z-index: 5;
+    }
+    
+    .balance-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-dark);
+    }
+    .balance-row:last-child { border-bottom: none; }
+    
+    .arrow-viz { color: #8b949e; font-size: 12px; margin: 0 8px; }
+    
+    .fab-add {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      width: 56px;
+      height: 56px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: #000;
+      box-shadow: 0 4px 20px rgba(61, 220, 151, 0.4);
+      cursor: pointer;
+    }
+    
+    .expense-list { margin: 0 24px 100px 24px; }
+    .expense-item {
+      display: flex;
+      align-items: center;
+      background: var(--card-dark);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border-dark);
+    }
+    .expense-icon { font-size: 20px; margin-right: 16px; width: 32px; height: 32px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+    
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="control-bar">
+    <button class="view-btn active" onclick="switchView('receipt')">1. Receipt View (Shared)</button>
+    <button class="view-btn" onclick="switchView('single')">2. Single Bill Details</button>
+    <button class="view-btn" onclick="switchView('multi')">3. Multi-Bill Details (Trip)</button>
+  </nav>
+
+  <div class="main-container">
+
+    <!-- VIEW 1: RECEIPT -->
+    <div id="view-receipt" class="view-wrapper active">
+      
+      <!-- Hero Header -->
+      <div class="hero-header">
+        <div class="hero-title">Lunch at Reeper</div>
+        <div class="hero-subtitle">
+            <span>Hosted by You</span>
+            <a onclick="switchView('single')" style="color:#8b949e; cursor:pointer;">Full Details →</a>
+        </div>
+        
+        <div class="hero-card">
+            <div class="hero-amount-label">YOUR SHARE</div>
+            <div class="hero-amount-row">
+                <div class="hero-amount-val">€35.60</div>
+                <div class="hero-status-badge">PENDING</div>
+            </div>
+            
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill"></div>
+            </div>
+            <div class="progress-text">65% Collected</div>
+        </div>
+        
+        <button class="hero-btn">Pay €35.60</button>
+      </div>
+      
+      <!-- Paper Receipt -->
+      <div class="receipt-paper">
+        <div class="r-header">
+            <div class="r-logo">PayFriends</div>
+            <div class="r-meta">TRANSACTION RECORD #88291</div>
+        </div>
+        
+        <div class="r-section">
+            <div class="r-section-title">Original Receipt</div>
+            <div class="r-attachment">
+                <span>📄</span> VIEW ORIGINAL FILE (PDF)
+            </div>
+        </div>
+        
+        <div class="r-section">
+            <div class="r-section-title">Cost Breakdown</div>
+            <div class="r-row">
+                <div>TOTAL BILL</div>
+                <div>€142.50</div>
+            </div>
+            <div class="r-row" style="color:#666; font-size:12px;">
+                <div>↳ TIP (10%)</div>
+                <div>€12.50</div>
+            </div>
+            
+            <!-- Price Groups Mode Example -->
+            <div style="margin-top:12px; padding-top:12px; border-top:1px dashed #eee;">
+                <div class="r-row">
+                    <div><span class="r-chip">GRP</span> 2x ALCOHOL</div>
+                    <div>€50.00</div>
+                </div>
+                <div class="r-row">
+                    <div><span class="r-chip">GRP</span> 1x NO ALC</div>
+                    <div>€15.00</div>
+                </div>
+            </div>
+            
+            <div class="r-row total">
+                <div>AMOUNT DUE</div>
+                <div>€142.50</div>
+            </div>
+        </div>
+        
+        <div class="r-section">
+            <div class="r-section-title">Payment Status</div>
+            
+            <div class="r-list-item">
+                <div class="r-checkbox checked">✓</div>
+                <div style="flex:1">YOU (PAUL)</div>
+                <div style="font-weight:700; font-size:12px;">PAID</div>
+            </div>
+            <div class="r-list-item">
+                <div class="r-checkbox"> </div>
+                <div style="flex:1">JOHN DOE</div>
+                <div style="color:#999; font-size:12px;">PENDING</div>
+            </div>
+            <div class="r-list-item">
+                <div class="r-checkbox checked">✓</div>
+                <div style="flex:1">MIKE S.</div>
+                <div style="font-weight:700; font-size:12px;">PAID</div>
+            </div>
+            <div class="r-list-item">
+                <div class="r-checkbox"> </div>
+                <div style="flex:1">SARAH</div>
+                <div style="color:#999; font-size:12px;">PENDING</div>
+            </div>
+        </div>
+        
+        <div style="text-align:center; font-size:10px; margin-top:32px; opacity:0.6;">
+            GENERATED BY PAYFRIENDS APP<br>
+            THANK YOU
+            <div style="height:20px; background:repeating-linear-gradient(90deg,#000,#000 1px,#fff 1px,#fff 3px); margin-top:8px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: SINGLE BILL DETAILS -->
+    <div id="view-single" class="view-wrapper">
+        <div class="detail-page">
+            <div class="app-header">
+                <a onclick="switchView('receipt')" style="font-size:12px; color:#8b949e; cursor:pointer;">← Back to Receipt</a>
+                <div class="app-title" style="margin-top:8px;">Lunch at Reeper</div>
+                <div class="app-subtitle">Wed Dec 12 · 4 Participants</div>
+            </div>
+            
+            <div class="detail-card">
+                <div class="fairness-viz">
+                    <div style="font-size:12px; text-transform:uppercase; color:#8b949e; letter-spacing:1px;">Fairness Score</div>
+                    <div style="font-size:48px; font-weight:800; color:var(--accent);">100%</div>
+                    <div style="font-size:13px; color:#fff;">Everything is balanced</div>
+                </div>
+                
+                <div style="display:flex; gap:12px; margin-top:24px;">
+                    <button class="hero-btn" style="background:var(--accent); color:#000;">Add Expense</button>
+                    <button class="hero-btn" style="background:#333; color:#fff;">Edit Tab</button>
+                </div>
+            </div>
+            
+            <div class="activity-section">
+                <div class="activity-title">Participants</div>
+                <div class="detail-list">
+                    <div class="detail-item">
+                        <div class="detail-avatar">ME</div>
+                        <div class="detail-info">
+                            <div class="detail-name">You</div>
+                            <div class="detail-sub">Alcohol Group</div>
+                        </div>
+                        <div class="detail-status">
+                            <div class="status-paid">PAID</div>
+                            <div class="detail-sub">€25.00</div>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-avatar">JD</div>
+                        <div class="detail-info">
+                            <div class="detail-name">John Doe</div>
+                            <div class="detail-sub">Alcohol Group</div>
+                        </div>
+                        <div class="detail-status">
+                            <div class="status-pending">OWES</div>
+                            <div class="detail-sub">€25.00</div>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-avatar">MS</div>
+                        <div class="detail-info">
+                            <div class="detail-name">Mike S.</div>
+                            <div class="detail-sub">No Alc Group</div>
+                        </div>
+                        <div class="detail-status">
+                            <div class="status-paid">PAID</div>
+                            <div class="detail-sub">€15.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="activity-section" style="margin-top:32px;">
+                <div class="activity-title">History</div>
+                <div class="activity-feed">
+                    <div class="feed-item">
+                        <strong>Mike S.</strong> paid €15.00 via Revolut.
+                        <div class="feed-time">2 hours ago</div>
+                    </div>
+                    <div class="feed-item">
+                        <strong>You</strong> paid €25.00 via Cash.
+                        <div class="feed-time">5 hours ago</div>
+                    </div>
+                    <div class="feed-item">
+                        Tab created by <strong>You</strong>.
+                        <div class="feed-time">Yesterday</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 3: MULTI BILL DETAILS -->
+    <div id="view-multi" class="view-wrapper">
+        <div class="detail-page">
+            <div class="trip-hero">
+                <div style="display:flex; justify-content:space-between;">
+                    <div style="background:rgba(255,255,255,0.2); padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700;">TRIP MODE</div>
+                    <div style="font-size:20px;">⚙️</div>
+                </div>
+                <div class="app-title" style="margin-top:16px; color:#fff;">Ski Weekend 🎿</div>
+                <div class="trip-stats-row">
+                    <div class="trip-stat">
+                        <div class="trip-stat-val">€1,240</div>
+                        <div class="trip-stat-lbl">Total Cost</div>
+                    </div>
+                    <div class="trip-stat">
+                        <div class="trip-stat-val">€310</div>
+                        <div class="trip-stat-lbl">Your Share</div>
+                    </div>
+                    <div class="trip-stat">
+                        <div class="trip-stat-val" style="color:#fbbf24">+€45</div>
+                        <div class="trip-stat-lbl">You Get Back</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="balance-card">
+                <div class="activity-title">Settlement Plan</div>
+                <div class="balance-row">
+                    <div style="display:flex; align-items:center;">
+                        <div class="detail-avatar" style="width:24px; height:24px; font-size:10px; margin-right:8px;">JD</div>
+                        <span>John</span>
+                    </div>
+                    <div class="arrow-viz">OWES ➔</div>
+                    <div style="display:flex; align-items:center;">
+                        <span>You</span>
+                        <div class="detail-avatar" style="width:24px; height:24px; font-size:10px; margin-left:8px; background:var(--accent); color:#000;">ME</div>
+                    </div>
+                    <div style="font-weight:700; margin-left:12px;">€45.00</div>
+                </div>
+                <div class="balance-row">
+                    <div style="display:flex; align-items:center;">
+                        <div class="detail-avatar" style="width:24px; height:24px; font-size:10px; margin-right:8px;">MS</div>
+                        <span>Mike</span>
+                    </div>
+                    <div class="arrow-viz">OWES ➔</div>
+                    <div style="display:flex; align-items:center;">
+                        <span>Sarah</span>
+                        <div class="detail-avatar" style="width:24px; height:24px; font-size:10px; margin-left:8px;">S</div>
+                    </div>
+                    <div style="font-weight:700; margin-left:12px;">€120.00</div>
+                </div>
+            </div>
+            
+            <div class="expense-list">
+                <div class="activity-title">Expenses</div>
+                
+                <div class="expense-item">
+                    <div class="expense-icon">⛽</div>
+                    <div class="detail-info">
+                        <div class="detail-name">Gas for Car</div>
+                        <div class="detail-sub">Paid by You</div>
+                    </div>
+                    <div style="font-weight:700;">€85.00</div>
+                </div>
+                
+                <div class="expense-item">
+                    <div class="expense-icon">🏨</div>
+                    <div class="detail-info">
+                        <div class="detail-name">Airbnb Deposit</div>
+                        <div class="detail-sub">Paid by Sarah</div>
+                    </div>
+                    <div style="font-weight:700;">€420.00</div>
+                </div>
+                
+                <div class="expense-item">
+                    <div class="expense-icon">🍕</div>
+                    <div class="detail-info">
+                        <div class="detail-name">Friday Pizza</div>
+                        <div class="detail-sub">Paid by John</div>
+                    </div>
+                    <div style="font-weight:700;">€65.50</div>
+                </div>
+                 <div class="expense-item">
+                    <div class="expense-icon">🍻</div>
+                    <div class="detail-info">
+                        <div class="detail-name">Drinks</div>
+                        <div class="detail-sub">Paid by Mike</div>
+                    </div>
+                    <div style="font-weight:700;">€110.00</div>
+                </div>
+            </div>
+            
+            <div class="fab-add">+</div>
+        </div>
+    </div>
+
+  </div>
+
+  <script>
+    function switchView(viewId) {
+      // Buttons
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if(btn.textContent.toLowerCase().includes(viewId === 'single' ? 'single' : viewId === 'multi' ? 'multi' : 'receipt')) {
+            btn.classList.add('active');
+        }
+      });
+      
+      // Views
+      document.querySelectorAll('.view-wrapper').forEach(el => el.classList.remove('active'));
+      document.getElementById('view-' + viewId).classList.add('active');
+    }
+  </script>
+
+</body>
+</html>
+

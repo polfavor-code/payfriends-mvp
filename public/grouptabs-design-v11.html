@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFriends Design V11: Funky & Final</title>
+  
+  <!-- Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <!-- Funky Font for Stickers -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap">
+  
+  <style>
+    :root {
+      /* Dark Theme Palette */
+      --bg: #0e1116;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #3ddc97;
+      --accent-dim: rgba(61, 220, 151, 0.15);
+      --accent-glow: rgba(61, 220, 151, 0.4);
+      --danger: #f85149;
+      --pending: #d29922;
+      
+      /* Funky "Not Yet" Colors */
+      --funky-orange: #f59e0b;
+      --funky-bg: rgba(245, 158, 11, 0.1);
+      --funky-border: #b45309;
+      
+      --font: 'Inter', system-ui, sans-serif;
+      --font-funky: 'Permanent Marker', cursive;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: var(--text);
+      font-family: var(--font);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* --- CONTROL BAR --- */
+    .preview-controls {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      border-bottom: 1px solid #444;
+      z-index: 9999;
+      padding: 0 16px;
+    }
+    .control-group { display: flex; gap: 8px; align-items: center; margin-right: 16px; border-right: 1px solid #444; padding-right: 16px; }
+    .toggle-btn {
+      background: #333; color: #aaa; border: 1px solid #444;
+      padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600;
+    }
+    .toggle-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+    /* --- LAYOUT --- */
+    .app-container {
+      margin-top: 60px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      background: var(--bg);
+      min-height: calc(100vh - 60px);
+      box-shadow: 0 0 40px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    @media (min-width: 801px) {
+      .app-container { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+    }
+
+    /* --- HEADER --- */
+    .app-header {
+      background: var(--card);
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .back-btn { font-size: 20px; color: var(--text); text-decoration: none; }
+    
+    .share-btn-header {
+        background: var(--accent-dim);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        display: flex; align-items: center; gap: 6px;
+        cursor: pointer;
+        text-transform: uppercase;
+    }
+
+    .header-main-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .page-title { font-size: 22px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .page-meta { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+    
+    .split-pill {
+        font-size: 10px;
+        text-transform: uppercase;
+        font-weight: 700;
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    /* Stats & Progress */
+    .stats-container { margin-top: 24px; }
+    
+    .progress-track {
+        height: 12px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+    .progress-fill {
+        height: 100%;
+        width: 65%;
+        background: linear-gradient(90deg, var(--accent), #34d399);
+        box-shadow: 0 0 10px var(--accent-glow);
+    }
+    
+    .progress-labels {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .prog-val-left { color: var(--text); }
+    .prog-val-right { color: var(--pending); font-size: 14px; } 
+    
+    /* --- RECEIPT (In Header) --- */
+    .header-receipt-row {
+        margin-top: 24px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 16px;
+    }
+    .receipt-btn-big {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .receipt-btn-big:hover { background: rgba(255,255,255,0.1); }
+    
+    .receipt-upload-link {
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        text-align: center;
+        display: block;
+        padding: 8px;
+    }
+
+    /* --- GROUP CARDS --- */
+    .group-cards-area {
+      padding: 24px 32px 0 32px;
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+    }
+    .group-card {
+      min-width: 180px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .group-card.active {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .group-card.active::after {
+        content: '✓'; position: absolute; top: 12px; right: 12px; color: var(--accent); font-weight: 800;
+    }
+    .gc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .gc-icon { font-size: 24px; }
+    .gc-name { font-size: 14px; font-weight: 700; color: #fff; }
+    .gc-sub { font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+    .gc-price { font-size: 16px; color: var(--accent); font-weight: 800; margin-top: auto; }
+
+    /* --- HERO BOX (FUNKY!) --- */
+    .hero-pop-container {
+        padding: 24px 32px;
+    }
+    
+    .hero-pop-box {
+        /* Pending State (Orange/Brown) */
+        background: rgba(20, 20, 20, 0.8);
+        border: 2px dashed var(--funky-border);
+        border-radius: 24px;
+        padding: 32px 24px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Paid State (Green) */
+    .hero-pop-box.paid-state {
+        border-color: var(--accent);
+        background: rgba(61, 220, 151, 0.05);
+        border-style: solid;
+    }
+
+    .pop-icon { font-size: 32px; margin-bottom: 12px; display: block; }
+    .pop-title { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .pop-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+    
+    .pop-price { font-size: 48px; font-weight: 800; color: #fff; margin: 16px 0; display: block; }
+    .pop-price.highlight { color: var(--funky-orange); text-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+    
+    /* Funky Sticker */
+    .funky-sticker {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-family: var(--font-funky);
+        font-size: 14px;
+        color: var(--funky-orange);
+        border: 2px solid var(--funky-orange);
+        padding: 4px 12px;
+        border-radius: 4px;
+        transform: rotate(12deg);
+        opacity: 0.8;
+        letter-spacing: 1px;
+    }
+    
+    /* PAID Sticker */
+    .paid-sticker {
+        display: none;
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%) rotate(-10deg);
+        font-family: var(--font-funky);
+        font-size: 32px;
+        color: var(--accent);
+        border: 4px solid var(--accent);
+        padding: 12px 24px;
+        background: rgba(0,0,0,0.8);
+        z-index: 10;
+        white-space: nowrap;
+    }
+    .hero-pop-box.paid-state .paid-sticker { display: block; animation: stampIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    
+    @keyframes stampIn {
+        from { transform: translate(-50%, -50%) scale(2) rotate(-20deg); opacity: 0; }
+        to { transform: translate(-50%, -50%) scale(1) rotate(-10deg); opacity: 1; }
+    }
+
+    .pay-btn-big {
+        background: transparent;
+        color: var(--funky-orange);
+        border: 2px solid var(--funky-orange);
+        padding: 14px 32px;
+        border-radius: 30px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 12px;
+    }
+    .pay-btn-big:hover { background: var(--funky-orange); color: #000; }
+    
+    /* Hide elements when paid */
+    .hero-pop-box.paid-state .pay-btn-big,
+    .hero-pop-box.paid-state .funky-sticker { display: none; }
+    
+    .hero-pop-box.paid-state .pop-price { color: var(--accent); text-shadow: none; opacity: 0.3; }
+    .hero-pop-box.paid-state .pop-title { opacity: 0.3; }
+
+    /* --- LIST --- */
+    .list-section {
+        padding: 0 32px 100px 32px;
+        margin-top: 8px;
+    }
+    
+    .list-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+    }
+    
+    .list-title-row { display: flex; align-items: center; gap: 12px; }
+    .list-title { font-size: 14px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    
+    .fairness-pill {
+        background: rgba(61, 220, 151, 0.1);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(61, 220, 151, 0.3);
+        display: flex; align-items: center; gap: 6px;
+    }
+    
+    .sort-btn {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex; align-items: center; gap: 4px;
+    }
+
+    .p-row {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .p-avatar {
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        background: #21262d;
+        border: 2px solid var(--border);
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; color: var(--text);
+        margin-right: 16px;
+        flex-shrink: 0;
+    }
+    @media (max-width: 600px) { .p-avatar { display: none; } }
+
+    .p-info { flex: 1; }
+    .p-name { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+    .p-sub { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    
+    .time-badge { background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+    
+    .p-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; min-width: 100px; }
+    
+    .stamp {
+        font-size: 10px; font-weight: 800; text-transform: uppercase;
+        padding: 4px 8px; border-radius: 6px;
+        margin-bottom: 4px;
+        display: inline-block;
+    }
+    .stamp.paid { background: var(--accent-dim); color: var(--accent); }
+    .stamp.pending { background: var(--pending-dim); color: var(--pending); }
+
+    /* Share Link Button (Replaces Unknown Stamp) */
+    .share-link-btn {
+        background: var(--accent-dim);
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex; align-items: center; gap: 6px;
+        text-transform: uppercase;
+        transition: all 0.2s;
+    }
+    .share-link-btn:hover { background: var(--accent); color: #000; }
+
+    .user-prog-track { width: 80px; height: 4px; background: #333; border-radius: 2px; margin-top: 6px; }
+    .user-prog-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+
+    /* --- FOOTER --- */
+    .footer-bar {
+        position: sticky;
+        bottom: 0;
+        background: var(--card);
+        border-top: 1px solid var(--border);
+        padding: 16px 32px;
+        z-index: 100;
+        display: flex; gap: 12px;
+    }
+    .f-btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 14px; border: none; }
+    .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-pri { background: var(--accent); color: #000; }
+
+    /* Utilities */
+    .hide { display: none !important; }
+
+  </style>
+</head>
+<body>
+
+  <div class="preview-controls">
+    <div class="control-group">
+        <button class="toggle-btn active" onclick="setMode('host')">HOST</button>
+        <button class="toggle-btn" onclick="setMode('public')">GUEST</button>
+    </div>
+    <div class="control-group">
+        <button class="toggle-btn active" onclick="setSplit('equal')">EQUAL</button>
+        <button class="toggle-btn" onclick="setSplit('group')">GROUP</button>
+    </div>
+    <div class="control-group">
+        <button class="toggle-btn active" onclick="togglePayment()">TOGGLE PAID</button>
+    </div>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- HEADER -->
+    <div class="app-header">
+        <div class="header-top">
+            <a class="back-btn">←</a>
+            <button class="share-btn-header" onclick="alert('Link Copied!')">
+                <span>🔗</span> Share Link
+            </button>
+        </div>
+
+        <div class="header-main-row">
+            <div>
+                <div class="page-title">
+                    <span style="font-size:24px;">🍕</span> Dinner at Mario's
+                </div>
+                <div class="page-meta">
+                    <span>Wed Dec 12</span> • <span>4 People</span> • 
+                    <span class="split-pill" id="header-split-label">EQUAL SPLIT</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="stats-container">
+            <div class="progress-track">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="progress-labels">
+                <div class="prog-val-left">65% Collected</div>
+                <div class="prog-val-right">€50.00 Remaining</div>
+            </div>
+        </div>
+        
+        <!-- Receipt Row -->
+        <div class="header-receipt-row">
+            <div id="receipt-view-link" class="">
+                <button class="receipt-btn-big">
+                    <span style="font-size:18px">📄</span> View Original Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GROUP CARDS -->
+    <div id="group-cards" class="group-cards-area hide">
+        <div class="group-card active">
+            <div class="gc-header">
+                <div class="gc-icon">🍷</div>
+                <div class="gc-name">Alcohol</div>
+            </div>
+            <div class="gc-sub">Wine, cocktails, and heavy hitters.</div>
+            <div class="gc-price">€25.00</div>
+        </div>
+        <div class="group-card">
+            <div class="gc-header">
+                <div class="gc-icon">💧</div>
+                <div class="gc-name">No Alc</div>
+            </div>
+            <div class="gc-sub">Soft drinks, water, and designated drivers.</div>
+            <div class="gc-price">€15.00</div>
+        </div>
+    </div>
+
+    <!-- HERO BOX (FUNKY ORANGE / PAID GREEN) -->
+    <div class="hero-pop-container">
+        <div id="hero-box" class="hero-pop-box">
+            
+            <!-- Stickers -->
+            <div class="funky-sticker">PENDING PAYMENT</div>
+            <div class="paid-sticker">PAID 100%<br>THANKS!</div>
+            
+            <span class="pop-icon">👋</span>
+            <div class="pop-title">Your Fair Share</div>
+            
+            <div class="pop-price highlight" id="hero-price">€35.60</div>
+            
+            <div class="pop-sub" id="hero-sub">
+                Ready to settle up?
+            </div>
+            
+            <button class="pay-btn-big" onclick="togglePayment()">PAY NOW</button>
+        </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="list-section">
+        <div class="list-controls">
+            <div class="list-title-row">
+                <div class="list-title">Participants (4)</div>
+                <!-- Fairness Image -->
+                <div class="fairness-pill">
+                    <img src="/images/payfriends-handshake.svg" style="width:16px; height:16px; opacity:0.8;" onerror="this.style.display='none';this.nextElementSibling.textContent='⚖️'">
+                    <span></span> 100% FAIRLY DIVIDED
+                </div>
+            </div>
+            
+            <button class="sort-btn">
+                Sort: Highest Payer ▾
+            </button>
+        </div>
+
+        <!-- Self -->
+        <div class="p-row">
+            <div class="p-avatar" style="border-color:var(--accent); color:var(--accent);">ME</div>
+            <div class="p-info">
+                <div class="p-name">You (Paul)</div>
+                <div class="p-sub">
+                    Host • <span class="time-badge">5m ago</span>
+                </div>
+            </div>
+            <div class="p-right">
+                <div class="stamp paid">PAID</div>
+                <div class="user-prog-track"><div class="user-prog-fill" style="width:100%"></div></div>
+            </div>
+        </div>
+
+        <!-- Guest 1 -->
+        <div class="p-row">
+            <div class="p-avatar">MS</div>
+            <div class="p-info">
+                <div class="p-name">Mike S.</div>
+                <div class="p-sub">
+                    <span class="time-badge">2h ago</span>
+                </div>
+            </div>
+            <div class="p-right">
+                <div class="stamp paid">PAID</div>
+                <div class="user-prog-track"><div class="user-prog-fill" style="width:100%"></div></div>
+            </div>
+        </div>
+
+        <!-- Guest 2 (Pending) -->
+        <div class="p-row">
+            <div class="p-avatar">JD</div>
+            <div class="p-info">
+                <div class="p-name">John Doe</div>
+                <div class="p-sub">Pending</div>
+            </div>
+            <div class="p-right">
+                <div class="stamp pending">PENDING</div>
+                <div class="user-prog-track"><div class="user-prog-fill" style="width:0%"></div></div>
+            </div>
+        </div>
+
+        <!-- Pending / Unknown (Waiting) -->
+        <div class="p-row" style="opacity:0.8; border-style:dashed;">
+            <div class="p-avatar" style="border-style:dashed;">?</div>
+            <div class="p-info">
+                <div class="p-name" style="color:var(--muted);">Waiting for guest...</div>
+            </div>
+            <div class="p-right">
+                <!-- REPLACED UNKNOWN STAMP WITH LINK -->
+                <button class="share-link-btn" onclick="alert('Copied link!')">
+                    <span>🔗</span> Share link to guest
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FOOTER (Host Only) -->
+    <div id="host-footer" class="footer-bar">
+        <button class="f-btn btn-sec">Edit Details</button>
+        <button class="f-btn btn-pri">Report Payment</button>
+    </div>
+
+  </div>
+
+  <script>
+    let isPaid = false;
+
+    function togglePayment() {
+        isPaid = !isPaid;
+        const box = document.getElementById('hero-box');
+        if (isPaid) {
+            box.classList.add('paid-state');
+        } else {
+            box.classList.remove('paid-state');
+        }
+    }
+
+    function setMode(mode) {
+        const footer = document.getElementById('host-footer');
+        if(mode === 'host') footer.classList.remove('hide');
+        else footer.classList.add('hide');
+        
+        document.querySelectorAll('.toggle-btn').forEach(b => {
+            if(b.textContent.toLowerCase().includes(mode)) b.classList.add('active');
+            else if(b.onclick.toString().includes('setMode')) b.classList.remove('active');
+        });
+    }
+
+    function setSplit(split) {
+        const cards = document.getElementById('group-cards');
+        const headerLabel = document.getElementById('header-split-label');
+        const price = document.getElementById('hero-price');
+
+        if(split === 'group') {
+            cards.classList.remove('hide');
+            headerLabel.innerText = 'GROUP SPLIT';
+            price.innerText = '€25.00';
+        } else {
+            cards.classList.add('hide');
+            headerLabel.innerText = 'EQUAL SPLIT';
+            price.innerText = '€35.60';
+        }
+        
+        document.querySelectorAll('.toggle-btn').forEach(b => {
+            if(b.textContent.toLowerCase().includes(split)) b.classList.add('active');
+            else if(b.onclick.toString().includes('setSplit')) b.classList.remove('active');
+        });
+    }
+    
+    function setReceipt(state) {
+        // Logic placeholder
+    }
+    
+    // Init
+    setMode('host');
+    setSplit('equal');
+  </script>
+
+</body>
+</html>
+

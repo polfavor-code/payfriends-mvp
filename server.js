@@ -5987,6 +5987,9 @@ app.get('/api/grouptabs/:id', (req, res) => {
       console.warn('Error fetching price groups:', e);
     }
     
+    // Determine if current user is the creator
+    const isCreator = access.isCreator || (req.user && tab.creator_user_id === req.user.id);
+    
     res.json({
       success: true,
       tab,
@@ -5995,7 +5998,10 @@ app.get('/api/grouptabs/:id', (req, res) => {
       payments,
       currentParticipant,
       tiers,
-      priceGroups
+      priceGroups,
+      isCreator,
+      // Include owner token for creators to enable receipt uploads
+      ownerToken: isCreator ? tab.owner_token : null
     });
   } catch (err) {
     console.error('Error getting tab:', err);
@@ -6580,6 +6586,23 @@ app.patch('/api/grouptabs/token/:ownerToken', uploadGrouptabs.single('receipt'),
       const receiptFilePath = `/uploads/grouptabs/${req.file.filename}`;
       updates.push('receipt_file_path = ?');
       params.push(receiptFilePath);
+    }
+    
+    // Handle receipt deletion
+    if (req.body.deleteReceipt === 'true') {
+      // Optionally delete the file from disk
+      if (tab.receipt_file_path) {
+        const oldFilePath = path.join(__dirname, tab.receipt_file_path);
+        if (fs.existsSync(oldFilePath)) {
+          try {
+            fs.unlinkSync(oldFilePath);
+          } catch (e) {
+            console.warn('Could not delete old receipt file:', e);
+          }
+        }
+      }
+      updates.push('receipt_file_path = ?');
+      params.push(null);
     }
     
     if (updates.length > 0) {
@@ -7766,21 +7789,33 @@ app.get('/grouptabs/view/:publicToken', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'grouptabs-equal-view.html'));
 });
 
-// GroupTabs view page - handle numeric IDs only (legacy)
+// GroupTabs view page - handle numeric IDs only
 app.get('/grouptabs/:id', (req, res, next) => {
   // Skip if ID is not numeric (let other routes handle)
   if (!/^\d+$/.test(req.params.id)) {
     return next();
   }
   
+  // Serve the view page for all users (logged in or guests)
+  // The page and API will handle access control
+  res.sendFile(path.join(__dirname, 'public', 'grouptabs-view.html'));
+});
+
+// GroupTabs receipt view - classic receipt-styled page
+app.get('/grouptabs/:id/receipt', (req, res, next) => {
+  // Skip if ID is not numeric
+  if (!/^\d+$/.test(req.params.id)) {
+    return next();
+  }
+  
   if (req.user) {
-    res.sendFile(path.join(__dirname, 'public', 'grouptabs-view.html'));
+    res.sendFile(path.join(__dirname, 'public', 'grouptabs-receipt.html'));
   } else {
     res.redirect('/');
   }
 });
 
-// Magic link page (public access)
+// Magic link page (public access) - redirect to main view page
 app.get('/tab/:token', (req, res) => {
   const { token } = req.params;
   
@@ -7794,7 +7829,8 @@ app.get('/tab/:token', (req, res) => {
     return res.send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>This tab has been closed</h1><p style="color:#a7b0bd">Only members can view closed tabs.</p><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
   }
   
-  res.sendFile(path.join(__dirname, 'public', 'grouptabs-guest.html'));
+  // Redirect to the main GroupTab view page
+  res.redirect(`/grouptabs/${tab.id}`);
 });
 
 // Serve GroupTab receipt files

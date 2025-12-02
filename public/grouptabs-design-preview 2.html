@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GroupTabs Design Preview</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/chat-theme.css">
+  <link rel="stylesheet" href="/css/grouptabs.css">
+  <style>
+    body {
+      background: #0e1116;
+      color: #e6eef6;
+      font-family: 'Inter', sans-serif;
+      padding: 40px 20px;
+    }
+    .preview-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .variant-section {
+      margin-bottom: 80px;
+      border-bottom: 1px dashed rgba(255,255,255,0.1);
+      padding-bottom: 40px;
+    }
+    .variant-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--accent);
+    }
+    .variant-desc {
+      color: var(--muted);
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+    
+    /* Common utilities for mockups */
+    .mockup-frame {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+    }
+    .mockup-header {
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .mockup-list {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* --- Variant 1: Minimalist Ledger --- */
+    .v1-list { gap: 0; }
+    .v1-row {
+      display: flex;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .v1-row:last-child { border-bottom: none; }
+    .v1-icon {
+      width: 40px; height: 40px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-right: 16px;
+    }
+    .v1-info { flex: 1; }
+    .v1-title { font-weight: 600; font-size: 16px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .v1-tag { font-size: 10px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); color: var(--muted); letter-spacing: 0.5px; }
+    .v1-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .v1-financial { font-size: 13px; margin-top: 4px; color: var(--text); }
+    .v1-financial span { color: var(--muted); }
+    .v1-ring { width: 48px; height: 48px; position: relative; display: flex; align-items: center; justify-content: center; }
+    .v1-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+    .v1-ring-text { position: absolute; font-size: 11px; font-weight: 600; }
+
+    /* --- Variant 2: Neo-Glass Finance --- */
+    .v2-frame {
+      background: radial-gradient(circle at top right, #1c2333 0%, #0e1116 100%);
+    }
+    .v2-row {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      transition: transform 0.2s;
+    }
+    .v2-row:hover { background: rgba(255, 255, 255, 0.06); transform: translateY(-2px); }
+    .v2-icon {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin-right: 16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .v2-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+    .v2-meta { font-size: 12px; color: var(--muted); display: flex; gap: 8px; }
+    .v2-financial { font-size: 13px; color: #3ddc97; margin-top: 6px; font-weight: 500; }
+    .v2-ring { width: 56px; height: 56px; position: relative; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 8px rgba(61,220,151,0.2)); }
+
+    /* --- Variant 3: Social Bubble --- */
+    .v3-row {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      border: none;
+    }
+    .v3-icon {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin-right: 16px;
+    }
+    .v3-title { font-size: 16px; font-weight: 700; }
+    .v3-pill { background: rgba(61,220,151,0.1); color: #3ddc97; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; display: inline-block; margin-left: 6px; }
+    .v3-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .v3-ring { width: 44px; height: 44px; background: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; border: 3px solid #3ddc97; color: #3ddc97; }
+
+    /* --- Variant 4: High Contrast Dashboard --- */
+    .v4-row {
+      background: #000;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+    }
+    .v4-icon {
+      width: 40px; height: 40px;
+      border: 1px solid #333;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-right: 16px;
+      color: #fff;
+    }
+    .v4-title { font-family: monospace; font-size: 16px; font-weight: 600; letter-spacing: -0.5px; color: #fff; }
+    .v4-data { font-family: monospace; font-size: 12px; color: #888; margin-top: 4px; }
+    .v4-value { color: #fff; font-weight: 600; }
+    .v4-ring { width: 50px; height: 50px; position: relative; }
+    
+    /* --- Variant 5: Card Stack --- */
+    .v5-row {
+      background: #1a1d24;
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .v5-top { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .v5-icon-title { display: flex; align-items: center; gap: 12px; }
+    .v5-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .v5-progress-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-top: 12px; }
+    .v5-fill { height: 100%; background: #3ddc97; border-radius: 3px; }
+    .v5-stats { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--muted); }
+
+    /* --- Variant 6: Timeline View --- */
+    .v6-list { position: relative; padding-left: 20px; }
+    .v6-line { position: absolute; left: 29px; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.1); }
+    .v6-row { display: flex; align-items: flex-start; padding: 16px 0; position: relative; }
+    .v6-dot { width: 20px; height: 20px; background: #0e1116; border: 2px solid var(--accent); border-radius: 50%; margin-right: 16px; z-index: 2; margin-top: 4px; }
+    .v6-content { flex: 1; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px; }
+    .v6-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    
+    /* Utility for SVG Rings */
+    .progress-ring-circle {
+      transition: stroke-dashoffset 0.35s;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+  </style>
+</head>
+<body>
+
+<div class="preview-container">
+  <h1>GroupTabs Overview - Design Concepts</h1>
+  <p style="color:var(--muted); margin-bottom:40px;">6 variations for the new tab overview row.</p>
+
+  <!-- VARIANT 1 -->
+  <div class="variant-section">
+    <div class="variant-title">1. The Minimalist Ledger</div>
+    <div class="variant-desc">Clean, list-based, dividers. Focus on data density.</div>
+    
+    <div class="mockup-frame">
+      <div class="mockup-header">
+        <span style="font-weight:700; font-size:18px;">GroupTabs</span>
+        <button style="background:transparent; border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:20px; font-size:13px;">+ New Tab</button>
+      </div>
+      <div class="mockup-list v1-list">
+        
+        <!-- Row 1 -->
+        <div class="v1-row">
+          <div class="v1-icon">🍕</div>
+          <div class="v1-info">
+            <div class="v1-title">Friday Dinner <span class="v1-tag">One-Bill</span></div>
+            <div class="v1-meta">Created by You • 4 participants</div>
+            <div class="v1-financial">Total: €145.00 <span>•</span> <span style="color:var(--accent)">Unpaid: €36.25</span></div>
+          </div>
+          <div class="v1-ring">
+            <svg width="48" height="48">
+              <circle stroke="rgba(255,255,255,0.1)" stroke-width="3" fill="transparent" r="20" cx="24" cy="24"/>
+              <circle stroke="#3ddc97" stroke-width="3" fill="transparent" r="20" cx="24" cy="24" stroke-dasharray="125.6" stroke-dashoffset="31.4"/>
+            </svg>
+            <div class="v1-ring-text">75%</div>
+          </div>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="v1-row">
+          <div class="v1-icon" style="color:#818cf8; background:rgba(99,102,241,0.1)">✈️</div>
+          <div class="v1-info">
+            <div class="v1-title">Barcelona Trip <span class="v1-tag">Multi-Bill</span></div>
+            <div class="v1-meta">Created by Victor • 8 participants</div>
+            <div class="v1-financial">Total: €1,240.00 <span>•</span> <span style="color:var(--muted)">All settled</span></div>
+          </div>
+          <div class="v1-ring">
+            <svg width="48" height="48">
+              <circle stroke="rgba(255,255,255,0.1)" stroke-width="3" fill="transparent" r="20" cx="24" cy="24"/>
+              <circle stroke="#3ddc97" stroke-width="3" fill="transparent" r="20" cx="24" cy="24" stroke-dasharray="125.6" stroke-dashoffset="0"/>
+            </svg>
+            <div class="v1-ring-text">100%</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- VARIANT 2 -->
+  <div class="variant-section">
+    <div class="variant-title">2. Neo-Glass Finance</div>
+    <div class="variant-desc">Modern glassmorphism with depth and glow.</div>
+    
+    <div class="mockup-frame v2-frame">
+      <div class="mockup-header" style="background:transparent; border:none;">
+        <span style="font-weight:800; font-size:20px;">GroupTabs</span>
+        <button style="background:rgba(61,220,151,0.2); color:#3ddc97; border:none; padding:8px 16px; border-radius:20px; font-weight:600; font-size:13px;">+ New</button>
+      </div>
+      <div class="mockup-list">
+        
+        <div class="v2-row">
+          <div class="v2-icon">🍕</div>
+          <div class="v2-info" style="flex:1">
+            <div class="v2-title">Friday Dinner</div>
+            <div class="v2-meta">One-Bill • Created by You</div>
+            <div class="v2-financial">€36.25 unpaid</div>
+          </div>
+          <div class="v2-ring">
+            <svg width="56" height="56">
+              <circle stroke="rgba(255,255,255,0.05)" stroke-width="4" fill="transparent" r="24" cx="28" cy="28"/>
+              <circle stroke="#3ddc97" stroke-width="4" fill="transparent" stroke-linecap="round" r="24" cx="28" cy="28" stroke-dasharray="150" stroke-dashoffset="37"/>
+            </svg>
+            <div style="position:absolute; font-weight:700; font-size:13px;">75%</div>
+          </div>
+        </div>
+
+        <div class="v2-row">
+          <div class="v2-icon" style="color:#818cf8; text-shadow:0 0 10px rgba(129,140,248,0.5)">✈️</div>
+          <div class="v2-info" style="flex:1">
+            <div class="v2-title">Barcelona Trip</div>
+            <div class="v2-meta">Multi-Bill • Created by Victor</div>
+            <div class="v2-financial" style="color:var(--muted)">Settled</div>
+          </div>
+          <div class="v2-ring">
+            <svg width="56" height="56">
+              <circle stroke="rgba(255,255,255,0.05)" stroke-width="4" fill="transparent" r="24" cx="28" cy="28"/>
+              <circle stroke="#818cf8" stroke-width="4" fill="transparent" stroke-linecap="round" r="24" cx="28" cy="28" stroke-dasharray="150" stroke-dashoffset="0"/>
+            </svg>
+            <div style="position:absolute; font-weight:700; font-size:13px; color:#818cf8">100%</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- VARIANT 3 -->
+  <div class="variant-section">
+    <div class="variant-title">3. Social Bubble</div>
+    <div class="variant-desc">Friendly, chat-like, rounded aesthetics.</div>
+    
+    <div class="mockup-frame" style="background:#000;">
+      <div class="mockup-header">
+        <span style="font-weight:800; font-size:20px;">My Tabs</span>
+        <button style="background:linear-gradient(90deg, #3ddc97, #2563eb); border:none; color:white; width:32px; height:32px; border-radius:50%; font-size:20px;">+</button>
+      </div>
+      <div class="mockup-list">
+        
+        <div class="v3-row">
+          <div class="v3-icon">🍕</div>
+          <div style="flex:1">
+            <div class="v3-title">Friday Dinner <span class="v3-pill">ACTIVE</span></div>
+            <div class="v3-meta">You, Sarah, Mike • €145 total</div>
+          </div>
+          <div class="v3-ring">75%</div>
+        </div>
+
+        <div class="v3-row" style="opacity:0.7">
+          <div class="v3-icon" style="background:rgba(129,140,248,0.1)">✈️</div>
+          <div style="flex:1">
+            <div class="v3-title">Barcelona Trip</div>
+            <div class="v3-meta">8 people • €1,240 total</div>
+          </div>
+          <div class="v3-ring" style="border-color:var(--muted); color:var(--muted)">✓</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- VARIANT 4 -->
+  <div class="variant-section">
+    <div class="variant-title">4. High Contrast Dashboard</div>
+    <div class="variant-desc">Data-first, dark mode pro tool.</div>
+    
+    <div class="mockup-frame" style="background:#111; border:1px solid #333;">
+      <div class="mockup-header" style="border-bottom:1px solid #333;">
+        <span style="font-family:monospace; font-weight:700; letter-spacing:-1px;">GROUP_TABS</span>
+        <button style="background:#3ddc97; color:black; border:none; padding:4px 12px; font-family:monospace; font-weight:700;">NEW_TAB</button>
+      </div>
+      <div class="mockup-list">
+        
+        <div class="v4-row">
+          <div class="v4-icon">🍕</div>
+          <div style="flex:1">
+            <div class="v4-title">FRIDAY_DINNER</div>
+            <div class="v4-data">CREATOR: YOU | ID: #8921</div>
+            <div class="v4-data">UNPAID: <span class="v4-value" style="color:#3ddc97">€36.25</span> / €145.00</div>
+          </div>
+          <div class="v4-ring">
+            <svg width="50" height="50">
+               <circle stroke="#333" stroke-width="6" fill="none" r="20" cx="25" cy="25"/>
+               <circle stroke="#3ddc97" stroke-width="6" fill="none" r="20" cx="25" cy="25" stroke-dasharray="125" stroke-dashoffset="31"/>
+            </svg>
+            <div style="position:absolute; top:18px; left:0; right:0; text-align:center; font-size:10px; font-family:monospace;">75%</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- VARIANT 5 -->
+  <div class="variant-section">
+    <div class="variant-title">5. Card Stack</div>
+    <div class="variant-desc">Each tab is a distinct project card with linear progress.</div>
+    
+    <div class="mockup-frame">
+      <div class="mockup-list">
+        
+        <div class="v5-row">
+          <div class="v5-top">
+            <div class="v5-icon-title">
+              <div class="v5-icon">🍕</div>
+              <div style="font-weight:600">Friday Dinner</div>
+            </div>
+            <div style="font-size:12px; background:rgba(61,220,151,0.1); color:#3ddc97; padding:4px 8px; border-radius:6px;">Active</div>
+          </div>
+          <div style="font-size:13px; color:var(--muted)">Created by You • 4 participants</div>
+          <div class="v5-progress-bar">
+            <div class="v5-fill" style="width:75%"></div>
+          </div>
+          <div class="v5-stats">
+            <span>€108.75 paid</span>
+            <span>€145.00 total</span>
+          </div>
+        </div>
+
+        <div class="v5-row">
+          <div class="v5-top">
+            <div class="v5-icon-title">
+              <div class="v5-icon" style="color:#818cf8">✈️</div>
+              <div style="font-weight:600">Barcelona Trip</div>
+            </div>
+            <div style="font-size:12px; background:rgba(255,255,255,0.05); color:var(--muted); padding:4px 8px; border-radius:6px;">Settled</div>
+          </div>
+          <div style="font-size:13px; color:var(--muted)">Created by Victor • 8 participants</div>
+          <div class="v5-progress-bar">
+            <div class="v5-fill" style="width:100%; background:#818cf8"></div>
+          </div>
+          <div class="v5-stats">
+            <span>All settled</span>
+            <span>€1,240.00 total</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- VARIANT 6 -->
+  <div class="variant-section">
+    <div class="variant-title">6. Timeline View</div>
+    <div class="variant-desc">Chronological stream focus.</div>
+    
+    <div class="mockup-frame">
+      <div class="mockup-list v6-list">
+        <div class="v6-line"></div>
+        
+        <div class="v6-row">
+          <div class="v6-dot"></div>
+          <div class="v6-content">
+            <div class="v6-header">
+              <span style="font-weight:600">Friday Dinner</span>
+              <span style="font-size:12px; color:var(--accent)">75%</span>
+            </div>
+            <div style="font-size:13px; color:var(--muted); margin-bottom:4px;">2 hours ago • One-Bill</div>
+            <div style="font-size:13px;">Waiting on <span style="color:#fff">Mike</span></div>
+          </div>
+        </div>
+
+        <div class="v6-row">
+          <div class="v6-dot" style="border-color:var(--muted); background:var(--muted)"></div>
+          <div class="v6-content" style="opacity:0.7">
+             <div class="v6-header">
+              <span style="font-weight:600">Barcelona Trip</span>
+              <span style="font-size:12px; color:var(--muted)">Done</span>
+            </div>
+            <div style="font-size:13px; color:var(--muted);">Last month • Multi-Bill</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
+

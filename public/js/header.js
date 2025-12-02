@@ -92,6 +92,7 @@
    * @param {Object} options - Configuration options
    * @param {boolean} options.hasActivitySection - Whether the page has an activity section (like app.html)
    * @param {Function} options.onActivityClick - Optional custom handler for activity button click
+   * @param {boolean} options.skipAuthRedirect - If true, throw error instead of redirecting when not authenticated
    */
   async function initializeHeader(options = {}) {
     try {
@@ -107,8 +108,8 @@
       const container = document.querySelector('main.container') || document.querySelector('.container') || document.body;
       container.insertAdjacentHTML('afterbegin', headerHTML);
 
-      // Load user info
-      await loadUserInfo();
+      // Load user info (pass skipAuthRedirect option)
+      await loadUserInfo(options.skipAuthRedirect);
 
       // Load activity count
       await loadActivityCount();
@@ -121,16 +122,21 @@
 
     } catch (error) {
       console.error('Error initializing header:', error);
+      throw error; // Re-throw so callers can handle it
     }
   }
 
   /**
    * Load and display user information
+   * @param {boolean} skipAuthRedirect - If true, throw error instead of redirecting when not authenticated
    */
-  async function loadUserInfo() {
+  async function loadUserInfo(skipAuthRedirect = false) {
     try {
       const res = await fetch('/api/user');
       if (!res.ok) {
+        if (skipAuthRedirect) {
+          throw new Error('Not authenticated');
+        }
         window.location.href = '/';
         return;
       }
@@ -156,6 +162,9 @@
       if (emailEl) emailEl.textContent = email;
     } catch (err) {
       console.error('Error loading user:', err);
+      if (skipAuthRedirect) {
+        throw err;
+      }
       window.location.href = '/';
     }
   }

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFriends Design Lab - Presets</title>
+  <link rel="stylesheet" href="/css/chat-theme.css">
+  <style>
+    body {
+      background: #0e1116;
+      color: #e6eef6;
+      font-family: 'Inter', sans-serif;
+      padding: 40px;
+    }
+    
+    h1 { margin-bottom: 40px; text-align: center; background: linear-gradient(to right, #fff, #a7b0bd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    
+    .proposal-section {
+      margin-bottom: 60px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 40px;
+    }
+    
+    .proposal-title {
+      font-size: 18px;
+      color: #3ddc97;
+      margin-bottom: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .grid-container {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* =========================================
+       OPTION 1: Polished Sticker (Refined Current)
+       ========================================= */
+    .opt1-card {
+      width: 140px;
+      height: 160px;
+      background: #161b24;
+      border: 2px solid #2a303c;
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+    
+    .opt1-card:hover {
+      transform: translateY(-4px) rotate(-1deg);
+      border-color: #3ddc97;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+      z-index: 10;
+    }
+    
+    .opt1-icon { font-size: 42px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+    .opt1-title { font-size: 14px; font-weight: 700; text-align: center; line-height: 1.3; }
+    .opt1-sub { font-size: 11px; color: #a7b0bd; text-align: center; margin-top: 4px; }
+
+    /* =========================================
+       OPTION 2: Neon Glass (Cyber/Premium)
+       ========================================= */
+    .opt2-card {
+      width: 140px;
+      height: 160px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+    
+    .opt2-card:hover {
+      background: rgba(61, 220, 151, 0.05);
+      border-color: #3ddc97;
+      box-shadow: 0 0 20px rgba(61, 220, 151, 0.15);
+    }
+    
+    .opt2-icon-box {
+      width: 64px;
+      height: 64px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .opt2-content { text-align: center; }
+    .opt2-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .opt2-tag { font-size: 10px; color: #3ddc97; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* =========================================
+       OPTION 3: Big Emoji (Minimal & Fun)
+       ========================================= */
+    .opt3-card {
+      width: 130px;
+      height: 150px;
+      background: transparent;
+      border: 2px dashed rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .opt3-card:hover {
+      background: #161b24;
+      border-style: solid;
+      border-color: #3ddc97;
+      transform: scale(1.05);
+    }
+    
+    .opt3-icon { font-size: 64px; line-height: 1; margin-bottom: 10px; transition: transform 0.2s; }
+    .opt3-card:hover .opt3-icon { transform: scale(1.1); }
+    .opt3-title { font-size: 13px; font-weight: 600; color: #a7b0bd; }
+    .opt3-card:hover .opt3-title { color: #fff; }
+
+    /* =========================================
+       OPTION 4: Horizontal Chips (Compact & Clear)
+       ========================================= */
+    .opt4-grid { display: flex; flex-direction: column; gap: 10px; width: 300px; }
+    
+    .opt4-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      background: #161b24;
+      border: 1px solid #2a303c;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .opt4-card:hover {
+      border-color: #3ddc97;
+      background: #1c212b;
+      transform: translateX(4px);
+    }
+    
+    .opt4-icon { font-size: 24px; }
+    .opt4-text { display: flex; flex-direction: column; }
+    .opt4-title { font-size: 14px; font-weight: 600; color: #e6eef6; }
+    .opt4-sub { font-size: 12px; color: #a7b0bd; }
+
+    /* =========================================
+       OPTION 5: Pop Art / Hard Shadow (Funky)
+       ========================================= */
+    .opt5-card {
+      width: 140px;
+      height: 160px;
+      background: #1c212b;
+      border: 3px solid #000;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      box-shadow: 6px 6px 0px #3ddc97;
+      transition: all 0.1s;
+    }
+    
+    .opt5-card:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px #3ddc97;
+    }
+    
+    .opt5-card:active {
+      transform: translate(6px, 6px);
+      box-shadow: 0px 0px 0px #3ddc97;
+    }
+    
+    .opt5-icon { font-size: 48px; }
+    .opt5-title { font-size: 14px; font-weight: 800; text-transform: uppercase; color: #fff; }
+
+    /* =========================================
+       OPTION 6: The "Folder" (Tabbed)
+       ========================================= */
+    .opt6-card {
+      width: 140px;
+      height: 150px;
+      background: #161b24;
+      border-top: 4px solid #2a303c;
+      border-radius: 4px 4px 12px 12px;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+    
+    .opt6-card::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 0;
+      width: 40%;
+      height: 10px;
+      background: #2a303c;
+      border-radius: 4px 4px 0 0;
+      transition: background 0.2s;
+    }
+    
+    .opt6-card:hover {
+      background: #1a2030;
+      border-top-color: #3ddc97;
+    }
+    
+    .opt6-card:hover::before {
+      background: #3ddc97;
+    }
+    
+    .opt6-icon { font-size: 36px; }
+    .opt6-title { font-size: 13px; font-weight: 600; color: #e6eef6; text-align: center; }
+
+  </style>
+</head>
+<body>
+
+  <h1>Price Group Preset Proposals</h1>
+
+  <!-- OPTION 1 -->
+  <div class="proposal-section">
+    <div class="proposal-title">1. Polished Sticker (Clean & Tactile)</div>
+    <div class="grid-container">
+      <div class="opt1-card">
+        <div class="opt1-icon">🍷</div>
+        <div>
+          <div class="opt1-title">Alcohol vs<br>Non-Alcohol</div>
+        </div>
+      </div>
+      <div class="opt1-card">
+        <div class="opt1-icon">🥩</div>
+        <div>
+          <div class="opt1-title">Meat vs<br>Vegetarian</div>
+        </div>
+      </div>
+      <div class="opt1-card">
+        <div class="opt1-icon">🍽️</div>
+        <div>
+          <div class="opt1-title">Heavy vs<br>Light Eaters</div>
+        </div>
+      </div>
+      <div class="opt1-card">
+        <div class="opt1-icon">➕</div>
+        <div>
+          <div class="opt1-title">More...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION 2 -->
+  <div class="proposal-section">
+    <div class="proposal-title">2. Neon Glass (Modern Fintech)</div>
+    <div class="grid-container">
+      <div class="opt2-card">
+        <div class="opt2-icon-box">🍷</div>
+        <div class="opt2-content">
+          <div class="opt2-title">Drinks</div>
+          <div class="opt2-tag">Alcohol / Non</div>
+        </div>
+      </div>
+      <div class="opt2-card">
+        <div class="opt2-icon-box">🥩</div>
+        <div class="opt2-content">
+          <div class="opt2-title">Diet</div>
+          <div class="opt2-tag">Meat / Veggie</div>
+        </div>
+      </div>
+      <div class="opt2-card">
+        <div class="opt2-icon-box">🍽️</div>
+        <div class="opt2-content">
+          <div class="opt2-title">Portion</div>
+          <div class="opt2-tag">Big / Small</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION 3 -->
+  <div class="proposal-section">
+    <div class="proposal-title">3. Big Emoji (Minimal Fun)</div>
+    <div class="grid-container">
+      <div class="opt3-card">
+        <div class="opt3-icon">🍷</div>
+        <div class="opt3-title">Alcohol</div>
+      </div>
+      <div class="opt3-card">
+        <div class="opt3-icon">🥩</div>
+        <div class="opt3-title">Meat</div>
+      </div>
+      <div class="opt3-card">
+        <div class="opt3-icon">🍽️</div>
+        <div class="opt3-title">Portion</div>
+      </div>
+      <div class="opt3-card">
+        <div class="opt3-icon">👨‍👩‍👧</div>
+        <div class="opt3-title">Age</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION 4 -->
+  <div class="proposal-section">
+    <div class="proposal-title">4. Horizontal Chips (List Style)</div>
+    <div class="opt4-grid">
+      <div class="opt4-card">
+        <div class="opt4-icon">🍷</div>
+        <div class="opt4-text">
+          <div class="opt4-title">Alcohol / Non-Alcohol</div>
+          <div class="opt4-sub">For drinkers vs drivers</div>
+        </div>
+      </div>
+      <div class="opt4-card">
+        <div class="opt4-icon">🥩</div>
+        <div class="opt4-text">
+          <div class="opt4-title">Meat / Vegetarian</div>
+          <div class="opt4-sub">Dietary preferences</div>
+        </div>
+      </div>
+      <div class="opt4-card">
+        <div class="opt4-icon">🍽️</div>
+        <div class="opt4-text">
+          <div class="opt4-title">Heavy / Light Eaters</div>
+          <div class="opt4-sub">Portion sizes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION 5 -->
+  <div class="proposal-section">
+    <div class="proposal-title">5. Pop Art (Funky & Bold)</div>
+    <div class="grid-container">
+      <div class="opt5-card">
+        <div class="opt5-icon">🍷</div>
+        <div class="opt5-title">Drinks</div>
+      </div>
+      <div class="opt5-card">
+        <div class="opt5-icon">🥩</div>
+        <div class="opt5-title">Diet</div>
+      </div>
+      <div class="opt5-card">
+        <div class="opt5-icon">🍽️</div>
+        <div class="opt5-title">Size</div>
+      </div>
+      <div class="opt5-card">
+        <div class="opt5-icon">➕</div>
+        <div class="opt5-title">More</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION 6 -->
+  <div class="proposal-section">
+    <div class="proposal-title">6. The Folder (Utility)</div>
+    <div class="grid-container">
+      <div class="opt6-card">
+        <div class="opt6-icon">🍷</div>
+        <div class="opt6-title">Alcohol vs<br>Non-Alcohol</div>
+      </div>
+      <div class="opt6-card">
+        <div class="opt6-icon">🥩</div>
+        <div class="opt6-title">Meat vs<br>Veggie</div>
+      </div>
+      <div class="opt6-card">
+        <div class="opt6-icon">🍽️</div>
+        <div class="opt6-title">Heavy vs<br>Light</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+

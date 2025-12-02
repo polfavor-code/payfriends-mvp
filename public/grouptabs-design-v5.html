@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFriends Design V5: Responsive List</title>
+  
+  <!-- Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  
+  <style>
+    :root {
+      /* Dark Theme Palette (Design 2) */
+      --bg: #0e1116;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #3ddc97;
+      --accent-dim: rgba(61, 220, 151, 0.15);
+      --danger: #f85149;
+      --pending: #d29922;
+      --pending-dim: rgba(210, 153, 34, 0.15);
+      
+      --font: 'Inter', system-ui, sans-serif;
+      --header-height: 64px;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      background: #000; /* Page background */
+      color: var(--text);
+      font-family: var(--font);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* --- CONTROL BAR (For Preview) --- */
+    .preview-controls {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 50px;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      border-bottom: 1px solid #444;
+      z-index: 9999;
+    }
+    .toggle-btn {
+      background: #333;
+      color: #aaa;
+      border: 1px solid #444;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .toggle-btn.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    /* --- LAYOUT CONTAINER --- */
+    .app-container {
+      margin-top: 50px; /* Offset for preview controls */
+      max-width: 800px; /* Desktop constraint */
+      margin-left: auto;
+      margin-right: auto;
+      background: var(--bg);
+      min-height: calc(100vh - 50px);
+      box-shadow: 0 0 40px rgba(0,0,0,0.5);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Desktop Borders */
+    @media (min-width: 801px) {
+      .app-container {
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+      }
+    }
+
+    /* --- HEADER (Design 3 Style) --- */
+    .app-header {
+      background: var(--card);
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .back-link { font-size: 20px; color: var(--text); text-decoration: none; cursor: pointer; }
+    .header-icon { font-size: 24px; }
+
+    .title-row { margin-bottom: 4px; }
+    .page-title { font-size: 20px; font-weight: 800; color: #fff; }
+    .page-meta { font-size: 13px; color: var(--muted); }
+
+    /* Stats Box */
+    .stats-box {
+      margin-top: 20px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .stat-group { display: flex; flex-direction: column; gap: 4px; }
+    .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .stat-value { font-size: 24px; font-weight: 700; color: #fff; }
+    .stat-value.highlight { color: var(--accent); }
+
+    /* Progress Bar */
+    .progress-container { margin-top: 16px; }
+    .progress-track { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); width: 65%; }
+    .progress-text { font-size: 11px; color: var(--muted); text-align: right; margin-top: 6px; }
+
+    /* --- HOST TOOLBAR --- */
+    .host-toolbar {
+      background: rgba(61, 220, 151, 0.05);
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+    }
+    .toolbar-btn {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .toolbar-btn:hover { background: rgba(61, 220, 151, 0.1); }
+
+    /* --- PARTICIPANT LIST --- */
+    .content-scroll {
+      flex: 1;
+      padding-bottom: 100px; /* Space for footer */
+    }
+
+    .section-header {
+      padding: 24px 32px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .participant-row {
+      display: flex;
+      align-items: center;
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      transition: background 0.2s;
+    }
+    .participant-row:hover {
+      background: rgba(255,255,255,0.02);
+    }
+
+    /* --- RESPONSIVE AVATAR LOGIC --- */
+    .p-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 2px solid var(--border);
+      margin-right: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--text);
+      flex-shrink: 0;
+    }
+    
+    /* MOBILE TWEAKS (< 600px) */
+    @media (max-width: 600px) {
+      /* Drop Avatars to save space */
+      .p-avatar {
+        display: none;
+      }
+      
+      /* Reduce padding */
+      .app-header { padding: 20px 20px; }
+      .participant-row { padding: 16px 20px; }
+      .section-header { padding: 20px 20px 8px; }
+      
+      /* Adjust stats box for mobile */
+      .stats-box { padding: 16px; }
+      .stat-value { font-size: 20px; }
+    }
+
+    .p-info { flex: 1; overflow: hidden; }
+    .p-name { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .p-meta { font-size: 13px; color: var(--muted); }
+    
+    .p-status { text-align: right; margin-left: 12px; flex-shrink: 0; }
+    .status-badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .status-paid { background: var(--accent-dim); color: var(--accent); }
+    .status-pending { background: var(--pending-dim); color: var(--pending); }
+    
+    .status-amt { font-size: 13px; font-weight: 600; margin-top: 4px; display: block; }
+
+    /* --- PUBLIC FOOTER --- */
+    .sticky-footer {
+      position: sticky;
+      bottom: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 20px 32px;
+      z-index: 100;
+    }
+    .pay-btn {
+      width: 100%;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(61, 220, 151, 0.2);
+    }
+    
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    /* Utilities */
+    .hide { display: none !important; }
+    .text-accent { color: var(--accent); }
+
+  </style>
+</head>
+<body>
+
+  <!-- Preview Controls -->
+  <div class="preview-controls">
+    <span style="font-size:10px; text-transform:uppercase; color:#666;">Preview Mode:</span>
+    <button class="toggle-btn active" onclick="setMode('host')">HOST VIEW</button>
+    <button class="toggle-btn" onclick="setMode('public')">GUEST VIEW</button>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- HEADER -->
+    <div class="app-header">
+      <div class="header-nav">
+        <a class="back-link">←</a>
+        <div class="header-icon">🧾</div>
+      </div>
+      
+      <div class="title-row">
+        <div class="page-title">Dinner at Mario's</div>
+        <div class="page-meta">Wed Dec 12 · 4 Participants</div>
+      </div>
+      
+      <!-- Stats -->
+      <div class="stats-box">
+        <div class="stat-group">
+          <div class="stat-label">Total Bill</div>
+          <div class="stat-value">€142.50</div>
+        </div>
+        <div class="stat-group" style="text-align:right;">
+          <div class="stat-label">Collected</div>
+          <div class="stat-value highlight">€92.50</div>
+        </div>
+      </div>
+      
+      <div class="progress-container">
+        <div class="progress-track">
+          <div class="progress-fill"></div>
+        </div>
+        <div class="progress-text">65% Paid</div>
+      </div>
+    </div>
+
+    <!-- HOST TOOLBAR (Visible only in Host Mode) -->
+    <div id="host-tools" class="host-toolbar">
+      <button class="toolbar-btn">✎ Edit</button>
+      <button class="toolbar-btn">🔔 Nudge</button>
+      <button class="toolbar-btn">🧾 Receipt</button>
+      <button class="toolbar-btn">🔒 Close</button>
+    </div>
+
+    <!-- LIST CONTENT -->
+    <div class="content-scroll">
+      
+      <div class="section-header">
+        <span>Participants</span>
+        <span>Status</span>
+      </div>
+
+      <!-- Self -->
+      <div class="participant-row">
+        <div class="p-avatar" style="background:rgba(61, 220, 151, 0.1); color:var(--accent); border-color:var(--accent);">ME</div>
+        <div class="p-info">
+          <div class="p-name">You (Paul)</div>
+          <div class="p-meta">
+            <span class="text-accent">Alcohol Group</span> · Host
+          </div>
+        </div>
+        <div class="p-status">
+          <span class="status-badge status-paid">PAID</span>
+          <span class="status-amt">€25.00</span>
+        </div>
+      </div>
+
+      <!-- Guest 1 -->
+      <div class="participant-row">
+        <div class="p-avatar">JD</div>
+        <div class="p-info">
+          <div class="p-name">John Doe</div>
+          <div class="p-meta">Alcohol Group</div>
+        </div>
+        <div class="p-status">
+          <span class="status-badge status-pending">OWES</span>
+          <span class="status-amt">€25.00</span>
+        </div>
+      </div>
+
+      <!-- Guest 2 -->
+      <div class="participant-row">
+        <div class="p-avatar">MS</div>
+        <div class="p-info">
+          <div class="p-name">Mike S.</div>
+          <div class="p-meta">No Alc Group</div>
+        </div>
+        <div class="p-status">
+          <span class="status-badge status-paid">PAID</span>
+          <span class="status-amt">€15.00</span>
+        </div>
+      </div>
+
+      <!-- Guest 3 -->
+      <div class="participant-row">
+        <div class="p-avatar">S</div>
+        <div class="p-info">
+          <div class="p-name">Sarah</div>
+          <div class="p-meta">No Alc Group</div>
+        </div>
+        <div class="p-status">
+          <span class="status-badge status-pending">OWES</span>
+          <span class="status-amt">€15.00</span>
+        </div>
+      </div>
+      
+      <!-- Extra info -->
+      <div style="text-align:center; margin-top:32px; margin-bottom:24px; padding:0 20px;">
+        <div style="font-size:12px; color:#666; margin-bottom:12px;">ORIGINAL RECEIPT</div>
+        <button style="background:none; border:1px dashed #444; color:#888; padding:12px 24px; border-radius:12px; cursor:pointer; font-size:13px;">
+          📄 View Receipt Image
+        </button>
+      </div>
+
+    </div>
+
+    <!-- PUBLIC FOOTER (Visible only in Guest Mode) -->
+    <div id="guest-footer" class="sticky-footer hide">
+      <div class="footer-row">
+        <span style="color:var(--muted)">Your Share</span>
+        <span style="font-weight:700; color:#fff;">€25.00</span>
+      </div>
+      <button class="pay-btn">Pay Now</button>
+    </div>
+
+  </div>
+
+  <script>
+    function setMode(mode) {
+      // Toggle Buttons
+      document.querySelectorAll('.toggle-btn').forEach(btn => {
+        if(btn.innerText.toLowerCase().includes(mode)) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Toggle Content
+      const hostTools = document.getElementById('host-tools');
+      const guestFooter = document.getElementById('guest-footer');
+
+      if (mode === 'host') {
+        hostTools.classList.remove('hide');
+        guestFooter.classList.add('hide');
+      } else {
+        hostTools.classList.add('hide');
+        guestFooter.classList.remove('hide');
+      }
+    }
+    
+    // Init
+    setMode('host');
+  </script>
+
+</body>
+</html>
+

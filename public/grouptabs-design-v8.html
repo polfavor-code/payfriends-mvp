@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFriends Design V8: Refined Features</title>
+  
+  <!-- Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  
+  <style>
+    :root {
+      /* Dark Theme Palette (Design 2) */
+      --bg: #0e1116;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #3ddc97;
+      --accent-dim: rgba(61, 220, 151, 0.15);
+      --accent-glow: rgba(61, 220, 151, 0.4);
+      --danger: #f85149;
+      --pending: #d29922;
+      --pending-dim: rgba(210, 153, 34, 0.15);
+      
+      --font: 'Inter', system-ui, sans-serif;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: var(--text);
+      font-family: var(--font);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* --- CONTROL BAR --- */
+    .preview-controls {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      border-bottom: 1px solid #444;
+      z-index: 9999;
+      padding: 0 16px;
+    }
+    .control-group { display: flex; gap: 8px; align-items: center; margin-right: 16px; border-right: 1px solid #444; padding-right: 16px; }
+    .toggle-btn {
+      background: #333; color: #aaa; border: 1px solid #444;
+      padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600;
+    }
+    .toggle-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+    /* --- LAYOUT --- */
+    .app-container {
+      margin-top: 60px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      background: var(--bg);
+      min-height: calc(100vh - 60px);
+      box-shadow: 0 0 40px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    @media (min-width: 801px) {
+      .app-container { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+    }
+
+    /* --- HEADER --- */
+    .app-header {
+      background: var(--card);
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+    .back-btn { font-size: 20px; color: var(--text); text-decoration: none; }
+    
+    /* Share Button */
+    .share-btn-header {
+        background: var(--accent-dim);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        display: flex; align-items: center; gap: 6px;
+        cursor: pointer;
+        text-transform: uppercase;
+    }
+    
+    /* Fairness Ring (Right Top Corner) */
+    .fairness-badge {
+        position: absolute;
+        top: 24px; right: 32px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255,255,255,0.05);
+        padding: 4px 8px 4px 4px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--muted);
+        border: 1px solid var(--border);
+    }
+    .ring-mini {
+        width: 18px; height: 18px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        border-top-color: var(--accent);
+        border-right-color: var(--accent);
+    }
+
+    .page-title { font-size: 22px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .page-meta { font-size: 13px; color: var(--muted); margin-bottom: 16px; display: flex; gap: 8px; }
+    
+    /* Split Mode Indicator */
+    .split-pill {
+        font-size: 10px;
+        text-transform: uppercase;
+        font-weight: 700;
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    /* Stats Row */
+    .stats-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: 20px;
+    }
+    .stat-label { font-size: 11px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; letter-spacing: 1px; }
+    .stat-val { font-size: 32px; font-weight: 800; color: #fff; line-height: 1; }
+    
+    /* Enhanced Progress Bar */
+    .prog-container { margin-top: 20px; position: relative; }
+    .prog-track {
+        height: 12px; /* Thicker */
+        background: rgba(255,255,255,0.1);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    .prog-fill {
+        height: 100%;
+        width: 65%;
+        background: linear-gradient(90deg, var(--accent), #34d399);
+        box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .prog-label {
+        display: flex; justify-content: space-between;
+        font-size: 11px; font-weight: 700;
+        margin-top: 6px;
+        color: var(--text);
+    }
+
+    /* --- GROUP CARDS (Wider & Better) --- */
+    .group-cards-area {
+      padding: 20px 32px;
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+    }
+    .group-card {
+      min-width: 160px; /* Wider */
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .group-card:hover { transform: translateY(-2px); }
+    .group-card.active {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, var(--card), rgba(61, 220, 151, 0.05));
+    }
+    .group-card.active::after {
+        content: '✓'; position: absolute; top: 12px; right: 12px; color: var(--accent); font-weight: 800;
+    }
+    
+    .gc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .gc-icon { font-size: 24px; }
+    .gc-name { font-size: 14px; font-weight: 700; color: #fff; }
+    .gc-sub { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .gc-price { font-size: 16px; color: var(--accent); font-weight: 800; margin-top: auto; }
+
+    /* --- RECEIPT PREVIEW --- */
+    .receipt-mini {
+        margin: 24px 32px 0;
+        background: var(--card);
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        display: flex; align-items: center; gap: 12px;
+        cursor: pointer;
+    }
+    .rm-thumb {
+        width: 40px; height: 40px; background: #fff; border-radius: 4px;
+        display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .rm-info { flex: 1; }
+    .rm-title { font-size: 13px; font-weight: 600; color: #fff; }
+    .rm-sub { font-size: 11px; color: var(--muted); }
+    
+    /* Drag Drop Zone (Host) */
+    .drag-drop-zone {
+        margin: 24px 32px 0;
+        border: 2px dashed var(--border);
+        border-radius: 12px;
+        padding: 32px;
+        text-align: center;
+        background: rgba(255,255,255,0.02);
+        cursor: pointer;
+    }
+    .dd-icon { font-size: 32px; margin-bottom: 8px; opacity: 0.5; }
+    .dd-text { font-size: 13px; color: var(--muted); font-weight: 600; }
+
+    /* --- HERO (Your Share) --- */
+    .hero-box {
+        margin: 24px 32px 0;
+        padding: 24px;
+        background: linear-gradient(135deg, #1f2937, #0d1117);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .hero-left { display: flex; flex-direction: column; }
+    .hero-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .hero-price { font-size: 32px; font-weight: 800; color: #fff; }
+    
+    .pay-btn {
+        background: var(--accent);
+        color: #0e1116;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 4px 15px var(--accent-dim);
+    }
+
+    /* --- LIST --- */
+    .list-section {
+        padding: 32px;
+        padding-bottom: 100px;
+    }
+    .list-header {
+        font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+        margin-bottom: 16px; display: flex; justify-content: space-between;
+    }
+
+    .p-row {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin-bottom: 12px;
+    }
+    
+    /* Avatar */
+    .p-avatar {
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        background: #21262d;
+        border: 2px solid var(--border);
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; color: var(--text);
+        margin-right: 16px;
+        flex-shrink: 0;
+    }
+    @media (max-width: 600px) { .p-avatar { display: none; } }
+
+    .p-info { flex: 1; }
+    .p-name { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .p-sub { font-size: 12px; color: var(--muted); }
+    
+    .p-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+    
+    /* Share Link Mini */
+    .share-mini {
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        cursor: pointer;
+        display: flex; align-items: center; gap: 4px;
+        margin-top: 4px;
+    }
+    .share-mini:hover { background: rgba(255,255,255,0.2); }
+    
+    /* Status Stamp */
+    .stamp {
+        font-size: 10px; font-weight: 800; text-transform: uppercase;
+        padding: 4px 8px; border-radius: 6px;
+        margin-bottom: 4px;
+        display: inline-block;
+    }
+    .stamp.paid { background: var(--accent-dim); color: var(--accent); }
+    .stamp.pending { background: var(--pending-dim); color: var(--pending); }
+    .stamp.waiting { background: rgba(255,255,255,0.1); color: #888; border: 1px dashed #666; }
+
+    /* User Progress Bar */
+    .user-prog-track {
+        width: 80px; height: 4px; background: #333; border-radius: 2px; margin-top: 6px;
+        position: relative;
+    }
+    .user-prog-fill {
+        height: 100%; background: var(--accent); border-radius: 2px;
+    }
+    .user-prog-text { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    /* --- FOOTER --- */
+    .footer-bar {
+        position: sticky;
+        bottom: 0;
+        background: var(--card);
+        border-top: 1px solid var(--border);
+        padding: 16px 32px;
+        z-index: 100;
+        display: flex; gap: 12px;
+    }
+    .f-btn {
+        flex: 1; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 14px; border: none;
+    }
+    .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-pri { background: var(--accent); color: #000; }
+
+    /* Utilities */
+    .hide { display: none !important; }
+    .text-accent { color: var(--accent); }
+
+  </style>
+</head>
+<body>
+
+  <div class="preview-controls">
+    <div class="control-group">
+        <button class="toggle-btn active" onclick="setMode('host')">HOST</button>
+        <button class="toggle-btn" onclick="setMode('public')">GUEST</button>
+    </div>
+    <div class="control-group">
+        <button class="toggle-btn active" onclick="setSplit('equal')">EQUAL</button>
+        <button class="toggle-btn" onclick="setSplit('group')">GROUP</button>
+    </div>
+    <div class="control-group">
+        <button class="toggle-btn active" onclick="setReceipt('yes')">HAS RECEIPT</button>
+        <button class="toggle-btn" onclick="setReceipt('no')">NO RECEIPT</button>
+    </div>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- HEADER -->
+    <div class="app-header">
+        <div class="header-top">
+            <a class="back-btn">←</a>
+            <button class="share-btn-header" onclick="alert('Link Copied!')">
+                <span>🔗</span> Share Link
+            </button>
+            
+            <!-- Fairness Badge -->
+            <div class="fairness-badge">
+                <div class="ring-mini"></div>
+                FAIR 100%
+            </div>
+        </div>
+
+        <div class="page-title">
+            <span style="font-size:24px;">🍕</span> Dinner at Mario's
+        </div>
+        
+        <div class="page-meta">
+            <span>Wed Dec 12</span> • <span>4 People</span> • 
+            <span class="split-pill" id="header-split-label">EQUAL SPLIT</span>
+        </div>
+
+        <!-- Big Stats -->
+        <div class="stats-row">
+            <div>
+                <div class="stat-label">Total Bill</div>
+                <div class="stat-val">€142.50</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="stat-label">Collected</div>
+                <div class="stat-val highlight">€92.50</div>
+            </div>
+        </div>
+
+        <!-- Clear Progress -->
+        <div class="prog-container">
+            <div class="prog-track">
+                <div class="prog-fill"></div>
+            </div>
+            <div class="prog-label">
+                <span>65% Collected</span>
+                <span>€50.00 Remaining</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- BIG GROUP CARDS (Wider, Nicer) -->
+    <div id="group-cards" class="group-cards-area hide">
+        <!-- Active Card -->
+        <div class="group-card active">
+            <div class="gc-header">
+                <div class="gc-icon">🍷</div>
+                <div class="gc-name">Alcohol</div>
+            </div>
+            <div class="gc-sub">Includes wine & cocktails</div>
+            <div class="gc-price">€25.00</div>
+        </div>
+        
+        <!-- Inactive Card -->
+        <div class="group-card" onclick="alert('Switch to No Alc')">
+            <div class="gc-header">
+                <div class="gc-icon">💧</div>
+                <div class="gc-name">No Alc</div>
+            </div>
+            <div class="gc-sub">Soft drinks only</div>
+            <div class="gc-price">€15.00</div>
+        </div>
+        
+        <!-- Add Card (Host Only) -->
+        <div class="group-card host-only" style="opacity:0.5; border-style:dashed; align-items:center; justify-content:center;">
+            <div style="font-size:24px;">+</div>
+            <div style="font-size:12px; font-weight:700; margin-top:8px;">Add Group</div>
+        </div>
+    </div>
+
+    <!-- RECEIPT PREVIEW (Has Receipt) -->
+    <div id="receipt-preview" class="receipt-mini">
+        <div class="rm-thumb">📄</div>
+        <div class="rm-info">
+            <div class="rm-title">Original Receipt.pdf</div>
+            <div class="rm-sub">Uploaded Dec 12</div>
+        </div>
+        <button class="host-only" style="background:none; border:none; color:#f85149; font-size:18px; cursor:pointer;">×</button>
+        <button style="background:var(--accent-dim); color:var(--accent); border:none; padding:6px 12px; border-radius:8px; font-weight:700; font-size:11px; cursor:pointer;">VIEW</button>
+    </div>
+
+    <!-- DRAG DROP (No Receipt - Host Only) -->
+    <div id="drag-drop" class="drag-drop-zone host-only hide">
+        <div class="dd-icon">☁️</div>
+        <div class="dd-text">Drag & drop receipt here or click to upload</div>
+    </div>
+
+    <!-- HERO BOX (Your Share) -->
+    <div class="hero-box">
+        <div class="hero-left">
+            <div class="hero-title">Your Share</div>
+            <div class="hero-price" id="hero-price">€35.60</div>
+        </div>
+        <button class="pay-btn" onclick="alert('Pay Flow')">PAY NOW</button>
+    </div>
+
+    <!-- LIST -->
+    <div class="list-section">
+        <div class="list-header">
+            <span>Participants (4)</span>
+            <span>Status</span>
+        </div>
+
+        <!-- Self -->
+        <div class="p-row">
+            <div class="p-avatar" style="border-color:var(--accent); color:var(--accent);">ME</div>
+            <div class="p-info">
+                <div class="p-name">You (Paul)</div>
+                <div class="p-sub">Host • <span class="group-label hide">Alcohol</span></div>
+            </div>
+            <div class="p-right">
+                <div class="stamp paid">PAID</div>
+                <div class="user-prog-track"><div class="user-prog-fill" style="width:100%"></div></div>
+                <div class="user-prog-text">100%</div>
+            </div>
+        </div>
+
+        <!-- Guest 1 -->
+        <div class="p-row">
+            <div class="p-avatar">JD</div>
+            <div class="p-info">
+                <div class="p-name">John Doe</div>
+                <div class="p-sub"><span class="group-label hide">Alcohol</span></div>
+            </div>
+            <div class="p-right">
+                <div class="stamp pending">PENDING</div>
+                <div class="user-prog-track"><div class="user-prog-fill" style="width:0%"></div></div>
+                <div class="user-prog-text">0%</div>
+            </div>
+        </div>
+
+        <!-- Pending / Unknown -->
+        <div class="p-row" style="opacity:0.8; border-style:dashed;">
+            <div class="p-avatar" style="border-style:dashed;">?</div>
+            <div class="p-info">
+                <div class="p-name" style="color:var(--muted);">Waiting for guest...</div>
+                <div class="share-mini" onclick="alert('Copied!')">
+                    <span>🔗</span> COPY LINK
+                </div>
+            </div>
+            <div class="p-right">
+                <div class="stamp waiting">UNKNOWN</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FOOTER (Host Only) -->
+    <div id="host-footer" class="footer-bar">
+        <button class="f-btn btn-sec">Edit Details</button>
+        <button class="f-btn btn-pri">Report Payment</button>
+    </div>
+
+  </div>
+
+  <script>
+    function setMode(mode) {
+        // Buttons
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            if(btn.innerText.toLowerCase().includes(mode)) btn.classList.add('active');
+            else if(btn.onclick.toString().includes('setMode')) btn.classList.remove('active');
+        });
+
+        // Host Elements Toggle
+        const hostEls = document.querySelectorAll('.host-only');
+        const footer = document.getElementById('host-footer');
+        
+        if(mode === 'host') {
+            footer.classList.remove('hide');
+            hostEls.forEach(el => el.style.display = 'flex'); // restore flex
+        } else {
+            footer.classList.add('hide');
+            hostEls.forEach(el => el.style.display = 'none');
+        }
+    }
+
+    function setSplit(split) {
+        // Buttons
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            if(btn.innerText.toLowerCase().includes(split)) btn.classList.add('active');
+            else if(btn.onclick.toString().includes('setSplit')) btn.classList.remove('active');
+        });
+
+        // UI Updates
+        const cards = document.getElementById('group-cards');
+        const labels = document.querySelectorAll('.group-label');
+        const headerLabel = document.getElementById('header-split-label');
+        const price = document.getElementById('hero-price');
+
+        if(split === 'group') {
+            cards.classList.remove('hide');
+            labels.forEach(l => l.classList.remove('hide'));
+            headerLabel.innerText = 'GROUP SPLIT';
+            price.innerText = '€25.00';
+        } else {
+            cards.classList.add('hide');
+            labels.forEach(l => l.classList.add('hide'));
+            headerLabel.innerText = 'EQUAL SPLIT';
+            price.innerText = '€35.60';
+        }
+    }
+    
+    function setReceipt(state) {
+        // Buttons
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            if(btn.innerText.toLowerCase().includes(state)) btn.classList.add('active');
+            else if(btn.onclick.toString().includes('setReceipt')) btn.classList.remove('active');
+        });
+        
+        const preview = document.getElementById('receipt-preview');
+        const drop = document.getElementById('drag-drop');
+        
+        if(state === 'yes') {
+            preview.classList.remove('hide');
+            drop.classList.add('hide');
+        } else {
+            preview.classList.add('hide');
+            drop.classList.remove('hide'); // Only visible if host mode is also active (handled by class logic)
+        }
+    }
+    
+    // Init
+    setMode('host');
+    setSplit('equal');
+    setReceipt('yes');
+  </script>
+
+</body>
+</html>
+
