@@ -1319,7 +1319,12 @@ body {
 .undo-btn-header:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
-  transform: rotate(-45deg);
+  animation: spinLeft 0.8s linear infinite;
+}
+
+@keyframes spinLeft {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
 }
 
 .undo-btn-header:disabled {

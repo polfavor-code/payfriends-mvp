@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>PayFriends — Join Tab</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <link rel="stylesheet" href="/css/grouptabs.css" />
+  <script src="/js/formatters.js"></script>
+  <!-- Chart.js for fairness donuts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --bg:#0e1116; --card:#151a21; --text:#e6eef6; --muted:#a7b0bd; --accent:#3ddc97;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .container{max-width:800px; margin:0 auto; padding:32px 16px;}
+    .card{background:var(--card); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:24px; margin:16px 0}
+    h1{margin:0 0 8px 0; font-size:28px; font-weight:600}
+    h2{margin:0 0 16px 0; font-size:20px; font-weight:600}
+    .loading{text-align:center; padding:64px 32px; color:var(--muted)}
+    .header-bar{display:flex; justify-content:space-between; align-items:center; padding:16px; margin-bottom:24px}
+    .logo-link{display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--text)}
+    .logo-link img{height:40px}
+    .logo-text{font-size:18px; font-weight:600}
+    .section{margin-bottom:32px}
+    .section-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px}
+    .participant-row{display:flex; align-items:center; gap:16px; padding:12px 16px; background:rgba(255,255,255,0.02); border-radius:10px; margin-bottom:8px}
+    .participant-avatar{width:40px; height:40px; border-radius:50%; background:rgba(61,220,151,0.15); display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--accent); flex-shrink:0}
+    .participant-info{flex:1}
+    .participant-name{font-weight:500}
+    .participant-role{font-size:12px; color:var(--muted)}
+    .participant-balance{font-weight:600}
+    .modal-overlay{position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:1000; opacity:0; visibility:hidden; transition:all 0.2s ease}
+    .modal-overlay.visible{opacity:1; visibility:visible}
+    .modal{background:var(--card); border-radius:16px; padding:24px; width:90%; max-width:480px; max-height:90vh; overflow-y:auto}
+    .modal-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px}
+    .modal-title{font-size:20px; font-weight:600}
+    .modal-close{background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer}
+    .error-message{color:#f87171; font-size:14px; margin-top:8px}
+    .your-share-card{background:rgba(61,220,151,0.05); border:1px solid rgba(61,220,151,0.2); border-radius:12px; padding:20px; text-align:center; margin-bottom:24px}
+    .your-share-label{font-size:14px; color:var(--muted); margin-bottom:8px}
+    .your-share-amount{font-size:32px; font-weight:700; color:var(--accent)}
+    .your-share-status{font-size:14px; color:var(--muted); margin-top:8px}
+    
+    /* Price Group Selector Styles */
+    .price-group-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .price-group-option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .price-group-option:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    
+    .price-group-option.selected {
+      background: rgba(61, 220, 151, 0.1);
+      border-color: var(--accent);
+    }
+    
+    .pg-option-emoji {
+      font-size: 28px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    
+    .pg-option-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .pg-option-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .pg-option-hint {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .pg-option-price {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    
+    .price-group-option.selected .pg-option-price {
+      color: var(--accent);
+    }
+    
+    /* Shortfall/Surplus Banner for Creator */
+    .shortfall-surplus-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .shortfall-surplus-banner.shortfall {
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+    
+    .shortfall-surplus-banner.surplus {
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+    
+    .shortfall-surplus-banner.balanced {
+      background: rgba(61, 220, 151, 0.1);
+      border: 1px solid rgba(61, 220, 151, 0.3);
+    }
+    
+    .ss-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    
+    .ss-content {
+      flex: 1;
+    }
+    
+    .ss-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    .shortfall .ss-title { color: #f87171; }
+    .surplus .ss-title { color: #4ade80; }
+    .balanced .ss-title { color: var(--accent); }
+    
+    .ss-detail {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    
+    .ss-amount {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    .shortfall .ss-amount { color: #f87171; }
+    .surplus .ss-amount { color: #4ade80; }
+    .balanced .ss-amount { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Simple header -->
+    <div class="header-bar">
+      <a href="/" class="logo-link">
+        <img src="/images/payfriends-logov2.png" alt="PayFriends">
+        <span class="logo-text">PayFriends</span>
+      </a>
+      <div id="auth-actions">
+        <a href="/login.html" class="grouptabs-btn grouptabs-btn-secondary" id="login-btn" style="display:none">Log in</a>
+      </div>
+    </div>
+
+    <div id="loading" class="loading">Loading...</div>
+
+    <!-- Join Screen (for new guests) -->
+    <div id="join-screen" style="display:none">
+      <div class="card">
+        <div class="guest-welcome">
+          <div class="guest-welcome-icon" id="join-icon">🎉</div>
+          <h1 class="guest-welcome-title" id="join-title">You're Invited!</h1>
+          <p class="guest-welcome-subtitle" id="join-subtitle">Join this tab to view and pay your share.</p>
+          
+          <div class="guest-name-form">
+            <input type="text" id="guest-name" class="guest-name-input" placeholder="Enter your name" maxlength="50">
+            <button class="guest-join-btn" onclick="joinAsGuest()">Continue as Guest</button>
+          </div>
+          
+          <p class="guest-login-link" id="login-prompt">
+            Already have an account? <a href="#" onclick="redirectToLogin()">Log in</a> to join as a member.
+          </p>
+          
+          <div id="join-error" class="error-message" style="display:none; margin-top:16px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Content (after joining) -->
+    <div id="tab-content" style="display:none">
+      <div class="card">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
+          <span class="grouptab-type-badge" id="tab-type-badge"></span>
+          <span class="grouptab-status-badge" id="tab-status-badge"></span>
+        </div>
+        <h1 id="tab-title"></h1>
+        <p id="tab-description" style="color:var(--muted)"></p>
+        
+        <!-- Shortfall/Surplus Banner (for creator with price_groups) -->
+        <div id="shortfall-surplus-banner" class="shortfall-surplus-banner" style="display:none">
+          <span class="ss-icon" id="ss-icon">📊</span>
+          <div class="ss-content">
+            <div class="ss-title" id="ss-title">Collection Status</div>
+            <div class="ss-detail" id="ss-detail">Bill: €0 | Collected: €0</div>
+          </div>
+          <div class="ss-amount" id="ss-amount">€0</div>
+        </div>
+        
+        <!-- Your Share Card -->
+        <div class="your-share-card">
+          <div class="your-share-label">Your Fair Share</div>
+          <div class="your-share-amount" id="your-share-amount">—</div>
+          <div class="your-share-status" id="your-share-status"></div>
+        </div>
+        
+        <div style="display:flex; gap:12px; flex-wrap:wrap">
+          <button class="grouptabs-btn grouptabs-btn-primary grouptabs-btn-block" onclick="showPaymentModal()">
+            💰 Make Payment
+          </button>
+        </div>
+      </div>
+
+      <!-- Fairness Section -->
+      <div class="card section">
+        <h2>Fairness</h2>
+        <div class="global-fairness-score" style="padding:24px">
+          <div class="fairness-meter" style="width:120px; height:120px">
+            <svg viewBox="0 0 100 100" style="transform:rotate(-90deg)">
+              <circle cx="50" cy="50" r="45" fill="none" stroke-width="8" class="fairness-meter-bg"/>
+              <circle cx="50" cy="50" r="45" fill="none" stroke-width="8" class="fairness-meter-fill" id="fairness-circle"
+                stroke-dasharray="283" stroke-dashoffset="283"/>
+            </svg>
+            <div class="fairness-score-value" id="fairness-score" style="font-size:36px">—</div>
+          </div>
+          <div class="fairness-score-label">Fairness Score</div>
+        </div>
+        <div class="participant-fairness-grid" id="participant-fairness-grid"></div>
+      </div>
+
+      <!-- One-Bill: Seat/Tier/PriceGroup Selection -->
+      <div class="card section" id="seat-tier-section" style="display:none">
+        <h2>Your Selection</h2>
+        
+        <div id="seat-picker-container" style="display:none">
+          <p style="color:var(--muted); font-size:14px; margin-bottom:16px">Select the seats you're paying for:</p>
+          <div class="seat-picker" id="seat-picker"></div>
+        </div>
+        
+        <div id="tier-selector-container" style="display:none">
+          <p style="color:var(--muted); font-size:14px; margin-bottom:16px">Select your tier:</p>
+          <div class="tier-selector" id="tier-selector"></div>
+        </div>
+        
+        <!-- Price Groups Selector -->
+        <div id="price-group-selector-container" style="display:none">
+          <p style="color:var(--muted); font-size:14px; margin-bottom:16px">Choose your price group:</p>
+          <div class="price-group-selector" id="price-group-selector"></div>
+          <p style="color:var(--muted); font-size:12px; margin-top:12px; font-style:italic">
+            💡 You can adjust the amount when paying if needed.
+          </p>
+        </div>
+        
+        <button class="grouptabs-btn grouptabs-btn-secondary" style="margin-top:16px" onclick="updateSelection()">Update Selection</button>
+      </div>
+
+      <!-- Participants -->
+      <div class="card section">
+        <h2>Participants</h2>
+        <div id="participant-list"></div>
+      </div>
+
+      <!-- Payments -->
+      <div class="card section">
+        <h2>Payments</h2>
+        <div id="payment-list" class="payment-list"></div>
+        <div id="payments-empty" style="text-align:center; padding:24px; color:var(--muted)">
+          No payments yet.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal-overlay" id="payment-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Make Payment</div>
+        <button class="modal-close" onclick="hideModal('payment-modal')">&times;</button>
+      </div>
+      <form id="payment-form" onsubmit="submitPayment(event)">
+        <div class="grouptabs-form-group">
+          <label class="grouptabs-form-label">Amount *</label>
+          <input type="number" id="payment-amount" class="grouptabs-form-input" placeholder="0.00" step="0.01" min="0.01" required>
+          <p style="font-size:12px; color:var(--muted); margin-top:6px">Suggested: <span id="suggested-amount">—</span></p>
+        </div>
+        <div class="grouptabs-form-group">
+          <label class="grouptabs-form-label">Payment Method</label>
+          <select id="payment-method" class="grouptabs-form-input">
+            <option value="">Select method...</option>
+            <option value="cash">💵 Cash</option>
+            <option value="venmo">Venmo</option>
+            <option value="paypal">PayPal</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="grouptabs-form-group">
+          <label class="grouptabs-form-label">Note (optional)</label>
+          <input type="text" id="payment-note" class="grouptabs-form-input" placeholder="Any notes...">
+        </div>
+        <div class="grouptabs-form-group" id="payment-proof-group">
+          <label class="grouptabs-form-label">Proof <span id="proof-required-label"></span></label>
+          <input type="file" id="payment-proof" accept="image/*,application/pdf">
+        </div>
+        <div id="payment-error" class="error-message" style="display:none"></div>
+        <button type="submit" class="grouptabs-btn grouptabs-btn-primary grouptabs-btn-block" style="margin-top:16px">Submit Payment</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let token = null;
+    let tabData = null;
+    let participants = [];
+    let currentParticipant = null;
+    let fairnessData = null;
+    let payments = [];
+    let tiers = [];
+    let priceGroups = [];  // Price groups for price_groups split mode
+    let isLoggedIn = false;
+    let myFairnessInfo = null;
+
+    // Get token from URL
+    const pathParts = window.location.pathname.split('/');
+    token = pathParts[pathParts.length - 1];
+
+    async function loadTab() {
+      try {
+        const response = await fetch(`/api/tabs/token/${token}`);
+        
+        if (!response.ok) {
+          const data = await response.json();
+          if (data.closed) {
+            document.getElementById('loading').innerHTML = `
+              <div style="text-align:center">
+                <div style="font-size:48px; margin-bottom:16px">🔒</div>
+                <h2>This tab has been closed</h2>
+                <p style="color:var(--muted)">Only members can view closed tabs.</p>
+                <a href="/" class="grouptabs-btn grouptabs-btn-primary" style="margin-top:24px">Go to PayFriends</a>
+              </div>
+            `;
+            return;
+          }
+          throw new Error(data.error || 'Failed to load tab');
+        }
+        
+        const data = await response.json();
+        tabData = data.tab;
+        participants = data.participants;
+        currentParticipant = data.currentParticipant;
+        tiers = data.tiers || [];
+        priceGroups = data.priceGroups || [];  // Load price groups
+        isLoggedIn = data.isLoggedIn;
+        
+        document.getElementById('loading').style.display = 'none';
+        
+        // Show login button if not logged in
+        if (!isLoggedIn) {
+          document.getElementById('login-btn').style.display = 'inline-flex';
+        }
+        
+        // If already joined, show tab content
+        if (currentParticipant) {
+          showTabContent();
+        } else {
+          // Show join screen
+          showJoinScreen();
+        }
+        
+      } catch (error) {
+        console.error('Error loading tab:', error);
+        document.getElementById('loading').innerHTML = '<p style="color:#ff6b6b">Error loading tab. Please try again.</p>';
+      }
+    }
+
+    function showJoinScreen() {
+      document.getElementById('join-screen').style.display = 'block';
+      
+      const isOneBill = tabData.tab_type === 'one_bill';
+      const typeEmoji = isOneBill ? '🧾' : '📊';
+      document.getElementById('join-icon').textContent = typeEmoji;
+      document.getElementById('join-title').textContent = `Join "${tabData.name}"`;
+      document.getElementById('join-subtitle').textContent = `${tabData.creator_name} invited you to join this ${isOneBill ? 'bill' : 'shared expense'} tab.`;
+      
+      // If logged in, auto-join as member
+      if (isLoggedIn) {
+        document.querySelector('.guest-name-form').innerHTML = `
+          <button class="guest-join-btn" onclick="joinAsMember()">Join as Member</button>
+        `;
+        document.getElementById('login-prompt').style.display = 'none';
+      }
+    }
+
+    async function joinAsGuest() {
+      const name = document.getElementById('guest-name').value.trim();
+      const errorDiv = document.getElementById('join-error');
+      
+      if (!name) {
+        errorDiv.textContent = 'Please enter your name';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/tabs/token/${token}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ guestName: name })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to join');
+        }
+        
+        currentParticipant = data.participant;
+        document.getElementById('join-screen').style.display = 'none';
+        showTabContent();
+        
+      } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    async function joinAsMember() {
+      try {
+        const response = await fetch(`/api/tabs/token/${token}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to join');
+        }
+        
+        currentParticipant = data.participant;
+        document.getElementById('join-screen').style.display = 'none';
+        showTabContent();
+        
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function showTabContent() {
+      document.getElementById('tab-content').style.display = 'block';
+      
+      // Update tab info
+      document.getElementById('tab-title').textContent = tabData.name;
+      document.getElementById('tab-description').textContent = tabData.description || '';
+      
+      const isOneBill = tabData.tab_type === 'one_bill';
+      const typeLabel = isOneBill ? '🧾 One-Bill' : '📊 Multi-Bill';
+      document.getElementById('tab-type-badge').textContent = typeLabel;
+      document.getElementById('tab-type-badge').className = `grouptab-type-badge ${tabData.tab_type}`;
+      
+      document.getElementById('tab-status-badge').textContent = tabData.status;
+      document.getElementById('tab-status-badge').className = `grouptab-status-badge ${tabData.status}`;
+      
+      // Setup proof requirement
+      const proofLabel = document.getElementById('proof-required-label');
+      if (tabData.proof_required === 'required') {
+        proofLabel.textContent = '(required)';
+        document.getElementById('payment-proof').required = true;
+      } else if (tabData.proof_required === 'off') {
+        document.getElementById('payment-proof-group').style.display = 'none';
+      } else {
+        proofLabel.textContent = '(optional)';
+      }
+      
+      // Setup seat/tier/price-group selection for one-bill
+      if (tabData.tab_type === 'one_bill') {
+        
+        if (tabData.seat_count) {
+          document.getElementById('seat-tier-section').style.display = 'block';
+          document.getElementById('seat-picker-container').style.display = 'block';
+          renderSeatPicker();
+        }
+        
+        if (tabData.split_mode === 'tiered' && tiers.length > 0) {
+          document.getElementById('seat-tier-section').style.display = 'block';
+          document.getElementById('tier-selector-container').style.display = 'block';
+          renderTierSelector();
+        }
+        
+        // Price Groups mode
+        if (tabData.split_mode === 'price_groups' && priceGroups.length > 0) {
+          document.getElementById('seat-tier-section').style.display = 'block';
+          document.getElementById('price-group-selector-container').style.display = 'block';
+          renderPriceGroupSelector();
+        }
+      }
+      
+      // Load data
+      await Promise.all([
+        loadFairness(),
+        loadPayments()
+      ]);
+      
+      renderParticipants();
+    }
+
+    async function loadFairness() {
+      try {
+        const response = await fetch(`/api/grouptabs/${tabData.id}/fairness`);
+        if (response.ok) {
+          fairnessData = await response.json();
+          renderFairness();
+          updateYourShare();
+        }
+      } catch (error) {
+        console.error('Error loading fairness:', error);
+      }
+    }
+
+    async function loadPayments() {
+      try {
+        const response = await fetch(`/api/grouptabs/${tabData.id}/payments`);
+        if (response.ok) {
+          const data = await response.json();
+          payments = data.payments || [];
+          renderPayments();
+        }
+      } catch (error) {
+        console.error('Error loading payments:', error);
+      }
+    }
+
+    function updateYourShare() {
+      if (!fairnessData || !currentParticipant) return;
+      
+      myFairnessInfo = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
+      
+      if (myFairnessInfo) {
+        document.getElementById('your-share-amount').textContent = formatCurrency2(myFairnessInfo.fairShare);
+        document.getElementById('suggested-amount').textContent = formatCurrency2(myFairnessInfo.fairShare);
+        document.getElementById('payment-amount').value = (myFairnessInfo.fairShare / 100).toFixed(2);
+        
+        if (myFairnessInfo.balance >= -50 && myFairnessInfo.balance <= 50) {
+          document.getElementById('your-share-status').textContent = '✅ You\'re all settled up!';
+          document.getElementById('your-share-status').style.color = '#4ade80';
+        } else if (myFairnessInfo.balance < -50) {
+          document.getElementById('your-share-status').textContent = `You still owe ${formatCurrency2(Math.abs(myFairnessInfo.balance))}`;
+          document.getElementById('your-share-status').style.color = '#f87171';
+        } else {
+          document.getElementById('your-share-status').textContent = `You've overpaid by ${formatCurrency2(myFairnessInfo.balance)}`;
+          document.getElementById('your-share-status').style.color = '#4ade80';
+        }
+      }
+    }
+
+    function renderFairness() {
+      if (!fairnessData) return;
+      
+      const score = fairnessData.globalScore;
+      document.getElementById('fairness-score').textContent = score;
+      
+      const circle = document.getElementById('fairness-circle');
+      const circumference = 2 * Math.PI * 45;
+      const offset = circumference - (score / 100) * circumference;
+      circle.style.strokeDashoffset = offset;
+      
+      if (score >= 80) {
+        circle.style.stroke = '#4ade80';
+      } else if (score >= 50) {
+        circle.style.stroke = '#fbbf24';
+      } else {
+        circle.style.stroke = '#f87171';
+      }
+      
+      // Render shortfall/surplus banner for price_groups mode
+      renderShortfallSurplusBanner();
+      
+      // Participant donuts
+      const grid = document.getElementById('participant-fairness-grid');
+      grid.innerHTML = fairnessData.participants.map(p => {
+        const balance = p.balance;
+        let balanceClass = 'neutral';
+        let balanceText = 'Settled';
+        if (balance > 50) {
+          balanceClass = 'positive';
+          balanceText = `+${formatCurrency2(balance)} owed`;
+        } else if (balance < -50) {
+          balanceClass = 'negative';
+          balanceText = `${formatCurrency2(Math.abs(balance))} owes`;
+        }
+        
+        const isYou = currentParticipant && p.participantId === currentParticipant.id;
+        
+        return `
+          <div class="participant-fairness-card" style="${isYou ? 'border:2px solid var(--accent)' : ''}">
+            <canvas class="participant-donut" id="donut-${p.participantId}" width="100" height="100"></canvas>
+            <div class="participant-name">${escapeHtml(p.displayName)}${isYou ? ' (You)' : ''}</div>
+            <div class="participant-balance ${balanceClass}">${balanceText}</div>
+          </div>
+        `;
+      }).join('');
+      
+      // Draw donuts
+      fairnessData.participants.forEach(p => {
+        const canvas = document.getElementById(`donut-${p.participantId}`);
+        if (canvas) {
+          const paid = Math.max(0, p.actualPaid);
+          const remaining = Math.max(0, p.fairShare - paid);
+          const overpaid = Math.max(0, paid - p.fairShare);
+          
+          new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+              datasets: [{
+                data: overpaid > 0 ? [p.fairShare, overpaid] : [paid, remaining],
+                backgroundColor: overpaid > 0 
+                  ? ['rgba(61, 220, 151, 0.8)', 'rgba(74, 222, 128, 0.5)']
+                  : ['rgba(61, 220, 151, 0.8)', 'rgba(255, 255, 255, 0.1)'],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              cutout: '70%',
+              plugins: { legend: { display: false }, tooltip: { enabled: false } },
+              animation: { duration: 500 }
+            }
+          });
+        }
+      });
+    }
+
+    function renderShortfallSurplusBanner() {
+      const banner = document.getElementById('shortfall-surplus-banner');
+      
+      // Only show for price_groups split mode
+      if (tabData.split_mode !== 'price_groups' || !fairnessData?.summary) {
+        banner.style.display = 'none';
+        return;
+      }
+      
+      const billTotal = fairnessData.summary.tabTotal || 0;
+      const projectedTotal = fairnessData.summary.projectedTotal || 0;
+      const totalPayments = fairnessData.summary.totalPayments || 0;
+      const shortfallSurplus = fairnessData.summary.shortfallSurplus || (projectedTotal - billTotal);
+      
+      // Calculate actual collected vs bill
+      const collectedVsBill = totalPayments - billTotal;
+      
+      banner.style.display = 'flex';
+      
+      const iconEl = document.getElementById('ss-icon');
+      const titleEl = document.getElementById('ss-title');
+      const detailEl = document.getElementById('ss-detail');
+      const amountEl = document.getElementById('ss-amount');
+      
+      // Show collection progress
+      detailEl.textContent = `Bill: ${formatCurrency2(billTotal)} | Collected: ${formatCurrency2(totalPayments)}`;
+      
+      if (totalPayments >= billTotal) {
+        // Bill is fully covered
+        banner.className = 'shortfall-surplus-banner surplus';
+        iconEl.textContent = '✅';
+        titleEl.textContent = 'Bill Covered!';
+        if (collectedVsBill > 50) {
+          amountEl.textContent = `+${formatCurrency2(collectedVsBill)}`;
+          detailEl.textContent += ' (Extra goes to you)';
+        } else {
+          amountEl.textContent = formatCurrency2(0);
+        }
+      } else if (projectedTotal < billTotal) {
+        // Projected shortfall based on group prices
+        banner.className = 'shortfall-surplus-banner shortfall';
+        iconEl.textContent = '⚠️';
+        titleEl.textContent = 'Projected Shortfall';
+        const remaining = billTotal - totalPayments;
+        amountEl.textContent = `-${formatCurrency2(remaining)}`;
+        detailEl.textContent = `Bill: ${formatCurrency2(billTotal)} | Still needed: ${formatCurrency2(remaining)}`;
+      } else {
+        // In progress - show remaining
+        const remaining = billTotal - totalPayments;
+        if (remaining > 50) {
+          banner.className = 'shortfall-surplus-banner shortfall';
+          iconEl.textContent = '📊';
+          titleEl.textContent = 'Collection in Progress';
+          amountEl.textContent = formatCurrency2(remaining);
+          detailEl.textContent = `Bill: ${formatCurrency2(billTotal)} | Still needed: ${formatCurrency2(remaining)}`;
+        } else {
+          banner.className = 'shortfall-surplus-banner balanced';
+          iconEl.textContent = '✅';
+          titleEl.textContent = 'Almost There!';
+          amountEl.textContent = formatCurrency2(0);
+        }
+      }
+    }
+
+    function renderParticipants() {
+      const list = document.getElementById('participant-list');
+      
+      list.innerHTML = participants.map(p => {
+        const name = p.full_name || p.guest_name || 'Unknown';
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        const isYou = currentParticipant && p.id === currentParticipant.id;
+        const roleLabel = p.role === 'organizer' ? '(Organizer)' : (p.is_member ? '(Member)' : '(Guest)');
+        
+        const pFairness = fairnessData?.participants.find(f => f.participantId === p.id);
+        let balanceText = '';
+        if (pFairness) {
+          if (pFairness.balance > 50) {
+            balanceText = `<span style="color:#4ade80">+${formatCurrency2(pFairness.balance)}</span>`;
+          } else if (pFairness.balance < -50) {
+            balanceText = `<span style="color:#f87171">-${formatCurrency2(Math.abs(pFairness.balance))}</span>`;
+          } else {
+            balanceText = `<span style="color:var(--muted)">±€0</span>`;
+          }
+        }
+        
+        return `
+          <div class="participant-row" style="${isYou ? 'border:1px solid var(--accent)' : ''}">
+            <div class="participant-avatar">${initials}</div>
+            <div class="participant-info">
+              <div class="participant-name">${escapeHtml(name)}${isYou ? ' (You)' : ''}</div>
+              <div class="participant-role">${roleLabel}</div>
+            </div>
+            <div class="participant-balance">${balanceText}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPayments() {
+      const list = document.getElementById('payment-list');
+      const empty = document.getElementById('payments-empty');
+      
+      if (payments.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      
+      empty.style.display = 'none';
+      
+      list.innerHTML = payments.map(p => {
+        const fromName = p.from_name || p.from_guest_name || 'Unknown';
+        const toName = p.to_name || p.to_guest_name || 'The bill';
+        const hasProof = p.proof_file_path;
+        
+        return `
+          <div class="payment-item">
+            <div class="payment-arrow">
+              <span class="payment-from">${escapeHtml(fromName)}</span>
+              <span class="payment-arrow-icon">→</span>
+              <span class="payment-to">${escapeHtml(toName)}</span>
+            </div>
+            <div class="payment-amount">${formatCurrency2(p.amount_cents)}</div>
+            ${hasProof ? '<span class="payment-proof-badge">✓ Proof</span>' : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSeatPicker() {
+      const picker = document.getElementById('seat-picker');
+      const currentSeats = currentParticipant?.assigned_seats ? JSON.parse(currentParticipant.assigned_seats) : [];
+      
+      // Find taken seats
+      const takenSeats = {};
+      participants.forEach(p => {
+        if (p.assigned_seats && p.id !== currentParticipant?.id) {
+          try {
+            const seats = JSON.parse(p.assigned_seats);
+            seats.forEach(s => {
+              takenSeats[s] = p.guest_name || p.full_name || 'Someone';
+            });
+          } catch (e) {}
+        }
+      });
+      
+      let html = '';
+      for (let i = 1; i <= tabData.seat_count; i++) {
+        const isTaken = takenSeats[i];
+        const isSelected = currentSeats.includes(i);
+        html += `
+          <div class="seat ${isSelected ? 'selected' : ''} ${isTaken ? 'taken' : ''}" 
+               data-seat="${i}" 
+               onclick="${isTaken ? '' : `toggleSeat(${i})`}"
+               title="${isTaken ? `Taken by ${takenSeats[i]}` : `Seat ${i}`}">
+            ${i}
+          </div>
+        `;
+      }
+      picker.innerHTML = html;
+    }
+
+    function toggleSeat(seatNum) {
+      const seatEl = document.querySelector(`.seat[data-seat="${seatNum}"]`);
+      if (seatEl && !seatEl.classList.contains('taken')) {
+        seatEl.classList.toggle('selected');
+      }
+    }
+
+    function renderTierSelector() {
+      const selector = document.getElementById('tier-selector');
+      const currentTierId = currentParticipant?.tier_id;
+      
+      selector.innerHTML = tiers.map(tier => `
+        <div class="tier-option ${tier.id === currentTierId ? 'selected' : ''}" 
+             data-tier="${tier.id}" 
+             onclick="selectTier(${tier.id})">
+          <span class="tier-name">${escapeHtml(tier.name)}</span>
+          <span class="tier-multiplier">${tier.multiplier}x</span>
+        </div>
+      `).join('');
+    }
+
+    function selectTier(tierId) {
+      document.querySelectorAll('.tier-option').forEach(opt => {
+        opt.classList.remove('selected');
+        if (parseInt(opt.getAttribute('data-tier')) === tierId) {
+          opt.classList.add('selected');
+        }
+      });
+    }
+
+    // Price Groups Selector
+    function renderPriceGroupSelector() {
+      const selector = document.getElementById('price-group-selector');
+      const currentGroupId = currentParticipant?.price_group_id;
+      
+      selector.innerHTML = priceGroups.map(group => `
+        <div class="price-group-option ${group.id === currentGroupId ? 'selected' : ''}" 
+             data-group-id="${group.id}" 
+             onclick="selectPriceGroup(${group.id})">
+          <span class="pg-option-emoji">${group.emoji || '📦'}</span>
+          <div class="pg-option-info">
+            <span class="pg-option-name">${escapeHtml(group.name)}</span>
+            <span class="pg-option-hint">Suggested amount</span>
+          </div>
+          <span class="pg-option-price">${formatCurrency2(group.amount_cents)}</span>
+        </div>
+      `).join('');
+    }
+
+    function selectPriceGroup(groupId) {
+      document.querySelectorAll('.price-group-option').forEach(opt => {
+        opt.classList.remove('selected');
+        if (parseInt(opt.getAttribute('data-group-id')) === groupId) {
+          opt.classList.add('selected');
+        }
+      });
+      
+      // Update the "Your Share" display immediately for better UX
+      const group = priceGroups.find(g => g.id === groupId);
+      if (group) {
+        document.getElementById('your-share-amount').textContent = formatCurrency2(group.amount_cents);
+        document.getElementById('suggested-amount').textContent = formatCurrency2(group.amount_cents);
+      }
+    }
+
+    async function updateSelection() {
+      try {
+        const updates = {};
+        
+        // Get selected seats
+        const selectedSeats = [];
+        document.querySelectorAll('.seat.selected').forEach(el => {
+          selectedSeats.push(parseInt(el.getAttribute('data-seat')));
+        });
+        if (selectedSeats.length > 0) {
+          updates.assignedSeats = selectedSeats;
+        }
+        
+        // Get selected tier
+        const selectedTier = document.querySelector('.tier-option.selected');
+        if (selectedTier) {
+          updates.tierId = parseInt(selectedTier.getAttribute('data-tier'));
+        }
+        
+        // Get selected price group
+        const selectedPriceGroup = document.querySelector('.price-group-option.selected');
+        if (selectedPriceGroup) {
+          updates.priceGroupId = parseInt(selectedPriceGroup.getAttribute('data-group-id'));
+        }
+        
+        const response = await fetch(`/api/grouptabs/${tabData.id}/participants/${currentParticipant.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to update');
+        }
+        
+        // Update local participant data
+        if (updates.priceGroupId) {
+          currentParticipant.price_group_id = updates.priceGroupId;
+        }
+        
+        // Reload fairness to update share
+        await loadFairness();
+        alert('Selection updated!');
+        
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    // Modal functions
+    function showModal(id) {
+      document.getElementById(id).classList.add('visible');
+    }
+
+    function hideModal(id) {
+      document.getElementById(id).classList.remove('visible');
+    }
+
+    function showPaymentModal() {
+      document.getElementById('payment-form').reset();
+      document.getElementById('payment-error').style.display = 'none';
+      
+      // Pre-fill with suggested amount
+      if (myFairnessInfo) {
+        const amountOwed = Math.max(0, -myFairnessInfo.balance);
+        if (amountOwed > 0) {
+          document.getElementById('payment-amount').value = (amountOwed / 100).toFixed(2);
+        }
+      }
+      
+      showModal('payment-modal');
+    }
+
+    async function submitPayment(event) {
+      event.preventDefault();
+      const errorDiv = document.getElementById('payment-error');
+      errorDiv.style.display = 'none';
+      
+      try {
+        const formData = new FormData();
+        formData.append('amountCents', Math.round(parseFloat(document.getElementById('payment-amount').value) * 100));
+        formData.append('method', document.getElementById('payment-method').value);
+        formData.append('note', document.getElementById('payment-note').value);
+        
+        const proofFile = document.getElementById('payment-proof').files[0];
+        if (proofFile) {
+          formData.append('proof', proofFile);
+        }
+        
+        const response = await fetch(`/api/grouptabs/${tabData.id}/payments`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to record payment');
+        }
+        
+        hideModal('payment-modal');
+        await Promise.all([loadPayments(), loadFairness()]);
+        renderParticipants();
+        
+        alert('Payment recorded successfully!');
+        
+      } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    function redirectToLogin() {
+      // Store token to redirect back after login
+      localStorage.setItem('grouptab_redirect', window.location.href);
+      window.location.href = '/login.html';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Load on page load
+    loadTab();
+  </script>
+</body>
+</html>
+

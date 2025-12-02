@@ -624,7 +624,7 @@
 
       // Financial calculations
       const totalCents = tab.total_amount_cents || 0;
-      const paidCents = tab.paid_amount_cents || 0;
+      const paidCents = tab.paid_up_cents || 0;
       const unpaidCents = totalCents - paidCents;
       const isSettled = tab.status === 'closed' || unpaidCents <= 0;
       

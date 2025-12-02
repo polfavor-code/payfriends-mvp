@@ -63,24 +63,42 @@
 
     /* --- LAYOUT --- */
     .app-container {
-      max-width: 800px;
+      max-width: 960px;
       margin: 0 auto;
-      background: var(--bg);
+      padding: 0 24px;
+      background: transparent;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       position: relative;
     }
-    @media (min-width: 801px) {
-      .app-container { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+    
+    @media (max-width: 768px) {
+      .app-container {
+        padding: 0 16px;
+      }
     }
 
-    /* --- HEADER --- */
+    /* --- HEADER / TOP CARD --- */
     .app-header {
       background: var(--card);
       padding: 24px 32px;
-      border-bottom: 1px solid var(--border);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-top: 24px;
       position: relative;
+    }
+    
+    @media (max-width: 768px) {
+      .app-header {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        margin-top: 0;
+        margin-left: -16px;
+        margin-right: -16px;
+        padding: 20px 16px;
+      }
     }
 
     .header-top {
@@ -209,42 +227,58 @@
     .receipt-btn-big:hover { background: rgba(255,255,255,0.1); }
     
     .receipt-delete-btn {
-        background: rgba(255,100,100,0.1) !important;
-        border: 1px solid rgba(255,100,100,0.3) !important;
-        width: 44px !important;
-        min-width: 44px;
-        padding: 12px !important;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        width: 48px;
+        min-width: 48px;
+        height: 48px;
+        padding: 0;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #ff6b6b !important;
-        font-size: 16px;
-        font-weight: 600;
+        color: var(--text);
+        font-size: 18px;
         cursor: pointer;
         transition: all 0.2s;
     }
-    .receipt-delete-btn:hover { background: rgba(255,100,100,0.25) !important; }
+    .receipt-delete-btn:hover { 
+        background: rgba(255,255,255,0.1); 
+        color: #ff6b6b;
+    }
 
     /* --- GROUP CARDS --- */
     .group-cards-area {
-      padding: 24px 32px 0 32px;
+      padding: 24px 0 0 0;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 12px;
+    }
+    
+    @media (max-width: 768px) {
+      .group-cards-area {
+        padding: 16px 0 0 0;
+      }
     }
     .group-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 16px;
+      padding: 22px 16px; /* Increased vertical padding */
       display: flex;
       flex-direction: column;
       cursor: pointer;
       transition: all 0.2s;
       position: relative;
+      min-height: 140px; /* Ensure minimum height for balance */
     }
-    .group-card:hover { transform: translateY(-2px); }
+    .group-card:hover { 
+      transform: rotate(-1deg) scale(1.03); 
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+      border-color: var(--accent);
+      border-width: 2px;
+      z-index: 10;
+    }
     .group-card.active {
       border-color: var(--accent);
       background: var(--accent-dim);
@@ -252,10 +286,10 @@
     .group-card.active::after {
         content: '✓'; position: absolute; top: 12px; right: 12px; color: var(--accent); font-weight: 800;
     }
-    .gc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .gc-icon { font-size: 24px; }
-    .gc-name { font-size: 14px; font-weight: 700; color: #fff; }
-    .gc-sub { font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+    .gc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .gc-icon { font-size: 48px; } /* Increased icon size */
+    .gc-name { font-size: 16px; font-weight: 700; color: #fff; } /* Increased title size */
+    .gc-sub { font-size: 12px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; } /* Increased sub size */
     .gc-price { font-size: 16px; color: var(--accent); font-weight: 800; margin-top: auto; }
 
     .group-card.add-new {
@@ -267,14 +301,20 @@
 
     /* --- HERO BOX --- */
     .hero-pop-container {
-        padding: 24px 32px;
+        padding: 24px 0;
+    }
+    
+    @media (max-width: 768px) {
+      .hero-pop-container {
+        padding: 16px 0;
+      }
     }
     
     .hero-pop-box {
         background: var(--dutch-bg);
         border: 2px dashed var(--dutch-border);
         border-radius: 24px;
-        padding: 32px 24px;
+        padding: 20px 24px;
         text-align: center;
         position: relative;
         overflow: visible; 
@@ -287,10 +327,10 @@
         border-style: solid;
     }
 
-    .pop-title { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 4px; margin-top: 12px; }
-    .pop-sub { font-size: 13px; color: var(--accent); opacity:0.8; margin-bottom: 12px; font-weight:600; }
+    .pop-title { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 2px; margin-top: 8px; }
+    .pop-sub { font-size: 13px; color: var(--accent); opacity:0.8; margin-bottom: 8px; font-weight:600; }
     
-    .pop-price { font-size: 48px; font-weight: 800; color: var(--accent); margin: 8px 0; display: block; }
+    .pop-price { font-size: 48px; font-weight: 800; color: var(--accent); margin: 4px 0; display: block; }
     
     /* Unfair Text - NOW ORANGE */
     .unfair-text-line {
@@ -345,7 +385,7 @@
         font-weight: 700;
         cursor: pointer;
         transition: all 0.2s;
-        margin-top: 16px;
+        margin-top: 12px;
     }
     .pay-btn-big:hover { background: var(--dutch-orange); color: #000; }
     
@@ -358,21 +398,107 @@
 
     /* --- LIST --- */
     .list-section {
-        padding: 0 32px 100px 32px;
+        padding: 0 0 120px 0;
         margin-top: 8px;
     }
     
-    .list-controls {
+    @media (max-width: 768px) {
+      .list-section {
+        padding: 0 0 100px 0;
+      }
+    }
+    
+    /* Collapsible Participants Section */
+    .participants-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 16px;
+        padding: 16px 0;
         border-bottom: 1px solid var(--border);
-        padding-bottom: 12px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s;
+    }
+    .participants-header:hover {
+        background: rgba(255,255,255,0.02);
+        margin: 0 -16px;
+        padding: 16px;
+        border-radius: 12px;
     }
     
-    .list-title-row { display: flex; align-items: center; gap: 12px; }
+    .participants-summary {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        color: var(--muted);
+    }
+    .participants-summary-icon {
+        width: 18px;
+        height: 18px;
+        opacity: 0.7;
+    }
+    .participants-summary-title {
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .participants-summary-stats {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+    }
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .stat-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .stat-dot.green { background: var(--accent); }
+    .stat-dot.amber { background: var(--pending); }
+    .stat-dot.red { background: var(--danger); }
+    
+    .chevron {
+        font-size: 12px;
+        color: var(--muted);
+        transition: transform 0.3s ease;
+    }
+    .chevron.expanded {
+        transform: rotate(180deg);
+    }
+    
+    .participants-expanded-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-out, opacity 0.3s ease;
+        opacity: 0;
+    }
+    .participants-expanded-content.expanded {
+        max-height: 5000px; /* Large enough for any list */
+        opacity: 1;
+        transition: max-height 0.5s ease-in, opacity 0.3s ease;
+    }
+    
+    .participants-expanded-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 16px 0 12px 0;
+    }
+    .participants-expanded-header .list-title-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
     .list-title { font-size: 14px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .participants-subtitle { font-size: 13px; color: var(--muted); font-weight: 500; }
     
     .fairness-pill {
         background: var(--danger-dim);
@@ -382,22 +508,15 @@
         font-weight: 700;
         padding: 4px 10px;
         border-radius: 12px;
-        display: flex; align-items: center; gap: 6px;
+        display: inline-flex; 
+        align-items: center; 
+        gap: 6px;
+        width: fit-content;
+        margin-bottom: 12px;
     }
     .fairness-pill.balanced {
         background: var(--accent-dim); color: var(--accent); border-color: var(--accent);
     }
-    
-    .sort-btn {
-        background: transparent;
-        border: none;
-        color: var(--muted);
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex; align-items: center; gap: 6px;
-    }
-    .sort-btn:hover { color: var(--text); }
 
     .p-row {
         display: grid;
@@ -465,34 +584,47 @@
     .prog-pct { font-size: 11px; font-weight: 700; min-width: 35px; text-align: right; }
     .prog-pct.paid { color: var(--accent); }
     .prog-pct.overpaid { color: var(--danger); }
-    .prog-pct.pending { color: var(--muted); }
+    .prog-pct.pending { color: var(--pending); }
+
+    /* Time Ago Text */
+    .payment-time-ago {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 2px;
+        font-weight: 500;
+    }
 
     /* Share Link Button */
     .share-link-btn {
-        background: var(--accent-dim);
-        border: 1px solid var(--accent);
+        background: transparent;
+        border: none;
         color: var(--accent);
         font-size: 11px;
         font-weight: 700;
-        padding: 8px 12px;
-        border-radius: 8px;
+        padding: 8px 0;
         cursor: pointer;
         display: flex; align-items: center; gap: 6px;
         text-transform: uppercase;
         transition: all 0.2s;
     }
-    .share-link-btn:hover { background: var(--accent); color: #000; }
+    .share-link-btn:hover { opacity: 0.8; }
 
     /* Waiting Guest Card */
     .p-row.waiting-guest {
         border-style: dashed;
-        border-color: var(--muted);
+        border-color: #444;
         background: transparent;
+    }
+    .p-row.waiting-guest .share-link-btn {
+        color: #666;
+    }
+    .p-row.waiting-guest .share-link-btn:hover {
+        color: #888;
     }
     .p-avatar.waiting {
         border-style: dashed;
-        border-color: var(--muted);
-        color: var(--muted);
+        border-color: #444;
+        color: #666;
         background: transparent;
         font-size: 20px;
     }
@@ -503,13 +635,22 @@
 
     /* --- FOOTER --- */
     .footer-bar {
-        position: sticky;
+        position: fixed;
         bottom: 0;
-        background: var(--card);
+        left: 0;
+        right: 0;
+        background: var(--bg);
         border-top: 1px solid var(--border);
-        padding: 16px 32px;
+        padding: 16px 24px;
         z-index: 100;
-        display: flex; gap: 12px;
+        display: flex;
+        justify-content: center;
+    }
+    .footer-bar-inner {
+        max-width: 960px;
+        width: 100%;
+        display: flex;
+        gap: 12px;
     }
     .f-btn { 
         flex: 1; padding: 14px; border-radius: 12px; 
@@ -520,6 +661,19 @@
     
     .btn-sec { background: #21262d; border: 1px solid var(--border); color: var(--text); }
     .btn-pri { background: var(--accent); color: #000; border: 1px solid var(--accent); }
+    
+    @media (max-width: 768px) {
+      .footer-bar {
+        padding: 12px 16px;
+      }
+      .footer-bar-inner {
+        gap: 8px;
+      }
+      .f-btn {
+        padding: 12px;
+        font-size: 13px;
+      }
+    }
 
     /* Utilities */
     .hide { display: none !important; }
@@ -605,8 +759,8 @@
                 <div class="stat-value" id="total-bill-amount">€0.00</div>
             </div>
             <div class="stat-block stat-right">
-                <div class="stat-label">COLLECTED</div>
-                <div class="stat-value stat-accent" id="collected-amount">€0.00</div>
+                <div class="stat-label">REMAINING</div>
+                <div class="stat-value" id="remaining-amount" style="color: var(--pending);">€0.00</div>
             </div>
         </div>
         <div class="progress-track">
@@ -639,7 +793,7 @@
             <!-- Corner Paid Badge -->
             <div class="paid-badge-corner">FULLY PAID</div>
             
-            <div class="pop-title">Your Fair Share</div>
+            <div class="pop-title" id="hero-title">Your Fair Share</div>
             <div class="pop-sub" id="hero-group-name">...</div>
             
             <div class="pop-price highlight" id="hero-price">--</div>
@@ -655,43 +809,179 @@
 
     <!-- LIST -->
     <div class="list-section">
-        <div class="list-controls">
-            <div class="list-title-row">
-                <div class="list-title" id="participants-count">Participants</div>
+        <!-- Collapsed Header (clickable) -->
+        <div class="participants-header" onclick="toggleParticipants()">
+            <div class="participants-summary">
+                <svg class="participants-summary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span class="participants-summary-title" id="participants-collapsed-title">Participants (0)</span>
+                <span class="participants-summary-stats" id="participants-collapsed-stats"></span>
+            </div>
+            <span class="chevron" id="participants-chevron">▼</span>
+        </div>
+        
+        <!-- Expanded Content (hidden by default) -->
+        <div class="participants-expanded-content" id="participants-expanded">
+            <div class="participants-expanded-header">
+                <div class="list-title-row">
+                    <div class="list-title" id="participants-count">Participants</div>
+                </div>
+                <span class="participants-subtitle" id="participants-subtitle"></span>
                 <div class="fairness-pill" id="fairness-badge">
                     <img id="fairness-icon" src="/images/payfriends-handshake.svg" style="width:16px; height:16px; margin-right:4px;" onerror="this.style.display='none'">
                     <span id="fairness-text">CALCULATING...</span>
                 </div>
             </div>
-            
-            <!-- Sorting could be implemented here -->
-        </div>
 
-        <!-- Participants Container -->
-        <div id="participants-list">
-            <!-- Dynamically filled -->
+            <!-- Participants Container -->
+            <div id="participants-list">
+                <!-- Dynamically filled -->
+            </div>
         </div>
-
     </div>
 
-    <!-- FOOTER (Host Only) -->
-    <div id="host-footer" class="footer-bar hide">
-        <button class="f-btn btn-sec" onclick="showEditModal()">Edit Details</button>
-        <button class="f-btn btn-pri" onclick="showPaymentModal()">Report Payment</button>
-    </div>
+  </div>
 
+  <!-- FOOTER (Host Only) - Outside app-container for full-width positioning -->
+  <div id="host-footer" class="footer-bar hide">
+    <div class="footer-bar-inner">
+      <button class="f-btn btn-sec" onclick="showEditModal()">Edit Details</button>
+      <button class="f-btn btn-pri" onclick="showPaymentModal()">Add a Payment Received</button>
+    </div>
   </div>
 
   <!-- Hidden inputs -->
   <input type="hidden" id="share-link-input">
 
-  <!-- Modals (Minimal versions for functionality) -->
-  <div id="payment-modal" class="modal-overlay">
-    <div class="modal">
-      <h3>Record Payment</h3>
-      <input type="number" id="pay-amount" class="form-input" placeholder="Amount (€)" step="0.01">
-      <button class="form-btn" onclick="submitPayment()">Submit Payment</button>
-      <button class="form-btn" style="background:transparent; border:1px solid #333; margin-top:8px;" onclick="hideModal('payment-modal')">Cancel</button>
+  <!-- Payment Modal - Clean Minimalist Design -->
+  <div id="payment-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('payment-modal')">
+    <div class="modal" style="max-width: 420px; padding: 24px;">
+      <h3 style="margin: 0 0 24px 0; font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px;">ADD A PAYMENT RECEIVED</h3>
+      
+      <!-- Payment Rows -->
+      <div id="payment-rows-container"></div>
+      
+      <!-- Add another person button -->
+      <button id="add-beneficiary-btn" style="
+        width: 100%;
+        background: transparent;
+        border: 1px dashed rgba(255,255,255,0.2);
+        border-radius: 12px;
+        padding: 14px;
+        color: rgba(255,255,255,0.5);
+        font-size: 13px;
+        cursor: pointer;
+        margin: 8px 0 20px 0;
+        transition: all 0.2s;
+      " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='rgba(255,255,255,0.5)'" onclick="addPaymentRow()">
+        + Pay for another person also
+      </button>
+      
+      <!-- Payment Details -->
+      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <div style="flex: 1;">
+          <label style="display: block; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Received Via</label>
+          <select id="payment-method" style="
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 12px 14px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+          ">
+            <option value="cash">Cash</option>
+            <option value="transfer">Bank Transfer</option>
+            <option value="card">Card</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Proof (Optional)</label>
+        <input type="file" id="payment-proof" style="
+          width: 100%;
+          background: rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 10px;
+          padding: 10px 14px;
+          color: rgba(255,255,255,0.7);
+          font-size: 13px;
+        ">
+      </div>
+      
+      <!-- Payment summary -->
+      <div style="
+        padding: 16px;
+        background: rgba(0,0,0,0.4);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255,255,255,0.05);
+      ">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: rgba(255,255,255,0.6); font-size: 14px;">Total Payment:</span>
+          <span id="payment-total" style="font-size: 22px; font-weight: 800; color: var(--accent);">€0.00</span>
+        </div>
+        <div id="payment-error" style="color: #f87171; font-size: 12px; margin-top: 10px; display: none;"></div>
+      </div>
+      
+      <!-- Action buttons -->
+      <button class="form-btn" onclick="submitPaymentNew()" style="
+        width: 100%;
+        padding: 14px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 12px;
+      ">Report receiving this payment</button>
+      <button onclick="hideModal('payment-modal')" style="
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: rgba(255,255,255,0.5);
+        padding: 14px;
+        font-size: 14px;
+        cursor: pointer;
+        margin-top: 8px;
+      ">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- Overpay Confirmation Modal -->
+  <div id="overpay-confirm-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('overpay-confirm-modal')">
+    <div class="modal" style="max-width: 450px;">
+      <h3 style="margin-bottom: 16px; color: var(--pending);">⚠️ Confirm Overpayment</h3>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 16px;">
+        You are paying more than the remaining balance. The extra amount will reduce what others owe.
+      </p>
+      
+      <div class="overpay-details" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--muted);">Total Payment:</span>
+          <span id="overpay-total-amount" style="font-weight: 600;">€0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--muted);">Combined Remaining:</span>
+          <span id="overpay-total-remaining">€0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px;">
+          <span style="color: var(--pending);">Extra Amount:</span>
+          <span id="overpay-extra-amount" style="font-weight: 700; color: var(--pending);">€0.00</span>
+        </div>
+      </div>
+      
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">This will reduce the following balances:</p>
+      <ul id="redistribution-preview" style="list-style: none; padding: 0; margin: 0 0 16px 0; font-size: 13px;"></ul>
+      
+      <button class="form-btn" onclick="confirmOverpay()" style="background: var(--pending); margin-top: 8px;">Confirm Overpayment</button>
+      <button class="form-btn" style="background:transparent; border:1px solid #333; margin-top:8px;" onclick="cancelOverpay()">Cancel</button>
     </div>
   </div>
 
@@ -708,6 +998,33 @@
     </div>
   </div>
 
+  <!-- Add Price Group Modal -->
+  <div id="add-group-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('add-group-modal')">
+    <div class="modal" style="max-width: 400px;">
+      <h3 style="margin-bottom: 20px;">Add Price Group</h3>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px;">Group Name</label>
+        <input type="text" id="new-group-name" class="form-input" placeholder="e.g. VIP, Kids, Seniors" style="width: 100%;">
+      </div>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px;">Emoji (optional)</label>
+        <input type="text" id="new-group-emoji" class="form-input" placeholder="🎫" maxlength="2" style="width: 80px;">
+      </div>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px;">Price (€)</label>
+        <input type="number" id="new-group-price" class="form-input" placeholder="0.00" step="0.01" min="0" style="width: 100%;">
+      </div>
+      
+      <div id="add-group-error" style="color: #ff6b6b; font-size: 12px; margin-bottom: 12px; display: none;"></div>
+      
+      <button class="form-btn" onclick="submitNewGroup()" style="width: 100%;">Add Group</button>
+      <button class="form-btn" style="background:transparent; border:1px solid #333; margin-top:8px; width: 100%;" onclick="hideModal('add-group-modal')">Cancel</button>
+    </div>
+  </div>
+
   <!-- Hidden file input for receipt upload -->
   <input type="file" id="receipt-upload-input" accept="image/*,.pdf" style="display:none;" onchange="handleReceiptUpload(event)">
 
@@ -719,6 +1036,7 @@
     let tabData = null;
     let participants = [];
     let priceGroups = [];
+    let participantsExpanded = false; // Collapsed by default
     let currentParticipant = null;
     let fairnessData = null;
     let isCreator = false;
@@ -752,6 +1070,20 @@
             isCreator = data.isCreator; // API returns this
             ownerToken = data.ownerToken; // For receipt uploads
             
+            // Compute last_payment_at for each participant from payments
+            const payments = data.payments || [];
+            participants.forEach(p => {
+                const participantPayments = payments.filter(pay => pay.from_participant_id === p.id);
+                if (participantPayments.length > 0) {
+                    // Find the most recent payment date
+                    const mostRecent = participantPayments.reduce((latest, pay) => {
+                        const payDate = new Date(pay.created_at);
+                        return payDate > latest ? payDate : latest;
+                    }, new Date(0));
+                    p.last_payment_at = mostRecent.toISOString();
+                }
+            });
+            
             // Fallback: check if current user is the tab creator
             if (!isCreator && currentParticipant && tabData.creator_user_id === currentParticipant.user_id) {
                 isCreator = true;
@@ -760,7 +1092,7 @@
             // Calculate fairness
             if (window.GroupTabsEngine) {
                 fairnessData = window.GroupTabsEngine.calculateFairnessData(
-                    tabData, participants, data.expenses||[], data.payments||[], data.tiers||[], priceGroups
+                    tabData, participants, data.expenses||[], payments, data.tiers||[], priceGroups
                 );
             }
 
@@ -790,24 +1122,30 @@
         
         const peopleCount = tabData.people_count || tabData.peopleCount || participants.length || 1;
         document.getElementById('header-meta').innerHTML = `
-            <span>${date}</span> • <span>${peopleCount} People</span> • 
+            <span>${date}</span> • <span>${peopleCount} Participants</span> • 
             <span class="split-pill">${splitLabel}</span>
         `;
 
         // Bill Summary Stats
-        let totalCost = 0;
-        let totalPaid = 0;
-        if (fairnessData && fairnessData.participants) {
-            fairnessData.participants.forEach(p => {
-                totalCost += p.fairShare;
-                totalPaid += p.actualPaid;
-            });
-        }
-        const pct = totalCost > 0 ? Math.min(100, Math.round((totalPaid / totalCost) * 100)) : 0;
+        // Total Bill = the actual bill amount from the tab
+        const totalBill = tabData.total_amount_cents || 0;
+        
+        // For one_bill tabs: Host paid the full bill upfront
+        // "Collected" = total amount settled towards the bill (host's share + guest payments)
+        const numPeople = tabData.people_count || 1;
+        const fairShareCents = Math.floor(totalBill / numPeople);
+        
+        // paid_up_cents tracks total settled (host's share is auto-settled when they pay the bill)
+        // If paid_up_cents is not set, default to host's share being settled
+        const totalCollected = tabData.paid_up_cents || fairShareCents;
+        
+        // Progress is based on total collected vs total bill
+        const pct = totalBill > 0 ? Math.min(100, Math.round((totalCollected / totalBill) * 100)) : 100;
 
         // Update big stat numbers
-        document.getElementById('total-bill-amount').innerText = formatCurrency2(totalCost);
-        document.getElementById('collected-amount').innerText = formatCurrency2(totalPaid);
+        const totalRemaining = Math.max(0, totalBill - totalCollected);
+        document.getElementById('total-bill-amount').innerText = formatCurrency2(totalBill);
+        document.getElementById('remaining-amount').innerText = formatCurrency2(totalRemaining);
         document.getElementById('global-progress-fill').style.width = pct + '%';
         document.getElementById('progress-percent-text').innerText = pct + '% Collected';
 
@@ -820,14 +1158,14 @@
             rLink.innerHTML = `
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <button onclick="showReceiptModal('${receiptUrl}', '${receiptFilename}')" class="receipt-btn-big" style="flex: 1;">
-                        <span style="font-size:18px">📄</span> View Original Receipt
+                    <span style="font-size:18px">📄</span> View Original Receipt
                     </button>
-                    ${isCreator ? `<button onclick="deleteReceipt()" class="receipt-btn-big receipt-delete-btn" title="Delete Receipt">🗑️</button>` : ''}
+                    ${isCreator ? `<button onclick="deleteReceipt()" class="receipt-delete-btn" title="Delete Receipt">×</button>` : ''}
                 </div>`;
         } else {
             rLink.innerHTML = isCreator 
                 ? `<div class="receipt-btn-big" onclick="triggerReceiptUpload()" id="receipt-upload-btn">
-                     <span style="font-size:18px">📤</span> <span id="receipt-upload-text">Upload Receipt</span>
+                     <span id="receipt-upload-text">Upload Receipt</span>
                    </div>`
                 : '';
         }
@@ -837,6 +1175,7 @@
         const box = document.getElementById('hero-box');
         const priceEl = document.getElementById('hero-price');
         const groupNameEl = document.getElementById('hero-group-name');
+        const titleEl = document.getElementById('hero-title');
         const warningEl = document.getElementById('unfair-warning');
         
         if (!currentParticipant || !fairnessData) {
@@ -846,6 +1185,13 @@
 
         const myData = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
         if (!myData) return;
+
+        // Set the participant's name in the title
+        // Look up the full participant data from the participants list (which has full_name from user join)
+        const fullParticipant = participants.find(p => p.id === currentParticipant.id);
+        const participantName = fullParticipant?.full_name || fullParticipant?.guest_name || currentParticipant.display_name || currentParticipant.displayName || currentParticipant.guest_name || 'You';
+        const firstName = participantName.split(' ')[0]; // Get first name only
+        titleEl.innerText = `${firstName}'s Fair Share`;
 
         priceEl.innerText = formatCurrency2(myData.fairShare);
         
@@ -907,13 +1253,17 @@
         
         if (isCreator) {
             container.innerHTML += `
-                <div class="group-card add-new">
+                <div class="group-card add-new" onclick="showAddGroupModal()" style="cursor:pointer;">
                     <div style="font-size:24px; margin-bottom:4px;">+</div>
                     <div style="font-size:12px; font-weight:700;">Add Group</div>
                 </div>`;
         }
     }
 
+    function sortParticipants() {
+        renderParticipants();
+    }
+    
     function renderParticipants() {
         const container = document.getElementById('participants-list');
         container.innerHTML = '';
@@ -922,12 +1272,89 @@
         const expectedPeopleCount = tabData.people_count || tabData.peopleCount || participants.length || 1;
         document.getElementById('participants-count').innerText = `Participants (${expectedPeopleCount})`;
         
-        // Sort: Overpaid first, then pending, then settled
-        // We need computed data
+        // Get computed data for participants
         let list = participants.map(p => {
             const data = fairnessData ? fairnessData.participants.find(d => d.participantId === p.id) : {};
             return { ...p, ...data };
         });
+        
+        // Calculate counts for collapsed/expanded summary
+        let fullyPaidCount = 0;
+        let partialCount = 0;
+        let unpaidCount = 0;
+        
+        list.forEach(p => {
+            const paidAmt = p.actualPaid || 0;
+            const fairShare = p.fairShare || 0;
+            const balance = p.balance || 0;
+            
+            if (balance >= 0 && paidAmt > 0) {
+                // Fully paid or overpaid
+                fullyPaidCount++;
+            } else if (paidAmt > 0 && balance < 0) {
+                // Partial payment
+                partialCount++;
+            } else {
+                // Unpaid (paidAmt === 0)
+                unpaidCount++;
+            }
+        });
+        
+        // Add waiting guests to unpaid count
+        const waitingCount = expectedPeopleCount - participants.length;
+        unpaidCount += waitingCount;
+        
+        // Build summary stats with colored dots for collapsed header
+        let collapsedStatsHtml = '';
+        if (fullyPaidCount > 0) {
+            collapsedStatsHtml += `<span class="stat-item"><span class="stat-dot green"></span>${fullyPaidCount} Fully Paid</span>`;
+        }
+        if (partialCount > 0) {
+            collapsedStatsHtml += `<span class="stat-item"><span class="stat-dot amber"></span>${partialCount} Partial</span>`;
+        }
+        if (unpaidCount > 0) {
+            collapsedStatsHtml += `<span class="stat-item"><span class="stat-dot red"></span>${unpaidCount} Unpaid</span>`;
+        }
+        
+        // Build plain text for expanded header
+        const statsParts = [];
+        if (fullyPaidCount > 0) statsParts.push(`${fullyPaidCount} Fully Paid`);
+        if (partialCount > 0) statsParts.push(`${partialCount} Partial`);
+        if (unpaidCount > 0) statsParts.push(`${unpaidCount} Unpaid`);
+        const statsText = statsParts.join(' • ');
+        
+        // Update collapsed header
+        document.getElementById('participants-collapsed-title').innerText = `Participants (${expectedPeopleCount})`;
+        document.getElementById('participants-collapsed-stats').innerHTML = collapsedStatsHtml;
+        
+        // Update expanded header subtitle
+        document.getElementById('participants-subtitle').innerText = statsText;
+        
+        // Apply sorting based on dropdown selection
+        const sortMode = document.getElementById('participant-sort')?.value || 'highest';
+        
+        switch (sortMode) {
+            case 'highest':
+                // Highest paying first (actualPaid descending)
+                list.sort((a, b) => (b.actualPaid || 0) - (a.actualPaid || 0));
+                break;
+            case 'name':
+                // Alphabetical by name
+                list.sort((a, b) => {
+                    const nameA = (a.full_name || a.guest_name || '').toLowerCase();
+                    const nameB = (b.full_name || b.guest_name || '').toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+                break;
+            case 'recent':
+                // Most recent payment first (by last payment date)
+                list.sort((a, b) => {
+                    const dateA = a.last_payment_at ? new Date(a.last_payment_at) : new Date(0);
+                    const dateB = b.last_payment_at ? new Date(b.last_payment_at) : new Date(0);
+                    return dateB - dateA;
+                });
+                break;
+        }
         
         list.forEach(p => {
             // Logic for stamps and bars
@@ -961,10 +1388,11 @@
             const isHost = p.user_id === tabData.creator_user_id;
             const isMe = currentParticipant && p.id === currentParticipant.id;
             
-            let groupName = '';
-            if (tabData.split_mode === 'price_groups' && p.priceGroupId) {
-                const g = priceGroups.find(x => x.id === p.priceGroupId);
-                if(g) groupName = g.name + ' • ';
+            let fairShareLabel = 'Equal split';
+            const priceGroupId = p.price_group_id || p.priceGroupId;
+            if (tabData.split_mode === 'price_groups' && priceGroupId) {
+                const g = priceGroups.find(x => x.id === priceGroupId);
+                if(g) fairShareLabel = g.name;
             }
 
             let overpaidHtml = '';
@@ -972,31 +1400,44 @@
                 overpaidHtml = `<div class="overpaid-val">+${formatCurrency2(balance)}</div>`;
             }
 
-            // Determine "Actually Paid" color
-            // - Orange if below fair share (pending/underpaid)
-            // - Gray (muted) if exactly equal
-            // - Red if overpaid
-            let paidColor = 'var(--muted)'; // default gray
-            if (paidAmt < fairShare) {
-                paidColor = 'var(--pending)'; // orange
-            } else if (paidAmt > fairShare) {
-                paidColor = 'var(--danger)'; // red
+            // Determine row color based on payment status (matches progress bar)
+            // - Red (danger) if overpaid (paid more than fair share)
+            // - Orange (pending) if partial/underpaid (including 0%)
+            // - Green (accent) if fully paid (exactly equal)
+            let rowColor = '#d29922'; // default orange for pending
+            if (paidAmt > fairShare && fairShare > 0) {
+                rowColor = '#f85149'; // red - overpaid
+            } else if (paidAmt >= fairShare && fairShare > 0) {
+                rowColor = '#3ddc97'; // green - fully paid
             }
 
+            // Check for profile picture (from user_id)
+            const hasProfilePic = p.user_id && (p.profile_picture || p.profilePicture);
+            const profilePicUrl = hasProfilePic ? `/api/profile/picture/${p.user_id}` : null;
+            
+            // Time ago
+            const timeAgoStr = (p.last_payment_at || p.lastPaymentAt) ? timeAgo(p.last_payment_at || p.lastPaymentAt) : '';
+
             const html = `
-                <div class="p-row">
-                    <div class="p-avatar" style="${isMe ? 'border-color:var(--accent); color:var(--accent);' : ''}">
-                        ${getInitials(p.full_name || p.guest_name)}
-                    </div>
+                <div class="p-row" style="--row-color:${rowColor};">
+                    ${profilePicUrl ? `
+                        <div class="p-avatar" style="border: none !important; padding: 0; overflow: hidden;">
+                            <img src="${profilePicUrl}" alt="" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        </div>
+                    ` : `
+                        <div class="p-avatar" style="border-color:${rowColor} !important; color:${rowColor} !important;">
+                            ${getInitials(p.full_name || p.guest_name)}
+                        </div>
+                    `}
                     
                     <div class="p-info">
                         <div class="p-name-row">
-                            <span class="p-name">${p.full_name || p.guest_name} ${isMe ? '(You)' : ''}</span>
+                            <span class="p-name" style="color:${rowColor} !important;">${p.full_name || p.guest_name} ${isMe ? '(You)' : ''}</span>
                             ${isHost ? '<span class="host-badge">HOST</span>' : ''}
                         </div>
-                        <div class="p-amt-line">
-                            <span class="p-amt-sub">${groupName}Fair Share: ${formatCurrency2(fairShare)}</span>
-                            <span style="color:${paidColor}">Actually Paid: ${formatCurrency2(paidAmt)}</span>
+                        <div class="p-amt-line" style="color:${rowColor} !important;">
+                            <span>${fairShareLabel}: ${formatCurrency2(fairShare)}</span>
+                            <span>Paid: ${formatCurrency2(paidAmt)}${timeAgoStr ? ` • <span style="opacity:0.8; font-weight:500;">${timeAgoStr}</span>` : ''}</span>
                         </div>
                     </div>
                     
@@ -1020,28 +1461,32 @@
         
         // Add "Waiting for guest" cards for unjoined participant slots
         const joinedCount = participants.length;
-        const waitingCount = expectedPeopleCount - joinedCount;
+        const waitingGuestCount = expectedPeopleCount - joinedCount;
         const shareUrl = `${window.location.origin}/tab/${tabData.magic_token}`;
         
-        for (let i = 0; i < waitingCount; i++) {
+        for (let i = 0; i < waitingGuestCount; i++) {
             const waitingHtml = `
                 <div class="p-row waiting-guest">
                     <div class="p-avatar waiting">
                         ?
                     </div>
                     
-                    <div class="p-info">
+                    <div class="p-info" style="justify-content: center; margin-top: 2px;">
                         <div class="p-name-row">
                             <span class="p-name waiting-text">Waiting for guest to respond...</span>
                         </div>
                         <div class="p-amt-line">
-                            <span class="p-amt-sub">Please help remind them to pay his fair share.</span>
+                            <span class="p-amt-sub">Please remind the other people to pay their share.</span>
                         </div>
                     </div>
 
                     <div class="p-status-col">
                         <button class="share-link-btn" onclick="copyShareLink('${shareUrl}')">
-                            <span style="margin-right:4px;">🔗</span> SHARE LINK
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                            </svg> 
+                            SHARE LINK
                         </button>
                     </div>
                 </div>
@@ -1060,7 +1505,7 @@
             if (badgeIcon) badgeIcon.style.filter = 'brightness(0) saturate(100%) invert(76%) sepia(52%) saturate(497%) hue-rotate(101deg) brightness(92%) contrast(87%)';
         } else {
             badge.classList.remove('balanced');
-            badgeText.innerText = "UNBALANCED " + Math.round(fairnessData.globalScore) + "%";
+            badgeText.innerText = "UNBALANCED";
             // Red filter for unbalanced state
             if (badgeIcon) badgeIcon.style.filter = 'brightness(0) saturate(100%) invert(37%) sepia(93%) saturate(1352%) hue-rotate(336deg) brightness(101%) contrast(97%)';
         }
@@ -1084,20 +1529,425 @@
     function hideModal(id) {
         document.getElementById(id).classList.remove('visible');
     }
+    // ===========================================
+    // PAYMENT MODAL LOGIC
+    // ===========================================
+    let pendingOverpayData = null; // Store overpay data for confirmation
+    let paymentRowCounter = 0; // Unique row IDs
+    
     function showPaymentModal() {
+        // Reset payment modal
+        const container = document.getElementById('payment-rows-container');
+        container.innerHTML = '';
+        paymentRowCounter = 0;
+        addPaymentRow(true); // Add initial row with pre-fill
+        updatePaymentTotal();
+        document.getElementById('payment-error').style.display = 'none';
+        document.getElementById('payment-method').value = 'transfer';
+        document.getElementById('payment-proof').value = '';
         showModal('payment-modal');
     }
+    
+    function addPaymentRow(isFirstRow = false) {
+        const container = document.getElementById('payment-rows-container');
+        const rowIndex = paymentRowCounter++;
+        
+        // Calculate fair share for equal split
+        const numPeople = tabData.people_count || 1;
+        const totalBill = tabData.total_amount_cents || 0;
+        const fairShareCents = Math.floor(totalBill / numPeople);
+        
+        // Pre-fill name for first row if currentParticipant exists
+        let prefillName = '';
+        let prefillPriceGroupId = null;
+        if (isFirstRow && currentParticipant) {
+            prefillName = currentParticipant.display_name || currentParticipant.guest_name || '';
+            prefillPriceGroupId = currentParticipant.price_group_id;
+        }
+        
+        // Build price group cards if applicable
+        let priceGroupHtml = '';
+        if (tabData.split_mode === 'price_groups' && priceGroups && priceGroups.length > 0) {
+            priceGroupHtml = `
+                <div class="price-group-cards" style="display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0;">
+                    ${priceGroups.map(pg => `
+                        <button type="button" class="price-group-card ${prefillPriceGroupId === pg.id ? 'selected' : ''}" 
+                            data-group-id="${pg.id}" data-amount="${pg.amount_cents}"
+                            onclick="selectPriceGroup(${rowIndex}, ${pg.id}, ${pg.amount_cents})"
+                            style="
+                                padding: 10px 14px;
+                                border-radius: 10px;
+                                border: 1px solid ${prefillPriceGroupId === pg.id ? 'var(--accent)' : 'rgba(255,255,255,0.15)'};
+                                background: ${prefillPriceGroupId === pg.id ? 'rgba(61,220,151,0.15)' : 'rgba(0,0,0,0.3)'};
+                                color: ${prefillPriceGroupId === pg.id ? 'var(--accent)' : '#fff'};
+                                cursor: pointer;
+                                font-size: 13px;
+                                font-weight: 500;
+                                transition: all 0.2s;
+                            ">
+                            ${pg.emoji || ''} ${pg.name} <span style="opacity:0.7">${formatCurrency2(pg.amount_cents)}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        // Fair share copy link for equal split
+        let fairShareHtml = '';
+        if (tabData.split_mode === 'equal' || !tabData.split_mode) {
+            fairShareHtml = `
+                <button type="button" onclick="copyFairShare(${rowIndex}, ${fairShareCents})" 
+                   style="
+                       background: rgba(61,220,151,0.1);
+                       border: 1px solid var(--accent);
+                       color: var(--accent);
+                       padding: 8px 12px;
+                       border-radius: 8px;
+                       font-size: 12px;
+                       font-weight: 600;
+                       cursor: pointer;
+                       white-space: nowrap;
+                   ">
+                    ${formatCurrency2(fairShareCents)}
+                </button>
+            `;
+        }
+        
+        const rowHtml = `
+            <div class="payment-row" data-row-index="${rowIndex}" data-price-group-id="${prefillPriceGroupId || ''}" style="
+                background: rgba(0,0,0,0.25);
+                border: 1px solid rgba(255,255,255,0.06);
+                border-radius: 14px;
+                padding: 16px;
+                margin-bottom: 12px;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label style="color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Name</label>
+                    ${rowIndex > 0 ? `<button onclick="removePaymentRow(${rowIndex})" style="background: transparent; border: none; color: rgba(255,255,255,0.3); cursor: pointer; padding: 4px 8px; font-size: 16px; transition: color 0.2s;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">×</button>` : ''}
+                </div>
+                <input type="text" class="payment-name-input" placeholder="Enter name" value="${prefillName}" 
+                       style="
+                           width: 100%;
+                           background: rgba(0,0,0,0.3);
+                           border: 1px solid rgba(255,255,255,0.1);
+                           border-radius: 10px;
+                           padding: 12px 14px;
+                           color: #fff;
+                           font-size: 14px;
+                           margin-bottom: 4px;
+                       ">
+                ${priceGroupHtml}
+                <div style="margin-top: 12px;">
+                    <label style="display: block; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Amount</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0 14px;">
+                            <span style="color: rgba(255,255,255,0.5); font-size: 14px;">€</span>
+                            <input type="number" class="payment-amount-input" placeholder="0.00" step="0.01" 
+                                   style="
+                                       flex: 1;
+                                       background: transparent;
+                                       border: none;
+                                       padding: 12px 8px;
+                                       color: #fff;
+                                       font-size: 16px;
+                                       font-weight: 600;
+                                   " oninput="updatePaymentTotal()"
+                                   value="${prefillPriceGroupId && priceGroups ? (priceGroups.find(pg => pg.id === prefillPriceGroupId)?.amount_cents / 100 || '') : ''}">
+                        </div>
+                        ${fairShareHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', rowHtml);
+    }
+    
+    function selectPriceGroup(rowIndex, groupId, amountCents) {
+        const container = document.getElementById('payment-rows-container');
+        const row = container.querySelector(`[data-row-index="${rowIndex}"]`);
+        if (!row) return;
+        
+        // Update selected state on cards
+        const cards = row.querySelectorAll('.price-group-card');
+        cards.forEach(card => {
+            const isSelected = parseInt(card.dataset.groupId) === groupId;
+            card.classList.toggle('selected', isSelected);
+            card.style.borderColor = isSelected ? 'var(--accent)' : 'var(--border)';
+            card.style.background = isSelected ? 'rgba(61,220,151,0.1)' : 'rgba(0,0,0,0.3)';
+            card.style.color = isSelected ? 'var(--accent)' : '#fff';
+        });
+        
+        // Store selected group ID
+        row.dataset.priceGroupId = groupId;
+        
+        // Set amount
+        const amountInput = row.querySelector('.payment-amount-input');
+        amountInput.value = (amountCents / 100).toFixed(2);
+        updatePaymentTotal();
+    }
+    
+    function copyFairShare(rowIndex, amountCents) {
+        const container = document.getElementById('payment-rows-container');
+        const row = container.querySelector(`[data-row-index="${rowIndex}"]`);
+        if (!row) return;
+        
+        const amountInput = row.querySelector('.payment-amount-input');
+        amountInput.value = (amountCents / 100).toFixed(2);
+        updatePaymentTotal();
+    }
+    
+    function removePaymentRow(index) {
+        const container = document.getElementById('payment-rows-container');
+        const row = container.querySelector(`[data-row-index="${index}"]`);
+        if (row) {
+            row.remove();
+            updatePaymentTotal();
+        }
+    }
+    
+    function updatePaymentTotal() {
+        const container = document.getElementById('payment-rows-container');
+        const inputs = container.querySelectorAll('.payment-amount-input');
+        
+        let total = 0;
+        inputs.forEach(input => {
+            const val = parseFloat(input.value) || 0;
+            total += val;
+        });
+        
+        document.getElementById('payment-total').innerText = formatCurrency2(Math.round(total * 100));
+        
+        // Validate against total outstanding (from tab data, not just existing participants)
+        // This accounts for guests who haven't joined yet
+        const totalBill = tabData.total_amount_cents || 0;
+        const alreadyCollected = tabData.paid_up_cents || 0;
+        const totalOutstanding = Math.max(0, totalBill - alreadyCollected);
+        const errorDiv = document.getElementById('payment-error');
+        
+        if (Math.round(total * 100) > totalOutstanding) {
+            errorDiv.innerText = `Amount exceeds total outstanding (${formatCurrency2(totalOutstanding)})`;
+            errorDiv.style.display = 'block';
+        } else {
+            errorDiv.style.display = 'none';
+        }
+    }
+    
+    // Find participant by name (case-insensitive)
+    function findParticipantByName(name) {
+        const normalizedName = name.trim().toLowerCase();
+        return participants.find(p => {
+            const pName = (p.display_name || p.guest_name || '').toLowerCase();
+            return pName === normalizedName;
+        });
+    }
+    
+    // Create new guest participant
+    async function createGuestParticipant(name, priceGroupId = null) {
+        const token = ownerToken || tabData.magic_token;
+        
+        // Use the correct endpoint: /api/grouptabs/:id/add-guest with token in body
+        const response = await fetch(`/api/grouptabs/${tabId}/add-guest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                guestName: name,
+                priceGroupId,
+                token
+            })
+        });
+        
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Failed to create guest');
+        }
+        
+        const data = await response.json();
+        return data.participant;
+    }
+    
+    async function submitPaymentNew() {
+        const container = document.getElementById('payment-rows-container');
+        const rows = container.querySelectorAll('.payment-row');
+        const errorDiv = document.getElementById('payment-error');
+        
+        // Collect row data
+        const rowsData = [];
+        for (const row of rows) {
+            const nameInput = row.querySelector('.payment-name-input');
+            const amountInput = row.querySelector('.payment-amount-input');
+            const name = nameInput.value.trim();
+            const amount = parseFloat(amountInput.value) || 0;
+            const priceGroupId = row.dataset.priceGroupId ? parseInt(row.dataset.priceGroupId) : null;
+            
+            if (name && amount > 0) {
+                rowsData.push({ name, amountCents: Math.round(amount * 100), priceGroupId });
+            }
+        }
+        
+        if (rowsData.length === 0) {
+            errorDiv.innerText = 'Please enter at least one name and amount';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        const method = document.getElementById('payment-method').value;
+        const token = ownerToken || tabData.magic_token;
+        
+        try {
+            // Process each payment row individually using the simple endpoint
+            for (const rowData of rowsData) {
+                // First, find or create the participant
+                let participant = findParticipantByName(rowData.name);
+                
+                if (!participant) {
+                    // Create new guest
+                    try {
+                        participant = await createGuestParticipant(rowData.name, rowData.priceGroupId);
+                        // Refresh participants list
+                        await loadTabData();
+                        participant = findParticipantByName(rowData.name);
+                    } catch (err) {
+                        errorDiv.innerText = `Error adding "${rowData.name}": ${err.message}`;
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+                }
+                
+                if (!participant) {
+                    errorDiv.innerText = `Could not find or create participant "${rowData.name}"`;
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                // Now record the payment using simple JSON endpoint
+                const response = await fetch(`/api/grouptabs/${tabId}/simple-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        participantId: participant.id,
+                        amountCents: rowData.amountCents,
+                        method: method,
+                        token: token,
+                        priceGroupId: rowData.priceGroupId // Include price group ID if selected
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    errorDiv.innerText = data.error || 'Payment failed';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                console.log('Payment recorded for', rowData.name, ':', data);
+            }
+            
+            // All payments successful
+            hideModal('payment-modal');
+            await loadTabData(); // Refresh data
+            
+        } catch (error) {
+            console.error('Payment error:', error);
+            errorDiv.innerText = 'Network error: ' + error.message;
+            errorDiv.style.display = 'block';
+        }
+    }
+    
+    function showOverpayConfirmation(overpayDetails, paymentRows) {
+        // Store method and proof for when user confirms
+        const method = document.getElementById('payment-method').value;
+        const proofFile = document.getElementById('payment-proof').files[0];
+        pendingOverpayData = { overpayDetails, paymentRows, method, proofFile };
+        
+        // Populate overpay modal
+        document.getElementById('overpay-total-amount').innerText = formatCurrency2(overpayDetails.totalAmount);
+        document.getElementById('overpay-total-remaining').innerText = formatCurrency2(overpayDetails.totalRemaining);
+        document.getElementById('overpay-extra-amount').innerText = formatCurrency2(overpayDetails.overpayAmount);
+        
+        // Build redistribution preview list
+        const previewList = document.getElementById('redistribution-preview');
+        previewList.innerHTML = overpayDetails.redistribution
+            .filter(r => r.reduction > 0)
+            .map(r => `
+                <li style="padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                    <span>${r.participantName}</span>
+                    <span style="color: var(--accent);">-${formatCurrency2(r.reduction)}</span>
+                </li>
+            `)
+            .join('');
+        
+        hideModal('payment-modal');
+        showModal('overpay-confirm-modal');
+    }
+    
+    async function confirmOverpay() {
+        if (!pendingOverpayData) return;
+        
+        try {
+            // Build FormData for file upload
+            const formData = new FormData();
+            formData.append('paymentRows', JSON.stringify(pendingOverpayData.paymentRows));
+            formData.append('confirmOverpay', 'true');
+            formData.append('token', ownerToken || tabData.magic_token);
+            formData.append('method', pendingOverpayData.method || 'transfer');
+            
+            if (pendingOverpayData.proofFile) {
+                formData.append('proof', pendingOverpayData.proofFile);
+            }
+            
+            const response = await fetch(`/api/grouptabs/${tabId}/process-payment`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                alert(data.error || 'Payment failed');
+                return;
+            }
+            
+            // Payment successful
+            hideModal('overpay-confirm-modal');
+            pendingOverpayData = null;
+            await loadTabData(); // Refresh data
+            
+        } catch (error) {
+            console.error('Confirm overpay error:', error);
+            alert('Network error. Please try again.');
+        }
+    }
+    
+    function cancelOverpay() {
+        hideModal('overpay-confirm-modal');
+        pendingOverpayData = null;
+        showModal('payment-modal'); // Return to payment modal
+    }
+    
     function showEditModal() {
         // TODO: Full edit modal
         alert('Edit modal implementation required');
     }
-    
-    async function submitPayment() {
-        const amt = document.getElementById('pay-amount').value;
-        if(!amt) return;
-        // API Call logic here...
-        alert(`Payment of €${amt} simulated!`);
-        hideModal('payment-modal');
+
+    // ===========================================
+    // COLLAPSIBLE PARTICIPANTS
+    // ===========================================
+    function toggleParticipants() {
+        participantsExpanded = !participantsExpanded;
+        const expandedContent = document.getElementById('participants-expanded');
+        const chevron = document.getElementById('participants-chevron');
+        
+        if (participantsExpanded) {
+            expandedContent.classList.add('expanded');
+            chevron.classList.add('expanded');
+            chevron.innerText = '▲';
+        } else {
+            expandedContent.classList.remove('expanded');
+            chevron.classList.remove('expanded');
+            chevron.innerText = '▼';
+        }
     }
 
     function getInitials(name) {
@@ -1126,7 +1976,24 @@
     }
 
     if(typeof formatCurrency2 === 'undefined') {
-        window.formatCurrency2 = (c) => '€' + (c/100).toFixed(2);
+        window.formatCurrency2 = (c) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(c / 100);
+    }
+    
+    // Time Ago Helper
+    function timeAgo(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+        
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        return date.toLocaleDateString();
     }
 
     // ===========================================
@@ -1263,6 +2130,70 @@
 
         // Clear file input for potential re-upload
         event.target.value = '';
+    }
+
+    // ===========================================
+    // ADD PRICE GROUP
+    // ===========================================
+    
+    function showAddGroupModal() {
+        // Clear form
+        document.getElementById('new-group-name').value = '';
+        document.getElementById('new-group-emoji').value = '';
+        document.getElementById('new-group-price').value = '';
+        document.getElementById('add-group-error').style.display = 'none';
+        
+        showModal('add-group-modal');
+    }
+    
+    async function submitNewGroup() {
+        const name = document.getElementById('new-group-name').value.trim();
+        const emoji = document.getElementById('new-group-emoji').value.trim() || '🏷️';
+        const priceInput = document.getElementById('new-group-price').value;
+        const errorDiv = document.getElementById('add-group-error');
+        
+        // Validation
+        if (!name) {
+            errorDiv.textContent = 'Please enter a group name';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        const price = parseFloat(priceInput);
+        if (isNaN(price) || price < 0) {
+            errorDiv.textContent = 'Please enter a valid price';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        const amountCents = Math.round(price * 100);
+        
+        try {
+            const response = await fetch(`/api/grouptabs/${tabId}/price-groups`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    emoji,
+                    amountCents,
+                    token: ownerToken
+                })
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to add group');
+            }
+            
+            // Success - reload data and close modal
+            hideModal('add-group-modal');
+            await loadTabData();
+            
+        } catch (error) {
+            console.error('Add group error:', error);
+            errorDiv.textContent = error.message;
+            errorDiv.style.display = 'block';
+        }
     }
 
     // Initialize header if available
