@@ -61,6 +61,289 @@
       padding: 32px 16px;
     }
 
+    /* --- JOIN SCREEN (Soft Glass B Design) --- */
+    .join-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background: radial-gradient(ellipse at top center, #1a2233 0%, #0a0c10 70%);
+    }
+
+    .join-container {
+      width: 100%;
+      max-width: 400px;
+      animation: joinFadeIn 0.6s ease-out;
+    }
+
+    @keyframes joinFadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header Row */
+    .join-header-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .join-host-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(61, 220, 151, 0.2), rgba(61, 220, 151, 0.05));
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .join-header-titles h2 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin: 0 0 6px 0;
+      color: var(--text);
+    }
+
+    .join-header-titles .join-host-line {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .join-header-titles .join-host-name {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* Name Input - Underline Style */
+    .join-name-field {
+      margin-bottom: 48px;
+    }
+
+    .join-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .join-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+      padding: 14px 0;
+      font-size: 18px;
+      color: var(--text);
+      font-family: inherit;
+      transition: border-color 0.3s ease;
+      outline: none;
+      border-radius: 0;
+    }
+
+    .join-input:focus {
+      border-color: var(--accent);
+    }
+
+    .join-input::placeholder {
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Group Selection */
+    .join-group-section {
+      margin-bottom: 48px;
+    }
+
+    .join-group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 20px;
+    }
+
+    .join-group-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .join-group-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Group Cards */
+    .join-groups {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .join-group-card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 20px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .join-group-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .join-group-card.selected {
+      background: linear-gradient(90deg, rgba(61, 220, 151, 0.12) 0%, rgba(61, 220, 151, 0.03) 100%);
+      border-color: rgba(61, 220, 151, 0.4);
+      box-shadow: 0 8px 32px rgba(61, 220, 151, 0.1);
+    }
+
+    .join-group-card.selected .jg-icon-box {
+      background: rgba(61, 220, 151, 0.15);
+      box-shadow: 0 4px 16px rgba(61, 220, 151, 0.2);
+    }
+
+    .jg-icon-box {
+      width: 52px;
+      height: 52px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+      transition: all 0.25s ease;
+    }
+
+    .jg-info {
+      flex: 1;
+    }
+
+    .jg-info h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 4px 0;
+      color: var(--text);
+    }
+
+    .jg-info p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .jg-check {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .join-group-card.selected .jg-check {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .jg-check svg {
+      width: 14px;
+      height: 14px;
+      stroke: #0e1116;
+      stroke-width: 3;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .join-group-card.selected .jg-check svg {
+      opacity: 1;
+    }
+
+    /* CTA Button - White Pill */
+    .join-btn {
+      width: 100%;
+      background: white;
+      color: #0e1116;
+      border: none;
+      padding: 20px 32px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 24px rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.25s ease;
+      font-family: inherit;
+    }
+
+    .join-btn:hover {
+      background: #f5f5f5;
+      transform: scale(1.02);
+      box-shadow: 0 8px 32px rgba(255, 255, 255, 0.15);
+    }
+
+    .join-btn:active {
+      transform: scale(0.98);
+    }
+
+    .join-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .join-btn-arrow {
+      font-size: 20px;
+      transition: transform 0.25s ease;
+    }
+
+    .join-btn:hover .join-btn-arrow {
+      transform: translateX(4px);
+    }
+
+    /* Error */
+    .join-error {
+      color: var(--danger);
+      font-size: 14px;
+      margin-top: 16px;
+      text-align: center;
+      padding: 12px;
+      background: rgba(248, 81, 73, 0.1);
+      border-radius: 12px;
+    }
+
+    /* Legacy chip styles for backwards compat - hidden */
+    .join-group-chip { display: none; }
+    .join-amount { display: none; }
+
     /* --- LAYOUT --- */
     .app-container {
       max-width: 960px;
@@ -273,11 +556,8 @@
       min-height: 140px; /* Ensure minimum height for balance */
     }
     .group-card:hover { 
-      transform: rotate(-1deg) scale(1.03); 
-      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
       border-color: var(--accent);
       border-width: 2px;
-      z-index: 10;
     }
     .group-card.active {
       border-color: var(--accent);
@@ -396,6 +676,22 @@
     .hero-pop-box.paid-state .pop-price { color: var(--accent); opacity: 0.3; }
     .hero-pop-box.paid-state .pop-title, .hero-pop-box.paid-state .pop-sub { opacity: 0.3; }
 
+    /* Pay for someone else link */
+    .pay-for-other-link {
+        position: absolute;
+        bottom: 12px;
+        right: 16px;
+        font-size: 11px;
+        color: var(--muted);
+        cursor: pointer;
+        opacity: 0.6;
+        transition: all 0.2s;
+    }
+    .pay-for-other-link:hover { 
+        opacity: 1; 
+        color: var(--accent); 
+    }
+
     /* --- LIST --- */
     .list-section {
         padding: 0 0 120px 0;
@@ -413,7 +709,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 16px 0;
+        padding: 18px 0; /* Increased vertical padding */
         border-bottom: 1px solid var(--border);
         cursor: pointer;
         user-select: none;
@@ -422,7 +718,7 @@
     .participants-header:hover {
         background: rgba(255,255,255,0.02);
         margin: 0 -16px;
-        padding: 16px;
+        padding: 18px 16px; /* Match increased padding */
         border-radius: 12px;
     }
     
@@ -436,12 +732,15 @@
     .participants-summary-icon {
         width: 18px;
         height: 18px;
-        opacity: 0.7;
+        opacity: 1;
+        color: #fff;
     }
     .participants-summary-title {
+        font-size: 15px; /* Slightly larger */
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 1px;
+        color: #fff;
     }
     .participants-summary-stats {
         display: flex;
@@ -497,8 +796,6 @@
         gap: 12px;
     }
     
-    .list-title { font-size: 14px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-    .participants-subtitle { font-size: 13px; color: var(--muted); font-weight: 500; }
     
     .fairness-pill {
         background: var(--danger-dim);
@@ -512,10 +809,32 @@
         align-items: center; 
         gap: 6px;
         width: fit-content;
-        margin-bottom: 12px;
+        /* margin-bottom removed to allow proper flex alignment */
     }
     .fairness-pill.balanced {
         background: var(--accent-dim); color: var(--accent); border-color: var(--accent);
+    }
+    
+    .fairness-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+    
+    .unbalanced-explanation {
+        font-size: 14px;
+        color: var(--danger);
+        font-weight: 500;
+        line-height: 1;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+    }
+    .unbalanced-explanation:empty {
+        display: none;
     }
 
     .p-row {
@@ -730,7 +1049,55 @@
     <!-- Site header will be loaded dynamically by header.js -->
   </div>
 
-  <div class="app-container">
+  <!-- JOIN SCREEN (Soft Glass B Design) -->
+  <div class="join-screen" id="join-screen" style="display: none;">
+    <div class="join-container">
+      
+      <!-- Header Row -->
+      <div class="join-header-row">
+        <div class="join-host-avatar" id="join-host-avatar">P</div>
+        <div class="join-header-titles">
+          <h2 id="join-tab-name">Loading...</h2>
+          <p class="join-host-line">
+            <span class="join-host-name" id="join-host-name">Someone</span> sent you a split bill request.
+          </p>
+        </div>
+      </div>
+
+      <!-- Name Input -->
+      <div class="join-name-field">
+        <label class="join-label" for="join-name-input">Enter your name</label>
+        <input 
+          type="text" 
+          class="join-input" 
+          id="join-name-input" 
+          placeholder="Just how your friends call you"
+          maxlength="50"
+          autocomplete="name"
+        >
+      </div>
+
+      <!-- Group Selection -->
+      <div class="join-group-section" id="join-groups-section" style="display: none;">
+        <div class="join-group-header">
+          <span class="join-group-title">Select your group</span>
+          <span class="join-group-subtitle">Choose what applies to you</span>
+        </div>
+        <div class="join-groups" id="join-groups-container"></div>
+      </div>
+
+      <!-- CTA Button -->
+      <button class="join-btn" id="join-submit-btn" onclick="submitJoin()">
+        <span>See your share</span>
+        <span class="join-btn-arrow">→</span>
+      </button>
+
+      <!-- Error Message -->
+      <p class="join-error" id="join-error" style="display: none;"></p>
+    </div>
+  </div>
+
+  <div class="app-container" id="main-content">
     
     <!-- HEADER -->
     <div class="app-header">
@@ -759,7 +1126,7 @@
                 <div class="stat-value" id="total-bill-amount">€0.00</div>
             </div>
             <div class="stat-block stat-right">
-                <div class="stat-label">REMAINING</div>
+                <div class="stat-label stat-pending">REMAINING</div>
                 <div class="stat-value" id="remaining-amount" style="color: var(--pending);">€0.00</div>
             </div>
         </div>
@@ -804,6 +1171,9 @@
             <span class="unfair-text-line hide" id="unfair-warning">
                 <!-- Populated by JS -->
             </span>
+            
+            <!-- Pay for someone else link -->
+            <a class="pay-for-other-link" onclick="showPaymentModalForOther()">Pay for someone else</a>
         </div>
     </div>
 
@@ -827,29 +1197,28 @@
         <!-- Expanded Content (hidden by default) -->
         <div class="participants-expanded-content" id="participants-expanded">
             <div class="participants-expanded-header">
-                <div class="list-title-row">
-                    <div class="list-title" id="participants-count">Participants</div>
-                </div>
-                <span class="participants-subtitle" id="participants-subtitle"></span>
+                <div class="fairness-row">
                 <div class="fairness-pill" id="fairness-badge">
                     <img id="fairness-icon" src="/images/payfriends-handshake.svg" style="width:16px; height:16px; margin-right:4px;" onerror="this.style.display='none'">
                     <span id="fairness-text">CALCULATING...</span>
                 </div>
-            </div>
-
-            <!-- Participants Container -->
-            <div id="participants-list">
-                <!-- Dynamically filled -->
+                    <span class="unbalanced-explanation" id="unbalanced-explanation"></span>
             </div>
         </div>
+
+        <!-- Participants Container -->
+        <div id="participants-list">
+            <!-- Dynamically filled -->
+            </div>
+        </div>
+        </div>
+
     </div>
 
-  </div>
-
   <!-- FOOTER (Host Only) - Outside app-container for full-width positioning -->
-  <div id="host-footer" class="footer-bar hide">
+    <div id="host-footer" class="footer-bar hide">
     <div class="footer-bar-inner">
-      <button class="f-btn btn-sec" onclick="showEditModal()">Edit Details</button>
+        <button class="f-btn btn-sec" onclick="showEditModal()">Edit Details</button>
       <button class="f-btn btn-pri" onclick="showPaymentModal()">Add a Payment Received</button>
     </div>
   </div>
@@ -902,8 +1271,8 @@
             <option value="card">Card</option>
             <option value="other">Other</option>
           </select>
-        </div>
-      </div>
+    </div>
+  </div>
       
       <div style="margin-bottom: 20px;">
         <label style="display: block; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Proof (Optional)</label>
@@ -1025,6 +1394,15 @@
     </div>
   </div>
 
+  <!-- Error Modal (styled replacement for browser alert) -->
+  <div id="error-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('error-modal')">
+    <div class="modal" style="max-width: 380px; text-align: center; padding: 32px 24px;">
+      <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+      <p id="error-modal-message" style="margin: 0 0 24px 0; color: var(--text); font-size: 15px; line-height: 1.5;"></p>
+      <button class="form-btn" onclick="hideModal('error-modal')" style="width: 100%;">Close</button>
+    </div>
+  </div>
+
   <!-- Hidden file input for receipt upload -->
   <input type="file" id="receipt-upload-input" accept="image/*,.pdf" style="display:none;" onchange="handleReceiptUpload(event)">
 
@@ -1042,25 +1420,39 @@
     let isCreator = false;
     let ownerToken = null;
 
-    // Init
+    // Init - detect route type
     const pathParts = window.location.pathname.split('/');
-    // Handle both /view/:id and /grouptabs/:id routes
+    let magicToken = null;
+    
+    // Handle /tab/:token (magic link) vs /grouptabs/:id routes
+    if (pathParts[1] === 'tab' && pathParts[2]) {
+        magicToken = pathParts[2];
+    } else {
     const lastPart = pathParts[pathParts.length - 1];
     if (!isNaN(parseInt(lastPart))) {
         tabId = parseInt(lastPart);
-    } else {
-        // Fallback or token logic if needed
+        }
     }
 
     async function init() {
-        if (!tabId) return;
+        if (!tabId && !magicToken) return;
         await loadTabData();
     }
 
     async function loadTabData() {
         try {
-            const response = await fetch(`/api/grouptabs/${tabId}`);
-            if (!response.ok) throw new Error('Failed to load');
+            // Use different API endpoint based on access type
+            let response;
+            if (magicToken) {
+                response = await fetch(`/api/tabs/token/${magicToken}`);
+            } else {
+                response = await fetch(`/api/grouptabs/${tabId}`);
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to load');
+            }
             const data = await response.json();
             
             tabData = data.tab;
@@ -1069,6 +1461,22 @@
             currentParticipant = data.currentParticipant;
             isCreator = data.isCreator; // API returns this
             ownerToken = data.ownerToken; // For receipt uploads
+            
+            // Store magic token if provided (for join API calls)
+            if (data.magicToken) {
+                window.currentMagicToken = data.magicToken;
+            }
+            
+            // Check if user needs to join first (via magic link, not yet a participant)
+            if (magicToken && data.hasJoined === false) {
+                showJoinScreen();
+                return;
+            }
+            
+            // Set tabId from tab data if we came via magic token
+            if (!tabId && tabData.id) {
+                tabId = tabData.id;
+            }
             
             // Compute last_payment_at for each participant from payments
             const payments = data.payments || [];
@@ -1130,20 +1538,26 @@
         // Total Bill = the actual bill amount from the tab
         const totalBill = tabData.total_amount_cents || 0;
         
-        // For one_bill tabs: Host paid the full bill upfront
-        // "Collected" = total amount settled towards the bill (host's share + guest payments)
-        const numPeople = tabData.people_count || 1;
-        const fairShareCents = Math.floor(totalBill / numPeople);
+        // Calculate what's been "settled" towards the bill
+        // Each participant contributes min(whatTheyPaid, theirFairShare) towards settling the bill
+        let totalSettled = 0;
+        if (fairnessData && fairnessData.participants && fairnessData.participants.length > 0) {
+            totalSettled = fairnessData.participants.reduce((sum, p) => {
+                // Each person has settled up to their fair share
+                const settled = Math.min(p.actualPaid || 0, p.fairShare || 0);
+                return sum + settled;
+            }, 0);
+        } else {
+            // Fallback: use database value or assume host's share is settled
+            const numPeople = tabData.people_count || 1;
+            const fairShareCents = Math.floor(totalBill / numPeople);
+            totalSettled = tabData.paid_up_cents || fairShareCents;
+        }
         
-        // paid_up_cents tracks total settled (host's share is auto-settled when they pay the bill)
-        // If paid_up_cents is not set, default to host's share being settled
-        const totalCollected = tabData.paid_up_cents || fairShareCents;
-        
-        // Progress is based on total collected vs total bill
+        // Remaining = bill minus what's settled
+        const totalRemaining = Math.max(0, totalBill - totalSettled);
+        const totalCollected = totalSettled;
         const pct = totalBill > 0 ? Math.min(100, Math.round((totalCollected / totalBill) * 100)) : 100;
-
-        // Update big stat numbers
-        const totalRemaining = Math.max(0, totalBill - totalCollected);
         document.getElementById('total-bill-amount').innerText = formatCurrency2(totalBill);
         document.getElementById('remaining-amount').innerText = formatCurrency2(totalRemaining);
         document.getElementById('global-progress-fill').style.width = pct + '%';
@@ -1235,16 +1649,31 @@
         container.classList.remove('hide');
         container.innerHTML = '';
 
+        // Subtext mapping for known group names
+        const groupSubtexts = {
+            'Alcohol Drinkers': 'Wine, cocktails, and heavy hitters.',
+            'Non-Alcohol': 'Soft drinks, water, and designated drivers.',
+            'Meat Eaters': 'Steak, burgers, and carnivore delights.',
+            'Vegetarians': 'Plant-based dishes and veggie options.',
+            'Heavy Eaters': 'Big appetites and second helpings.',
+            'Light Eaters': 'Smaller portions and lighter fare.',
+            'Adults': 'Full-price adult portions.',
+            'Kids': 'Kids menu and smaller plates.',
+            'Full Dinner': 'Food and drinks, the full experience.',
+            'Drinks Only': 'Just here for the beverages.'
+        };
+
         priceGroups.forEach(g => {
-            const isActive = currentParticipant && currentParticipant.price_group_id === g.id;
+            const isActive = currentParticipant && (currentParticipant.price_group_id === g.id || currentParticipant.priceGroupId === g.id);
             const activeClass = isActive ? 'active' : '';
+            const subtext = groupSubtexts[g.name] || 'Target per person';
             const html = `
-                <div class="group-card ${activeClass}">
+                <div class="group-card ${activeClass}" onclick="selectMyGroup(${g.id}, ${g.amount_cents})" data-group-id="${g.id}">
                     <div class="gc-header">
                         <div class="gc-icon">${g.emoji || '🏷️'}</div>
                         <div class="gc-name">${g.name}</div>
                     </div>
-                    <div class="gc-sub">Target per person</div>
+                    <div class="gc-sub">${subtext}</div>
                     <div class="gc-price">${formatCurrency2(g.amount_cents)}</div>
                 </div>
             `;
@@ -1263,14 +1692,13 @@
     function sortParticipants() {
         renderParticipants();
     }
-    
+
     function renderParticipants() {
         const container = document.getElementById('participants-list');
         container.innerHTML = '';
         
         // Use people_count from tab data for expected total, fallback to participants.length
         const expectedPeopleCount = tabData.people_count || tabData.peopleCount || participants.length || 1;
-        document.getElementById('participants-count').innerText = `Participants (${expectedPeopleCount})`;
         
         // Get computed data for participants
         let list = participants.map(p => {
@@ -1326,9 +1754,6 @@
         // Update collapsed header
         document.getElementById('participants-collapsed-title').innerText = `Participants (${expectedPeopleCount})`;
         document.getElementById('participants-collapsed-stats').innerHTML = collapsedStatsHtml;
-        
-        // Update expanded header subtitle
-        document.getElementById('participants-subtitle').innerText = statsText;
         
         // Apply sorting based on dropdown selection
         const sortMode = document.getElementById('participant-sort')?.value || 'highest';
@@ -1415,8 +1840,14 @@
             const hasProfilePic = p.user_id && (p.profile_picture || p.profilePicture);
             const profilePicUrl = hasProfilePic ? `/api/profile/picture/${p.user_id}` : null;
             
-            // Time ago
-            const timeAgoStr = (p.last_payment_at || p.lastPaymentAt) ? timeAgo(p.last_payment_at || p.lastPaymentAt) : '';
+            // Time ago - for host, show dinner date; for guests, show their payment time
+            let timeAgoStr = '';
+            if (isHost) {
+                // For host, show the dinner date instead of "just now"
+                timeAgoStr = tabData.created_at ? timeAgo(tabData.created_at) : '';
+            } else {
+                timeAgoStr = (p.last_payment_at || p.lastPaymentAt) ? timeAgo(p.last_payment_at || p.lastPaymentAt) : '';
+            }
 
             const html = `
                 <div class="p-row" style="--row-color:${rowColor};">
@@ -1426,8 +1857,8 @@
                         </div>
                     ` : `
                         <div class="p-avatar" style="border-color:${rowColor} !important; color:${rowColor} !important;">
-                            ${getInitials(p.full_name || p.guest_name)}
-                        </div>
+                        ${getInitials(p.full_name || p.guest_name)}
+                    </div>
                     `}
                     
                     <div class="p-info">
@@ -1436,8 +1867,7 @@
                             ${isHost ? '<span class="host-badge">HOST</span>' : ''}
                         </div>
                         <div class="p-amt-line" style="color:${rowColor} !important;">
-                            <span>${fairShareLabel}: ${formatCurrency2(fairShare)}</span>
-                            <span>Paid: ${formatCurrency2(paidAmt)}${timeAgoStr ? ` • <span style="opacity:0.8; font-weight:500;">${timeAgoStr}</span>` : ''}</span>
+                            <span>${fairShareLabel} group: ${formatCurrency2(fairShare)} • ${isHost ? 'Paid full bill' : 'Paid'}: ${formatCurrency2(paidAmt)}${timeAgoStr ? ` • <span style="opacity:0.8; font-weight:500;">${timeAgoStr}</span>` : ''}</span>
                         </div>
                     </div>
                     
@@ -1498,9 +1928,13 @@
         const badge = document.getElementById('fairness-badge');
         const badgeText = document.getElementById('fairness-text');
         const badgeIcon = document.getElementById('fairness-icon');
+        const unbalancedExplanation = document.getElementById('unbalanced-explanation');
+        
         if (fairnessData.globalScore >= 100) {
             badge.classList.add('balanced');
             badgeText.innerText = "100% BALANCED";
+            badge.style.display = 'flex';
+            unbalancedExplanation.innerText = '';
             // Green filter for balanced state
             if (badgeIcon) badgeIcon.style.filter = 'brightness(0) saturate(100%) invert(76%) sepia(52%) saturate(497%) hue-rotate(101deg) brightness(92%) contrast(87%)';
         } else {
@@ -1508,6 +1942,75 @@
             badgeText.innerText = "UNBALANCED";
             // Red filter for unbalanced state
             if (badgeIcon) badgeIcon.style.filter = 'brightness(0) saturate(100%) invert(37%) sepia(93%) saturate(1352%) hue-rotate(336deg) brightness(101%) contrast(97%)';
+            
+            // Generate dynamic unbalanced explanation text
+            const explanationText = generateUnbalancedExplanation(participants, fairnessData);
+            unbalancedExplanation.innerText = explanationText;
+            
+            // Hide badge and explanation if nobody has paid anything
+            const anyoneHasPaid = participants.some(p => (p.total_paid_cents || p.totalPaidCents || 0) > 0);
+            if (!anyoneHasPaid) {
+                badge.style.display = 'none';
+                unbalancedExplanation.innerText = '';
+            } else {
+                badge.style.display = 'flex';
+            }
+        }
+    }
+    
+    // Generate dynamic unbalanced explanation text
+    function generateUnbalancedExplanation(participants, fairnessData) {
+        // Find all participants who have overpaid (paid more than their fair share)
+        const overpayers = participants.filter(p => {
+            const paid = p.total_paid_cents || p.totalPaidCents || 0;
+            const fairShare = p.fair_share_cents || p.fairShareCents || 0;
+            return paid > fairShare && paid > 0;
+        });
+        
+        if (overpayers.length === 0) {
+            return '';
+        }
+        
+        // Check if anyone has paid anything at all
+        const anyoneHasPaid = participants.some(p => (p.total_paid_cents || p.totalPaidCents || 0) > 0);
+        if (!anyoneHasPaid) {
+            return '';
+        }
+        
+        // Get host's name (the organizer)
+        const host = participants.find(p => p.role === 'organizer');
+        const hostName = host ? (host.full_name || host.guest_name || host.display_name || 'Host')?.split(' ')[0] : 'Host';
+        
+        // Check if host is among overpayers
+        const hostOverpaid = overpayers.some(p => p.role === 'organizer');
+        
+        // Get non-host overpayers
+        const guestOverpayers = overpayers.filter(p => p.role !== 'organizer');
+        
+        // Generate text based on count and who overpaid
+        if (overpayers.length === 1) {
+            if (hostOverpaid) {
+                return `${hostName} covered most of the bill — please settle your share.`;
+            } else {
+                const guestName = (guestOverpayers[0].full_name || guestOverpayers[0].guest_name || guestOverpayers[0].display_name || 'A guest')?.split(' ')[0];
+                return `${guestName} covered most of the bill — please settle your share.`;
+            }
+        } else if (overpayers.length === 2) {
+            if (hostOverpaid && guestOverpayers.length === 1) {
+                const guestName = (guestOverpayers[0].full_name || guestOverpayers[0].guest_name || guestOverpayers[0].display_name || 'a guest')?.split(' ')[0];
+                return `${hostName} and ${guestName} covered extra — remaining guests, please settle your share.`;
+            } else if (!hostOverpaid && guestOverpayers.length === 2) {
+                const name1 = (guestOverpayers[0].full_name || guestOverpayers[0].guest_name || guestOverpayers[0].display_name || 'Guest 1')?.split(' ')[0];
+                const name2 = (guestOverpayers[1].full_name || guestOverpayers[1].guest_name || guestOverpayers[1].display_name || 'Guest 2')?.split(' ')[0];
+                return `${name1} and ${name2} covered extra — please settle your share.`;
+            }
+        }
+        
+        // More than 2 overpayers
+        if (hostOverpaid) {
+            return `Several guests, including ${hostName}, paid more — please settle your share.`;
+        } else {
+            return `Several guests have paid more — please settle your share.`;
         }
     }
 
@@ -1529,6 +2032,10 @@
     function hideModal(id) {
         document.getElementById(id).classList.remove('visible');
     }
+    function showErrorModal(message) {
+        document.getElementById('error-modal-message').innerText = message;
+        showModal('error-modal');
+    }
     // ===========================================
     // PAYMENT MODAL LOGIC
     // ===========================================
@@ -1541,6 +2048,19 @@
         container.innerHTML = '';
         paymentRowCounter = 0;
         addPaymentRow(true); // Add initial row with pre-fill
+        updatePaymentTotal();
+        document.getElementById('payment-error').style.display = 'none';
+        document.getElementById('payment-method').value = 'transfer';
+        document.getElementById('payment-proof').value = '';
+        showModal('payment-modal');
+    }
+    
+    function showPaymentModalForOther() {
+        // Open payment modal with empty row (not prefilled with current user)
+        const container = document.getElementById('payment-rows-container');
+        container.innerHTML = '';
+        paymentRowCounter = 0;
+        addPaymentRow(false); // Add empty row - user types someone else's name
         updatePaymentTotal();
         document.getElementById('payment-error').style.display = 'none';
         document.getElementById('payment-method').value = 'transfer';
@@ -1930,7 +2450,7 @@
         // TODO: Full edit modal
         alert('Edit modal implementation required');
     }
-
+    
     // ===========================================
     // COLLAPSIBLE PARTICIPANTS
     // ===========================================
@@ -2133,6 +2653,90 @@
     }
 
     // ===========================================
+    // SELECT MY GROUP
+    // ===========================================
+    
+    async function selectMyGroup(priceGroupId, amountCents) {
+        if (!currentParticipant) {
+            console.error('No current participant');
+            return;
+        }
+        
+        // Check if already selected
+        const currentGroupId = currentParticipant.price_group_id || currentParticipant.priceGroupId;
+        if (currentGroupId === priceGroupId) {
+            return; // Already selected
+        }
+        
+        // Check if guest (not host) has already made a payment - block group switch
+        const isHost = currentParticipant.user_id === tabData.creator_user_id;
+        if (!isHost && fairnessData) {
+            const myData = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
+            if (myData && myData.actualPaid > 0) {
+                showErrorModal('You cannot switch groups after reporting a payment. Please contact the host if you need to change your group.');
+                return;
+            }
+        }
+        
+        // Update UI immediately for responsiveness
+        document.querySelectorAll('.group-card').forEach(card => {
+            const cardGroupId = parseInt(card.dataset.groupId);
+            if (cardGroupId === priceGroupId) {
+                card.classList.add('active');
+            } else if (!card.classList.contains('add-new')) {
+                card.classList.remove('active');
+            }
+        });
+        
+        // Determine which token to use
+        const token = ownerToken || tabData.magic_token || tabData.magicToken;
+        
+        try {
+            const response = await fetch(`/api/grouptabs/token/${token}/participant/${currentParticipant.id}/group`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ priceGroupId })
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to update group');
+            }
+            
+            const result = await response.json();
+            
+            // Update local state
+            currentParticipant.price_group_id = priceGroupId;
+            currentParticipant.priceGroupId = priceGroupId;
+            currentParticipant.fair_share_cents = result.participant.fairShareCents || amountCents;
+            
+            // Update the participant in the participants array too
+            const pIdx = participants.findIndex(p => p.id === currentParticipant.id);
+            if (pIdx !== -1) {
+                participants[pIdx].price_group_id = priceGroupId;
+                participants[pIdx].fair_share_cents = result.participant.fairShareCents || amountCents;
+            }
+            
+            // Recalculate fairness data
+            if (window.GroupTabsEngine) {
+                fairnessData = window.GroupTabsEngine.calculateFairnessData(
+                    tabData, participants, [], [], [], priceGroups
+                );
+            }
+            
+            // Re-render to update fair share display and header stats
+            renderHeader();
+            renderHero();
+            renderParticipants();
+            
+        } catch (err) {
+            console.error('Error updating group:', err);
+            // Revert UI on error
+            renderGroups();
+        }
+    }
+
+    // ===========================================
     // ADD PRICE GROUP
     // ===========================================
     
@@ -2196,9 +2800,143 @@
         }
     }
 
+    // ===========================================
+    // JOIN SCREEN FUNCTIONS (Soft Glass B Design)
+    // ===========================================
+    let selectedJoinGroupId = null;
+    
+    function showJoinScreen() {
+        // Hide main content, show join screen
+        const mainContent = document.getElementById('main-content');
+        const joinScreen = document.getElementById('join-screen');
+        
+        if (mainContent) mainContent.style.display = 'none';
+        if (joinScreen) joinScreen.style.display = 'flex';
+        
+        // Populate join screen with tab data
+        const tabName = tabData.name || 'Split Bill';
+        const hostName = tabData.creator_name || 'Someone';
+        
+        const tabNameEl = document.getElementById('join-tab-name');
+        const hostNameEl = document.getElementById('join-host-name');
+        const hostAvatarEl = document.getElementById('join-host-avatar');
+        
+        if (tabNameEl) tabNameEl.innerText = tabName;
+        if (hostNameEl) hostNameEl.innerText = hostName;
+        
+        // Set host avatar initials
+        if (hostAvatarEl) {
+            const initials = hostName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+            hostAvatarEl.innerText = initials;
+        }
+        
+        // Show price groups if applicable
+        if (priceGroups && priceGroups.length > 0) {
+            const groupsSection = document.getElementById('join-groups-section');
+            if (groupsSection) groupsSection.style.display = 'block';
+            const container = document.getElementById('join-groups-container');
+            if (!container) return;
+            
+            // Render new card-style groups
+            container.innerHTML = priceGroups.map((g, idx) => `
+                <div class="join-group-card ${idx === 0 ? 'selected' : ''}" 
+                     data-group-id="${g.id}" 
+                     onclick="selectJoinGroup(${g.id})">
+                    <div class="jg-icon-box">${g.emoji || '📦'}</div>
+                    <div class="jg-info">
+                        <h3>${escapeHtml(g.name)}</h3>
+                        <p>${escapeHtml(g.description || '')}</p>
+                    </div>
+                    <div class="jg-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Select first group by default
+            selectedJoinGroupId = priceGroups[0].id;
+        }
+        
+        // Focus name input
+        setTimeout(() => {
+            const nameInput = document.getElementById('join-name-input');
+            if (nameInput) nameInput.focus();
+        }, 100);
+    }
+    
+    function selectJoinGroup(groupId) {
+        selectedJoinGroupId = groupId;
+        document.querySelectorAll('.join-group-card').forEach(card => {
+            card.classList.toggle('selected', parseInt(card.dataset.groupId) === groupId);
+        });
+    }
+    
+    async function submitJoin() {
+        const nameInput = document.getElementById('join-name-input');
+        const errorEl = document.getElementById('join-error');
+        const submitBtn = document.getElementById('join-submit-btn');
+        
+        const guestName = nameInput.value.trim();
+        if (!guestName) {
+            errorEl.innerText = 'Please enter your name to continue';
+            errorEl.style.display = 'block';
+            nameInput.focus();
+            return;
+        }
+        
+        errorEl.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>Joining...</span><span class="join-btn-arrow">⏳</span>';
+        
+        try {
+            const response = await fetch(`/api/tabs/token/${window.currentMagicToken}/join`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    guestName,
+                    priceGroupId: selectedJoinGroupId 
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to join');
+            }
+            
+            // Successfully joined - reload the page to show full content
+            window.location.reload();
+            
+        } catch (error) {
+            console.error('Join error:', error);
+            errorEl.innerText = error.message;
+            errorEl.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>See your share</span><span class="join-btn-arrow">→</span>';
+        }
+    }
+    
+    // Handle Enter key on name input
+    document.getElementById('join-name-input')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            submitJoin();
+        }
+    });
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     // Initialize header if available
+    // skipAuthRedirect: true allows guests to view the page without being redirected to login
     if (window.PayFriendsHeader) {
-        window.PayFriendsHeader.initialize({ hasActivitySection: false });
+        window.PayFriendsHeader.initialize({ hasActivitySection: false, skipAuthRedirect: true }).catch(err => {
+            console.log('Header init for guest:', err.message);
+            // Guest users - header will show minimal/guest version
+        });
     }
 
     // Start
@@ -2207,3 +2945,4 @@
   </script>
 </body>
 </html>
+

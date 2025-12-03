@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFriends - Invite Redesign Prototypes</title>
+  
+  <!-- Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap">
+  
+  <style>
+    :root {
+      --bg: #0e1116;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #3ddc97;
+      --accent-dim: rgba(61, 220, 151, 0.15);
+      --danger: #f85149;
+      --font: 'Inter', system-ui, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: var(--text);
+      font-family: var(--font);
+    }
+
+    /* Prototype Navigation */
+    .proto-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: #1f242c;
+      padding: 12px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      z-index: 1000;
+      border-bottom: 1px solid #333;
+    }
+
+    .proto-btn {
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .proto-btn:hover { background: #444; }
+    .proto-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+    /* Frame */
+    .frame {
+      display: none;
+      min-height: 100vh;
+      padding-top: 60px; /* Nav space */
+    }
+    .frame.active { display: flex; }
+
+    /* Common mock elements */
+    .mock-avatar {
+      width: 64px; height: 64px; background: #ccc; border-radius: 50%; 
+      background-image: url('https://i.pravatar.cc/150?img=33');
+      background-size: cover;
+    }
+    .emoji-icon { font-size: 32px; }
+
+    /* =========================================
+       VARIATION 1: The Clean Stack (Minimalist)
+       ========================================= */
+    #v1 {
+      background: var(--bg);
+      align-items: center;
+      justify-content: center;
+    }
+    .v1-container {
+      width: 100%;
+      max-width: 400px;
+      padding: 32px;
+      text-align: center;
+    }
+    .v1-avatar {
+      width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      background-image: url('https://i.pravatar.cc/150?u=paul'); background-size: cover;
+    }
+    .v1-h1 { font-size: 16px; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+    .v1-h2 { font-size: 20px; color: var(--text); margin: 0 0 32px; font-weight: 400; }
+    .v1-h2 b { font-weight: 600; }
+    
+    .v1-input-group { margin-bottom: 32px; text-align: left; }
+    .v1-label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .v1-input {
+      width: 100%; background: var(--card); border: 1px solid var(--border);
+      padding: 14px; border-radius: 10px; color: var(--text); font-size: 16px;
+    }
+
+    .v1-cards-title { font-size: 14px; color: var(--muted); text-align: left; margin-bottom: 12px; }
+    .v1-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 32px; }
+    .v1-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 20px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .v1-card:hover, .v1-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+    .v1-card-emoji { font-size: 28px; }
+    .v1-card-name { font-size: 14px; font-weight: 500; }
+
+    .v1-btn {
+      width: 100%; background: var(--accent); color: #000; border: none;
+      padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
+    }
+
+    /* =========================================
+       VARIATION 2: The Card Hero (Card Focus)
+       ========================================= */
+    #v2 {
+      background: #111;
+      align-items: center;
+      justify-content: center;
+    }
+    .v2-card {
+      background: #1c2128;
+      border: 1px solid #30363d;
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .v2-avatar-stack {
+      position: relative; width: 80px; height: 80px; margin: -60px auto 20px;
+    }
+    .v2-avatar {
+      width: 100%; height: 100%; border-radius: 50%; 
+      border: 4px solid #1c2128;
+      background-image: url('https://i.pravatar.cc/150?u=paul'); background-size: cover;
+    }
+    .v2-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .v2-sub { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+
+    .v2-field { margin-bottom: 24px; }
+    .v2-input {
+      width: 100%; background: #0d1117; border: 1px solid #30363d;
+      padding: 16px; border-radius: 12px; text-align: center; font-size: 16px; color: white;
+    }
+    .v2-input:focus { border-color: var(--accent); outline: none; }
+
+    .v2-group-grid { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 24px; justify-content: center; }
+    .v2-g-card {
+      min-width: 100px; height: 100px; background: #0d1117; border: 1px solid #30363d;
+      border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; cursor: pointer;
+    }
+    .v2-g-card.active { border-color: var(--accent); background: rgba(61, 220, 151, 0.05); }
+    
+    .v2-btn {
+      width: 100%; background: white; color: black; font-weight: 700; padding: 18px; border-radius: 50px; border: none; font-size: 16px;
+      box-shadow: 0 4px 15px rgba(255,255,255,0.1); cursor: pointer;
+    }
+
+    /* =========================================
+       VARIATION 3: The Soft Glass (Modern UI)
+       ========================================= */
+    #v3 {
+      background: radial-gradient(circle at top right, #2a3645 0%, #0e1116 60%);
+      align-items: center;
+      justify-content: center;
+    }
+    .v3-glass {
+      background: rgba(22, 27, 34, 0.6);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 32px;
+      padding: 40px 32px;
+      max-width: 400px;
+      width: 90%;
+    }
+    .v3-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+    .v3-avatar { width: 56px; height: 56px; border-radius: 50%; background-image: url('https://i.pravatar.cc/150?u=paul'); background-size: cover; }
+    .v3-texts h2 { font-size: 18px; margin: 0 0 4px; font-weight: 600; }
+    .v3-texts p { font-size: 14px; color: var(--muted); margin: 0; }
+
+    .v3-input {
+      background: transparent; border: none; border-bottom: 2px solid #333;
+      width: 100%; padding: 12px 0; font-size: 20px; color: white; margin-bottom: 40px;
+      transition: 0.3s;
+    }
+    .v3-input:focus { border-color: var(--accent); outline: none; }
+    .v3-input::placeholder { color: #444; }
+
+    .v3-groups-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 16px; }
+    .v3-group-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+    .v3-g-row {
+      display: flex; align-items: center; gap: 16px; padding: 16px;
+      background: rgba(255,255,255,0.03); border-radius: 16px; cursor: pointer; border: 1px solid transparent;
+    }
+    .v3-g-row:hover, .v3-g-row.active { border-color: var(--accent); background: rgba(61, 220, 151, 0.05); }
+    .v3-emoji { font-size: 24px; background: #222; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+    .v3-g-name { font-size: 16px; font-weight: 500; }
+
+    .v3-btn {
+      width: 100%; background: var(--accent); color: #0d1117; padding: 18px; border-radius: 16px;
+      font-weight: 700; font-size: 16px; border: none; cursor: pointer;
+      box-shadow: 0 0 20px rgba(61, 220, 151, 0.2);
+    }
+
+    /* =========================================
+       VARIATION 4: The Friendly Face (Large Avatar)
+       ========================================= */
+    #v4 {
+      background: #000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .v4-top {
+      margin-top: -40px;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .v4-avatar {
+      width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 16px;
+      border: 4px solid #000; outline: 2px solid var(--accent);
+      background-image: url('https://i.pravatar.cc/150?u=paul'); background-size: cover;
+    }
+    .v4-msg {
+      background: #222; padding: 12px 24px; border-radius: 20px;
+      position: relative; display: inline-block; font-size: 14px;
+    }
+    .v4-msg:after {
+      content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+      border-width: 8px 8px 0; border-style: solid; border-color: #222 transparent transparent;
+    }
+
+    .v4-form {
+      width: 100%; max-width: 360px; padding: 20px;
+    }
+    .v4-input {
+      width: 100%; padding: 20px; background: #161b22; border: 2px solid #222;
+      border-radius: 16px; color: white; font-size: 18px; margin-bottom: 24px;
+      text-align: center;
+    }
+    
+    .v4-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 32px; }
+    .v4-tile {
+      background: #161b22; padding: 24px; border-radius: 20px; text-align: center;
+      cursor: pointer; border: 2px solid transparent;
+    }
+    .v4-tile.active { border-color: var(--accent); color: var(--accent); }
+    
+    .v4-btn {
+      background: white; color: black; width: 100%; padding: 20px; border-radius: 20px;
+      font-weight: 800; font-size: 16px; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    /* =========================================
+       VARIATION 5: The Bottom Sheet (Mobile First)
+       ========================================= */
+    #v5 {
+      background: #333; /* Dimmed bg */
+      align-items: flex-end; /* Bottom sheet alignment */
+      justify-content: center;
+    }
+    .v5-sheet {
+      background: #0e1116;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 32px 32px 0 0;
+      padding: 40px 32px;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+      animation: slideUp 0.4s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .v5-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+    .v5-title h1 { font-size: 24px; margin: 0 0 4px; }
+    .v5-title p { color: var(--muted); margin: 0; font-size: 14px; }
+    .v5-avatar { width: 48px; height: 48px; border-radius: 16px; background-image: url('https://i.pravatar.cc/150?u=paul'); background-size: cover; }
+
+    .v5-input {
+      width: 100%; background: #21262d; border: none; padding: 18px;
+      border-radius: 16px; color: white; font-size: 16px; margin-bottom: 32px;
+    }
+
+    .v5-scroll-area {
+      display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px; margin-bottom: 24px;
+      scrollbar-width: none;
+    }
+    .v5-card {
+      min-width: 140px; background: #21262d; padding: 20px; border-radius: 20px;
+      display: flex; flex-direction: column; gap: 12px; cursor: pointer;
+    }
+    .v5-card.active { background: var(--accent); color: black; }
+    
+    .v5-btn {
+      background: var(--text); color: var(--bg); width: 100%; padding: 20px;
+      border-radius: 20px; font-size: 16px; font-weight: 700; border: none; cursor: pointer;
+    }
+
+    /* =========================================
+       VARIATION 6: The Ultra Minimal (Typography)
+       ========================================= */
+    #v6 {
+      background: #050505;
+      align-items: center;
+      justify-content: center;
+    }
+    .v6-container { width: 100%; max-width: 360px; padding: 24px; }
+    .v6-host { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+    .v6-avatar { width: 32px; height: 32px; border-radius: 50%; background-image: url('https://i.pravatar.cc/150?u=paul'); background-size: cover; filter: grayscale(100%); }
+    .v6-meta { font-size: 12px; color: #666; letter-spacing: 1px; text-transform: uppercase; }
+
+    .v6-large-text { font-size: 32px; font-weight: 300; color: #fff; line-height: 1.2; margin-bottom: 48px; }
+    .v6-large-text b { font-weight: 600; color: var(--accent); }
+
+    .v6-input {
+      background: transparent; border: none; border-bottom: 1px solid #333;
+      width: 100%; padding: 12px 0; font-size: 18px; color: white; font-family: 'Courier New', monospace; margin-bottom: 32px;
+    }
+
+    .v6-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 48px; }
+    .v6-chip {
+      border: 1px solid #333; padding: 8px 16px; border-radius: 100px; font-size: 13px; color: #888; cursor: pointer; transition: 0.2s;
+    }
+    .v6-chip:hover, .v6-chip.active { border-color: white; color: white; }
+    
+    .v6-btn {
+      background: transparent; border: 1px solid var(--accent); color: var(--accent);
+      width: 100%; padding: 16px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer;
+      transition: 0.2s;
+    }
+    .v6-btn:hover { background: var(--accent); color: black; }
+
+  </style>
+</head>
+<body>
+
+  <!-- Switcher -->
+  <div class="proto-nav">
+    <button class="proto-btn active" onclick="show(1)">1. Clean Stack</button>
+    <button class="proto-btn" onclick="show(2)">2. Card Hero</button>
+    <button class="proto-btn" onclick="show(3)">3. Soft Glass</button>
+    <button class="proto-btn" onclick="show(4)">4. Friendly</button>
+    <button class="proto-btn" onclick="show(5)">5. Bottom Sheet</button>
+    <button class="proto-btn" onclick="show(6)">6. Minimal</button>
+  </div>
+
+  <!-- VAR 1 -->
+  <div id="v1" class="frame active">
+    <div class="v1-container">
+      <div class="v1-avatar"></div>
+      <div class="v1-h1">Invited to a GroupTab</div>
+      <h2 class="v1-h2">Split bill with <b>Paul Somers</b></h2>
+
+      <div class="v1-input-group">
+        <label class="v1-label">YOUR NAME</label>
+        <input type="text" class="v1-input" placeholder="Just how your friends call you">
+      </div>
+
+      <div class="v1-cards-title">PICK YOUR GROUP</div>
+      <div class="v1-cards">
+        <div class="v1-card selected">
+          <div class="v1-card-emoji">🍺</div>
+          <div class="v1-card-name">Drinkers</div>
+        </div>
+        <div class="v1-card">
+          <div class="v1-card-emoji">🥗</div>
+          <div class="v1-card-name">Non-Drinkers</div>
+        </div>
+        <div class="v1-card">
+          <div class="v1-card-emoji">👶</div>
+          <div class="v1-card-name">Kids</div>
+        </div>
+        <div class="v1-card">
+          <div class="v1-card-emoji">🤝</div>
+          <div class="v1-card-name">Equal Split</div>
+        </div>
+      </div>
+
+      <button class="v1-btn">See your share</button>
+    </div>
+  </div>
+
+  <!-- VAR 2 -->
+  <div id="v2" class="frame">
+    <div class="v2-card">
+      <div class="v2-avatar-stack">
+        <div class="v2-avatar"></div>
+      </div>
+      <div class="v2-title">Join Paul's Tab</div>
+      <div class="v2-sub">Invited you to split the bill</div>
+
+      <div class="v2-field">
+        <input type="text" class="v2-input" placeholder="What's your name?">
+      </div>
+
+      <div class="v2-group-grid">
+        <div class="v2-g-card active">
+          <span style="font-size:32px">🍺</span>
+          <span style="font-size:12px;font-weight:600">Drinkers</span>
+        </div>
+        <div class="v2-g-card">
+          <span style="font-size:32px">🥗</span>
+          <span style="font-size:12px;font-weight:600">Foodies</span>
+        </div>
+        <div class="v2-g-card">
+          <span style="font-size:32px">🤝</span>
+          <span style="font-size:12px;font-weight:600">Everyone</span>
+        </div>
+      </div>
+
+      <button class="v2-btn">See My Share</button>
+    </div>
+  </div>
+
+  <!-- VAR 3 -->
+  <div id="v3" class="frame">
+    <div class="v3-glass">
+      <div class="v3-header">
+        <div class="v3-avatar"></div>
+        <div class="v3-texts">
+          <h2>Paul invited you</h2>
+          <p>Split the bill easily</p>
+        </div>
+      </div>
+
+      <input type="text" class="v3-input" placeholder="Enter your name...">
+
+      <div class="v3-groups-label">SELECT YOUR GROUP</div>
+      <div class="v3-group-list">
+        <div class="v3-g-row active">
+          <div class="v3-emoji">🍷</div>
+          <div class="v3-g-name">Wine Lovers</div>
+        </div>
+        <div class="v3-g-row">
+          <div class="v3-emoji">🥤</div>
+          <div class="v3-g-name">Soft Drinks</div>
+        </div>
+      </div>
+
+      <button class="v3-btn">Continue →</button>
+    </div>
+  </div>
+
+  <!-- VAR 4 -->
+  <div id="v4" class="frame">
+    <div class="v4-top">
+      <div class="v4-avatar"></div>
+      <div class="v4-msg">Hey! Join my tab to pay your share.</div>
+    </div>
+
+    <div class="v4-form">
+      <input type="text" class="v4-input" placeholder="Your Name">
+      
+      <div class="v4-grid">
+        <div class="v4-tile active">
+          <div style="font-size:40px;margin-bottom:8px">🥩</div>
+          <div style="font-weight:700;font-size:14px">Steak</div>
+        </div>
+        <div class="v4-tile">
+          <div style="font-size:40px;margin-bottom:8px">🥗</div>
+          <div style="font-weight:700;font-size:14px">Salad</div>
+        </div>
+      </div>
+
+      <button class="v4-btn">Show Price</button>
+    </div>
+  </div>
+
+  <!-- VAR 5 -->
+  <div id="v5" class="frame">
+    <div class="v5-sheet">
+      <div class="v5-header">
+        <div class="v5-title">
+          <h1>You're invited!</h1>
+          <p>Paul Somers added you to the tab.</p>
+        </div>
+        <div class="v5-avatar"></div>
+      </div>
+
+      <input type="text" class="v5-input" placeholder="Type your name">
+
+      <div class="v5-scroll-area">
+        <div class="v5-card active">
+          <div style="font-size:32px">🍕</div>
+          <div style="font-weight:700;font-size:14px">Pizza Group</div>
+        </div>
+        <div class="v5-card">
+          <div style="font-size:32px">🍜</div>
+          <div style="font-weight:700;font-size:14px">Noodle Gang</div>
+        </div>
+        <div class="v5-card">
+          <div style="font-size:32px">🍰</div>
+          <div style="font-weight:700;font-size:14px">Dessert Only</div>
+        </div>
+      </div>
+
+      <button class="v5-btn">See Your Share</button>
+    </div>
+  </div>
+
+  <!-- VAR 6 -->
+  <div id="v6" class="frame">
+    <div class="v6-container">
+      <div class="v6-host">
+        <div class="v6-avatar"></div>
+        <div class="v6-meta">INVITED BY PAUL</div>
+      </div>
+
+      <div class="v6-large-text">
+        Hello, <br>
+        please enter your name to see your <b>fair share</b>.
+      </div>
+
+      <input type="text" class="v6-input" placeholder="Your Name">
+
+      <div class="v6-chips">
+        <div class="v6-chip active">Alcohol</div>
+        <div class="v6-chip">No Alcohol</div>
+        <div class="v6-chip">Kids</div>
+        <div class="v6-chip">Vegetarian</div>
+      </div>
+
+      <button class="v6-btn">REVEAL PRICE</button>
+    </div>
+  </div>
+
+  <script>
+    function show(id) {
+      // Hide all frames
+      document.querySelectorAll('.frame').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.proto-btn').forEach(el => el.classList.remove('active'));
+      
+      // Show selected
+      document.getElementById('v' + id).classList.add('active');
+      
+      // Update button state
+      const buttons = document.querySelectorAll('.proto-btn');
+      buttons[id-1].classList.add('active');
+    }
+  </script>
+</body>
+</html>
+

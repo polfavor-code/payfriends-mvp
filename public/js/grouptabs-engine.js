@@ -194,7 +194,8 @@
         fairShare: fair,
         actualPaid: paid,
         balance: balance, // Positive = overpaid, Negative = owes
-        remainingCents: remainingCents // What they still owe (0 = fully paid)
+        remainingCents: remainingCents, // What they still owe (0 = fully paid)
+        priceGroupId: p.price_group_id || p.priceGroupId // Include price group for display
       };
     });
   }
@@ -307,7 +308,8 @@
       balance: balance.balance,
       percentOfFair: percentOfFair,
       status: status,
-      remainingCents: remaining
+      remainingCents: remaining,
+      priceGroupId: balance.priceGroupId
     };
   }
 
