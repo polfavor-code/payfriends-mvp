@@ -981,6 +981,7 @@ body {
   border: none;
   outline: none;
   -moz-appearance: textfield;
+  appearance: textfield;
   text-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
@@ -1119,6 +1120,7 @@ body {
   outline: none;
   transition: border-color 0.2s;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .counter-input::-webkit-outer-spin-button,
@@ -1319,7 +1321,12 @@ body {
 .undo-btn-header:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
-  transform: rotate(-45deg);
+  animation: spinLeft 0.8s linear infinite;
+}
+
+@keyframes spinLeft {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
 }
 
 .undo-btn-header:disabled {

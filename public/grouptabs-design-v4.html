@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFriends Design V4: Clean Dark UI</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  
+  <style>
+    :root {
+      /* Design 2 Palette */
+      --bg: #0e1116;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #3ddc97;
+      --accent-bg: rgba(61, 220, 151, 0.15);
+      --danger: #f85149;
+      --pending: #d29922;
+      
+      --font: 'Inter', system-ui, sans-serif;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: var(--text);
+      font-family: var(--font);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* --- Controls --- */
+    .control-panel {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(14, 17, 22, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 1000;
+      align-items: center;
+    }
+    
+    .control-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .btn-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-toggle:hover { color: #fff; border-color: #8b949e; }
+    .btn-toggle.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+    
+    /* --- Main Canvas --- */
+    .main-canvas {
+      margin-top: 100px;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      padding-bottom: 100px;
+    }
+    
+    .mobile-frame {
+      width: 100%;
+      max-width: 400px; /* Mobile simulation */
+      background: var(--bg);
+      min-height: 800px;
+      border-radius: 32px;
+      border: 8px solid #333;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+
+    /* --- Design 3 Header Style (Clean) --- */
+    .header-clean {
+        padding: 20px 24px;
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .header-top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .back-btn { font-size: 20px; color: var(--text); cursor: pointer; text-decoration: none; }
+    
+    .tab-title { font-size: 18px; font-weight: 700; }
+    .tab-meta { font-size: 13px; color: var(--muted); }
+    
+    .header-stat-card {
+        margin-top: 16px;
+        background: rgba(0,0,0,0.2);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .stat-val { font-size: 24px; font-weight: 800; color: #fff; }
+    .stat-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    /* Progress Bar Global */
+    .prog-track {
+        height: 6px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 3px;
+        margin-top: 12px;
+        overflow: hidden;
+    }
+    .prog-fill {
+        height: 100%;
+        width: 65%;
+        background: var(--accent);
+        border-radius: 3px;
+    }
+
+    /* --- Host Controls (Only visible in Host Mode) --- */
+    .host-controls {
+        display: none; /* Toggled by JS */
+        padding: 12px 24px;
+        background: rgba(61, 220, 151, 0.05);
+        border-bottom: 1px solid var(--border);
+    }
+    .host-controls.active { display: flex; gap: 8px; overflow-x: auto; }
+    
+    .host-pill {
+        background: transparent;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    
+    /* --- Shared Components --- */
+    .section-title {
+        padding: 24px 24px 12px 24px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .list-container { padding: 0 16px; }
+
+    /* Avatar */
+    .avatar {
+        width: 42px; height: 42px;
+        border-radius: 50%;
+        background: #21262d;
+        color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 600; font-size: 14px;
+        border: 2px solid var(--bg);
+        position: relative;
+        flex-shrink: 0;
+    }
+    .avatar.me { border-color: var(--accent); color: var(--accent); background: rgba(61,220,151,0.1); }
+    
+    /* Status Badge */
+    .status-badge {
+        font-size: 11px; font-weight: 700;
+        padding: 4px 8px; border-radius: 6px;
+        text-transform: uppercase;
+    }
+    .st-paid { background: rgba(61, 220, 151, 0.15); color: var(--accent); }
+    .st-pending { background: rgba(210, 153, 34, 0.15); color: var(--pending); }
+
+    /* ============================
+       DESIGN 1: MODERN LIST
+       ============================ */
+    .d1-item {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg);
+    }
+    .d1-item:last-child { border-bottom: none; }
+    
+    .d1-info { flex: 1; margin-left: 12px; }
+    .d1-name { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+    .d1-meta { font-size: 12px; color: var(--muted); }
+    
+    /* ============================
+       DESIGN 2: CARDS / GRID
+       ============================ */
+    .d2-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding: 0 16px;
+    }
+    .d2-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        position: relative;
+    }
+    .d2-amt { font-size: 16px; font-weight: 700; margin: 8px 0 4px 0; }
+    .d2-sub { font-size: 11px; color: var(--muted); }
+    .d2-status-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        position: absolute; top: 12px; right: 12px;
+    }
+
+    /* ============================
+       DESIGN 3: CHAT THREAD
+       ============================ */
+    .d3-container {
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        gap: 16px;
+    }
+    .d3-bubble {
+        max-width: 85%;
+        padding: 12px 16px;
+        border-radius: 16px;
+        font-size: 14px;
+        line-height: 1.4;
+        position: relative;
+    }
+    .d3-bot { align-self: flex-start; background: var(--card); color: var(--text); border-bottom-left-radius: 4px; }
+    .d3-user { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 4px; font-weight: 500; }
+    .d3-system { align-self: center; font-size: 11px; color: var(--muted); background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 12px; }
+
+    /* --- Sticky Footer Action (Public View) --- */
+    .sticky-footer {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        background: var(--card);
+        border-top: 1px solid var(--border);
+        padding: 16px;
+        padding-bottom: 32px; /* Home bar safe area */
+    }
+    .btn-primary {
+        width: 100%;
+        background: var(--accent);
+        color: #0e1116;
+        border: none;
+        padding: 16px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    
+    /* Hidden Utility */
+    .hide { display: none !important; }
+
+  </style>
+</head>
+<body>
+
+  <!-- CONTROL PANEL (For Dev/Preview) -->
+  <div class="control-panel">
+    <div class="control-row">
+        <span style="font-size:10px; color:#666; width:100%; text-align:center; margin-bottom:4px;">DESIGN STYLE</span>
+        <button class="btn-toggle active" onclick="setDesign(1)">1. Modern List</button>
+        <button class="btn-toggle" onclick="setDesign(2)">2. Card Grid</button>
+        <button class="btn-toggle" onclick="setDesign(3)">3. Chat Thread</button>
+    </div>
+    <div class="control-row">
+        <span style="font-size:10px; color:#666; width:100%; text-align:center; margin-bottom:4px;">USER MODE</span>
+        <button class="btn-toggle active" onclick="setMode('host')">Host (Organizer)</button>
+        <button class="btn-toggle" onclick="setMode('public')">Public (Guest)</button>
+    </div>
+    <div class="control-row">
+        <span style="font-size:10px; color:#666; width:100%; text-align:center; margin-bottom:4px;">SPLIT TYPE</span>
+        <button class="btn-toggle active" onclick="setSplit('equal')">Equal Split</button>
+        <button class="btn-toggle" onclick="setSplit('group')">Group Type</button>
+    </div>
+  </div>
+
+  <div class="main-canvas">
+    <div class="mobile-frame">
+        
+        <!-- HEADER (Consistent across all) -->
+        <div class="header-clean">
+            <div class="header-top-row">
+                <a href="#" class="back-btn">←</a>
+                <div style="text-align:right;">
+                    <div style="font-size:24px;">🧾</div>
+                </div>
+            </div>
+            
+            <div class="tab-title">Dinner at Mario's</div>
+            <div class="tab-meta">Wed Dec 12 · 4 Participants</div>
+            
+            <!-- Stats Card -->
+            <div class="header-stat-card">
+                <div>
+                    <div class="stat-lbl">Total Bill</div>
+                    <div class="stat-val">€142.50</div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="stat-lbl">Collected</div>
+                    <div class="stat-val" style="color:var(--accent);">€92.50</div>
+                </div>
+            </div>
+            
+            <!-- Progress -->
+            <div class="prog-track">
+                <div class="prog-fill"></div>
+            </div>
+        </div>
+        
+        <!-- HOST CONTROLS (Visible in Host Mode) -->
+        <div id="host-toolbar" class="host-controls active">
+            <button class="host-pill">✎ Edit Details</button>
+            <button class="host-pill">🔔 Nudge All</button>
+            <button class="host-pill">🔒 Close Tab</button>
+        </div>
+        
+        <!-- CONTENT AREA -->
+        <div id="content-area" style="padding-bottom: 100px;">
+            <!-- Injected via JS based on design selection -->
+        </div>
+        
+        <!-- PUBLIC FOOTER (Guest Mode Only) -->
+        <div id="public-footer" class="sticky-footer hide">
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:13px;">
+                <span style="color:var(--muted);">Your Share:</span>
+                <span style="font-weight:700; color:#fff;" id="footer-share-amt">€35.60</span>
+            </div>
+            <button class="btn-primary">Pay Now</button>
+        </div>
+
+    </div>
+  </div>
+
+  <script>
+    // STATE
+    let currentDesign = 1;
+    let currentMode = 'host';
+    let currentSplit = 'equal';
+
+    // MOCK DATA
+    const participants = [
+        { name: 'You', avatar: 'ME', isMe: true, status: 'paid', paidAmt: 35.60, group: 'Alcohol' },
+        { name: 'John Doe', avatar: 'JD', isMe: false, status: 'pending', paidAmt: 0, group: 'Alcohol' },
+        { name: 'Mike S.', avatar: 'MS', isMe: false, status: 'paid', paidAmt: 35.60, group: 'No Alc' },
+        { name: 'Sarah', avatar: 'S', isMe: false, status: 'pending', paidAmt: 0, group: 'No Alc' }
+    ];
+
+    function init() {
+        render();
+    }
+
+    function setDesign(n) {
+        currentDesign = n;
+        updateToggleUI();
+        render();
+    }
+
+    function setMode(m) {
+        currentMode = m;
+        updateToggleUI();
+        render();
+    }
+
+    function setSplit(s) {
+        currentSplit = s;
+        updateToggleUI();
+        render();
+    }
+    
+    function updateToggleUI() {
+        // Simple toggle logic visual update
+        document.querySelectorAll('.btn-toggle').forEach(btn => {
+            const txt = btn.innerText.toLowerCase();
+            if (
+                (txt.includes(currentDesign.toString()) && txt.includes('list') && currentDesign===1) ||
+                (txt.includes('card') && currentDesign===2) ||
+                (txt.includes('chat') && currentDesign===3) ||
+                (txt.includes('host') && currentMode==='host') ||
+                (txt.includes('public') && currentMode==='public') ||
+                (txt.includes('equal') && currentSplit==='equal') ||
+                (txt.includes('group') && currentSplit==='group')
+            ) {
+                btn.classList.add('active');
+            } else {
+                 // Logic is a bit loose here for brevity but works for the demo buttons
+                 // In a real app use IDs
+                 if(btn.innerText.includes(currentDesign===1?'Modern': currentDesign===2?'Card':'Chat') 
+                    || btn.innerText.toLowerCase().includes(currentMode) 
+                    || btn.innerText.toLowerCase().includes(currentSplit === 'equal' ? 'equal' : 'group')) {
+                     // btn.classList.add('active'); 
+                 } else {
+                    btn.classList.remove('active');
+                 }
+                 
+                 // Fix specific groups
+                 if(btn.onclick.toString().includes('setDesign')) {
+                    btn.classList.toggle('active', btn.innerText.includes(currentDesign.toString()));
+                 }
+                 if(btn.onclick.toString().includes('setMode')) {
+                    btn.classList.toggle('active', btn.innerText.toLowerCase().includes(currentMode === 'host' ? 'host' : 'public'));
+                 }
+                 if(btn.onclick.toString().includes('setSplit')) {
+                    btn.classList.toggle('active', btn.innerText.toLowerCase().includes(currentSplit === 'equal' ? 'equal' : 'group'));
+                 }
+            }
+        });
+    }
+
+    function render() {
+        const container = document.getElementById('content-area');
+        const hostToolbar = document.getElementById('host-toolbar');
+        const publicFooter = document.getElementById('public-footer');
+        
+        // Toggle Bars
+        if (currentMode === 'host') {
+            hostToolbar.classList.add('active');
+            publicFooter.classList.add('hide');
+        } else {
+            hostToolbar.classList.remove('active');
+            publicFooter.classList.remove('hide');
+        }
+        
+        // Footer Amount Update
+        const shareAmt = currentSplit === 'equal' ? '€35.60' : '€25.00';
+        document.getElementById('footer-share-amt').innerText = shareAmt;
+
+        // RENDER CONTENT BASED ON DESIGN
+        let html = '';
+
+        // --- DESIGN 1: LIST ---
+        if (currentDesign === 1) {
+            html += `<div class="section-title">Participants (${participants.length})</div>`;
+            html += `<div class="list-container">`;
+            
+            participants.forEach(p => {
+                const share = currentSplit === 'equal' ? '€35.60' : (p.group === 'Alcohol' ? '€25.00' : '€15.00');
+                const groupLabel = currentSplit === 'group' ? `<span style="color:#8b949e"> • ${p.group}</span>` : '';
+                const statusHtml = p.status === 'paid' 
+                    ? `<div class="status-badge st-paid">PAID</div>` 
+                    : `<div class="status-badge st-pending">OWES ${share}</div>`;
+                
+                html += `
+                <div class="d1-item">
+                    <div class="avatar ${p.isMe ? 'me' : ''}">${p.avatar}</div>
+                    <div class="d1-info">
+                        <div class="d1-name">${p.name} ${p.isMe ? '(You)' : ''}</div>
+                        <div class="d1-meta">${currentSplit === 'equal' ? 'Equal Share' : p.group}</div>
+                    </div>
+                    ${statusHtml}
+                </div>`;
+            });
+            html += `</div>`;
+            
+            // Add Receipt Link
+            html += `
+            <div style="margin:24px; padding:16px; border:1px dashed var(--border); border-radius:12px; text-align:center;">
+                <div style="font-size:12px; font-weight:700; color:var(--muted); margin-bottom:8px;">ORIGINAL RECEIPT</div>
+                <a href="#" style="color:var(--accent); text-decoration:none; font-size:13px;">📄 View Receipt Image</a>
+            </div>`;
+        }
+
+        // --- DESIGN 2: CARD GRID ---
+        else if (currentDesign === 2) {
+            html += `<div class="section-title">Participants</div>`;
+            html += `<div class="d2-grid">`;
+            
+            participants.forEach(p => {
+                const share = currentSplit === 'equal' ? '€35.60' : (p.group === 'Alcohol' ? '€25.00' : '€15.00');
+                const dotColor = p.status === 'paid' ? '#3ddc97' : '#fbbf24';
+                
+                html += `
+                <div class="d2-card" style="border-color:${p.isMe ? 'var(--accent)' : 'var(--border)'}">
+                    <div class="d2-status-dot" style="background:${dotColor}"></div>
+                    <div class="avatar ${p.isMe ? 'me' : ''}" style="margin-bottom:8px;">${p.avatar}</div>
+                    <div style="font-weight:600; font-size:14px;">${p.name}</div>
+                    <div class="d2-sub">${currentSplit === 'equal' ? 'Equal' : p.group}</div>
+                    <div class="d2-amt">${share}</div>
+                    <div style="font-size:10px; font-weight:700; color:${p.status==='paid'?'var(--accent)':'var(--pending)'}">
+                        ${p.status==='paid'?'PAID':'PENDING'}
+                    </div>
+                </div>`;
+            });
+            html += `</div>`;
+            
+             // Receipt Card at bottom
+            html += `
+            <div class="section-title">Proof</div>
+            <div style="padding:0 16px;">
+                <div class="d2-card" style="flex-direction:row; gap:12px; text-align:left;">
+                    <div style="font-size:24px;">🧾</div>
+                    <div>
+                        <div style="font-weight:700;">Original Receipt</div>
+                        <div style="font-size:11px; color:var(--muted);">Uploaded by Host</div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // --- DESIGN 3: CHAT THREAD ---
+        else if (currentDesign === 3) {
+            html += `<div class="d3-container">`;
+            html += `<div class="d3-system">Tab Created • Wed Dec 12</div>`;
+            
+            // Bill as a message
+            html += `
+            <div class="d3-bubble d3-bot">
+                <div style="font-weight:700; margin-bottom:4px;">🧾 Total Bill: €142.50</div>
+                <div style="font-size:13px; color:#8b949e;">
+                    ${currentSplit === 'equal' ? 'Split equally 4 ways.' : 'Split by groups: Alcohol, No Alc.'}
+                </div>
+                <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:8px;">
+                    <a href="#" style="color:var(--accent); font-size:12px; text-decoration:none;">View Receipt Image</a>
+                </div>
+            </div>`;
+            
+            participants.forEach(p => {
+                if (p.status === 'paid') {
+                    if (p.isMe) {
+                        html += `<div class="d3-bubble d3-user">Paid €${p.paidAmt.toFixed(2)} via Cash</div>`;
+                    } else {
+                        html += `
+                        <div style="display:flex; align-items:flex-end; gap:8px;">
+                            <div class="avatar" style="width:24px; height:24px; font-size:10px;">${p.avatar}</div>
+                            <div class="d3-bubble d3-bot">
+                                <div style="font-weight:600; font-size:11px; margin-bottom:2px; color:var(--accent);">${p.name}</div>
+                                Paid their share (€${p.paidAmt.toFixed(2)})
+                            </div>
+                        </div>`;
+                    }
+                }
+            });
+            
+            html += `<div class="d3-system">2 people still owe money</div>`;
+            html += `</div>`;
+        }
+
+        container.innerHTML = html;
+    }
+
+    // Initial Render
+    init();
+  </script>
+</body>
+</html>
+

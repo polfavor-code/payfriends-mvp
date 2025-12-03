@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayFriends Design V16: Final Polish</title>
+  
+  <!-- Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap">
+  
+  <style>
+    :root {
+      /* Dark Theme Palette */
+      --bg: #0e1116;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #3ddc97; /* Green */
+      --accent-dim: rgba(61, 220, 151, 0.15);
+      
+      --danger: #f85149; /* Red */
+      --danger-dim: rgba(248, 81, 73, 0.15);
+      
+      --pending: #d29922; /* Orange */
+      
+      /* Going Dutch Box Colors */
+      --dutch-border: #664d03;
+      --dutch-bg: rgba(20, 20, 20, 0.8);
+      --dutch-orange: #f59e0b;
+      
+      --font: 'Inter', system-ui, sans-serif;
+      --font-funky: 'Permanent Marker', cursive;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: var(--text);
+      font-family: var(--font);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* --- CONTROL BAR --- */
+    .preview-controls {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      border-bottom: 1px solid #444;
+      z-index: 9999;
+      padding: 0 16px;
+    }
+    .control-group { display: flex; gap: 8px; align-items: center; margin-right: 16px; border-right: 1px solid #444; padding-right: 16px; }
+    .toggle-btn {
+      background: #333; color: #aaa; border: 1px solid #444;
+      padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600;
+    }
+    .toggle-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+    /* --- LAYOUT --- */
+    .app-container {
+      margin-top: 60px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      background: var(--bg);
+      min-height: calc(100vh - 60px);
+      box-shadow: 0 0 40px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    @media (min-width: 801px) {
+      .app-container { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+    }
+
+    /* --- HEADER --- */
+    .app-header {
+      background: var(--card);
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .back-btn { font-size: 20px; color: var(--text); text-decoration: none; }
+    
+    .share-btn-header {
+        background: var(--accent-dim);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        display: flex; align-items: center; gap: 6px;
+        cursor: pointer;
+        text-transform: uppercase;
+    }
+
+    .header-main-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .page-title { font-size: 22px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .page-meta { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+    
+    .split-pill {
+        font-size: 10px;
+        text-transform: uppercase;
+        font-weight: 700;
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    /* Stats & Progress */
+    .stats-container { margin-top: 24px; }
+    
+    .progress-track {
+        height: 12px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+    .progress-fill {
+        height: 100%;
+        width: 65%;
+        background: linear-gradient(90deg, var(--accent), #34d399);
+        box-shadow: 0 0 10px rgba(61, 220, 151, 0.4);
+    }
+    
+    .progress-labels {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .prog-val-left { color: var(--accent); }
+    .prog-val-right { color: var(--pending); font-size: 14px; } 
+    
+    /* --- RECEIPT --- */
+    .header-receipt-row {
+        margin-top: 24px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 16px;
+    }
+    .receipt-btn-big {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .receipt-btn-big:hover { background: rgba(255,255,255,0.1); }
+
+    /* --- GROUP CARDS --- */
+    .group-cards-area {
+      padding: 24px 32px 0 32px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .group-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .group-card:hover { transform: translateY(-2px); }
+    .group-card.active {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .group-card.active::after {
+        content: '✓'; position: absolute; top: 12px; right: 12px; color: var(--accent); font-weight: 800;
+    }
+    .gc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .gc-icon { font-size: 24px; }
+    .gc-name { font-size: 14px; font-weight: 700; color: #fff; }
+    .gc-sub { font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+    .gc-price { font-size: 16px; color: var(--accent); font-weight: 800; margin-top: auto; }
+
+    .group-card.add-new {
+        border-style: dashed;
+        align-items: center; justify-content: center;
+        opacity: 0.6;
+    }
+    .group-card.add-new:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
+
+    /* --- HERO BOX (DUTCH STYLE ORANGE) --- */
+    .hero-pop-container {
+        padding: 24px 32px;
+    }
+    
+    .hero-pop-box {
+        background: var(--dutch-bg);
+        border: 2px dashed var(--dutch-border);
+        border-radius: 24px;
+        padding: 32px 24px;
+        text-align: center;
+        position: relative;
+        overflow: visible; /* Allow bell to pop out */
+        margin-top: 12px;
+    }
+    
+    .hero-pop-box.paid-state {
+        border-color: var(--accent);
+        background: rgba(61, 220, 151, 0.05);
+        border-style: solid;
+    }
+
+    /* Green Theme for Hero */
+    .pop-title { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 4px; margin-top: 12px; }
+    .pop-sub { font-size: 13px; color: var(--accent); opacity:0.8; margin-bottom: 12px; font-weight:600; }
+    
+    /* Price Styling */
+    .pop-price { font-size: 48px; font-weight: 800; color: var(--accent); margin: 8px 0; display: block; }
+    
+    /* Unfair Text (Integrated Below Button) */
+    .unfair-text-line {
+        color: var(--danger);
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 12px;
+        display: block;
+    }
+    .unfair-text-line strong { font-weight: 800; }
+
+    /* Funky SVG Bell Badge */
+    .bell-badge-svg {
+        position: absolute;
+        top: -20px;
+        right: -15px;
+        width: 70px; height: 70px;
+        z-index: 10;
+        animation: wiggle 2s ease-in-out infinite;
+        filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4));
+    }
+    
+    @keyframes wiggle {
+        0%, 100% { transform: rotate(10deg); }
+        50% { transform: rotate(0deg) scale(1.05); }
+    }
+    
+    .paid-badge-corner {
+        display: none;
+        position: absolute;
+        top: 16px; right: -30px;
+        background: var(--accent);
+        color: #000;
+        padding: 6px 40px;
+        font-weight: 900;
+        font-size: 14px;
+        transform: rotate(45deg);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        z-index: 20;
+        white-space: nowrap;
+        text-transform: uppercase;
+    }
+    .hero-pop-box.paid-state .paid-badge-corner { display: block; }
+
+    .pay-btn-big {
+        background: transparent;
+        color: var(--dutch-orange);
+        border: 2px solid var(--dutch-orange);
+        padding: 14px 32px;
+        border-radius: 30px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 16px;
+    }
+    .pay-btn-big:hover { background: var(--dutch-orange); color: #000; }
+    
+    .hero-pop-box.paid-state .pay-btn-big,
+    .hero-pop-box.paid-state .bell-badge-svg,
+    .hero-pop-box.paid-state .unfair-text-line { display: none; }
+    
+    .hero-pop-box.paid-state .pop-price { color: var(--accent); opacity: 0.3; }
+    .hero-pop-box.paid-state .pop-title, .hero-pop-box.paid-state .pop-sub { opacity: 0.3; }
+
+    /* --- LIST --- */
+    .list-section {
+        padding: 0 32px 100px 32px;
+        margin-top: 8px;
+    }
+    
+    .list-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+    }
+    
+    .list-title-row { display: flex; align-items: center; gap: 12px; }
+    .list-title { font-size: 14px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    
+    .fairness-pill {
+        /* RED if unfair */
+        background: var(--danger-dim);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 12px;
+        display: flex; align-items: center; gap: 6px;
+    }
+    
+    .sort-btn {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .sort-btn:hover { color: var(--text); }
+
+    .p-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-rows: auto auto;
+        gap: 8px 16px;
+        align-items: center;
+        padding: 16px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .p-avatar {
+        grid-row: 1 / -1;
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        background: #21262d;
+        border: 2px solid var(--border);
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; color: var(--text);
+    }
+    @media (max-width: 600px) { .p-avatar { display: none; } .p-row { grid-template-columns: 1fr auto; } }
+
+    .p-info { display: flex; flex-direction: column; gap: 4px; }
+    .p-name-row { display: flex; align-items: center; gap: 8px; }
+    .p-name { font-size: 15px; font-weight: 600; color: #fff; }
+    .host-badge { font-size: 10px; font-weight: 800; background: #fff; color: #000; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    .p-group { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+    .p-amt-line { font-size: 12px; color: #fff; display: flex; gap: 12px; }
+    .p-amt-sub { color: var(--muted); }
+
+    /* Status Column (Right) */
+    .p-status-col {
+        grid-column: 3; grid-row: 1 / -1;
+        display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
+        gap: 4px;
+    }
+    @media (max-width: 600px) { .p-status-col { grid-column: 2; } }
+
+    .stamp { font-size: 12px; font-weight: 900; text-transform: uppercase; }
+    .stamp.paid { color: var(--accent); }
+    .stamp.pending { color: var(--pending); }
+    .stamp.overpaid { color: var(--danger); margin-bottom: 2px; }
+    .overpaid-val { color: var(--danger); font-weight: 700; font-size: 12px; }
+
+    /* Progress Row */
+    .p-stats-row {
+        grid-column: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .prog-wrapper {
+        display: flex; align-items: center; gap: 8px; width: 100%;
+    }
+    .user-prog-track { flex: 1; height: 6px; background: #333; border-radius: 3px; min-width: 60px; }
+    .user-prog-fill { height: 100%; border-radius: 3px; }
+    .user-prog-fill.paid { background: var(--accent); }
+    .user-prog-fill.overpaid { background: var(--danger); }
+    .user-prog-fill.pending { background: var(--pending); width: 0; }
+    
+    .prog-pct { font-size: 11px; font-weight: 700; min-width: 35px; text-align: right; }
+    .prog-pct.paid { color: var(--accent); }
+    .prog-pct.overpaid { color: var(--danger); }
+    .prog-pct.pending { color: var(--muted); }
+
+    /* Share Link Button */
+    .share-link-btn {
+        background: var(--accent-dim);
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex; align-items: center; gap: 6px;
+        text-transform: uppercase;
+        transition: all 0.2s;
+    }
+    .share-link-btn:hover { background: var(--accent); color: #000; }
+
+    /* --- FOOTER --- */
+    .footer-bar {
+        position: sticky;
+        bottom: 0;
+        background: var(--card);
+        border-top: 1px solid var(--border);
+        padding: 16px 32px;
+        z-index: 100;
+        display: flex; gap: 12px;
+    }
+    .f-btn { 
+        flex: 1; padding: 14px; border-radius: 12px; 
+        font-weight: 700; cursor: pointer; font-size: 14px; border: none;
+        transition: all 0.2s;
+    }
+    .f-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    
+    .btn-sec { background: #21262d; border: 1px solid var(--border); color: var(--text); }
+    /* GREEN PRIMARY BUTTON */
+    .btn-pri { background: var(--accent); color: #000; border: 1px solid var(--accent); }
+
+    /* Utilities */
+    .hide { display: none !important; }
+
+  </style>
+</head>
+<body>
+
+  <div class="preview-controls">
+    <div class="control-group">
+        <button class="toggle-btn active" onclick="setMode('host')">HOST</button>
+        <button class="toggle-btn" onclick="setMode('public')">GUEST</button>
+    </div>
+    <div class="control-group">
+        <button class="toggle-btn active" onclick="setSplit('equal')">EQUAL</button>
+        <button class="toggle-btn" onclick="setSplit('group')">GROUP</button>
+    </div>
+    <div class="control-group">
+        <button class="toggle-btn active" onclick="togglePayment()">TOGGLE PAID</button>
+    </div>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- HEADER -->
+    <div class="app-header">
+        <div class="header-top">
+            <a class="back-btn">←</a>
+            <button class="share-btn-header" onclick="alert('Link Copied!')">
+                <span>🔗</span> Share Link
+            </button>
+        </div>
+
+        <div class="header-main-row">
+            <div>
+                <div class="page-title">
+                    <span style="font-size:24px;">🍕</span> Dinner at Mario's
+                </div>
+                <div class="page-meta">
+                    <span>Wed Dec 12</span> • <span>4 People</span> • 
+                    <span class="split-pill" id="header-split-label">EQUAL SPLIT</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="stats-container">
+            <div class="progress-track">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="progress-labels">
+                <div class="prog-val-left">65% Collected</div>
+                <div class="prog-val-right">€50.00 Remaining</div>
+            </div>
+        </div>
+        
+        <!-- Receipt Row -->
+        <div class="header-receipt-row">
+            <div id="receipt-view-link" class="">
+                <button class="receipt-btn-big">
+                    <span style="font-size:18px">📄</span> View Original Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GROUP CARDS (With Add Button) -->
+    <div id="group-cards" class="group-cards-area hide">
+        <div class="group-card active">
+            <div class="gc-header">
+                <div class="gc-icon">🍷</div>
+                <div class="gc-name">Alcohol Group</div>
+            </div>
+            <div class="gc-sub">Wine, cocktails, and heavy hitters.</div>
+            <div class="gc-price">€25.00</div>
+        </div>
+        <div class="group-card">
+            <div class="gc-header">
+                <div class="gc-icon">💧</div>
+                <div class="gc-name">No Alc Group</div>
+            </div>
+            <div class="gc-sub">Soft drinks, water, and designated drivers.</div>
+            <div class="gc-price">€15.00</div>
+        </div>
+        <div class="group-card add-new host-only">
+            <div style="font-size:24px; margin-bottom:4px;">+</div>
+            <div style="font-size:12px; font-weight:700;">Add Group</div>
+        </div>
+    </div>
+
+    <!-- HERO BOX (FINAL POLISH) -->
+    <div class="hero-pop-container">
+        <div id="hero-box" class="hero-pop-box">
+            
+            <!-- Funky SVG Bell (Bell Emoji + Burst) -->
+            <div class="bell-badge-svg">
+                 <div style="font-size:40px; position:relative;">
+                    <div style="position:absolute; top:-10px; right:-10px; font-size:20px; animation:pulse 1s infinite;">💥</div>
+                    🔔
+                 </div>
+            </div>
+            
+            <!-- Corner Paid Badge (Rotated) -->
+            <div class="paid-badge-corner">FULLY PAID</div>
+            
+            <div class="pop-title">Your Fair Share</div>
+            <div class="pop-sub">Group: Alcohol Group</div>
+            
+            <div class="pop-price highlight" id="hero-price">€35.60</div>
+            
+            <button class="pay-btn-big" onclick="togglePayment()">PAY NOW</button>
+
+            <!-- Unfair Text Below Button -->
+            <span class="unfair-text-line">
+                ⚠️ Paul (Host) paid <strong>€175.00 too much!</strong> Please pay asap to balance the tab.
+            </span>
+        </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="list-section">
+        <div class="list-controls">
+            <div class="list-title-row">
+                <div class="list-title">Participants (4)</div>
+                <!-- Unfair Red Badge -->
+                <div class="fairness-pill">
+                    <img src="/images/payfriends-handshake.svg" style="width:16px; height:16px; opacity:0.8; margin-right:4px;" onerror="this.style.display='none'">
+                    UNBALANCED 20%
+                </div>
+            </div>
+            
+            <button class="sort-btn">
+                Sort ▾
+            </button>
+        </div>
+
+        <!-- Self (OVERPAID CLEAN) -->
+        <div class="p-row">
+            <div class="p-avatar" style="border-color:var(--danger); color:var(--danger);">ME</div>
+            
+            <div class="p-info">
+                <div class="p-name-row">
+                    <span class="p-name">You (Paul)</span>
+                    <span class="host-badge">HOST</span>
+                </div>
+                <div class="p-group">Alcohol Group</div>
+                <div class="p-amt-line">
+                    <span class="p-amt-sub">Fair Share: €25.00</span>
+                    <span>Actually Paid: €200.00</span>
+                </div>
+            </div>
+            
+            <!-- Progress Bar Full Row -->
+            <div class="p-stats-row" style="grid-column:2; margin-top:4px;">
+                <div class="prog-wrapper">
+                    <div class="user-prog-track">
+                        <div class="user-prog-fill overpaid" style="width:100%"></div>
+                    </div>
+                    <span class="prog-pct overpaid">800%</span>
+                </div>
+            </div>
+
+            <!-- Status Right -->
+            <div class="p-status-col">
+                <div class="stamp overpaid">OVERPAID</div>
+                <div class="overpaid-val">+€175.00</div>
+            </div>
+        </div>
+
+        <!-- Guest 1 (PAID NORMAL) -->
+        <div class="p-row">
+            <div class="p-avatar">MS</div>
+            
+            <div class="p-info">
+                <div class="p-name-row">
+                    <span class="p-name">Mike S.</span>
+                </div>
+                <div class="p-group">Alcohol Group</div>
+                <div class="p-amt-line">
+                    <span class="p-amt-sub">Fair Share: €25.00</span>
+                    <span>Actually Paid: €25.00</span>
+                </div>
+            </div>
+
+            <div class="p-stats-row" style="grid-column:2; margin-top:4px;">
+                <div class="prog-wrapper">
+                    <div class="user-prog-track">
+                        <div class="user-prog-fill paid" style="width:100%"></div>
+                    </div>
+                    <span class="prog-pct paid">100%</span>
+                </div>
+            </div>
+
+            <div class="p-status-col">
+                <div class="stamp paid">FULLY PAID</div>
+            </div>
+        </div>
+
+        <!-- Guest 2 (PENDING) -->
+        <div class="p-row">
+            <div class="p-avatar">JD</div>
+            
+            <div class="p-info">
+                <div class="p-name-row">
+                    <span class="p-name">John Doe</span>
+                </div>
+                <div class="p-group">No Alc Group</div>
+                <div class="p-amt-line">
+                    <span class="p-amt-sub">Fair Share: €15.00</span>
+                    <span>Actually Paid: €0.00</span>
+                </div>
+            </div>
+
+            <div class="p-stats-row" style="grid-column:2; margin-top:4px;">
+                <div class="prog-wrapper">
+                    <div class="user-prog-track">
+                        <div class="user-prog-fill pending" style="width:0%"></div>
+                    </div>
+                    <span class="prog-pct pending">0%</span>
+                </div>
+            </div>
+
+            <div class="p-status-col">
+                <div class="stamp pending">PENDING</div>
+            </div>
+        </div>
+
+        <!-- Pending / Unknown (Waiting) -->
+        <div class="p-row" style="opacity:0.8; border-style:dashed; grid-template-columns: auto 1fr auto;">
+            <div class="p-avatar" style="border-style:dashed;">?</div>
+            
+            <div class="p-info" style="grid-column:2">
+                <div class="p-name" style="color:var(--muted); margin-bottom:2px;">Waiting for guest to respond...</div>
+                <div class="p-details" style="font-size:11px;">Please help remind them to pay his fair share.</div>
+            </div>
+            
+            <div class="p-status-col">
+                <button class="share-link-btn" onclick="alert('Copied link!')">
+                    <span>🔗</span> Share link
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FOOTER (Host Only) -->
+    <div id="host-footer" class="footer-bar">
+        <button class="f-btn btn-sec">Edit Details</button>
+        <button class="f-btn btn-pri">Report Payment</button>
+    </div>
+
+  </div>
+
+  <script>
+    let isPaid = false;
+
+    function togglePayment() {
+        isPaid = !isPaid;
+        const box = document.getElementById('hero-box');
+        if (isPaid) {
+            box.classList.add('paid-state');
+        } else {
+            box.classList.remove('paid-state');
+        }
+    }
+
+    function setMode(mode) {
+        const footer = document.getElementById('host-footer');
+        const hostEls = document.querySelectorAll('.host-only');
+        
+        if(mode === 'host') {
+            footer.classList.remove('hide');
+            hostEls.forEach(el => el.classList.remove('hide'));
+        } else {
+            footer.classList.add('hide');
+            hostEls.forEach(el => el.classList.add('hide'));
+        }
+        
+        document.querySelectorAll('.toggle-btn').forEach(b => {
+            if(b.textContent.toLowerCase().includes(mode)) b.classList.add('active');
+            else if(b.onclick.toString().includes('setMode')) b.classList.remove('active');
+        });
+    }
+
+    function setSplit(split) {
+        const cards = document.getElementById('group-cards');
+        const headerLabel = document.getElementById('header-split-label');
+        const price = document.getElementById('hero-price');
+
+        if(split === 'group') {
+            cards.classList.remove('hide');
+            headerLabel.innerText = 'GROUP SPLIT';
+            price.innerText = '€25.00';
+        } else {
+            cards.classList.add('hide');
+            headerLabel.innerText = 'EQUAL SPLIT';
+            price.innerText = '€35.60';
+        }
+        
+        document.querySelectorAll('.toggle-btn').forEach(b => {
+            if(b.textContent.toLowerCase().includes(split)) b.classList.add('active');
+            else if(b.onclick.toString().includes('setSplit')) b.classList.remove('active');
+        });
+    }
+    
+    // Init
+    setMode('host');
+    setSplit('equal');
+  </script>
+
+</body>
+</html>
+

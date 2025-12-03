@@ -1,1206 +1,2948 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex,nofollow" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PayFriends — GroupTab</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   
-  <!-- Shared control styles -->
+  <!-- Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap">
+  
+  <!-- Core Styles -->
   <link rel="stylesheet" href="/css/shared-controls.css" />
   <link rel="stylesheet" href="/css/app.css" />
   
-  <!-- Chat Theme -->
-  <link rel="stylesheet" href="/css/chat-theme.css" />
-  <!-- GroupTabs specific styles -->
-  <link rel="stylesheet" href="/css/grouptabs.css" />
-
+  <!-- Core Scripts -->
   <script src="/js/header.js"></script>
-  <script src="/js/footer.js"></script>
   <script src="/js/formatters.js"></script>
   <script src="/js/grouptabs-engine.js"></script>
-  
+
   <style>
-    /* Standard page layout - matches dashboard, friends, agreements */
+    :root {
+      /* Dark Theme Palette */
+      --bg: #0e1116;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #3ddc97; /* Green */
+      --accent-dim: rgba(61, 220, 151, 0.15);
+      
+      --danger: #f85149; /* Red */
+      --danger-dim: rgba(248, 81, 73, 0.15);
+      
+      --pending: #d29922; /* Orange */
+      
+      /* Going Dutch Box Colors */
+      --dutch-border: #664d03;
+      --dutch-bg: rgba(20, 20, 20, 0.8);
+      --dutch-orange: #f59e0b;
+      
+      --font: 'Inter', system-ui, sans-serif;
+      --font-funky: 'Permanent Marker', cursive;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* Site-wide container for header */
     .container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 32px 16px;
     }
-    
-    /* =============================================
-       HUB LAYOUT (Dashboard + Feed Split)
-       ============================================= */
-    .hub-container {
-      display: flex;
-      flex-direction: column;
-      max-width: 800px;
-      margin: 0 auto;
-      position: relative;
-      z-index: 1; /* Ensure global header dropdown appears above */
-    }
 
-    /* Full width on mobile */
-    @media (max-width: 900px) {
-      .hub-container {
-        max-width: 100%;
-      }
-    }
-
-    /* --- HEADER --- */
-    .hub-header {
-      position: relative; /* Not sticky - let global header be sticky */
-      z-index: 10;
-      background: transparent;
-      border-bottom: 1px solid var(--border);
-      padding: 16px 0;
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .hub-header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .hub-back-btn {
-      font-size: 20px;
-      color: var(--text);
-      text-decoration: none;
-      padding: 4px;
-    }
-
-    .hub-title {
-      font-weight: 700;
-      font-size: 18px;
-    }
-
-    .hub-subtitle {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .hub-edit-btn {
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      padding: 8px;
-    }
-
-    /* --- DASHBOARD SECTION --- */
-    .hub-dashboard {
-      padding: 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    /* Fairness Ring */
-    .fairness-hero {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 24px 0;
-    }
-
-    .fairness-ring {
-      width: 120px;
-      height: 120px;
-      position: relative;
-      margin-bottom: 16px;
-    }
-
-    .fairness-ring svg {
-      transform: rotate(-90deg);
-    }
-
-    .fairness-ring-bg {
-      stroke: rgba(255, 255, 255, 0.1);
-    }
-
-    .fairness-ring-fill {
-      stroke: var(--accent);
-      stroke-linecap: round;
-      transition: stroke-dashoffset 0.5s ease;
-    }
-
-    .fairness-score {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 36px;
-      font-weight: 700;
-      color: var(--accent);
-    }
-
-    .fairness-label {
-      font-size: 12px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    /* Your Share Box */
-    .your-share-box {
-      background: rgba(61, 220, 151, 0.1);
-      border: 1px solid rgba(61, 220, 151, 0.3);
-      border-radius: 16px;
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .your-share-label {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-
-    .your-share-amount {
-      font-size: 32px;
-      font-weight: 700;
-      color: var(--accent);
-    }
-
-    .your-share-status {
-      font-size: 13px;
-      color: var(--accent);
-      margin-top: 4px;
-    }
-
-    /* Participants Row */
-    .participants-row {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      padding: 8px 0 16px 0;
-      scrollbar-width: none;
-    }
-    .participants-row::-webkit-scrollbar { display: none; }
-
-    .participant-chip {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      min-width: 70px;
-      cursor: pointer;
-    }
-
-    .participant-avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: rgba(61, 220, 151, 0.2);
+    /* --- JOIN SCREEN (Soft Glass B Design) --- */
+    .join-screen {
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--accent);
-      position: relative;
+      padding: 24px 16px;
+      background: radial-gradient(ellipse at top center, #1a2233 0%, #0a0c10 70%);
     }
 
-    .participant-status-dot {
-      position: absolute;
-      bottom: 2px;
-      right: 2px;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 2px solid var(--bg);
-    }
-
-    .participant-status-dot.paid { background: #22c55e; }
-    .participant-status-dot.owes { background: #f87171; }
-    .participant-status-dot.partial { background: #fbbf24; }
-
-    .participant-name {
-      font-size: 11px;
-      color: var(--muted);
-      text-align: center;
-      max-width: 70px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* Primary Action Button */
-    .hub-primary-action {
+    .join-container {
       width: 100%;
-      padding: 16px;
-      background: var(--accent);
-      border: none;
-      border-radius: 12px;
-      color: #0e1116;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.15s;
-    }
-
-    .hub-primary-action:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(61, 220, 151, 0.3);
-    }
-
-    /* --- FEED SECTION --- */
-    .hub-feed {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .feed-header {
-      position: sticky;
-      top: 73px;
-      z-index: 90;
-      background: var(--bg);
-      padding: 12px 20px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .feed-scroll {
-      flex: 1;
-      padding: 16px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      overflow-y: auto;
-      padding-bottom: 100px;
-    }
-
-    /* Feed Event Bubbles */
-    .feed-event {
-      max-width: 85%;
-      padding: 12px 16px;
-      border-radius: 16px;
-      font-size: 14px;
-      line-height: 1.5;
-      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .feed-event-system {
-      align-self: flex-start;
-      background: var(--card);
-      color: var(--text);
-      border-bottom-left-radius: 4px;
-    }
-
-    .feed-event-payment {
-      align-self: flex-start;
-      background: rgba(34, 197, 94, 0.15);
-      color: #4ade80;
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      border-bottom-left-radius: 4px;
-    }
-
-    .feed-event-join {
-      align-self: center;
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--muted);
-      font-size: 12px;
-      padding: 6px 12px;
-      border-radius: 12px;
-    }
-
-    .feed-event strong {
-      font-weight: 600;
-    }
-
-    /* --- MODAL --- */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.2s ease;
-    }
-    
-    .modal-overlay.visible {
-      opacity: 1;
-      visibility: visible;
-    }
-    
-    .modal {
-      background: var(--card);
-      border-radius: 16px;
-      padding: 24px;
-      width: 90%;
       max-width: 400px;
-      max-height: 90vh;
-      overflow-y: auto;
-      border: 1px solid var(--border);
-    }
-    
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-    
-    .modal-title {
-      font-size: 20px;
-      font-weight: 600;
-    }
-    
-    .modal-close {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 24px;
-      cursor: pointer;
+      animation: joinFadeIn 0.6s ease-out;
     }
 
-    /* Form Inputs */
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-label {
-      display: block;
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    .form-input {
-      width: 100%;
-      padding: 12px 16px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text);
-      font-size: 16px;
-    }
-
-    .form-input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .form-btn {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      background: var(--accent);
-      color: #0e1116;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-
-    .form-btn-danger {
-      background: transparent;
-      color: #f87171;
-      border: 1px solid rgba(248, 113, 113, 0.3);
-      margin-top: 24px;
-    }
-
-    /* Participants List in Modal */
-    .participants-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .participant-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.03);
-      border-radius: 10px;
-    }
-
-    .participant-row-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(61, 220, 151, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--accent);
-    }
-
-    .participant-row-info {
-      flex: 1;
-    }
-
-    .participant-row-name {
-      font-weight: 500;
-      font-size: 14px;
-    }
-
-    .participant-row-role {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .participant-row-remove {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 18px;
-      cursor: pointer;
-      padding: 4px 8px;
-    }
-
-    .participant-row-remove:hover {
-      color: #f87171;
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(10px); }
+    @keyframes joinFadeIn {
+      from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Receipt Section */
-    .receipt-section {
-      margin-bottom: 20px;
-    }
-
-    .receipt-thumbnail {
+    /* Header Row */
+    .join-header-row {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
+      gap: 16px;
+      margin-bottom: 48px;
     }
 
-    .receipt-thumbnail:hover {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: var(--accent);
+    .join-host-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(61, 220, 151, 0.2), rgba(61, 220, 151, 0.05));
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
     }
 
-    .receipt-thumbnail img {
-      max-width: 100%;
-      max-height: 100px;
-      border-radius: 8px;
-      object-fit: contain;
+    .join-header-titles h2 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin: 0 0 6px 0;
+      color: var(--text);
     }
 
-    .receipt-badge {
-      font-size: 12px;
+    .join-header-titles .join-host-line {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .join-header-titles .join-host-name {
       color: var(--accent);
       font-weight: 500;
     }
 
-    /* Receipt Lightbox */
-    .receipt-lightbox {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.9);
+    /* Name Input - Underline Style */
+    .join-name-field {
+      margin-bottom: 48px;
+    }
+
+    .join-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .join-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+      padding: 14px 0;
+      font-size: 18px;
+      color: var(--text);
+      font-family: inherit;
+      transition: border-color 0.3s ease;
+      outline: none;
+      border-radius: 0;
+    }
+
+    .join-input:focus {
+      border-color: var(--accent);
+    }
+
+    .join-input::placeholder {
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Group Selection */
+    .join-group-section {
+      margin-bottom: 48px;
+    }
+
+    .join-group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 20px;
+    }
+
+    .join-group-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .join-group-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Group Cards */
+    .join-groups {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .join-group-card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 20px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .join-group-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .join-group-card.selected {
+      background: linear-gradient(90deg, rgba(61, 220, 151, 0.12) 0%, rgba(61, 220, 151, 0.03) 100%);
+      border-color: rgba(61, 220, 151, 0.4);
+      box-shadow: 0 8px 32px rgba(61, 220, 151, 0.1);
+    }
+
+    .join-group-card.selected .jg-icon-box {
+      background: rgba(61, 220, 151, 0.15);
+      box-shadow: 0 4px 16px rgba(61, 220, 151, 0.2);
+    }
+
+    .jg-icon-box {
+      width: 52px;
+      height: 52px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 9999;
-      cursor: zoom-out;
-      animation: fadeIn 0.2s ease;
+      font-size: 28px;
+      flex-shrink: 0;
+      transition: all 0.25s ease;
     }
 
-    .receipt-lightbox img {
-      max-width: 90%;
-      max-height: 90%;
-      border-radius: 8px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    .jg-info {
+      flex: 1;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .jg-info h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 4px 0;
+      color: var(--text);
+    }
+
+    .jg-info p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .jg-check {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .join-group-card.selected .jg-check {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .jg-check svg {
+      width: 14px;
+      height: 14px;
+      stroke: #0e1116;
+      stroke-width: 3;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .join-group-card.selected .jg-check svg {
+      opacity: 1;
+    }
+
+    /* CTA Button - White Pill */
+    .join-btn {
+      width: 100%;
+      background: white;
+      color: #0e1116;
+      border: none;
+      padding: 20px 32px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 24px rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.25s ease;
+      font-family: inherit;
+    }
+
+    .join-btn:hover {
+      background: #f5f5f5;
+      transform: scale(1.02);
+      box-shadow: 0 8px 32px rgba(255, 255, 255, 0.15);
+    }
+
+    .join-btn:active {
+      transform: scale(0.98);
+    }
+
+    .join-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .join-btn-arrow {
+      font-size: 20px;
+      transition: transform 0.25s ease;
+    }
+
+    .join-btn:hover .join-btn-arrow {
+      transform: translateX(4px);
+    }
+
+    /* Error */
+    .join-error {
+      color: var(--danger);
+      font-size: 14px;
+      margin-top: 16px;
+      text-align: center;
+      padding: 12px;
+      background: rgba(248, 81, 73, 0.1);
+      border-radius: 12px;
+    }
+
+    /* Legacy chip styles for backwards compat - hidden */
+    .join-group-chip { display: none; }
+    .join-amount { display: none; }
+
+    /* --- LAYOUT --- */
+    .app-container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px;
+      background: transparent;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    
+    @media (max-width: 768px) {
+      .app-container {
+        padding: 0 16px;
+      }
+    }
+
+    /* --- HEADER / TOP CARD --- */
+    .app-header {
+      background: var(--card);
+      padding: 24px 32px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-top: 24px;
+      position: relative;
+    }
+    
+    @media (max-width: 768px) {
+      .app-header {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        margin-top: 0;
+        margin-left: -16px;
+        margin-right: -16px;
+        padding: 20px 16px;
+      }
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .back-btn { font-size: 20px; color: var(--text); text-decoration: none; cursor: pointer; }
+    
+    .share-btn-header {
+        background: var(--accent-dim);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        display: flex; align-items: center; gap: 6px;
+        cursor: pointer;
+        text-transform: uppercase;
+    }
+
+    .header-main-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .page-title { font-size: 28px; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .page-meta { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+    
+    .split-pill {
+        font-size: 10px;
+        text-transform: uppercase;
+        font-weight: 700;
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    /* Bill Summary Stats - Big Numbers */
+    .bill-summary-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-top: 24px;
+        margin-bottom: 16px;
+    }
+
+    .stat-block {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .stat-block.stat-right {
+        text-align: right;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .stat-value {
+        font-size: 36px;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1;
+    }
+
+    .stat-value.stat-accent {
+        color: var(--accent);
+    }
+
+    /* Progress Bar */
+    .progress-track {
+        height: 10px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        width: 0%; /* Dynamic */
+        background: linear-gradient(90deg, var(--accent), #34d399);
+        box-shadow: 0 0 10px rgba(61, 220, 151, 0.4);
+        transition: width 0.5s ease;
+    }
+    .progress-percent {
+        margin-top: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--accent);
+    }
+    
+    /* --- RECEIPT --- */
+    .header-receipt-row {
+        margin-top: 24px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 16px;
+    }
+    .receipt-btn-big {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    .receipt-btn-big:hover { background: rgba(255,255,255,0.1); }
+    
+    .receipt-delete-btn {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        width: 48px;
+        min-width: 48px;
+        height: 48px;
+        padding: 0;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text);
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .receipt-delete-btn:hover { 
+        background: rgba(255,255,255,0.1); 
+        color: #ff6b6b;
+    }
+
+    /* --- GROUP CARDS --- */
+    .group-cards-area {
+      padding: 24px 0 0 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    
+    @media (max-width: 768px) {
+      .group-cards-area {
+        padding: 16px 0 0 0;
+      }
+    }
+    .group-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 16px; /* Increased vertical padding */
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      min-height: 140px; /* Ensure minimum height for balance */
+    }
+    .group-card:hover { 
+      border-color: var(--accent);
+      border-width: 2px;
+    }
+    .group-card.active {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .group-card.active::after {
+        content: '✓'; position: absolute; top: 12px; right: 12px; color: var(--accent); font-weight: 800;
+    }
+    .gc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .gc-icon { font-size: 48px; } /* Increased icon size */
+    .gc-name { font-size: 16px; font-weight: 700; color: #fff; } /* Increased title size */
+    .gc-sub { font-size: 12px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; } /* Increased sub size */
+    .gc-price { font-size: 16px; color: var(--accent); font-weight: 800; margin-top: auto; }
+
+    .group-card.add-new {
+        border-style: dashed;
+        align-items: center; justify-content: center;
+        opacity: 0.6;
+    }
+    .group-card.add-new:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
+
+    /* --- HERO BOX --- */
+    .hero-pop-container {
+        padding: 24px 0;
+    }
+    
+    @media (max-width: 768px) {
+      .hero-pop-container {
+        padding: 16px 0;
+      }
+    }
+    
+    .hero-pop-box {
+        background: var(--dutch-bg);
+        border: 2px dashed var(--dutch-border);
+        border-radius: 24px;
+        padding: 20px 24px;
+        text-align: center;
+        position: relative;
+        overflow: visible; 
+        margin-top: 12px;
+    }
+    
+    .hero-pop-box.paid-state {
+        border-color: var(--accent);
+        background: rgba(61, 220, 151, 0.05);
+        border-style: solid;
+    }
+
+    .pop-title { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 2px; margin-top: 8px; }
+    .pop-sub { font-size: 13px; color: var(--accent); opacity:0.8; margin-bottom: 8px; font-weight:600; }
+    
+    .pop-price { font-size: 48px; font-weight: 800; color: var(--accent); margin: 4px 0; display: block; }
+    
+    /* Unfair Text - NOW ORANGE */
+    .unfair-text-line {
+        color: var(--pending); /* Orange */
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 12px;
+        display: block;
+    }
+    .unfair-text-line strong { font-weight: 800; }
+
+    /* Funky SVG Bell */
+    .bell-badge-svg {
+        position: absolute;
+        top: -25px;
+        right: -15px;
+        width: 80px; height: 80px; /* Bigger */
+        z-index: 10;
+        animation: wiggle 3s ease-in-out infinite;
+        filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+    }
+    
+    @keyframes wiggle {
+        0%, 100% { transform: rotate(10deg); }
+        50% { transform: rotate(0deg); }
+    }
+    
+    .paid-badge-corner {
+        display: none;
+        position: absolute;
+        top: 16px; right: -30px;
+        background: var(--accent);
+        color: #000;
+        padding: 6px 40px;
+        font-weight: 900;
+        font-size: 14px;
+        transform: rotate(45deg);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        z-index: 20;
+        white-space: nowrap;
+        text-transform: uppercase;
+    }
+    .hero-pop-box.paid-state .paid-badge-corner { display: block; }
+
+    .pay-btn-big {
+        background: transparent;
+        color: var(--dutch-orange);
+        border: 2px solid var(--dutch-orange);
+        padding: 14px 32px;
+        border-radius: 30px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 12px;
+    }
+    .pay-btn-big:hover { background: var(--dutch-orange); color: #000; }
+    
+    .hero-pop-box.paid-state .pay-btn-big,
+    .hero-pop-box.paid-state .bell-badge-svg,
+    .hero-pop-box.paid-state .unfair-text-line { display: none; }
+    
+    .hero-pop-box.paid-state .pop-price { color: var(--accent); opacity: 0.3; }
+    .hero-pop-box.paid-state .pop-title, .hero-pop-box.paid-state .pop-sub { opacity: 0.3; }
+
+    /* Pay for someone else link */
+    .pay-for-other-link {
+        position: absolute;
+        bottom: 12px;
+        right: 16px;
+        font-size: 11px;
+        color: var(--muted);
+        cursor: pointer;
+        opacity: 0.6;
+        transition: all 0.2s;
+    }
+    .pay-for-other-link:hover { 
+        opacity: 1; 
+        color: var(--accent); 
+    }
+
+    /* --- LIST --- */
+    .list-section {
+        padding: 0 0 120px 0;
+        margin-top: 8px;
+    }
+    
+    @media (max-width: 768px) {
+      .list-section {
+        padding: 0 0 100px 0;
+      }
+    }
+    
+    /* Collapsible Participants Section */
+    .participants-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0; /* Increased vertical padding */
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s;
+    }
+    .participants-header:hover {
+        background: rgba(255,255,255,0.02);
+        margin: 0 -16px;
+        padding: 18px 16px; /* Match increased padding */
+        border-radius: 12px;
+    }
+    
+    .participants-summary {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        color: var(--muted);
+    }
+    .participants-summary-icon {
+        width: 18px;
+        height: 18px;
+        opacity: 1;
+        color: #fff;
+    }
+    .participants-summary-title {
+        font-size: 15px; /* Slightly larger */
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #fff;
+    }
+    .participants-summary-stats {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+    }
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .stat-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .stat-dot.green { background: var(--accent); }
+    .stat-dot.amber { background: var(--pending); }
+    .stat-dot.red { background: var(--danger); }
+    
+    .chevron {
+        font-size: 12px;
+        color: var(--muted);
+        transition: transform 0.3s ease;
+    }
+    .chevron.expanded {
+        transform: rotate(180deg);
+    }
+    
+    .participants-expanded-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-out, opacity 0.3s ease;
+        opacity: 0;
+    }
+    .participants-expanded-content.expanded {
+        max-height: 5000px; /* Large enough for any list */
+        opacity: 1;
+        transition: max-height 0.5s ease-in, opacity 0.3s ease;
+    }
+    
+    .participants-expanded-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 16px 0 12px 0;
+    }
+    .participants-expanded-header .list-title-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    
+    .fairness-pill {
+        background: var(--danger-dim);
+        color: var(--danger);
+        border: 1px solid var(--danger);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 12px;
+        display: inline-flex; 
+        align-items: center; 
+        gap: 6px;
+        width: fit-content;
+        /* margin-bottom removed to allow proper flex alignment */
+    }
+    .fairness-pill.balanced {
+        background: var(--accent-dim); color: var(--accent); border-color: var(--accent);
+    }
+    
+    .fairness-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+    
+    .unbalanced-explanation {
+        font-size: 14px;
+        color: var(--danger);
+        font-weight: 500;
+        line-height: 1;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+    }
+    .unbalanced-explanation:empty {
+        display: none;
+    }
+
+    .p-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-rows: auto auto;
+        gap: 8px 16px;
+        align-items: center;
+        padding: 16px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .p-avatar {
+        grid-row: 1 / -1;
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        background: #21262d;
+        border: 2px solid var(--border);
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; color: var(--text);
+    }
+    @media (max-width: 600px) { .p-avatar { display: none; } .p-row { grid-template-columns: 1fr auto; } }
+
+    .p-info { display: flex; flex-direction: column; gap: 4px; }
+    .p-name-row { display: flex; align-items: center; gap: 8px; }
+    .p-name { font-size: 15px; font-weight: 600; color: #fff; }
+    .host-badge { font-size: 10px; font-weight: 800; background: #fff; color: #000; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    
+    .p-amt-line { font-size: 12px; color: #fff; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+    .p-amt-sub { color: var(--muted); }
+
+    /* Status Column (Right) */
+    .p-status-col {
+        grid-column: 3; grid-row: 1 / -1;
+        display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
+        gap: 4px;
+    }
+    @media (max-width: 600px) { .p-status-col { grid-column: 2; } }
+
+    .stamp { font-size: 12px; font-weight: 900; text-transform: uppercase; }
+    .stamp.paid { color: var(--accent); }
+    .stamp.pending { color: var(--pending); }
+    .stamp.overpaid { color: var(--danger); margin-bottom: 2px; }
+    .overpaid-val { color: var(--danger); font-weight: 700; font-size: 12px; }
+
+    /* Progress Row */
+    .p-stats-row {
+        grid-column: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .prog-wrapper {
+        display: flex; align-items: center; gap: 8px; width: 100%;
+    }
+    .user-prog-track { flex: 1; height: 6px; background: #333; border-radius: 3px; min-width: 60px; }
+    .user-prog-fill { height: 100%; border-radius: 3px; }
+    .user-prog-fill.paid { background: var(--accent); }
+    .user-prog-fill.overpaid { background: var(--danger); }
+    .user-prog-fill.pending { background: var(--pending); width: 0; }
+    
+    .prog-pct { font-size: 11px; font-weight: 700; min-width: 35px; text-align: right; }
+    .prog-pct.paid { color: var(--accent); }
+    .prog-pct.overpaid { color: var(--danger); }
+    .prog-pct.pending { color: var(--pending); }
+
+    /* Time Ago Text */
+    .payment-time-ago {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 2px;
+        font-weight: 500;
+    }
+
+    /* Share Link Button */
+    .share-link-btn {
+        background: transparent;
+        border: none;
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 8px 0;
+        cursor: pointer;
+        display: flex; align-items: center; gap: 6px;
+        text-transform: uppercase;
+        transition: all 0.2s;
+    }
+    .share-link-btn:hover { opacity: 0.8; }
+
+    /* Waiting Guest Card */
+    .p-row.waiting-guest {
+        border-style: dashed;
+        border-color: #444;
+        background: transparent;
+    }
+    .p-row.waiting-guest .share-link-btn {
+        color: #666;
+    }
+    .p-row.waiting-guest .share-link-btn:hover {
+        color: #888;
+    }
+    .p-avatar.waiting {
+        border-style: dashed;
+        border-color: #444;
+        color: #666;
+        background: transparent;
+        font-size: 20px;
+    }
+    .p-name.waiting-text {
+        color: var(--muted);
+        font-style: italic;
+    }
+
+    /* --- FOOTER --- */
+    .footer-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--bg);
+        border-top: 1px solid var(--border);
+        padding: 16px 24px;
+        z-index: 100;
+        display: flex;
+        justify-content: center;
+    }
+    .footer-bar-inner {
+        max-width: 960px;
+        width: 100%;
+        display: flex;
+        gap: 12px;
+    }
+    .f-btn { 
+        flex: 1; padding: 14px; border-radius: 12px; 
+        font-weight: 700; cursor: pointer; font-size: 14px; border: none;
+        transition: all 0.2s;
+    }
+    .f-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    
+    .btn-sec { background: #21262d; border: 1px solid var(--border); color: var(--text); }
+    .btn-pri { background: var(--accent); color: #000; border: 1px solid var(--accent); }
+    
+    @media (max-width: 768px) {
+      .footer-bar {
+        padding: 12px 16px;
+      }
+      .footer-bar-inner {
+        gap: 8px;
+      }
+      .f-btn {
+        padding: 12px;
+        font-size: 13px;
+      }
+    }
+
+    /* Utilities */
+    .hide { display: none !important; }
+    
+    /* Modals minimal styling for compatibility */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.9); z-index: 1000;
+      display: none; justify-content: center; align-items: center;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal {
+      background: var(--card); border: 1px solid var(--border);
+      width: 90%; max-width: 400px; padding: 24px; border-radius: 16px;
+    }
+    .form-input { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 8px; margin-bottom: 12px; }
+    .form-btn { width: 100%; padding: 12px; background: var(--accent); color: #000; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; }
+    
+    /* Receipt Modal */
+    .receipt-modal {
+      background: var(--card); border: 1px solid var(--border);
+      width: 95%; max-width: 600px; max-height: 90vh;
+      border-radius: 16px; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .receipt-modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .receipt-modal-title {
+      font-weight: 700; font-size: 16px; color: var(--text);
+    }
+    .receipt-modal-close {
+      background: transparent; border: none; color: var(--muted);
+      font-size: 24px; cursor: pointer; padding: 0; line-height: 1;
+    }
+    .receipt-modal-close:hover { color: var(--text); }
+    .receipt-modal-body {
+      padding: 20px; overflow: auto; flex: 1;
+      display: flex; justify-content: center; align-items: center;
+      background: #000;
+    }
+    .receipt-modal-body img {
+      max-width: 100%; max-height: 80vh; object-fit: contain;
+    }
+    .receipt-modal-body iframe {
+      width: 100%; height: 80vh; border: none;
     }
 
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Header will be loaded dynamically by header.js -->
+    <!-- Site header will be loaded dynamically by header.js -->
+  </div>
 
-    <div class="hub-container">
+  <!-- JOIN SCREEN (Soft Glass B Design) -->
+  <div class="join-screen" id="join-screen" style="display: none;">
+    <div class="join-container">
+      
+      <!-- Header Row -->
+      <div class="join-header-row">
+        <div class="join-host-avatar" id="join-host-avatar">P</div>
+        <div class="join-header-titles">
+          <h2 id="join-tab-name">Loading...</h2>
+          <p class="join-host-line">
+            <span class="join-host-name" id="join-host-name">Someone</span> sent you a split bill request.
+          </p>
+        </div>
+      </div>
+
+      <!-- Name Input -->
+      <div class="join-name-field">
+        <label class="join-label" for="join-name-input">Enter your name</label>
+        <input 
+          type="text" 
+          class="join-input" 
+          id="join-name-input" 
+          placeholder="Just how your friends call you"
+          maxlength="50"
+          autocomplete="name"
+        >
+      </div>
+
+      <!-- Group Selection -->
+      <div class="join-group-section" id="join-groups-section" style="display: none;">
+        <div class="join-group-header">
+          <span class="join-group-title">Select your group</span>
+          <span class="join-group-subtitle">Choose what applies to you</span>
+        </div>
+        <div class="join-groups" id="join-groups-container"></div>
+      </div>
+
+      <!-- CTA Button -->
+      <button class="join-btn" id="join-submit-btn" onclick="submitJoin()">
+        <span>See your share</span>
+        <span class="join-btn-arrow">→</span>
+      </button>
+
+      <!-- Error Message -->
+      <p class="join-error" id="join-error" style="display: none;"></p>
+    </div>
+  </div>
+
+  <div class="app-container" id="main-content">
     
     <!-- HEADER -->
-    <div class="hub-header">
-      <div class="hub-header-left">
-        <a href="/grouptabs" class="hub-back-btn">←</a>
-        <div>
-          <div class="hub-title" id="tab-title">Loading...</div>
-          <div class="hub-subtitle" id="tab-subtitle">...</div>
+    <div class="app-header">
+        <div class="header-top">
+            <a href="/grouptabs" class="back-btn">←</a>
+            <button class="share-btn-header" onclick="copyShareLink()">
+                <span>🔗</span> <span id="share-link-text">Share Link</span>
+            </button>
         </div>
-      </div>
-      <button class="hub-edit-btn" onclick="showEditModal()">⚙️</button>
+
+        <div class="header-main-row">
+            <div>
+                <div class="page-title" id="header-title">
+                    Loading...
+                </div>
+                <div class="page-meta" id="header-meta">
+                    ...
+                </div>
+            </div>
+        </div>
+
+        <!-- Bill Summary Stats -->
+        <div class="bill-summary-stats">
+            <div class="stat-block">
+                <div class="stat-label">TOTAL BILL</div>
+                <div class="stat-value" id="total-bill-amount">€0.00</div>
+            </div>
+            <div class="stat-block stat-right">
+                <div class="stat-label stat-pending">REMAINING</div>
+                <div class="stat-value" id="remaining-amount" style="color: var(--pending);">€0.00</div>
+            </div>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill" id="global-progress-fill"></div>
+        </div>
+        <div class="progress-percent" id="progress-percent-text">0% Collected</div>
+        
+        <!-- Receipt Row -->
+        <div class="header-receipt-row">
+            <div id="receipt-view-link" class="">
+                <!-- Dynamically filled -->
+            </div>
+        </div>
     </div>
 
-    <!-- DASHBOARD SECTION -->
-    <div class="hub-dashboard">
+    <!-- GROUP CARDS -->
+    <div id="group-cards" class="group-cards-area hide">
+        <!-- Dynamically filled -->
+    </div>
+
+    <!-- HERO BOX -->
+    <div class="hero-pop-container">
+        <div id="hero-box" class="hero-pop-box">
+            
+            <!-- Funky SVG Bell -->
+            <div class="bell-badge-svg">
+                 <div style="font-size:70px; line-height:1; filter:drop-shadow(2px 4px 0px rgba(0,0,0,0.2));">🔔</div>
+            </div>
+            
+            <!-- Corner Paid Badge -->
+            <div class="paid-badge-corner">FULLY PAID</div>
+            
+            <div class="pop-title" id="hero-title">Your Fair Share</div>
+            <div class="pop-sub" id="hero-group-name">...</div>
+            
+            <div class="pop-price highlight" id="hero-price">--</div>
+            
+            <button class="pay-btn-big" onclick="showPaymentModal()">PAY NOW</button>
+
+            <!-- Unfair Text -->
+            <span class="unfair-text-line hide" id="unfair-warning">
+                <!-- Populated by JS -->
+            </span>
+            
+            <!-- Pay for someone else link -->
+            <a class="pay-for-other-link" onclick="showPaymentModalForOther()">Pay for someone else</a>
+        </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="list-section">
+        <!-- Collapsed Header (clickable) -->
+        <div class="participants-header" onclick="toggleParticipants()">
+            <div class="participants-summary">
+                <svg class="participants-summary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span class="participants-summary-title" id="participants-collapsed-title">Participants (0)</span>
+                <span class="participants-summary-stats" id="participants-collapsed-stats"></span>
+            </div>
+            <span class="chevron" id="participants-chevron">▼</span>
+        </div>
+        
+        <!-- Expanded Content (hidden by default) -->
+        <div class="participants-expanded-content" id="participants-expanded">
+            <div class="participants-expanded-header">
+                <div class="fairness-row">
+                <div class="fairness-pill" id="fairness-badge">
+                    <img id="fairness-icon" src="/images/payfriends-handshake.svg" style="width:16px; height:16px; margin-right:4px;" onerror="this.style.display='none'">
+                    <span id="fairness-text">CALCULATING...</span>
+                </div>
+                    <span class="unbalanced-explanation" id="unbalanced-explanation"></span>
+            </div>
+        </div>
+
+        <!-- Participants Container -->
+        <div id="participants-list">
+            <!-- Dynamically filled -->
+            </div>
+        </div>
+        </div>
+
+    </div>
+
+  <!-- FOOTER (Host Only) - Outside app-container for full-width positioning -->
+    <div id="host-footer" class="footer-bar hide">
+    <div class="footer-bar-inner">
+        <button class="f-btn btn-sec" onclick="showEditModal()">Edit Details</button>
+      <button class="f-btn btn-pri" onclick="showPaymentModal()">Add a Payment Received</button>
+    </div>
+  </div>
+
+  <!-- Hidden inputs -->
+  <input type="hidden" id="share-link-input">
+
+  <!-- Payment Modal - Clean Minimalist Design -->
+  <div id="payment-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('payment-modal')">
+    <div class="modal" style="max-width: 420px; padding: 24px;">
+      <h3 style="margin: 0 0 24px 0; font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px;">ADD A PAYMENT RECEIVED</h3>
       
-      <!-- Fairness Ring -->
-      <div class="fairness-hero">
-        <div class="fairness-ring">
-          <svg width="120" height="120" viewBox="0 0 120 120">
-            <circle class="fairness-ring-bg" cx="60" cy="60" r="52" fill="none" stroke-width="8"/>
-            <circle id="fairness-ring-fill" class="fairness-ring-fill" cx="60" cy="60" r="52" fill="none" stroke-width="8" stroke-dasharray="327" stroke-dashoffset="327"/>
-          </svg>
-          <span class="fairness-score" id="fairness-score">--</span>
-        </div>
-        <span class="fairness-label">Fairness Score</span>
-      </div>
-
-      <!-- Your Share Box -->
-      <div class="your-share-box">
-        <div class="your-share-label">Your Fair Share</div>
-        <div class="your-share-amount" id="your-share-amount">€ --</div>
-        <div class="your-share-status" id="your-share-status">Loading...</div>
-      </div>
-
-      <!-- Receipt Preview (if available) -->
-      <div id="receipt-section" class="receipt-section" style="display: none;">
-        <div class="receipt-thumbnail" onclick="showReceiptLightbox()">
-          <img id="receipt-img" src="" alt="Receipt">
-          <span class="receipt-badge">📄 View Receipt</span>
-        </div>
-      </div>
-
-      <!-- Participants Row -->
-      <div class="participants-row" id="participants-row">
-        <!-- Dynamically populated -->
-      </div>
-
-      <!-- Primary Action -->
-      <button class="hub-primary-action" id="primary-action-btn" onclick="handlePrimaryAction()">
-        💳 Record Payment
+      <!-- Payment Rows -->
+      <div id="payment-rows-container"></div>
+      
+      <!-- Add another person button -->
+      <button id="add-beneficiary-btn" style="
+        width: 100%;
+        background: transparent;
+        border: 1px dashed rgba(255,255,255,0.2);
+        border-radius: 12px;
+        padding: 14px;
+        color: rgba(255,255,255,0.5);
+        font-size: 13px;
+        cursor: pointer;
+        margin: 8px 0 20px 0;
+        transition: all 0.2s;
+      " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='rgba(255,255,255,0.5)'" onclick="addPaymentRow()">
+        + Pay for another person also
       </button>
-    </div>
-
-    <!-- FEED SECTION -->
-    <div class="hub-feed">
-      <div class="feed-header">
-        ⚡ Activity Feed
-      </div>
-      <div class="feed-scroll" id="feed-scroll">
-        <!-- Dynamically populated -->
-      </div>
-    </div>
-
-  </div>
-
-  <!-- EDIT DETAILS MODAL -->
-  <div class="modal-overlay" id="edit-modal">
-    <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title">Edit Details</div>
-        <button class="modal-close" onclick="hideModal('edit-modal')">&times;</button>
-      </div>
       
-      <div class="form-group">
-        <label class="form-label">What is this tab for?</label>
-        <input type="text" id="edit-name" class="form-input" placeholder="e.g. Dinner at Mario's">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Date</label>
-        <input type="date" id="edit-date" class="form-input">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Who is involved?</label>
-        <div class="participants-list" id="edit-participants-list">
-          <!-- Dynamically populated -->
-        </div>
-        <button class="form-btn" style="background: transparent; color: var(--accent); border: 1px dashed var(--accent); margin-top: 12px;" onclick="showAddPersonModal()">
-          + Add Person
-        </button>
-      </div>
-
-      <button class="form-btn" onclick="saveTabDetails()">Save Changes</button>
-      
-      <button class="form-btn form-btn-danger" onclick="closeTab()">Close Tab</button>
-    </div>
-  </div>
-
-  <!-- PRICE GROUP MODAL -->
-  <div class="modal-overlay" id="price-group-modal">
-    <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title">Select Your Group</div>
-        <button class="modal-close" onclick="hideModal('price-group-modal')">&times;</button>
-      </div>
-      <div id="price-group-list" style="display:flex; flex-direction:column; gap:8px;">
-        <!-- populated dynamically -->
-      </div>
-    </div>
-  </div>
-
-  <!-- PAYMENT MODAL -->
-  <div class="modal-overlay" id="payment-modal">
-    <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title">Record Payment</div>
-        <button class="modal-close" onclick="hideModal('payment-modal')">&times;</button>
-      </div>
-      
-      <form onsubmit="submitPayment(event)">
-        <div class="form-group">
-          <label class="form-label">Amount</label>
-          <input type="number" id="pay-amount" class="form-input" placeholder="€ 0.00" step="0.01" required>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label">Method</label>
-          <select id="pay-method" class="form-input">
+      <!-- Payment Details -->
+      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <div style="flex: 1;">
+          <label style="display: block; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Received Via</label>
+          <select id="payment-method" style="
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 12px 14px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+          ">
             <option value="cash">Cash</option>
-            <option value="bank_transfer">Bank Transfer</option>
-            <option value="venmo">Venmo</option>
-            <option value="paypal">PayPal</option>
+            <option value="transfer">Bank Transfer</option>
+            <option value="card">Card</option>
+            <option value="other">Other</option>
           </select>
+    </div>
+  </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Proof (Optional)</label>
+        <input type="file" id="payment-proof" style="
+          width: 100%;
+          background: rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 10px;
+          padding: 10px 14px;
+          color: rgba(255,255,255,0.7);
+          font-size: 13px;
+        ">
+      </div>
+      
+      <!-- Payment summary -->
+      <div style="
+        padding: 16px;
+        background: rgba(0,0,0,0.4);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255,255,255,0.05);
+      ">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: rgba(255,255,255,0.6); font-size: 14px;">Total Payment:</span>
+          <span id="payment-total" style="font-size: 22px; font-weight: 800; color: var(--accent);">€0.00</span>
         </div>
-        
-        <button type="submit" class="form-btn">Record Payment</button>
-      </form>
+        <div id="payment-error" style="color: #f87171; font-size: 12px; margin-top: 10px; display: none;"></div>
+      </div>
+      
+      <!-- Action buttons -->
+      <button class="form-btn" onclick="submitPaymentNew()" style="
+        width: 100%;
+        padding: 14px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 12px;
+      ">Report receiving this payment</button>
+      <button onclick="hideModal('payment-modal')" style="
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: rgba(255,255,255,0.5);
+        padding: 14px;
+        font-size: 14px;
+        cursor: pointer;
+        margin-top: 8px;
+      ">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- Overpay Confirmation Modal -->
+  <div id="overpay-confirm-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('overpay-confirm-modal')">
+    <div class="modal" style="max-width: 450px;">
+      <h3 style="margin-bottom: 16px; color: var(--pending);">⚠️ Confirm Overpayment</h3>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 16px;">
+        You are paying more than the remaining balance. The extra amount will reduce what others owe.
+      </p>
+      
+      <div class="overpay-details" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--muted);">Total Payment:</span>
+          <span id="overpay-total-amount" style="font-weight: 600;">€0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--muted);">Combined Remaining:</span>
+          <span id="overpay-total-remaining">€0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px;">
+          <span style="color: var(--pending);">Extra Amount:</span>
+          <span id="overpay-extra-amount" style="font-weight: 700; color: var(--pending);">€0.00</span>
+        </div>
+      </div>
+      
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">This will reduce the following balances:</p>
+      <ul id="redistribution-preview" style="list-style: none; padding: 0; margin: 0 0 16px 0; font-size: 13px;"></ul>
+      
+      <button class="form-btn" onclick="confirmOverpay()" style="background: var(--pending); margin-top: 8px;">Confirm Overpayment</button>
+      <button class="form-btn" style="background:transparent; border:1px solid #333; margin-top:8px;" onclick="cancelOverpay()">Cancel</button>
     </div>
   </div>
 
-  <!-- Hidden inputs for magic link -->
-  <input type="text" id="magic-link-input" style="position:absolute; left:-9999px;" readonly>
+  <!-- Receipt View Modal -->
+  <div id="receipt-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('receipt-modal')">
+    <div class="receipt-modal">
+      <div class="receipt-modal-header">
+        <span class="receipt-modal-title">Original Receipt</span>
+        <button class="receipt-modal-close" onclick="hideModal('receipt-modal')">&times;</button>
+      </div>
+      <div class="receipt-modal-body" id="receipt-modal-body">
+        <!-- Content loaded dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Price Group Modal -->
+  <div id="add-group-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('add-group-modal')">
+    <div class="modal" style="max-width: 400px;">
+      <h3 style="margin-bottom: 20px;">Add Price Group</h3>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px;">Group Name</label>
+        <input type="text" id="new-group-name" class="form-input" placeholder="e.g. VIP, Kids, Seniors" style="width: 100%;">
+      </div>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px;">Emoji (optional)</label>
+        <input type="text" id="new-group-emoji" class="form-input" placeholder="🎫" maxlength="2" style="width: 80px;">
+      </div>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px;">Price (€)</label>
+        <input type="number" id="new-group-price" class="form-input" placeholder="0.00" step="0.01" min="0" style="width: 100%;">
+      </div>
+      
+      <div id="add-group-error" style="color: #ff6b6b; font-size: 12px; margin-bottom: 12px; display: none;"></div>
+      
+      <button class="form-btn" onclick="submitNewGroup()" style="width: 100%;">Add Group</button>
+      <button class="form-btn" style="background:transparent; border:1px solid #333; margin-top:8px; width: 100%;" onclick="hideModal('add-group-modal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Error Modal (styled replacement for browser alert) -->
+  <div id="error-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('error-modal')">
+    <div class="modal" style="max-width: 380px; text-align: center; padding: 32px 24px;">
+      <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+      <p id="error-modal-message" style="margin: 0 0 24px 0; color: var(--text); font-size: 15px; line-height: 1.5;"></p>
+      <button class="form-btn" onclick="hideModal('error-modal')" style="width: 100%;">Close</button>
+    </div>
+  </div>
+
+  <!-- Hidden file input for receipt upload -->
+  <input type="file" id="receipt-upload-input" accept="image/*,.pdf" style="display:none;" onchange="handleReceiptUpload(event)">
 
   <script>
     // ===========================================
-    // STATE
+    // APP STATE
     // ===========================================
     let tabId = null;
     let tabData = null;
     let participants = [];
-    let expenses = [];
-    let payments = [];
-    let tiers = [];
     let priceGroups = [];
+    let participantsExpanded = false; // Collapsed by default
     let currentParticipant = null;
     let fairnessData = null;
+    let isCreator = false;
+    let ownerToken = null;
 
-    // Get tab ID from URL
+    // Init - detect route type
     const pathParts = window.location.pathname.split('/');
-    tabId = parseInt(pathParts[pathParts.length - 1]);
+    let magicToken = null;
+    
+    // Handle /tab/:token (magic link) vs /grouptabs/:id routes
+    if (pathParts[1] === 'tab' && pathParts[2]) {
+        magicToken = pathParts[2];
+    } else {
+    const lastPart = pathParts[pathParts.length - 1];
+    if (!isNaN(parseInt(lastPart))) {
+        tabId = parseInt(lastPart);
+        }
+    }
 
-    // ===========================================
-    // LOAD DATA
-    // ===========================================
+    async function init() {
+        if (!tabId && !magicToken) return;
+        await loadTabData();
+    }
+
     async function loadTabData() {
-      try {
-        const response = await fetch(`/api/grouptabs/${tabId}`);
-        if (!response.ok) {
-          if (response.status === 401) { window.location.href = '/'; return; }
-          throw new Error('Failed to load tab');
+        try {
+            // Use different API endpoint based on access type
+            let response;
+            if (magicToken) {
+                response = await fetch(`/api/tabs/token/${magicToken}`);
+            } else {
+                response = await fetch(`/api/grouptabs/${tabId}`);
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to load');
+            }
+            const data = await response.json();
+            
+            tabData = data.tab;
+            participants = data.participants || [];
+            priceGroups = data.priceGroups || [];
+            currentParticipant = data.currentParticipant;
+            isCreator = data.isCreator; // API returns this
+            ownerToken = data.ownerToken; // For receipt uploads
+            
+            // Store magic token if provided (for join API calls)
+            if (data.magicToken) {
+                window.currentMagicToken = data.magicToken;
+            }
+            
+            // Check if user needs to join first (via magic link, not yet a participant)
+            if (magicToken && data.hasJoined === false) {
+                showJoinScreen();
+                return;
+            }
+            
+            // Set tabId from tab data if we came via magic token
+            if (!tabId && tabData.id) {
+                tabId = tabData.id;
+            }
+            
+            // Compute last_payment_at for each participant from payments
+            const payments = data.payments || [];
+            participants.forEach(p => {
+                const participantPayments = payments.filter(pay => pay.from_participant_id === p.id);
+                if (participantPayments.length > 0) {
+                    // Find the most recent payment date
+                    const mostRecent = participantPayments.reduce((latest, pay) => {
+                        const payDate = new Date(pay.created_at);
+                        return payDate > latest ? payDate : latest;
+                    }, new Date(0));
+                    p.last_payment_at = mostRecent.toISOString();
+                }
+            });
+            
+            // Fallback: check if current user is the tab creator
+            if (!isCreator && currentParticipant && tabData.creator_user_id === currentParticipant.user_id) {
+                isCreator = true;
+            }
+
+            // Calculate fairness
+            if (window.GroupTabsEngine) {
+                fairnessData = window.GroupTabsEngine.calculateFairnessData(
+                    tabData, participants, data.expenses||[], payments, data.tiers||[], priceGroups
+                );
+            }
+
+            renderAll();
+        } catch (e) {
+            console.error(e);
+            document.getElementById('header-title').innerText = "Error loading tab";
         }
-        
-        const data = await response.json();
-        tabData = data.tab;
-        participants = data.participants || [];
-        expenses = data.expenses || [];
-        payments = data.payments || [];
-        tiers = data.tiers || [];
-        priceGroups = data.priceGroups || [];
-        currentParticipant = data.currentParticipant;
-        
-        // Calculate fairness using the engine
-        if (window.GroupTabsEngine) {
-          fairnessData = window.GroupTabsEngine.calculateFairnessData(
-            tabData, participants, expenses, payments, tiers, priceGroups
-          );
-        }
-        
-        // Set magic link
-        document.getElementById('magic-link-input').value = `${window.location.origin}/tab/${tabData.magic_token}`;
-        
-        renderAll();
-        
-      } catch (error) {
-        console.error('Error loading tab:', error);
-        document.getElementById('tab-title').textContent = 'Error loading tab';
-        document.getElementById('tab-subtitle').textContent = error.message;
-        alert('Failed to load tab details. Please try refreshing the page.');
-      }
     }
 
     // ===========================================
-    // RENDER ALL
+    // RENDERERS
     // ===========================================
     function renderAll() {
-      renderHeader();
-      renderDashboard();
-      renderFeed();
-      renderEditModal();
+        renderHeader();
+        renderHero();
+        renderGroups();
+        renderParticipants();
+        renderFooter();
     }
 
     function renderHeader() {
-      document.getElementById('tab-title').textContent = tabData.name;
-      const isOneBill = tabData.tab_type === 'one_bill';
-      const typeLabel = isOneBill ? 'One-Bill' : 'Trip';
-      document.getElementById('tab-subtitle').textContent = `${participants.length} people · ${typeLabel}`;
+        // Title & Meta
+        document.getElementById('header-title').innerText = tabData.name;
+        const date = new Date(tabData.created_at).toLocaleDateString();
+        const splitLabel = (tabData.split_mode === 'price_groups') ? 'GROUP SPLIT' : 'EQUAL SPLIT';
+        
+        const peopleCount = tabData.people_count || tabData.peopleCount || participants.length || 1;
+        document.getElementById('header-meta').innerHTML = `
+            <span>${date}</span> • <span>${peopleCount} Participants</span> • 
+            <span class="split-pill">${splitLabel}</span>
+        `;
+
+        // Bill Summary Stats
+        // Total Bill = the actual bill amount from the tab
+        const totalBill = tabData.total_amount_cents || 0;
+        
+        // Calculate what's been "settled" towards the bill
+        // Each participant contributes min(whatTheyPaid, theirFairShare) towards settling the bill
+        let totalSettled = 0;
+        if (fairnessData && fairnessData.participants && fairnessData.participants.length > 0) {
+            totalSettled = fairnessData.participants.reduce((sum, p) => {
+                // Each person has settled up to their fair share
+                const settled = Math.min(p.actualPaid || 0, p.fairShare || 0);
+                return sum + settled;
+            }, 0);
+        } else {
+            // Fallback: use database value or assume host's share is settled
+            const numPeople = tabData.people_count || 1;
+            const fairShareCents = Math.floor(totalBill / numPeople);
+            totalSettled = tabData.paid_up_cents || fairShareCents;
+        }
+        
+        // Remaining = bill minus what's settled
+        const totalRemaining = Math.max(0, totalBill - totalSettled);
+        const totalCollected = totalSettled;
+        const pct = totalBill > 0 ? Math.min(100, Math.round((totalCollected / totalBill) * 100)) : 100;
+        document.getElementById('total-bill-amount').innerText = formatCurrency2(totalBill);
+        document.getElementById('remaining-amount').innerText = formatCurrency2(totalRemaining);
+        document.getElementById('global-progress-fill').style.width = pct + '%';
+        document.getElementById('progress-percent-text').innerText = pct + '% Collected';
+
+        // Receipt
+        const rLink = document.getElementById('receipt-view-link');
+        if (tabData.receipt_file_path) {
+            // Extract filename from path and use the secure API endpoint
+            const receiptFilename = tabData.receipt_file_path.split('/').pop();
+            const receiptUrl = `/api/grouptabs/receipt/${receiptFilename}`;
+            rLink.innerHTML = `
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button onclick="showReceiptModal('${receiptUrl}', '${receiptFilename}')" class="receipt-btn-big" style="flex: 1;">
+                    <span style="font-size:18px">📄</span> View Original Receipt
+                    </button>
+                    ${isCreator ? `<button onclick="deleteReceipt()" class="receipt-delete-btn" title="Delete Receipt">×</button>` : ''}
+                </div>`;
+        } else {
+            rLink.innerHTML = isCreator 
+                ? `<div class="receipt-btn-big" onclick="triggerReceiptUpload()" id="receipt-upload-btn">
+                     <span id="receipt-upload-text">Upload Receipt</span>
+                   </div>`
+                : '';
+        }
     }
 
-    // ===========================================
-    // RENDER DASHBOARD
-    // ===========================================
-    function renderDashboard() {
-      // Fairness Score
-      const score = fairnessData ? fairnessData.globalScore : 0;
-      document.getElementById('fairness-score').textContent = score;
-      
-      // Animate the ring
-      const circumference = 2 * Math.PI * 52; // r=52
-      const offset = circumference - (score / 100) * circumference;
-      document.getElementById('fairness-ring-fill').style.strokeDashoffset = offset;
+    function renderHero() {
+        const box = document.getElementById('hero-box');
+        const priceEl = document.getElementById('hero-price');
+        const groupNameEl = document.getElementById('hero-group-name');
+        const titleEl = document.getElementById('hero-title');
+        const warningEl = document.getElementById('unfair-warning');
+        
+        if (!currentParticipant || !fairnessData) {
+            priceEl.innerText = "€ --";
+            return;
+        }
 
-      // Your Share
-      let myShare = 0;
-      let myPaid = 0;
-      let myStatus = 'You still owe';
-      
-      if (currentParticipant && fairnessData) {
         const myData = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
-        if (myData) {
-          myShare = myData.fairShare;
-          myPaid = myData.actualPaid;
-          
-          if (myData.status === 'settled') {
-            myStatus = 'All settled!';
-          } else if (myData.status === 'overpaid') {
-            myStatus = `You overpaid by ${formatCurrency2(myData.balance)}`;
-          } else {
-            myStatus = `You still owe ${formatCurrency2(Math.abs(myData.balance))}`;
-          }
-        }
-      }
-      
-      document.getElementById('your-share-amount').textContent = formatCurrency2(myShare);
-      document.getElementById('your-share-status').textContent = myStatus;
+        if (!myData) return;
 
-      // Price Group Selector (for price_groups mode)
-      let pgLink = document.getElementById('price-group-select-link');
-      if (tabData.split_mode === 'price_groups') {
-        const myGroup = priceGroups.find(g => g.id === currentParticipant?.price_group_id);
-        const label = myGroup ? `${myGroup.emoji || ''} ${myGroup.name}` : 'Select Group';
+        // Set the participant's name in the title
+        // Look up the full participant data from the participants list (which has full_name from user join)
+        const fullParticipant = participants.find(p => p.id === currentParticipant.id);
+        const participantName = fullParticipant?.full_name || fullParticipant?.guest_name || currentParticipant.display_name || currentParticipant.displayName || currentParticipant.guest_name || 'You';
+        const firstName = participantName.split(' ')[0]; // Get first name only
+        titleEl.innerText = `${firstName}'s Fair Share`;
+
+        priceEl.innerText = formatCurrency2(myData.fairShare);
         
-        if (!pgLink) {
-           const box = document.querySelector('.your-share-box');
-           const div = document.createElement('div');
-           div.id = 'price-group-select-link';
-           div.style.marginTop = '12px';
-           div.innerHTML = `<button onclick="showPriceGroupModal()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); padding:8px 16px; border-radius:8px; color:var(--text); cursor:pointer; font-size:13px; display:flex; align-items:center; gap:6px; margin:0 auto;">
-             <span id="pg-label">${escapeHtml(label)}</span> 
-             <span style="opacity:0.5">▾</span>
-           </button>`;
-           box.appendChild(div);
+        // Group Name
+        let groupName = "Equal Split";
+        if (tabData.split_mode === 'price_groups' && myData.priceGroupId) {
+            const g = priceGroups.find(grp => grp.id === myData.priceGroupId);
+            if (g) groupName = g.name;
+        }
+        groupNameEl.innerText = "Group: " + groupName;
+
+        // Paid Status
+        const isPaid = myData.balance >= 0; // 0 means settled, >0 means overpaid
+        if (isPaid) {
+            box.classList.add('paid-state');
         } else {
-           pgLink.querySelector('#pg-label').textContent = label;
-           pgLink.style.display = 'block';
+            box.classList.remove('paid-state');
         }
-      } else if (pgLink) {
-        pgLink.style.display = 'none';
-      }
 
-      // Receipt Section (if available)
-      const receiptSection = document.getElementById('receipt-section');
-      if (tabData.receipt_file_path) {
-        receiptSection.style.display = 'block';
-        document.getElementById('receipt-img').src = tabData.receipt_file_path;
-      } else {
-        receiptSection.style.display = 'none';
-      }
-
-      // Participants Row
-      const row = document.getElementById('participants-row');
-      row.innerHTML = '';
-      
-      participants.forEach(p => {
-        const pData = fairnessData ? fairnessData.participants.find(x => x.participantId === p.id) : null;
-        let statusClass = 'owes';
-        if (pData) {
-          if (pData.status === 'settled') statusClass = 'paid';
-          else if (pData.status === 'overpaid') statusClass = 'paid';
-          else if (pData.percentOfFair >= 50) statusClass = 'partial';
+        // Unfair Warning (Host Overpaid)
+        // Find if host overpaid
+        const creatorP = participants.find(p => p.user_id === tabData.created_by);
+        if (creatorP) {
+            const hostData = fairnessData.participants.find(p => p.participantId === creatorP.id);
+            if (hostData && hostData.status === 'overpaid' && !isPaid) {
+                // Only show if *I* haven't paid and host is covering me
+                warningEl.innerHTML = `Paul (Host) paid <strong>${formatCurrency2(hostData.balance)} too much!</strong> Please pay asap.`;
+                warningEl.classList.remove('hide');
+            } else {
+                warningEl.classList.add('hide');
+            }
         }
-        
-        const name = p.full_name || p.guest_name || 'Guest';
-        const initials = getInitials(name);
-        
-        const chip = document.createElement('div');
-        chip.className = 'participant-chip';
-        chip.innerHTML = `
-          <div class="participant-avatar">
-            ${initials}
-            <div class="participant-status-dot ${statusClass}"></div>
-          </div>
-          <div class="participant-name">${escapeHtml(name.split(' ')[0])}</div>
-        `;
-        row.appendChild(chip);
-      });
-
-      // Primary Action Button
-      const btn = document.getElementById('primary-action-btn');
-      if (tabData.tab_type === 'one_bill') {
-        btn.innerHTML = '💳 Record Payment';
-        btn.onclick = () => showModal('payment-modal');
-      } else {
-        btn.innerHTML = '➕ Add Expense';
-        btn.onclick = showExpenseModal;
-      }
     }
 
-    // ===========================================
-    // RENDER FEED
-    // ===========================================
-    function renderFeed() {
-      const container = document.getElementById('feed-scroll');
-      container.innerHTML = '';
-
-      // Build events list
-      const events = [];
-      
-      // Tab creation
-      events.push({
-        type: 'system',
-        date: new Date(tabData.created_at),
-        text: `Tab created on ${new Date(tabData.created_at).toLocaleDateString()}.`
-      });
-
-      // Participant joins
-      participants.forEach(p => {
-        if (p.user_id !== tabData.created_by && p.created_at) {
-          const name = p.full_name || p.guest_name || 'Someone';
-          events.push({
-            type: 'join',
-            date: new Date(p.created_at),
-            text: `${name} joined the tab.`
-          });
+    function renderGroups() {
+        const container = document.getElementById('group-cards');
+        if (tabData.split_mode !== 'price_groups') {
+            container.classList.add('hide');
+            return;
         }
-      });
+        container.classList.remove('hide');
+        container.innerHTML = '';
 
-      // Expenses
-      expenses.forEach(e => {
-        const name = e.payer_name || 'Someone';
-        const amount = formatCurrency2(e.amount_cents);
-        events.push({
-          type: 'system',
-          date: new Date(e.created_at),
-          text: `<strong>${escapeHtml(name)}</strong> added expense: ${escapeHtml(e.description)} (${amount}).`
+        // Subtext mapping for known group names
+        const groupSubtexts = {
+            'Alcohol Drinkers': 'Wine, cocktails, and heavy hitters.',
+            'Non-Alcohol': 'Soft drinks, water, and designated drivers.',
+            'Meat Eaters': 'Steak, burgers, and carnivore delights.',
+            'Vegetarians': 'Plant-based dishes and veggie options.',
+            'Heavy Eaters': 'Big appetites and second helpings.',
+            'Light Eaters': 'Smaller portions and lighter fare.',
+            'Adults': 'Full-price adult portions.',
+            'Kids': 'Kids menu and smaller plates.',
+            'Full Dinner': 'Food and drinks, the full experience.',
+            'Drinks Only': 'Just here for the beverages.'
+        };
+
+        priceGroups.forEach(g => {
+            const isActive = currentParticipant && (currentParticipant.price_group_id === g.id || currentParticipant.priceGroupId === g.id);
+            const activeClass = isActive ? 'active' : '';
+            const subtext = groupSubtexts[g.name] || 'Target per person';
+            const html = `
+                <div class="group-card ${activeClass}" onclick="selectMyGroup(${g.id}, ${g.amount_cents})" data-group-id="${g.id}">
+                    <div class="gc-header">
+                        <div class="gc-icon">${g.emoji || '🏷️'}</div>
+                        <div class="gc-name">${g.name}</div>
+                    </div>
+                    <div class="gc-sub">${subtext}</div>
+                    <div class="gc-price">${formatCurrency2(g.amount_cents)}</div>
+                </div>
+            `;
+            container.innerHTML += html;
         });
-      });
-
-      // Payments
-      payments.forEach(p => {
-        const name = p.from_name || p.from_guest_name || 'Someone';
-        const amount = formatCurrency2(p.amount_cents);
-        const method = p.method ? ` via ${p.method}` : '';
-        events.push({
-          type: 'payment',
-          date: new Date(p.created_at),
-          text: `<strong>${escapeHtml(name)}</strong> paid <strong>${amount}</strong>${method}.`
-        });
-      });
-
-      // Sort by date
-      events.sort((a, b) => a.date - b.date);
-
-      // Render
-      events.forEach(e => {
-        const div = document.createElement('div');
         
-        if (e.type === 'join') {
-          div.className = 'feed-event feed-event-join';
-        } else if (e.type === 'payment') {
-          div.className = 'feed-event feed-event-payment';
+        if (isCreator) {
+            container.innerHTML += `
+                <div class="group-card add-new" onclick="showAddGroupModal()" style="cursor:pointer;">
+                    <div style="font-size:24px; margin-bottom:4px;">+</div>
+                    <div style="font-size:12px; font-weight:700;">Add Group</div>
+                </div>`;
+        }
+    }
+
+    function sortParticipants() {
+        renderParticipants();
+    }
+
+    function renderParticipants() {
+        const container = document.getElementById('participants-list');
+        container.innerHTML = '';
+        
+        // Use people_count from tab data for expected total, fallback to participants.length
+        const expectedPeopleCount = tabData.people_count || tabData.peopleCount || participants.length || 1;
+        
+        // Get computed data for participants
+        let list = participants.map(p => {
+            const data = fairnessData ? fairnessData.participants.find(d => d.participantId === p.id) : {};
+            return { ...p, ...data };
+        });
+        
+        // Calculate counts for collapsed/expanded summary
+        let fullyPaidCount = 0;
+        let partialCount = 0;
+        let unpaidCount = 0;
+        
+        list.forEach(p => {
+            const paidAmt = p.actualPaid || 0;
+            const fairShare = p.fairShare || 0;
+            const balance = p.balance || 0;
+            
+            if (balance >= 0 && paidAmt > 0) {
+                // Fully paid or overpaid
+                fullyPaidCount++;
+            } else if (paidAmt > 0 && balance < 0) {
+                // Partial payment
+                partialCount++;
+            } else {
+                // Unpaid (paidAmt === 0)
+                unpaidCount++;
+            }
+        });
+        
+        // Add waiting guests to unpaid count
+        const waitingCount = expectedPeopleCount - participants.length;
+        unpaidCount += waitingCount;
+        
+        // Build summary stats with colored dots for collapsed header
+        let collapsedStatsHtml = '';
+        if (fullyPaidCount > 0) {
+            collapsedStatsHtml += `<span class="stat-item"><span class="stat-dot green"></span>${fullyPaidCount} Fully Paid</span>`;
+        }
+        if (partialCount > 0) {
+            collapsedStatsHtml += `<span class="stat-item"><span class="stat-dot amber"></span>${partialCount} Partial</span>`;
+        }
+        if (unpaidCount > 0) {
+            collapsedStatsHtml += `<span class="stat-item"><span class="stat-dot red"></span>${unpaidCount} Unpaid</span>`;
+        }
+        
+        // Build plain text for expanded header
+        const statsParts = [];
+        if (fullyPaidCount > 0) statsParts.push(`${fullyPaidCount} Fully Paid`);
+        if (partialCount > 0) statsParts.push(`${partialCount} Partial`);
+        if (unpaidCount > 0) statsParts.push(`${unpaidCount} Unpaid`);
+        const statsText = statsParts.join(' • ');
+        
+        // Update collapsed header
+        document.getElementById('participants-collapsed-title').innerText = `Participants (${expectedPeopleCount})`;
+        document.getElementById('participants-collapsed-stats').innerHTML = collapsedStatsHtml;
+        
+        // Apply sorting based on dropdown selection
+        const sortMode = document.getElementById('participant-sort')?.value || 'highest';
+        
+        switch (sortMode) {
+            case 'highest':
+                // Highest paying first (actualPaid descending)
+                list.sort((a, b) => (b.actualPaid || 0) - (a.actualPaid || 0));
+                break;
+            case 'name':
+                // Alphabetical by name
+                list.sort((a, b) => {
+                    const nameA = (a.full_name || a.guest_name || '').toLowerCase();
+                    const nameB = (b.full_name || b.guest_name || '').toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+                break;
+            case 'recent':
+                // Most recent payment first (by last payment date)
+                list.sort((a, b) => {
+                    const dateA = a.last_payment_at ? new Date(a.last_payment_at) : new Date(0);
+                    const dateB = b.last_payment_at ? new Date(b.last_payment_at) : new Date(0);
+                    return dateB - dateA;
+                });
+                break;
+        }
+        
+        list.forEach(p => {
+            // Logic for stamps and bars
+            let stampClass = 'pending';
+            let stampText = 'PENDING';
+            let barClass = 'pending';
+            let pctText = '0%';
+            let paidAmt = p.actualPaid || 0;
+            let fairShare = p.fairShare || 0;
+            let balance = p.balance || 0;
+            
+            if (balance > 0) { // Overpaid
+                stampClass = 'overpaid';
+                stampText = 'OVERPAID';
+                barClass = 'overpaid';
+                let pct = fairShare > 0 ? Math.round((paidAmt / fairShare) * 100) : 100;
+                pctText = pct + '%';
+            } else if (balance === 0 && paidAmt > 0) { // Exact
+                stampClass = 'paid';
+                stampText = 'FULLY PAID';
+                barClass = 'paid';
+                pctText = '100%';
+            } else if (paidAmt > 0) { // Partial
+                stampClass = 'pending';
+                stampText = 'PARTIAL';
+                barClass = 'pending'; // or a partial color? keep orange
+                let pct = fairShare > 0 ? Math.round((paidAmt / fairShare) * 100) : 0;
+                pctText = pct + '%';
+            }
+
+            const isHost = p.user_id === tabData.creator_user_id;
+            const isMe = currentParticipant && p.id === currentParticipant.id;
+            
+            let fairShareLabel = 'Equal split';
+            const priceGroupId = p.price_group_id || p.priceGroupId;
+            if (tabData.split_mode === 'price_groups' && priceGroupId) {
+                const g = priceGroups.find(x => x.id === priceGroupId);
+                if(g) fairShareLabel = g.name;
+            }
+
+            let overpaidHtml = '';
+            if (stampClass === 'overpaid') {
+                overpaidHtml = `<div class="overpaid-val">+${formatCurrency2(balance)}</div>`;
+            }
+
+            // Determine row color based on payment status (matches progress bar)
+            // - Red (danger) if overpaid (paid more than fair share)
+            // - Orange (pending) if partial/underpaid (including 0%)
+            // - Green (accent) if fully paid (exactly equal)
+            let rowColor = '#d29922'; // default orange for pending
+            if (paidAmt > fairShare && fairShare > 0) {
+                rowColor = '#f85149'; // red - overpaid
+            } else if (paidAmt >= fairShare && fairShare > 0) {
+                rowColor = '#3ddc97'; // green - fully paid
+            }
+
+            // Check for profile picture (from user_id)
+            const hasProfilePic = p.user_id && (p.profile_picture || p.profilePicture);
+            const profilePicUrl = hasProfilePic ? `/api/profile/picture/${p.user_id}` : null;
+            
+            // Time ago - for host, show dinner date; for guests, show their payment time
+            let timeAgoStr = '';
+            if (isHost) {
+                // For host, show the dinner date instead of "just now"
+                timeAgoStr = tabData.created_at ? timeAgo(tabData.created_at) : '';
+            } else {
+                timeAgoStr = (p.last_payment_at || p.lastPaymentAt) ? timeAgo(p.last_payment_at || p.lastPaymentAt) : '';
+            }
+
+            const html = `
+                <div class="p-row" style="--row-color:${rowColor};">
+                    ${profilePicUrl ? `
+                        <div class="p-avatar" style="border: none !important; padding: 0; overflow: hidden;">
+                            <img src="${profilePicUrl}" alt="" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        </div>
+                    ` : `
+                        <div class="p-avatar" style="border-color:${rowColor} !important; color:${rowColor} !important;">
+                        ${getInitials(p.full_name || p.guest_name)}
+                    </div>
+                    `}
+                    
+                    <div class="p-info">
+                        <div class="p-name-row">
+                            <span class="p-name" style="color:${rowColor} !important;">${p.full_name || p.guest_name} ${isMe ? '(You)' : ''}</span>
+                            ${isHost ? '<span class="host-badge">HOST</span>' : ''}
+                        </div>
+                        <div class="p-amt-line" style="color:${rowColor} !important;">
+                            <span>${fairShareLabel} group: ${formatCurrency2(fairShare)} • ${isHost ? 'Paid full bill' : 'Paid'}: ${formatCurrency2(paidAmt)}${timeAgoStr ? ` • <span style="opacity:0.8; font-weight:500;">${timeAgoStr}</span>` : ''}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-stats-row" style="grid-column:2; margin-top:4px;">
+                        <div class="prog-wrapper">
+                            <div class="user-prog-track">
+                                <div class="user-prog-fill ${barClass}" style="width:${Math.min(100, (paidAmt/fairShare)*100)}%"></div>
+                            </div>
+                            <span class="prog-pct ${barClass}">${pctText}</span>
+                        </div>
+                    </div>
+
+                    <div class="p-status-col">
+                        <div class="stamp ${stampClass}">${stampText}</div>
+                        ${overpaidHtml}
+                    </div>
+                </div>
+            `;
+            container.innerHTML += html;
+        });
+        
+        // Add "Waiting for guest" cards for unjoined participant slots
+        const joinedCount = participants.length;
+        const waitingGuestCount = expectedPeopleCount - joinedCount;
+        const shareUrl = `${window.location.origin}/tab/${tabData.magic_token}`;
+        
+        for (let i = 0; i < waitingGuestCount; i++) {
+            const waitingHtml = `
+                <div class="p-row waiting-guest">
+                    <div class="p-avatar waiting">
+                        ?
+                    </div>
+                    
+                    <div class="p-info" style="justify-content: center; margin-top: 2px;">
+                        <div class="p-name-row">
+                            <span class="p-name waiting-text">Waiting for guest to respond...</span>
+                        </div>
+                        <div class="p-amt-line">
+                            <span class="p-amt-sub">Please remind the other people to pay their share.</span>
+                        </div>
+                    </div>
+
+                    <div class="p-status-col">
+                        <button class="share-link-btn" onclick="copyShareLink('${shareUrl}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                            </svg> 
+                            SHARE LINK
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += waitingHtml;
+        }
+        
+        // Fairness Badge
+        const badge = document.getElementById('fairness-badge');
+        const badgeText = document.getElementById('fairness-text');
+        const badgeIcon = document.getElementById('fairness-icon');
+        const unbalancedExplanation = document.getElementById('unbalanced-explanation');
+        
+        if (fairnessData.globalScore >= 100) {
+            badge.classList.add('balanced');
+            badgeText.innerText = "100% BALANCED";
+            badge.style.display = 'flex';
+            unbalancedExplanation.innerText = '';
+            // Green filter for balanced state
+            if (badgeIcon) badgeIcon.style.filter = 'brightness(0) saturate(100%) invert(76%) sepia(52%) saturate(497%) hue-rotate(101deg) brightness(92%) contrast(87%)';
         } else {
-          div.className = 'feed-event feed-event-system';
+            badge.classList.remove('balanced');
+            badgeText.innerText = "UNBALANCED";
+            // Red filter for unbalanced state
+            if (badgeIcon) badgeIcon.style.filter = 'brightness(0) saturate(100%) invert(37%) sepia(93%) saturate(1352%) hue-rotate(336deg) brightness(101%) contrast(97%)';
+            
+            // Generate dynamic unbalanced explanation text
+            const explanationText = generateUnbalancedExplanation(participants, fairnessData);
+            unbalancedExplanation.innerText = explanationText;
+            
+            // Hide badge and explanation if nobody has paid anything
+            const anyoneHasPaid = participants.some(p => (p.total_paid_cents || p.totalPaidCents || 0) > 0);
+            if (!anyoneHasPaid) {
+                badge.style.display = 'none';
+                unbalancedExplanation.innerText = '';
+            } else {
+                badge.style.display = 'flex';
+            }
         }
-        
-        div.innerHTML = e.text;
-        container.appendChild(div);
-      });
-
-      // If empty
-      if (events.length === 0) {
-        container.innerHTML = '<div class="feed-event feed-event-system">No activity yet.</div>';
-      }
-    }
-
-    // ===========================================
-    // RENDER EDIT MODAL
-    // ===========================================
-    function renderEditModal() {
-      document.getElementById('edit-name').value = tabData.name;
-      
-      // Date (extract from created_at if no explicit date)
-      const dateVal = tabData.event_date || tabData.created_at.split('T')[0];
-      document.getElementById('edit-date').value = dateVal;
-
-      // Participants list
-      const list = document.getElementById('edit-participants-list');
-      list.innerHTML = '';
-      
-      participants.forEach(p => {
-        const name = p.full_name || p.guest_name || 'Guest';
-        const initials = getInitials(name);
-        const isCreator = p.user_id === tabData.created_by;
-        
-        const row = document.createElement('div');
-        row.className = 'participant-row';
-        row.innerHTML = `
-          <div class="participant-row-avatar">${initials}</div>
-          <div class="participant-row-info">
-            <div class="participant-row-name">${escapeHtml(name)}</div>
-            <div class="participant-row-role">${isCreator ? '(Organizer)' : ''}</div>
-          </div>
-          ${!isCreator ? `<button class="participant-row-remove" onclick="removeParticipant(${p.id})">×</button>` : ''}
-        `;
-        list.appendChild(row);
-      });
-    }
-
-    // ===========================================
-    // MODAL HELPERS
-    // ===========================================
-    function showModal(id) {
-      document.getElementById(id).classList.add('visible');
     }
     
+    // Generate dynamic unbalanced explanation text
+    function generateUnbalancedExplanation(participants, fairnessData) {
+        // Find all participants who have overpaid (paid more than their fair share)
+        const overpayers = participants.filter(p => {
+            const paid = p.total_paid_cents || p.totalPaidCents || 0;
+            const fairShare = p.fair_share_cents || p.fairShareCents || 0;
+            return paid > fairShare && paid > 0;
+        });
+        
+        if (overpayers.length === 0) {
+            return '';
+        }
+        
+        // Check if anyone has paid anything at all
+        const anyoneHasPaid = participants.some(p => (p.total_paid_cents || p.totalPaidCents || 0) > 0);
+        if (!anyoneHasPaid) {
+            return '';
+        }
+        
+        // Get host's name (the organizer)
+        const host = participants.find(p => p.role === 'organizer');
+        const hostName = host ? (host.full_name || host.guest_name || host.display_name || 'Host')?.split(' ')[0] : 'Host';
+        
+        // Check if host is among overpayers
+        const hostOverpaid = overpayers.some(p => p.role === 'organizer');
+        
+        // Get non-host overpayers
+        const guestOverpayers = overpayers.filter(p => p.role !== 'organizer');
+        
+        // Generate text based on count and who overpaid
+        if (overpayers.length === 1) {
+            if (hostOverpaid) {
+                return `${hostName} covered most of the bill — please settle your share.`;
+            } else {
+                const guestName = (guestOverpayers[0].full_name || guestOverpayers[0].guest_name || guestOverpayers[0].display_name || 'A guest')?.split(' ')[0];
+                return `${guestName} covered most of the bill — please settle your share.`;
+            }
+        } else if (overpayers.length === 2) {
+            if (hostOverpaid && guestOverpayers.length === 1) {
+                const guestName = (guestOverpayers[0].full_name || guestOverpayers[0].guest_name || guestOverpayers[0].display_name || 'a guest')?.split(' ')[0];
+                return `${hostName} and ${guestName} covered extra — remaining guests, please settle your share.`;
+            } else if (!hostOverpaid && guestOverpayers.length === 2) {
+                const name1 = (guestOverpayers[0].full_name || guestOverpayers[0].guest_name || guestOverpayers[0].display_name || 'Guest 1')?.split(' ')[0];
+                const name2 = (guestOverpayers[1].full_name || guestOverpayers[1].guest_name || guestOverpayers[1].display_name || 'Guest 2')?.split(' ')[0];
+                return `${name1} and ${name2} covered extra — please settle your share.`;
+            }
+        }
+        
+        // More than 2 overpayers
+        if (hostOverpaid) {
+            return `Several guests, including ${hostName}, paid more — please settle your share.`;
+        } else {
+            return `Several guests have paid more — please settle your share.`;
+        }
+    }
+
+    function renderFooter() {
+        const footer = document.getElementById('host-footer');
+        if (isCreator) {
+            footer.classList.remove('hide');
+        } else {
+            footer.classList.add('hide');
+        }
+    }
+
+    // ===========================================
+    // UTILS & MODALS
+    // ===========================================
+    function showModal(id) {
+        document.getElementById(id).classList.add('visible');
+    }
     function hideModal(id) {
-      document.getElementById(id).classList.remove('visible');
+        document.getElementById(id).classList.remove('visible');
     }
-
-    function showEditModal() {
-      renderEditModal();
-      showModal('edit-modal');
+    function showErrorModal(message) {
+        document.getElementById('error-modal-message').innerText = message;
+        showModal('error-modal');
     }
-
-    function showPriceGroupModal() {
-      const list = document.getElementById('price-group-list');
-      list.innerHTML = priceGroups.map(g => {
-        const isSelected = currentParticipant?.price_group_id === g.id;
-        const price = formatCurrency2(g.amount_cents);
-        return `
-          <div onclick="selectPriceGroup(${g.id})" style="
-            padding: 16px; 
-            border-radius: 12px; 
-            background: ${isSelected ? 'rgba(61, 220, 151, 0.1)' : 'rgba(255,255,255,0.05)'}; 
-            border: 1px solid ${isSelected ? 'var(--accent)' : 'transparent'};
-            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-            transition: all 0.2s;
-          " onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='${isSelected ? 'rgba(61, 220, 151, 0.1)' : 'rgba(255,255,255,0.05)'}'">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <span style="font-size:24px;">${g.emoji || '🏷️'}</span>
-              <span style="font-weight:600; font-size:16px;">${escapeHtml(g.name)}</span>
-            </div>
-            <span style="font-weight:700; color:var(--accent); font-size:18px;">${price}</span>
-          </div>
-        `;
-      }).join('');
-      showModal('price-group-modal');
-    }
-
-    async function selectPriceGroup(groupId) {
-      try {
-        const response = await fetch(`/api/grouptabs/${tabId}/participants/${currentParticipant.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ priceGroupId: groupId })
-        });
-        
-        if (response.ok) {
-          hideModal('price-group-modal');
-          // Optimistic update
-          currentParticipant.price_group_id = groupId;
-          loadTabData(); 
-        } else {
-          const data = await response.json();
-          alert(data.error || 'Failed to update group.');
-        }
-      } catch (e) {
-        console.error(e);
-        alert('Error updating group.');
-      }
-    }
-
-    function showExpenseModal() {
-      // TODO: Implement expense modal
-      alert('Add Expense modal coming soon!');
-    }
-
-    function showAddPersonModal() {
-      // TODO: Implement add person modal
-      alert('Add Person modal coming soon!');
-    }
-
-    function handlePrimaryAction() {
-      if (tabData.tab_type === 'one_bill') {
+    // ===========================================
+    // PAYMENT MODAL LOGIC
+    // ===========================================
+    let pendingOverpayData = null; // Store overpay data for confirmation
+    let paymentRowCounter = 0; // Unique row IDs
+    
+    function showPaymentModal() {
+        // Reset payment modal
+        const container = document.getElementById('payment-rows-container');
+        container.innerHTML = '';
+        paymentRowCounter = 0;
+        addPaymentRow(true); // Add initial row with pre-fill
+        updatePaymentTotal();
+        document.getElementById('payment-error').style.display = 'none';
+        document.getElementById('payment-method').value = 'transfer';
+        document.getElementById('payment-proof').value = '';
         showModal('payment-modal');
-      } else {
-        showExpenseModal();
-      }
     }
-
-    // ===========================================
-    // ACTIONS
-    // ===========================================
-    async function saveTabDetails() {
-      const name = document.getElementById('edit-name').value.trim();
-      const date = document.getElementById('edit-date').value;
-      
-      if (!name) {
-        alert('Please enter a name for the tab.');
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/grouptabs/${tabId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, eventDate: date })
+    
+    function showPaymentModalForOther() {
+        // Open payment modal with empty row (not prefilled with current user)
+        const container = document.getElementById('payment-rows-container');
+        container.innerHTML = '';
+        paymentRowCounter = 0;
+        addPaymentRow(false); // Add empty row - user types someone else's name
+        updatePaymentTotal();
+        document.getElementById('payment-error').style.display = 'none';
+        document.getElementById('payment-method').value = 'transfer';
+        document.getElementById('payment-proof').value = '';
+        showModal('payment-modal');
+    }
+    
+    function addPaymentRow(isFirstRow = false) {
+        const container = document.getElementById('payment-rows-container');
+        const rowIndex = paymentRowCounter++;
+        
+        // Calculate fair share for equal split
+        const numPeople = tabData.people_count || 1;
+        const totalBill = tabData.total_amount_cents || 0;
+        const fairShareCents = Math.floor(totalBill / numPeople);
+        
+        // Pre-fill name for first row if currentParticipant exists
+        let prefillName = '';
+        let prefillPriceGroupId = null;
+        if (isFirstRow && currentParticipant) {
+            prefillName = currentParticipant.display_name || currentParticipant.guest_name || '';
+            prefillPriceGroupId = currentParticipant.price_group_id;
+        }
+        
+        // Build price group cards if applicable
+        let priceGroupHtml = '';
+        if (tabData.split_mode === 'price_groups' && priceGroups && priceGroups.length > 0) {
+            priceGroupHtml = `
+                <div class="price-group-cards" style="display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0;">
+                    ${priceGroups.map(pg => `
+                        <button type="button" class="price-group-card ${prefillPriceGroupId === pg.id ? 'selected' : ''}" 
+                            data-group-id="${pg.id}" data-amount="${pg.amount_cents}"
+                            onclick="selectPriceGroup(${rowIndex}, ${pg.id}, ${pg.amount_cents})"
+                            style="
+                                padding: 10px 14px;
+                                border-radius: 10px;
+                                border: 1px solid ${prefillPriceGroupId === pg.id ? 'var(--accent)' : 'rgba(255,255,255,0.15)'};
+                                background: ${prefillPriceGroupId === pg.id ? 'rgba(61,220,151,0.15)' : 'rgba(0,0,0,0.3)'};
+                                color: ${prefillPriceGroupId === pg.id ? 'var(--accent)' : '#fff'};
+                                cursor: pointer;
+                                font-size: 13px;
+                                font-weight: 500;
+                                transition: all 0.2s;
+                            ">
+                            ${pg.emoji || ''} ${pg.name} <span style="opacity:0.7">${formatCurrency2(pg.amount_cents)}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        // Fair share copy link for equal split
+        let fairShareHtml = '';
+        if (tabData.split_mode === 'equal' || !tabData.split_mode) {
+            fairShareHtml = `
+                <button type="button" onclick="copyFairShare(${rowIndex}, ${fairShareCents})" 
+                   style="
+                       background: rgba(61,220,151,0.1);
+                       border: 1px solid var(--accent);
+                       color: var(--accent);
+                       padding: 8px 12px;
+                       border-radius: 8px;
+                       font-size: 12px;
+                       font-weight: 600;
+                       cursor: pointer;
+                       white-space: nowrap;
+                   ">
+                    ${formatCurrency2(fairShareCents)}
+                </button>
+            `;
+        }
+        
+        const rowHtml = `
+            <div class="payment-row" data-row-index="${rowIndex}" data-price-group-id="${prefillPriceGroupId || ''}" style="
+                background: rgba(0,0,0,0.25);
+                border: 1px solid rgba(255,255,255,0.06);
+                border-radius: 14px;
+                padding: 16px;
+                margin-bottom: 12px;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label style="color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Name</label>
+                    ${rowIndex > 0 ? `<button onclick="removePaymentRow(${rowIndex})" style="background: transparent; border: none; color: rgba(255,255,255,0.3); cursor: pointer; padding: 4px 8px; font-size: 16px; transition: color 0.2s;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">×</button>` : ''}
+                </div>
+                <input type="text" class="payment-name-input" placeholder="Enter name" value="${prefillName}" 
+                       style="
+                           width: 100%;
+                           background: rgba(0,0,0,0.3);
+                           border: 1px solid rgba(255,255,255,0.1);
+                           border-radius: 10px;
+                           padding: 12px 14px;
+                           color: #fff;
+                           font-size: 14px;
+                           margin-bottom: 4px;
+                       ">
+                ${priceGroupHtml}
+                <div style="margin-top: 12px;">
+                    <label style="display: block; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Amount</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0 14px;">
+                            <span style="color: rgba(255,255,255,0.5); font-size: 14px;">€</span>
+                            <input type="number" class="payment-amount-input" placeholder="0.00" step="0.01" 
+                                   style="
+                                       flex: 1;
+                                       background: transparent;
+                                       border: none;
+                                       padding: 12px 8px;
+                                       color: #fff;
+                                       font-size: 16px;
+                                       font-weight: 600;
+                                   " oninput="updatePaymentTotal()"
+                                   value="${prefillPriceGroupId && priceGroups ? (priceGroups.find(pg => pg.id === prefillPriceGroupId)?.amount_cents / 100 || '') : ''}">
+                        </div>
+                        ${fairShareHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', rowHtml);
+    }
+    
+    function selectPriceGroup(rowIndex, groupId, amountCents) {
+        const container = document.getElementById('payment-rows-container');
+        const row = container.querySelector(`[data-row-index="${rowIndex}"]`);
+        if (!row) return;
+        
+        // Update selected state on cards
+        const cards = row.querySelectorAll('.price-group-card');
+        cards.forEach(card => {
+            const isSelected = parseInt(card.dataset.groupId) === groupId;
+            card.classList.toggle('selected', isSelected);
+            card.style.borderColor = isSelected ? 'var(--accent)' : 'var(--border)';
+            card.style.background = isSelected ? 'rgba(61,220,151,0.1)' : 'rgba(0,0,0,0.3)';
+            card.style.color = isSelected ? 'var(--accent)' : '#fff';
         });
         
-        if (response.ok) {
-          hideModal('edit-modal');
-          loadTabData(); // Reload
+        // Store selected group ID
+        row.dataset.priceGroupId = groupId;
+        
+        // Set amount
+        const amountInput = row.querySelector('.payment-amount-input');
+        amountInput.value = (amountCents / 100).toFixed(2);
+        updatePaymentTotal();
+    }
+    
+    function copyFairShare(rowIndex, amountCents) {
+        const container = document.getElementById('payment-rows-container');
+        const row = container.querySelector(`[data-row-index="${rowIndex}"]`);
+        if (!row) return;
+        
+        const amountInput = row.querySelector('.payment-amount-input');
+        amountInput.value = (amountCents / 100).toFixed(2);
+        updatePaymentTotal();
+    }
+    
+    function removePaymentRow(index) {
+        const container = document.getElementById('payment-rows-container');
+        const row = container.querySelector(`[data-row-index="${index}"]`);
+        if (row) {
+            row.remove();
+            updatePaymentTotal();
+        }
+    }
+    
+    function updatePaymentTotal() {
+        const container = document.getElementById('payment-rows-container');
+        const inputs = container.querySelectorAll('.payment-amount-input');
+        
+        let total = 0;
+        inputs.forEach(input => {
+            const val = parseFloat(input.value) || 0;
+            total += val;
+        });
+        
+        document.getElementById('payment-total').innerText = formatCurrency2(Math.round(total * 100));
+        
+        // Validate against total outstanding (from tab data, not just existing participants)
+        // This accounts for guests who haven't joined yet
+        const totalBill = tabData.total_amount_cents || 0;
+        const alreadyCollected = tabData.paid_up_cents || 0;
+        const totalOutstanding = Math.max(0, totalBill - alreadyCollected);
+        const errorDiv = document.getElementById('payment-error');
+        
+        if (Math.round(total * 100) > totalOutstanding) {
+            errorDiv.innerText = `Amount exceeds total outstanding (${formatCurrency2(totalOutstanding)})`;
+            errorDiv.style.display = 'block';
         } else {
-          const data = await response.json();
-          alert(data.error || 'Failed to save changes.');
+            errorDiv.style.display = 'none';
         }
-      } catch (err) {
-        alert('Error saving changes.');
-      }
     }
-
-    async function closeTab() {
-      if (!confirm('Are you sure you want to close this tab? This action cannot be undone.')) return;
-      
-      try {
-        const response = await fetch(`/api/grouptabs/${tabId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'closed' })
+    
+    // Find participant by name (case-insensitive)
+    function findParticipantByName(name) {
+        const normalizedName = name.trim().toLowerCase();
+        return participants.find(p => {
+            const pName = (p.display_name || p.guest_name || '').toLowerCase();
+            return pName === normalizedName;
+        });
+    }
+    
+    // Create new guest participant
+    async function createGuestParticipant(name, priceGroupId = null) {
+        const token = ownerToken || tabData.magic_token;
+        
+        // Use the correct endpoint: /api/grouptabs/:id/add-guest with token in body
+        const response = await fetch(`/api/grouptabs/${tabId}/add-guest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                guestName: name,
+                priceGroupId,
+                token
+            })
         });
         
-        if (response.ok) {
-          window.location.href = '/grouptabs';
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Failed to create guest');
         }
-      } catch (err) {
-        alert('Error closing tab.');
-      }
-    }
-
-    async function removeParticipant(participantId) {
-      if (!confirm('Remove this person from the tab?')) return;
-      
-      try {
-        const response = await fetch(`/api/grouptabs/${tabId}/participants/${participantId}`, {
-          method: 'DELETE'
-        });
         
-        if (response.ok) {
-          loadTabData();
-          renderEditModal();
+        const data = await response.json();
+        return data.participant;
+    }
+    
+    async function submitPaymentNew() {
+        const container = document.getElementById('payment-rows-container');
+        const rows = container.querySelectorAll('.payment-row');
+        const errorDiv = document.getElementById('payment-error');
+        
+        // Collect row data
+        const rowsData = [];
+        for (const row of rows) {
+            const nameInput = row.querySelector('.payment-name-input');
+            const amountInput = row.querySelector('.payment-amount-input');
+            const name = nameInput.value.trim();
+            const amount = parseFloat(amountInput.value) || 0;
+            const priceGroupId = row.dataset.priceGroupId ? parseInt(row.dataset.priceGroupId) : null;
+            
+            if (name && amount > 0) {
+                rowsData.push({ name, amountCents: Math.round(amount * 100), priceGroupId });
+            }
         }
-      } catch (err) {
-        alert('Error removing participant.');
-      }
+        
+        if (rowsData.length === 0) {
+            errorDiv.innerText = 'Please enter at least one name and amount';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        const method = document.getElementById('payment-method').value;
+        const token = ownerToken || tabData.magic_token;
+        
+        try {
+            // Process each payment row individually using the simple endpoint
+            for (const rowData of rowsData) {
+                // First, find or create the participant
+                let participant = findParticipantByName(rowData.name);
+                
+                if (!participant) {
+                    // Create new guest
+                    try {
+                        participant = await createGuestParticipant(rowData.name, rowData.priceGroupId);
+                        // Refresh participants list
+                        await loadTabData();
+                        participant = findParticipantByName(rowData.name);
+                    } catch (err) {
+                        errorDiv.innerText = `Error adding "${rowData.name}": ${err.message}`;
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+                }
+                
+                if (!participant) {
+                    errorDiv.innerText = `Could not find or create participant "${rowData.name}"`;
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                // Now record the payment using simple JSON endpoint
+                const response = await fetch(`/api/grouptabs/${tabId}/simple-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        participantId: participant.id,
+                        amountCents: rowData.amountCents,
+                        method: method,
+                        token: token,
+                        priceGroupId: rowData.priceGroupId // Include price group ID if selected
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    errorDiv.innerText = data.error || 'Payment failed';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                console.log('Payment recorded for', rowData.name, ':', data);
+            }
+            
+            // All payments successful
+            hideModal('payment-modal');
+            await loadTabData(); // Refresh data
+            
+        } catch (error) {
+            console.error('Payment error:', error);
+            errorDiv.innerText = 'Network error: ' + error.message;
+            errorDiv.style.display = 'block';
+        }
     }
-
-    async function submitPayment(e) {
-      e.preventDefault();
-      const amount = document.getElementById('pay-amount').value;
-      const method = document.getElementById('pay-method').value;
-      
-      try {
-        const formData = new FormData();
-        formData.append('amountCents', Math.round(parseFloat(amount) * 100));
-        formData.append('method', method);
+    
+    function showOverpayConfirmation(overpayDetails, paymentRows) {
+        // Store method and proof for when user confirms
+        const method = document.getElementById('payment-method').value;
+        const proofFile = document.getElementById('payment-proof').files[0];
+        pendingOverpayData = { overpayDetails, paymentRows, method, proofFile };
         
-        const response = await fetch(`/api/grouptabs/${tabId}/payments`, {
-          method: 'POST',
-          body: formData
-        });
+        // Populate overpay modal
+        document.getElementById('overpay-total-amount').innerText = formatCurrency2(overpayDetails.totalAmount);
+        document.getElementById('overpay-total-remaining').innerText = formatCurrency2(overpayDetails.totalRemaining);
+        document.getElementById('overpay-extra-amount').innerText = formatCurrency2(overpayDetails.overpayAmount);
         
-        if (response.ok) {
-          hideModal('payment-modal');
-          document.getElementById('pay-amount').value = '';
-          loadTabData(); // Reload
+        // Build redistribution preview list
+        const previewList = document.getElementById('redistribution-preview');
+        previewList.innerHTML = overpayDetails.redistribution
+            .filter(r => r.reduction > 0)
+            .map(r => `
+                <li style="padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                    <span>${r.participantName}</span>
+                    <span style="color: var(--accent);">-${formatCurrency2(r.reduction)}</span>
+                </li>
+            `)
+            .join('');
+        
+        hideModal('payment-modal');
+        showModal('overpay-confirm-modal');
+    }
+    
+    async function confirmOverpay() {
+        if (!pendingOverpayData) return;
+        
+        try {
+            // Build FormData for file upload
+            const formData = new FormData();
+            formData.append('paymentRows', JSON.stringify(pendingOverpayData.paymentRows));
+            formData.append('confirmOverpay', 'true');
+            formData.append('token', ownerToken || tabData.magic_token);
+            formData.append('method', pendingOverpayData.method || 'transfer');
+            
+            if (pendingOverpayData.proofFile) {
+                formData.append('proof', pendingOverpayData.proofFile);
+            }
+            
+            const response = await fetch(`/api/grouptabs/${tabId}/process-payment`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                alert(data.error || 'Payment failed');
+                return;
+            }
+            
+            // Payment successful
+            hideModal('overpay-confirm-modal');
+            pendingOverpayData = null;
+            await loadTabData(); // Refresh data
+            
+        } catch (error) {
+            console.error('Confirm overpay error:', error);
+            alert('Network error. Please try again.');
+        }
+    }
+    
+    function cancelOverpay() {
+        hideModal('overpay-confirm-modal');
+        pendingOverpayData = null;
+        showModal('payment-modal'); // Return to payment modal
+    }
+    
+    function showEditModal() {
+        // TODO: Full edit modal
+        alert('Edit modal implementation required');
+    }
+    
+    // ===========================================
+    // COLLAPSIBLE PARTICIPANTS
+    // ===========================================
+    function toggleParticipants() {
+        participantsExpanded = !participantsExpanded;
+        const expandedContent = document.getElementById('participants-expanded');
+        const chevron = document.getElementById('participants-chevron');
+        
+        if (participantsExpanded) {
+            expandedContent.classList.add('expanded');
+            chevron.classList.add('expanded');
+            chevron.innerText = '▲';
         } else {
-          alert('Failed to record payment.');
+            expandedContent.classList.remove('expanded');
+            chevron.classList.remove('expanded');
+            chevron.innerText = '▼';
         }
-      } catch (err) {
-        alert('Error recording payment.');
-      }
     }
 
-    // ===========================================
-    // RECEIPT LIGHTBOX
-    // ===========================================
-    function showReceiptLightbox() {
-      if (!tabData.receipt_file_path) return;
-      
-      const overlay = document.createElement('div');
-      overlay.className = 'receipt-lightbox';
-      overlay.onclick = () => overlay.remove();
-      overlay.innerHTML = `<img src="${tabData.receipt_file_path}" alt="Receipt">`;
-      document.body.appendChild(overlay);
-    }
-
-    // ===========================================
-    // UTILITIES
-    // ===========================================
     function getInitials(name) {
-      if (!name) return '?';
-      const parts = name.trim().split(/\s+/);
-      if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+        if(!name) return '?';
+        return name.substring(0,2).toUpperCase();
+    }
+    
+    function copyShareLink(customUrl) {
+        const url = customUrl || `${window.location.origin}/tab/${tabData.magic_token}`;
+        navigator.clipboard.writeText(url).then(() => {
+            const shareText = document.getElementById('share-link-text');
+            if (shareText) {
+                shareText.innerText = "COPIED!";
+                setTimeout(() => shareText.innerText = "Share Link", 2000);
+            }
+            // Visual feedback on clicked button
+            if (event && event.target) {
+                const btn = event.target.closest('button');
+                if (btn) {
+                    const orig = btn.innerHTML;
+                    btn.innerHTML = '✓ COPIED!';
+                    setTimeout(() => btn.innerHTML = orig, 2000);
+                }
+            }
+        });
     }
 
+    if(typeof formatCurrency2 === 'undefined') {
+        window.formatCurrency2 = (c) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(c / 100);
+    }
+    
+    // Time Ago Helper
+    function timeAgo(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+        
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        return date.toLocaleDateString();
+    }
+
+    // ===========================================
+    // RECEIPT VIEW, UPLOAD & DELETE
+    // ===========================================
+    
+    function showReceiptModal(url, filename) {
+        const body = document.getElementById('receipt-modal-body');
+        
+        // Determine file type
+        const ext = filename.split('.').pop().toLowerCase();
+        
+        if (ext === 'pdf') {
+            // PDF viewer
+            body.innerHTML = `<iframe src="${url}" title="Receipt PDF"></iframe>`;
+        } else {
+            // Image viewer
+            body.innerHTML = `<img src="${url}" alt="Receipt">`;
+        }
+        
+        showModal('receipt-modal');
+    }
+    
+    function triggerReceiptUpload() {
+        if (!ownerToken) {
+            alert('You do not have permission to upload receipts.');
+            return;
+        }
+        document.getElementById('receipt-upload-input').click();
+    }
+
+    async function deleteReceipt() {
+        if (!ownerToken) {
+            alert('You do not have permission to delete receipts.');
+            return;
+        }
+        
+        if (!confirm('Are you sure you want to delete this receipt?')) {
+            return;
+        }
+        
+        try {
+            const formData = new FormData();
+            formData.append('deleteReceipt', 'true');
+            
+            const response = await fetch(`/api/grouptabs/token/${ownerToken}`, {
+                method: 'PATCH',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Delete failed');
+            }
+            
+            // Close modal if open
+            hideModal('receipt-modal');
+            
+            // Update local data
+            tabData.receipt_file_path = null;
+            
+            // Re-render header to show upload button
+            renderHeader();
+            
+        } catch (error) {
+            console.error('Receipt delete error:', error);
+            alert('Failed to delete receipt: ' + error.message);
+        }
+    }
+
+    async function handleReceiptUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+        if (!validTypes.includes(file.type)) {
+            alert('Please upload an image (JPEG, PNG, GIF, WebP) or PDF file.');
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File is too large. Maximum size is 10MB.');
+            return;
+        }
+
+        const uploadBtn = document.getElementById('receipt-upload-btn');
+        const uploadText = document.getElementById('receipt-upload-text');
+        
+        // Show uploading state
+        if (uploadText) uploadText.textContent = 'Uploading...';
+        if (uploadBtn) uploadBtn.style.opacity = '0.7';
+
+        try {
+            const formData = new FormData();
+            formData.append('receipt', file);
+
+            const response = await fetch(`/api/grouptabs/token/${ownerToken}`, {
+                method: 'PATCH',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Upload failed');
+            }
+
+            const data = await response.json();
+            
+            // Update local data
+            if (data.tab && data.tab.receiptFilePath) {
+                tabData.receipt_file_path = data.tab.receiptFilePath;
+            }
+            
+            // Re-render header to show the receipt link
+            renderHeader();
+            
+            // Show success message briefly
+            if (uploadText) uploadText.textContent = 'Uploaded!';
+            setTimeout(() => {
+                // Refresh data to ensure consistency
+                loadTabData();
+            }, 1000);
+
+        } catch (error) {
+            console.error('Receipt upload error:', error);
+            alert('Failed to upload receipt: ' + error.message);
+            
+            // Reset button state
+            if (uploadText) uploadText.textContent = 'Upload Receipt';
+            if (uploadBtn) uploadBtn.style.opacity = '1';
+        }
+
+        // Clear file input for potential re-upload
+        event.target.value = '';
+    }
+
+    // ===========================================
+    // SELECT MY GROUP
+    // ===========================================
+    
+    async function selectMyGroup(priceGroupId, amountCents) {
+        if (!currentParticipant) {
+            console.error('No current participant');
+            return;
+        }
+        
+        // Check if already selected
+        const currentGroupId = currentParticipant.price_group_id || currentParticipant.priceGroupId;
+        if (currentGroupId === priceGroupId) {
+            return; // Already selected
+        }
+        
+        // Check if guest (not host) has already made a payment - block group switch
+        const isHost = currentParticipant.user_id === tabData.creator_user_id;
+        if (!isHost && fairnessData) {
+            const myData = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
+            if (myData && myData.actualPaid > 0) {
+                showErrorModal('You cannot switch groups after reporting a payment. Please contact the host if you need to change your group.');
+                return;
+            }
+        }
+        
+        // Update UI immediately for responsiveness
+        document.querySelectorAll('.group-card').forEach(card => {
+            const cardGroupId = parseInt(card.dataset.groupId);
+            if (cardGroupId === priceGroupId) {
+                card.classList.add('active');
+            } else if (!card.classList.contains('add-new')) {
+                card.classList.remove('active');
+            }
+        });
+        
+        // Determine which token to use
+        const token = ownerToken || tabData.magic_token || tabData.magicToken;
+        
+        try {
+            const response = await fetch(`/api/grouptabs/token/${token}/participant/${currentParticipant.id}/group`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ priceGroupId })
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to update group');
+            }
+            
+            const result = await response.json();
+            
+            // Update local state
+            currentParticipant.price_group_id = priceGroupId;
+            currentParticipant.priceGroupId = priceGroupId;
+            currentParticipant.fair_share_cents = result.participant.fairShareCents || amountCents;
+            
+            // Update the participant in the participants array too
+            const pIdx = participants.findIndex(p => p.id === currentParticipant.id);
+            if (pIdx !== -1) {
+                participants[pIdx].price_group_id = priceGroupId;
+                participants[pIdx].fair_share_cents = result.participant.fairShareCents || amountCents;
+            }
+            
+            // Recalculate fairness data
+            if (window.GroupTabsEngine) {
+                fairnessData = window.GroupTabsEngine.calculateFairnessData(
+                    tabData, participants, [], [], [], priceGroups
+                );
+            }
+            
+            // Re-render to update fair share display and header stats
+            renderHeader();
+            renderHero();
+            renderParticipants();
+            
+        } catch (err) {
+            console.error('Error updating group:', err);
+            // Revert UI on error
+            renderGroups();
+        }
+    }
+
+    // ===========================================
+    // ADD PRICE GROUP
+    // ===========================================
+    
+    function showAddGroupModal() {
+        // Clear form
+        document.getElementById('new-group-name').value = '';
+        document.getElementById('new-group-emoji').value = '';
+        document.getElementById('new-group-price').value = '';
+        document.getElementById('add-group-error').style.display = 'none';
+        
+        showModal('add-group-modal');
+    }
+    
+    async function submitNewGroup() {
+        const name = document.getElementById('new-group-name').value.trim();
+        const emoji = document.getElementById('new-group-emoji').value.trim() || '🏷️';
+        const priceInput = document.getElementById('new-group-price').value;
+        const errorDiv = document.getElementById('add-group-error');
+        
+        // Validation
+        if (!name) {
+            errorDiv.textContent = 'Please enter a group name';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        const price = parseFloat(priceInput);
+        if (isNaN(price) || price < 0) {
+            errorDiv.textContent = 'Please enter a valid price';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        const amountCents = Math.round(price * 100);
+        
+        try {
+            const response = await fetch(`/api/grouptabs/${tabId}/price-groups`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    emoji,
+                    amountCents,
+                    token: ownerToken
+                })
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to add group');
+            }
+            
+            // Success - reload data and close modal
+            hideModal('add-group-modal');
+            await loadTabData();
+            
+        } catch (error) {
+            console.error('Add group error:', error);
+            errorDiv.textContent = error.message;
+            errorDiv.style.display = 'block';
+        }
+    }
+
+    // ===========================================
+    // JOIN SCREEN FUNCTIONS (Soft Glass B Design)
+    // ===========================================
+    let selectedJoinGroupId = null;
+    
+    function showJoinScreen() {
+        // Hide main content, show join screen
+        const mainContent = document.getElementById('main-content');
+        const joinScreen = document.getElementById('join-screen');
+        
+        if (mainContent) mainContent.style.display = 'none';
+        if (joinScreen) joinScreen.style.display = 'flex';
+        
+        // Populate join screen with tab data
+        const tabName = tabData.name || 'Split Bill';
+        const hostName = tabData.creator_name || 'Someone';
+        
+        const tabNameEl = document.getElementById('join-tab-name');
+        const hostNameEl = document.getElementById('join-host-name');
+        const hostAvatarEl = document.getElementById('join-host-avatar');
+        
+        if (tabNameEl) tabNameEl.innerText = tabName;
+        if (hostNameEl) hostNameEl.innerText = hostName;
+        
+        // Set host avatar initials
+        if (hostAvatarEl) {
+            const initials = hostName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+            hostAvatarEl.innerText = initials;
+        }
+        
+        // Show price groups if applicable
+        if (priceGroups && priceGroups.length > 0) {
+            const groupsSection = document.getElementById('join-groups-section');
+            if (groupsSection) groupsSection.style.display = 'block';
+            const container = document.getElementById('join-groups-container');
+            if (!container) return;
+            
+            // Render new card-style groups
+            container.innerHTML = priceGroups.map((g, idx) => `
+                <div class="join-group-card ${idx === 0 ? 'selected' : ''}" 
+                     data-group-id="${g.id}" 
+                     onclick="selectJoinGroup(${g.id})">
+                    <div class="jg-icon-box">${g.emoji || '📦'}</div>
+                    <div class="jg-info">
+                        <h3>${escapeHtml(g.name)}</h3>
+                        <p>${escapeHtml(g.description || '')}</p>
+                    </div>
+                    <div class="jg-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Select first group by default
+            selectedJoinGroupId = priceGroups[0].id;
+        }
+        
+        // Focus name input
+        setTimeout(() => {
+            const nameInput = document.getElementById('join-name-input');
+            if (nameInput) nameInput.focus();
+        }, 100);
+    }
+    
+    function selectJoinGroup(groupId) {
+        selectedJoinGroupId = groupId;
+        document.querySelectorAll('.join-group-card').forEach(card => {
+            card.classList.toggle('selected', parseInt(card.dataset.groupId) === groupId);
+        });
+    }
+    
+    async function submitJoin() {
+        const nameInput = document.getElementById('join-name-input');
+        const errorEl = document.getElementById('join-error');
+        const submitBtn = document.getElementById('join-submit-btn');
+        
+        const guestName = nameInput.value.trim();
+        if (!guestName) {
+            errorEl.innerText = 'Please enter your name to continue';
+            errorEl.style.display = 'block';
+            nameInput.focus();
+            return;
+        }
+        
+        errorEl.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>Joining...</span><span class="join-btn-arrow">⏳</span>';
+        
+        try {
+            const response = await fetch(`/api/tabs/token/${window.currentMagicToken}/join`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    guestName,
+                    priceGroupId: selectedJoinGroupId 
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to join');
+            }
+            
+            // Successfully joined - reload the page to show full content
+            window.location.reload();
+            
+        } catch (error) {
+            console.error('Join error:', error);
+            errorEl.innerText = error.message;
+            errorEl.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>See your share</span><span class="join-btn-arrow">→</span>';
+        }
+    }
+    
+    // Handle Enter key on name input
+    document.getElementById('join-name-input')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            submitJoin();
+        }
+    });
+    
     function escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // ===========================================
-    // INIT
-    // ===========================================
-    if (window.PayFriendsHeader) window.PayFriendsHeader.initialize({ hasActivitySection: false });
-    loadTabData();
+    // Initialize header if available
+    // skipAuthRedirect: true allows guests to view the page without being redirected to login
+    if (window.PayFriendsHeader) {
+        window.PayFriendsHeader.initialize({ hasActivitySection: false, skipAuthRedirect: true }).catch(err => {
+            console.log('Header init for guest:', err.message);
+            // Guest users - header will show minimal/guest version
+        });
+    }
+
+    // Start
+    init();
+
   </script>
-  </div>
 </body>
 </html>
+

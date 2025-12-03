@@ -282,6 +282,60 @@
       flex-direction: column;
       gap: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .pg-group-card:hover {
+      border-color: rgba(61, 220, 151, 0.3);
+    }
+    
+    /* Selected host group card */
+    .pg-group-card.host-selected {
+      border-color: var(--accent);
+      background: linear-gradient(145deg, rgba(61, 220, 151, 0.08), rgba(61, 220, 151, 0.02));
+      box-shadow: 0 4px 20px rgba(61, 220, 151, 0.15);
+    }
+    
+    /* "Your group ✓" pill badge */
+    .pg-host-badge {
+      position: absolute;
+      top: -10px;
+      right: 12px;
+      background: var(--accent);
+      color: #0e1116;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      display: none;
+      white-space: nowrap;
+    }
+    
+    .pg-group-card.host-selected .pg-host-badge {
+      display: block;
+    }
+    
+    /* Host selection status text */
+    .pg-host-selection-status {
+      grid-column: 1 / -1;
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+    
+    .pg-host-selection-status.selected {
+      color: var(--accent);
+    }
+    
+    .pg-host-selection-error {
+      grid-column: 1 / -1;
+      color: #f87171;
+      font-size: 13px;
+      margin-top: 8px;
+      display: none;
+      text-align: center;
     }
 
     .pg-card-header {
@@ -551,19 +605,38 @@
     .launch-card-groups {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 10px;
       justify-content: center;
-      margin: 16px 0;
+      margin: 8px 0 24px 0; /* More space below before buttons */
     }
     
     .launch-group-chip {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px 14px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--card);
+      border: 1px solid rgba(61, 220, 151, 0.4);
+      border-radius: 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: rgba(61, 220, 151, 0.7);
+    }
+    .launch-group-chip:hover {
+      background: rgba(61, 220, 151, 0.08);
+      border-color: rgba(61, 220, 151, 0.6);
+    }
+    .launch-group-chip.selected {
+      background: #2a9d6a; /* Darker, less saturated green */
+      border-color: #2a9d6a;
+      color: #fff;
+    }
+    .launch-group-chip.selected .lg-name,
+    .launch-group-chip.selected .lg-price {
+      color: #fff;
+    }
+    .launch-group-chip.selected .lg-check {
+      display: inline;
     }
     
     .lg-emoji {
@@ -572,13 +645,57 @@
     
     .lg-name {
       font-size: 13px;
-      color: var(--text);
+      font-weight: 600;
+      color: inherit;
+      transition: color 0.2s;
     }
     
     .lg-price {
       font-size: 13px;
       font-weight: 600;
-      color: var(--accent);
+      color: inherit;
+      transition: color 0.2s;
+    }
+    
+    .lg-check {
+      display: none;
+      font-size: 12px;
+      margin-left: 2px;
+    }
+    
+    /* Choose your group instruction */
+    .choose-group-instruction {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 16px;
+      margin-bottom: 10px;
+    }
+    
+    /* Extra spacing above the launch card when it has groups */
+    .chat-card.launch-card-wrapper {
+      margin-top: 24px;
+    }
+    
+    /* Launch card action buttons */
+    .launch-card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    
+    .share-btn-primary {
+      background: #2a9d6a !important; /* Slightly less bright green */
+    }
+    
+    .share-btn-secondary {
+      background: transparent !important;
+      border: 1px solid var(--accent) !important;
+      color: var(--accent) !important;
+    }
+    .share-btn-secondary:hover {
+      background: rgba(61, 220, 151, 0.1) !important;
     }
     
     /* Go Dutch Coming Soon Card */
@@ -716,7 +833,8 @@
         splitMode: 'equal', // 'equal', 'price_groups', 'open'
         receiptFile: null, // Optional receipt image file
         // Price Groups configuration (for price_groups split mode)
-        priceGroups: []    // Array of { id, name, emoji, amountCents }
+        priceGroups: [],   // Array of { id, name, emoji, amountCents }
+        hostGroupId: null  // The price group ID that the host belongs to
       }
     };
     
@@ -730,8 +848,8 @@
         desc: 'Split by drinking preference',
         icon: '🍷',
         groups: [
-          { name: 'Alcohol Drinkers', emoji: '🍷' },
-          { name: 'Non-Alcohol', emoji: '💧' }
+          { name: 'Alcohol Drinkers', emoji: '🍷', subtext: 'Wine, cocktails, and heavy hitters.' },
+          { name: 'Non-Alcohol', emoji: '💧', subtext: 'Soft drinks, water, and designated drivers.' }
         ]
       },
       meat: {
@@ -739,8 +857,8 @@
         desc: 'Split by dietary preference',
         icon: '🥩',
         groups: [
-          { name: 'Meat Eaters', emoji: '🥩' },
-          { name: 'Vegetarians', emoji: '🥗' }
+          { name: 'Meat Eaters', emoji: '🥩', subtext: 'Steak, burgers, and carnivore delights.' },
+          { name: 'Vegetarians', emoji: '🥗', subtext: 'Plant-based dishes and veggie options.' }
         ]
       },
       portion: {
@@ -748,8 +866,8 @@
         desc: 'Split by portion size',
         icon: '🍽',
         groups: [
-          { name: 'Heavy Eaters', emoji: '🍽' },
-          { name: 'Light Eaters', emoji: '🥗' }
+          { name: 'Heavy Eaters', emoji: '🍽', subtext: 'Big appetites and second helpings.' },
+          { name: 'Light Eaters', emoji: '🥗', subtext: 'Smaller portions and lighter fare.' }
         ]
       },
       age: {
@@ -757,8 +875,8 @@
         desc: 'Split by age group',
         icon: '👨‍👩‍👧',
         groups: [
-          { name: 'Adults', emoji: '👨' },
-          { name: 'Kids', emoji: '👧' }
+          { name: 'Adults', emoji: '👨', subtext: 'Full-price adult portions.' },
+          { name: 'Kids', emoji: '👧', subtext: 'Kids menu and smaller plates.' }
         ]
       },
       drinks_only: {
@@ -766,8 +884,8 @@
         desc: 'Split by meal participation',
         icon: '🍻',
         groups: [
-          { name: 'Full Dinner', emoji: '🍽' },
-          { name: 'Drinks Only', emoji: '🍻' }
+          { name: 'Full Dinner', emoji: '🍽', subtext: 'Food and drinks, the full experience.' },
+          { name: 'Drinks Only', emoji: '🍻', subtext: 'Just here for the beverages.' }
         ]
       },
       custom: {
@@ -775,8 +893,8 @@
         desc: 'Create your own groups',
         icon: '⚙️',
         groups: [
-          { name: 'Group 1', emoji: '⚙️' },
-          { name: 'Group 2', emoji: '⚙️' }
+          { name: 'Group 1', emoji: '⚙️', subtext: '' },
+          { name: 'Group 2', emoji: '⚙️', subtext: '' }
         ]
       }
     };
@@ -1855,10 +1973,14 @@
           `;
           }
 
+          const isHostSelected = state.data.hostGroupId === group.id;
           return `
-          <div class="pg-group-card" data-group-id="${group.id}">
+          <div class="pg-group-card ${isHostSelected ? 'host-selected' : ''}" 
+               data-group-id="${group.id}"
+               onclick="selectHostGroup('${cardId}', ${group.id}, event)">
+            <span class="pg-host-badge">Your group ✓</span>
             ${groups.length > 2 ? `
-              <button class="pg-card-remove-btn" onclick="removePriceGroup('${cardId}', ${group.id})">×</button>
+              <button class="pg-card-remove-btn" onclick="removePriceGroup('${cardId}', ${group.id}); event.stopPropagation();">×</button>
             ` : ''}
             
             <div class="pg-card-header">
@@ -1869,12 +1991,13 @@
                      placeholder="Group name"
                      maxlength="25"
                      data-group-id="${group.id}"
+                     onclick="event.stopPropagation()"
                      onchange="updateGroupName('${cardId}', ${group.id}, this.value)">
             </div>
             
             <div class="pg-card-body">
               <label class="pg-card-label">Price per person</label>
-              <div class="pg-card-price-wrapper">
+              <div class="pg-card-price-wrapper" onclick="event.stopPropagation()">
                 <span class="pg-card-currency">€</span>
                 <input type="text" 
                        class="pg-card-price-input" 
@@ -1899,7 +2022,18 @@
           </button>
         `;
 
-        container.innerHTML = groupsHtml + addBtnHtml;
+        // Add host selection status text
+        const selectedGroup = groups.find(g => g.id === state.data.hostGroupId);
+        const hostStatusHtml = `
+          <div class="pg-host-selection-status ${selectedGroup ? 'selected' : ''}" id="${cardId}-host-status">
+            ${selectedGroup ? `Selected: <strong>${escapeHtml(selectedGroup.name)}</strong>` : 'Tap a group to select your own.'}
+          </div>
+          <div class="pg-host-selection-error" id="${cardId}-host-error">
+            Please select which group applies to you.
+          </div>
+        `;
+
+        container.innerHTML = groupsHtml + addBtnHtml + hostStatusHtml;
         
         // Update warning text
         const warningText = document.querySelector(`#${cardId}-config-view .pg-warning-text`);
@@ -1981,8 +2115,55 @@
       const group = state.data.priceGroups.find(g => g.id === groupId);
       if (group) {
         group.name = value.trim();
+        // Update host status text if this is the selected group
+        updateHostSelectionStatus(cardId);
       }
     };
+    
+    // Select which group the host belongs to
+    window.selectHostGroup = function(cardId, groupId, event) {
+      // Don't select if clicking on input fields
+      if (event && event.target.tagName === 'INPUT') {
+        return;
+      }
+      
+      // Update state
+      state.data.hostGroupId = groupId;
+      
+      // Update visual selection
+      const container = document.getElementById(`${cardId}-groups`);
+      if (container) {
+        container.querySelectorAll('.pg-group-card').forEach(card => {
+          const cardGroupId = parseInt(card.dataset.groupId);
+          if (cardGroupId === groupId) {
+            card.classList.add('host-selected');
+          } else {
+            card.classList.remove('host-selected');
+          }
+        });
+      }
+      
+      // Update status text
+      updateHostSelectionStatus(cardId);
+      
+      // Clear any error
+      const errorEl = document.getElementById(`${cardId}-host-error`);
+      if (errorEl) errorEl.style.display = 'none';
+    };
+    
+    function updateHostSelectionStatus(cardId) {
+      const statusEl = document.getElementById(`${cardId}-host-status`);
+      if (!statusEl) return;
+      
+      const selectedGroup = state.data.priceGroups.find(g => g.id === state.data.hostGroupId);
+      if (selectedGroup) {
+        statusEl.className = 'pg-host-selection-status selected';
+        statusEl.innerHTML = `Selected: <strong>${escapeHtml(selectedGroup.name || 'Unnamed group')}</strong>`;
+      } else {
+        statusEl.className = 'pg-host-selection-status';
+        statusEl.innerHTML = 'Tap a group to select your own.';
+      }
+    }
     
     window.updateGroupAmount = function(cardId, groupId, value) {
       const group = state.data.priceGroups.find(g => g.id === groupId);
@@ -2123,6 +2304,14 @@
         return;
       }
       
+      // Validate host group is selected
+      if (!state.data.hostGroupId) {
+        showError(cardId, 'Please select which group applies to you.');
+        const hostErrorEl = document.getElementById(`${cardId}-host-error`);
+        if (hostErrorEl) hostErrorEl.style.display = 'block';
+        return;
+      }
+      
       pushHistory();
       
       // Build summary message
@@ -2182,6 +2371,10 @@
           // Include price groups if using price_groups split mode
           if (state.data.splitMode === 'price_groups' && state.data.priceGroups.length > 0) {
             formData.append('priceGroups', JSON.stringify(state.data.priceGroups));
+            // Include which group the host belongs to
+            if (state.data.hostGroupId) {
+              formData.append('hostGroupId', state.data.hostGroupId);
+            }
           }
         }
         
@@ -2256,9 +2449,9 @@
     function showLaunchCard(tab) {
       hideInputContainer();
       
-      // Use magic link for sharing (public token), owner link for creator view
+      // Use magic link for sharing (public token), view link for creator view
       const shareUrl = tab.magicLink || `${window.location.origin}/tab/${tab.magicToken}`;
-      const ownerUrl = tab.ownerLink || `${window.location.origin}/grouptabs/manage/${tab.ownerToken}`;
+      const viewUrl = `${window.location.origin}/grouptabs/${tab.id}`;
       const totalCents = state.data.totalCents + state.data.tipCents;
       const perPerson = formatCurrency2(totalCents / state.data.people);
       
@@ -2274,24 +2467,18 @@
       }
       
       // Build price groups display if applicable
-      let priceGroupsHtml = '';
       let detailHtml = `${state.data.people} people · ${perPerson} each`;
+      let hasPriceGroups = false;
+      
+      // Store tab info for group selection
+      window.createdTab = tab;
       
       if (state.data.splitMode === 'price_groups' && state.data.priceGroups.length > 0) {
-        priceGroupsHtml = `
-          <div class="launch-card-groups">
-            ${state.data.priceGroups.map(g => `
-              <div class="launch-group-chip">
-                <span class="lg-emoji">${g.emoji}</span>
-                <span class="lg-name">${escapeHtml(g.name)}</span>
-                <span class="lg-price">${formatCurrency2(g.amountCents)}</span>
-              </div>
-            `).join('')}
-          </div>
-        `;
+        hasPriceGroups = true;
         detailHtml = `${state.data.people} people · Price Groups`;
       }
       
+      // Show success message
       addBotMessage("Tab created! 🚀");
       
       const cardHtml = `
@@ -2301,15 +2488,16 @@
             <div class="launch-card-title">${escapeHtml(state.data.name)}</div>
             <div class="launch-card-amount">${formatCurrency2(totalCents)}</div>
             <div class="launch-card-detail">${detailHtml}</div>
-            ${priceGroupsHtml}
             
-            <button class="share-btn" onclick="copyShareLink('${shareUrl}')">
-              📋 Copy Share Link
-            </button>
-            
-            <button class="share-btn" style="background:transparent; border:1px solid var(--accent); color:var(--accent); margin-top:8px;" onclick="window.location.href='${ownerUrl}'">
-              👀 View GroupTab
-            </button>
+            <div class="launch-card-actions">
+              <button class="share-btn share-btn-primary" onclick="copyShareLink('${shareUrl}')">
+                📋 Copy Share Link
+              </button>
+              
+              <button class="share-btn share-btn-secondary" onclick="window.location.href='${viewUrl}'">
+                👀 View GroupTab
+              </button>
+            </div>
           </div>
         </div>
       `;

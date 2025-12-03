@@ -1,0 +1,8 @@
+2025-12-01T04:25:24.054Z createGroupTab called. User: 1
+2025-12-01T04:25:24.058Z Body: {"name":"Test","tabType":"one_bill","template":"restaurant","proofRequired":"optional","totalAmountCents":"43400","splitMode":"equal","expectedPayRate":"100","peopleCount":"4"}
+2025-12-01T04:25:24.067Z Creating payment: tab=83, org=92, amt=43400
+2025-12-01T04:26:48.964Z createGroupTab called. User: 1
+2025-12-01T04:26:48.965Z Body: {"name":"My Dinner","tabType":"one_bill","template":"restaurant","proofRequired":"optional","totalAmountCents":"43400","splitMode":"equal","expectedPayRate":"100","peopleCount":"4"}
+2025-12-01T04:26:48.966Z Creating payment: tab=84, org=93, amt=43400
+2025-12-01T04:36:22.109Z createGroupTab called. User: 1
+2025-12-01T04:36:22.192Z Body: {"name":"My Dinner","tabType":"one_bill","template":"restaurant","proofRequired":"optional","totalAmountCents":"43400","splitMode":"price_groups","expectedPayRate":"100","peopleCount":"4","priceGroups":"[{\"id\":1,\"name\":\"Alcohol Drinkers\",\"emoji\":\"🍷\",\"amountCents\":3400},{\"id\":2,\"name\":\"Non-Alcohol\",\"emoji\":\"💧\",\"amountCents\":3400}]"}

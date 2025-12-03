@@ -6,11 +6,14 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>PayFriends — Receipt</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/css/shared-controls.css" />
+  <link rel="stylesheet" href="/css/app.css" />
+  <script src="/js/header.js"></script>
   <script src="/js/formatters.js"></script>
   
   <style>
     :root {
-      --bg: #2c2c2c;
+      --bg: #0e1116;
       --paper: #fff;
       --ink: #000;
       --muted: #555;
@@ -21,14 +24,33 @@
     
     body {
       margin: 0;
-      font-family: var(--font-mono);
+      font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
       background: var(--bg);
-      color: var(--ink);
+      color: var(--text);
       min-height: 100vh;
+    }
+    
+    /* Receipt content uses monospace font */
+    .receipt-area,
+    .receipt-paper,
+    .receipt-paper * {
+      font-family: var(--font-mono);
+      color: var(--ink);
+    }
+    
+    /* Main page wrapper */
+    .page-wrapper {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    /* Receipt area centered */
+    .receipt-area {
+      flex: 1;
       display: flex;
       justify-content: center;
-      padding-top: 40px;
-      padding-bottom: 40px;
+      padding: 40px 16px;
     }
     
     /* --- Receipt Container --- */
@@ -167,6 +189,21 @@
     .page-header, .bill-summary-card, .card { background: transparent; border: none; padding: 0; margin: 0; box-shadow: none; border-radius: 0; }
     #back-btn, #edit-btn { display: none; } /* We use custom header */
     
+    /* Site header container - standard styling matching other pages */
+    .header-container {
+      /* Standard site CSS variables */
+      --muted: #a7b0bd;
+      --text: #e6eef6;
+      --accent: #3ddc97;
+      --bg: #0e1116;
+      --card: #151a21;
+      --border: rgba(255, 255, 255, 0.08);
+      /* Standard container sizing */
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+    
     /* Specific Override for generated participant row structure */
     .participant-progress { display: none !important; }
     .participant-percent { display: none !important; }
@@ -182,8 +219,15 @@
   </style>
 </head>
 <body>
+<div class="page-wrapper">
+  <!-- Site header - standard structure matching other pages -->
+  <div class="container header-container" id="header-container">
+    <!-- Header will be loaded dynamically by header.js -->
+  </div>
 
-<div class="receipt-paper" id="main-content" style="display:none;">
+  <!-- Receipt area -->
+  <div class="receipt-area">
+    <div class="receipt-paper" id="main-content" style="display:none;">
   
   <!-- Receipt Header -->
   <div class="r-header">
@@ -255,12 +299,19 @@
   <div class="r-barcode"></div>
   <div class="r-center" style="margin-top: 8px; font-size: 10px;">THANK YOU FOR USING PAYFRIENDS</div>
 
-</div>
+    </div>
+    <!-- end receipt-paper -->
 
-<div id="loading-state">
-  <div class="loading-spinner"></div>
-  <div>PRINTING RECEIPT...</div>
-</div>
+    <div id="loading-state">
+      <div class="loading-spinner"></div>
+      <div>PRINTING RECEIPT...</div>
+    </div>
+  </div>
+  <!-- end receipt-area -->
+
+<!-- Hidden Inputs for Logic -->
+<input type="hidden" id="share-link-input">
+<input type="file" id="edit-receipt" style="display:none;">
 
 <!-- ================= MODALS ================= -->
 
@@ -475,10 +526,20 @@
       return tabData && tabData.splitMode === 'price_groups';
     }
     
-    // Get token from URL
+    // Get ID or token from URL
+    // Supports both /grouptabs/:id/receipt and /grouptabs/view/:token
     const pathParts = window.location.pathname.split('/');
-    const routeType = pathParts[2]; // 'manage' or 'view'
-    token = pathParts[3];
+    let tabId = null;
+    
+    // Check if we're using numeric ID route (/grouptabs/:id/receipt)
+    if (pathParts[2] && /^\d+$/.test(pathParts[2])) {
+      tabId = parseInt(pathParts[2]);
+      token = null; // Will fetch by ID instead
+    } else {
+      // Legacy token route (/grouptabs/view/:token)
+      const routeType = pathParts[2]; // 'manage' or 'view'
+      token = pathParts[3];
+    }
     
     // Local storage key for remembering identity
     const getStorageKey = (tabId) => `grouptab_identity_${tabId}`;
@@ -488,19 +549,25 @@
     // =============================================
     async function init() {
       try {
+        // Initialize site header for logged-in users
+        // Use a try-catch because guests won't be authenticated
+        if (typeof PayFriendsHeader !== 'undefined') {
+          try {
+            await PayFriendsHeader.initialize({ 
+              hasActivitySection: false,
+              skipAuthRedirect: true  // Don't redirect guests to login
+            });
+          } catch (headerError) {
+            console.log('Header init skipped (guest mode):', headerError);
+            // Hide header container if not logged in
+            const headerContainer = document.getElementById('header-container');
+            if (headerContainer) headerContainer.style.display = 'none';
+          }
+        }
+        
         await loadTabData();
         
         if (!tabData) return;
-        
-        // Initialize site header for logged-in users (creators)
-        // Use a try-catch because guests won't be authenticated
-        if (isCreator && typeof PayFriendsHeader !== 'undefined') {
-          try {
-            await PayFriendsHeader.initialize();
-          } catch (headerError) {
-            console.log('Header init skipped (guest mode):', headerError);
-          }
-        }
         
         // Check if we need name capture for non-creators
         if (!isCreator && !currentParticipant) {
@@ -530,7 +597,12 @@
     // DATA LOADING
     // =============================================
     async function loadTabData() {
-      const response = await fetch(`/api/grouptabs/token/${token}`);
+      // Use ID-based API if we have tabId, otherwise use token
+      const apiUrl = tabId 
+        ? `/api/grouptabs/${tabId}`
+        : `/api/grouptabs/token/${token}`;
+      
+      const response = await fetch(apiUrl);
       
       if (!response.ok) {
         const data = await response.json();
@@ -554,7 +626,7 @@
       summary = data.summary;
       
       // Update share link
-      const shareLink = `${window.location.origin}/grouptabs/view/${tabData.magicToken || token}`;
+      const shareLink = `${window.location.origin}/grouptabs/view/${tabData.magicToken || tabData.magic_token || token}`;
       document.getElementById('share-link-input').value = shareLink;
     }
     
@@ -576,7 +648,7 @@
       
       // Bill Summary
       const totalCents = tabData.totalAmountCents || 0;
-      const peopleCount = tabData.peopleCount || summary.peopleCount || 1;
+      const peopleCount = tabData.peopleCount || (summary && summary.peopleCount) || 1;
       const perPersonCents = tabData.perPersonCents || Math.round(totalCents / peopleCount);
       
       document.getElementById('total-amount').textContent = formatCurrency2(totalCents);
@@ -999,7 +1071,7 @@
       }
       
       // Only show last 5 items for receipt compactness
-      const recentFeed = activityFeed.slice(-5);
+      const recentFeed = activityFeed.slice(0, 5);
       
       container.innerHTML = recentFeed.map(a => {
         const time = new Date(a.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
@@ -1669,5 +1741,7 @@
     // =============================================
     init();
   </script>
+</div>
+<!-- end page-wrapper -->
 </body>
 </html>

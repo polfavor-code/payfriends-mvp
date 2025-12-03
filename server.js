@@ -556,6 +556,184 @@ try {
   console.error('[Startup] Error generating owner_tokens:', e.message);
 }
 
+// =============================================
+// GROUPTAB PAYMENT LOGIC SCHEMA MIGRATIONS
+// =============================================
+
+// Add host_overpaid_cents column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN host_overpaid_cents INTEGER DEFAULT 0;`);
+  console.log('[Startup] Added host_overpaid_cents column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add paid_up_cents column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN paid_up_cents INTEGER DEFAULT 0;`);
+  console.log('[Startup] Added paid_up_cents column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add remaining_cents column to group_tab_participants table
+try {
+  db.exec(`ALTER TABLE group_tab_participants ADD COLUMN remaining_cents INTEGER;`);
+  console.log('[Startup] Added remaining_cents column to group_tab_participants');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add fair_share_cents column to group_tab_participants table
+try {
+  db.exec(`ALTER TABLE group_tab_participants ADD COLUMN fair_share_cents INTEGER;`);
+  console.log('[Startup] Added fair_share_cents column to group_tab_participants');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add payment_type column to group_tab_payments table
+try {
+  db.exec(`ALTER TABLE group_tab_payments ADD COLUMN payment_type TEXT DEFAULT 'normal';`);
+  console.log('[Startup] Added payment_type column to group_tab_payments');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add applied_cents column to group_tab_payments table
+try {
+  db.exec(`ALTER TABLE group_tab_payments ADD COLUMN applied_cents INTEGER;`);
+  console.log('[Startup] Added applied_cents column to group_tab_payments');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add overpay_cents column to group_tab_payments table
+try {
+  db.exec(`ALTER TABLE group_tab_payments ADD COLUMN overpay_cents INTEGER DEFAULT 0;`);
+  console.log('[Startup] Added overpay_cents column to group_tab_payments');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add beneficiary_ids column to group_tab_payments table (JSON array for multi-person payments)
+try {
+  db.exec(`ALTER TABLE group_tab_payments ADD COLUMN beneficiary_ids TEXT;`);
+  console.log('[Startup] Added beneficiary_ids column to group_tab_payments');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// =============================================
+// MIGRATE EXISTING GROUPTABS TO NEW PAYMENT LOGIC
+// =============================================
+function migrateExistingGroupTabs() {
+  try {
+    // First, add total_paid_cents column if it doesn't exist
+    try {
+      db.exec(`ALTER TABLE group_tab_participants ADD COLUMN total_paid_cents INTEGER DEFAULT 0;`);
+      console.log('[Migration] Added total_paid_cents column');
+    } catch (e) {
+      // Column already exists
+    }
+    
+    // Find tabs that need migration (where participants have null fair_share_cents)
+    const tabsNeedingMigration = db.prepare(`
+      SELECT DISTINCT gt.id, gt.total_amount_cents, gt.people_count, gt.creator_user_id, gt.split_mode
+      FROM group_tabs gt
+      INNER JOIN group_tab_participants gtp ON gt.id = gtp.group_tab_id
+      WHERE gt.total_amount_cents IS NOT NULL 
+        AND gt.total_amount_cents > 0
+        AND (gtp.fair_share_cents IS NULL OR gtp.remaining_cents IS NULL)
+    `).all();
+    
+    if (tabsNeedingMigration.length === 0) {
+      console.log('[Migration] No existing tabs need migration');
+      return;
+    }
+    
+    console.log(`[Migration] Migrating ${tabsNeedingMigration.length} existing tabs to new payment logic`);
+    
+    for (const tab of tabsNeedingMigration) {
+      const peopleCount = tab.people_count || 1;
+      const fairShareCents = Math.floor(tab.total_amount_cents / peopleCount);
+      
+      // Get all participants for this tab with their payment totals
+      const participants = db.prepare(`
+        SELECT gtp.id, gtp.role, gtp.guest_name,
+          (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id) as payments_made
+        FROM group_tab_participants gtp
+        WHERE gtp.group_tab_id = ?
+      `).all(tab.id);
+      
+      let hostOverpaidCents = 0;
+      let paidUpCents = 0;
+      
+      for (const participant of participants) {
+        const isHost = participant.role === 'organizer';
+        const paymentsMade = participant.payments_made || 0;
+        
+        let remainingCents;
+        let totalPaidCents;
+        
+        if (isHost) {
+          // Check if host has an initial payment for the full bill
+          const initialPayment = db.prepare(`
+            SELECT * FROM group_tab_payments 
+            WHERE from_participant_id = ? AND amount_cents = ?
+          `).get(participant.id, tab.total_amount_cents);
+          
+          if (initialPayment) {
+            // Host paid the full bill
+            remainingCents = 0;
+            totalPaidCents = tab.total_amount_cents;
+            hostOverpaidCents = tab.total_amount_cents - fairShareCents;
+            paidUpCents += fairShareCents;
+          } else {
+            // Normal calculation
+            totalPaidCents = paymentsMade;
+            remainingCents = Math.max(0, fairShareCents - paymentsMade);
+            paidUpCents += Math.min(paymentsMade, fairShareCents);
+          }
+        } else {
+          // Non-host participants
+          totalPaidCents = paymentsMade;
+          remainingCents = Math.max(0, fairShareCents - paymentsMade);
+          
+          // If they've paid, reduce host overpaid
+          if (paymentsMade > 0 && hostOverpaidCents > 0) {
+            const reduction = Math.min(paymentsMade, hostOverpaidCents, fairShareCents);
+            hostOverpaidCents = Math.max(0, hostOverpaidCents - reduction);
+          }
+          
+          paidUpCents += Math.min(paymentsMade, fairShareCents);
+        }
+        
+        // Update participant
+        db.prepare(`
+          UPDATE group_tab_participants 
+          SET fair_share_cents = ?, remaining_cents = ?, total_paid_cents = ?
+          WHERE id = ?
+        `).run(fairShareCents, remainingCents, totalPaidCents, participant.id);
+      }
+      
+      // Update tab state
+      db.prepare(`
+        UPDATE group_tabs 
+        SET host_overpaid_cents = ?, paid_up_cents = ?
+        WHERE id = ?
+      `).run(hostOverpaidCents, paidUpCents, tab.id);
+    }
+    
+    console.log('[Migration] Migration complete');
+  } catch (err) {
+    console.error('[Migration] Error migrating existing tabs:', err);
+  }
+}
+
+// Run migration on startup
+migrateExistingGroupTabs();
+
 // --- multer setup for file uploads ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -5757,6 +5935,9 @@ function createGroupTab(req, res) {
     }
   }
   
+  // Parse hostGroupId (the price group the host selected for themselves in the wizard)
+  const hostGroupId = req.body.hostGroupId ? parseInt(req.body.hostGroupId) : null;
+  
   if (!name || !tabType) {
     return res.status(400).json({ error: 'Name and tab type are required' });
   }
@@ -5771,11 +5952,23 @@ function createGroupTab(req, res) {
     const createdAt = new Date().toISOString();
     const receiptFilePath = req.file ? `/uploads/grouptabs/${req.file.filename}` : null;
     
+    // Calculate payment logic values for host's initial payment
+    let hostOverpaidCents = 0;
+    let paidUpCents = 0;
+    let fairShareCents = 0;
+    
+    if (totalAmountCents && totalAmountCents > 0 && peopleCount > 0) {
+      fairShareCents = Math.floor(totalAmountCents / peopleCount);
+      hostOverpaidCents = totalAmountCents - fairShareCents;
+      paidUpCents = fairShareCents; // Only host's fair share is considered "settled"
+    }
+    
     const result = db.prepare(`
       INSERT INTO group_tabs (
         creator_user_id, name, description, tab_type, template, total_amount_cents, 
-        split_mode, expected_pay_rate, seat_count, people_count, proof_required, magic_token, owner_token, receipt_file_path, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        split_mode, expected_pay_rate, seat_count, people_count, proof_required, 
+        magic_token, owner_token, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       name,
@@ -5791,28 +5984,31 @@ function createGroupTab(req, res) {
       magicToken,
       ownerToken,
       receiptFilePath,
+      hostOverpaidCents,
+      paidUpCents,
       createdAt
     );
     
     const tabId = result.lastInsertRowid;
     
-    // Add creator as organizer
+    // Add creator as organizer with payment logic fields
+    // Host has remaining_cents = 0 (they paid the bill)
     const participantResult = db.prepare(`
-      INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at)
-      VALUES (?, ?, 'organizer', 1, ?)
-    `).run(tabId, req.user.id, createdAt);
+      INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, fair_share_cents, remaining_cents, total_paid_cents)
+      VALUES (?, ?, 'organizer', 1, ?, ?, ?, ?)
+    `).run(tabId, req.user.id, createdAt, fairShareCents, 0, totalAmountCents || 0);
     
     const organizerParticipantId = participantResult.lastInsertRowid;
     
     // Record organizer's payment for the full bill (they paid the bill upfront)
     // Works for both 'equal' and 'price_groups' split modes
     if ((splitMode === 'equal' || splitMode === 'price_groups') && totalAmountCents && totalAmountCents > 0) {
-      console.log(`Creating payment: tab=${tabId}, org=${organizerParticipantId}, amt=${totalAmountCents}`);
+      console.log(`Creating initial host payment: tab=${tabId}, org=${organizerParticipantId}, amt=${totalAmountCents}, fairShare=${fairShareCents}, overpaid=${hostOverpaidCents}`);
       try {
         db.prepare(`
-          INSERT INTO group_tab_payments (group_tab_id, from_participant_id, to_participant_id, amount_cents, method, note, status, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(tabId, organizerParticipantId, null, totalAmountCents, 'paid_bill', 'Paid the full bill', 'confirmed', createdAt);
+          INSERT INTO group_tab_payments (group_tab_id, from_participant_id, to_participant_id, amount_cents, method, note, status, payment_type, applied_cents, overpay_cents, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(tabId, organizerParticipantId, null, totalAmountCents, 'paid_bill', 'Paid the full bill', 'confirmed', 'initial_host', fairShareCents, hostOverpaidCents, createdAt);
       } catch (payErr) {
         console.error('Failed to create initial payment:', payErr);
         // Don't fail the whole tab creation for this, just log it
@@ -5830,13 +6026,32 @@ function createGroupTab(req, res) {
     }
     
     // Create price groups if price_groups split mode
+    // Map wizard group IDs to database IDs
+    const wizardToDbIdMap = {};
     if (splitMode === 'price_groups' && priceGroups && Array.isArray(priceGroups)) {
       priceGroups.forEach((group) => {
-        db.prepare(`
+        const result = db.prepare(`
           INSERT INTO group_tab_price_groups (group_tab_id, name, emoji, amount_cents, created_at)
           VALUES (?, ?, ?, ?, ?)
         `).run(tabId, group.name, group.emoji || '🏷️', group.amountCents, createdAt);
+        
+        // Map wizard ID to database ID
+        wizardToDbIdMap[group.id] = result.lastInsertRowid;
       });
+      
+      // Assign host to their selected price group (from wizard)
+      if (hostGroupId && wizardToDbIdMap[hostGroupId]) {
+        const dbGroupId = wizardToDbIdMap[hostGroupId];
+        const selectedGroup = priceGroups.find(g => g.id === hostGroupId);
+        const hostFairShare = selectedGroup ? selectedGroup.amountCents : fairShareCents;
+        
+        // Update organizer's price_group_id and fair_share_cents
+        db.prepare(`
+          UPDATE group_tab_participants SET price_group_id = ?, fair_share_cents = ? WHERE id = ?
+        `).run(dbGroupId, hostFairShare, organizerParticipantId);
+        
+        console.log(`Assigned host to price group: dbId=${dbGroupId}, wizardId=${hostGroupId}, fairShare=${hostFairShare}`);
+      }
     }
     
     // Create activity message for creator
@@ -5852,6 +6067,11 @@ function createGroupTab(req, res) {
       'GROUPTAB_CREATED'
     );
     
+    // Fetch created price groups with their IDs
+    const createdPriceGroups = db.prepare(`
+      SELECT id, name, emoji, amount_cents FROM group_tab_price_groups WHERE group_tab_id = ? ORDER BY id
+    `).all(tabId);
+    
     res.status(201).json({
       success: true,
       tab: {
@@ -5861,7 +6081,9 @@ function createGroupTab(req, res) {
         magicToken,
         ownerToken,
         magicLink: `${req.protocol}://${req.get('host')}/tab/${magicToken}`,
-        ownerLink: `${req.protocol}://${req.get('host')}/grouptabs/manage/${ownerToken}`
+        ownerLink: `${req.protocol}://${req.get('host')}/grouptabs/manage/${ownerToken}`,
+        organizerParticipantId: organizerParticipantId,
+        priceGroups: createdPriceGroups
       }
     });
   } catch (err) {
@@ -5895,7 +6117,7 @@ app.get('/api/grouptabs', requireAuth, (req, res) => {
   }
 });
 
-// Get tab details (requires participant access)
+// Get tab details (public read access for open tabs)
 app.get('/api/grouptabs/:id', (req, res) => {
   const tabId = parseInt(req.params.id);
   
@@ -5911,11 +6133,16 @@ app.get('/api/grouptabs/:id', (req, res) => {
       return res.status(404).json({ error: 'Tab not found' });
     }
     
-    // Enforce access control: must be authenticated participant or valid guest
+    // Check access - open tabs are publicly viewable, closed tabs require participant access
     const access = checkTabAccess(req, tabId);
-    if (!access.hasAccess) {
-      return res.status(403).json({ error: 'Access denied. You must be a participant in this tab.' });
+    
+    // For closed tabs, require participant access
+    if (tab.status === 'closed' && !access.hasAccess) {
+      return res.status(403).json({ error: 'This tab is closed. Only participants can view it.' });
     }
+    
+    // For open tabs, allow public read access (anyone with the link can view)
+    // access.hasAccess may be false for first-time visitors, but that's OK for open tabs
     
     const currentParticipant = access.participant;
     const isAuthenticated = access.isAuthenticated;
@@ -5987,6 +6214,9 @@ app.get('/api/grouptabs/:id', (req, res) => {
       console.warn('Error fetching price groups:', e);
     }
     
+    // Determine if current user is the creator
+    const isCreator = access.isCreator || (req.user && tab.creator_user_id === req.user.id);
+    
     res.json({
       success: true,
       tab,
@@ -5995,7 +6225,10 @@ app.get('/api/grouptabs/:id', (req, res) => {
       payments,
       currentParticipant,
       tiers,
-      priceGroups
+      priceGroups,
+      isCreator,
+      // Include owner token for creators to enable receipt uploads
+      ownerToken: isCreator ? tab.owner_token : null
     });
   } catch (err) {
     console.error('Error getting tab:', err);
@@ -6310,8 +6543,10 @@ app.get('/api/grouptabs/token/:token', (req, res) => {
         id: currentParticipant.id,
         displayName: currentParticipant.display_name,
         totalPaidCents: currentParticipant.total_paid_cents || 0,
-        fairShareCents: perPersonCents,
-        balanceCents: (currentParticipant.total_paid_cents || 0) - perPersonCents
+        fairShareCents: currentParticipant.fair_share_cents || perPersonCents,
+        balanceCents: (currentParticipant.total_paid_cents || 0) - (currentParticipant.fair_share_cents || perPersonCents),
+        price_group_id: currentParticipant.price_group_id,
+        priceGroupId: currentParticipant.price_group_id
       } : null,
       summary: {
         totalBillCents: tab.total_amount_cents || 0,
@@ -6469,6 +6704,52 @@ app.post('/api/grouptabs/:id/report-payment', (req, res) => {
   }
 });
 
+// Creator adds a new price group to the tab
+app.post('/api/grouptabs/:id/price-groups', (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const { name, emoji, amountCents, token } = req.body;
+  
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Group name is required' });
+  }
+  
+  if (typeof amountCents !== 'number' || amountCents < 0) {
+    return res.status(400).json({ error: 'Valid price is required' });
+  }
+  
+  try {
+    // Verify creator access via owner_token
+    const tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
+    
+    if (!tab) {
+      return res.status(403).json({ error: 'Only the creator can add price groups' });
+    }
+    
+    // Insert the new price group
+    const result = db.prepare(`
+      INSERT INTO group_tab_price_groups (group_tab_id, name, emoji, amount_cents, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(tabId, name.trim(), emoji || '🏷️', amountCents, new Date().toISOString());
+    
+    // Return the new group
+    const newGroup = db.prepare(`SELECT * FROM group_tab_price_groups WHERE id = ?`).get(result.lastInsertRowid);
+    
+    res.json({
+      success: true,
+      priceGroup: {
+        id: newGroup.id,
+        name: newGroup.name,
+        emoji: newGroup.emoji,
+        amountCents: newGroup.amount_cents
+      }
+    });
+    
+  } catch (err) {
+    console.error('Error adding price group:', err);
+    res.status(500).json({ error: 'Failed to add price group' });
+  }
+});
+
 // Creator adds a guest to the tab (for empty slots)
 app.post('/api/grouptabs/:id/add-guest', (req, res) => {
   const tabId = parseInt(req.params.id);
@@ -6505,12 +6786,18 @@ app.post('/api/grouptabs/:id/add-guest', (req, res) => {
     
     const joinedAt = new Date().toISOString();
     
+    // Calculate fair share for the new participant
+    const fairShareCents = (tab.total_amount_cents && tab.people_count > 0)
+      ? Math.floor(tab.total_amount_cents / tab.people_count)
+      : 0;
+    
     // Create the guest participant (no session token since creator added them)
     // Include price_group_id if provided (for price_groups mode)
+    // Set remaining_cents = fair_share_cents (they owe their full share)
     const result = db.prepare(`
-      INSERT INTO group_tab_participants (group_tab_id, guest_name, role, is_member, joined_at, added_by_creator, price_group_id)
-      VALUES (?, ?, 'participant', 0, ?, 1, ?)
-    `).run(tabId, guestName.trim(), joinedAt, priceGroupId || null);
+      INSERT INTO group_tab_participants (group_tab_id, guest_name, role, is_member, joined_at, added_by_creator, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
+      VALUES (?, ?, 'participant', 0, ?, 1, ?, ?, ?, 0)
+    `).run(tabId, guestName.trim(), joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
     
     // Get creator name
     const creator = db.prepare(`SELECT full_name FROM users WHERE id = ?`).get(tab.creator_user_id);
@@ -6582,6 +6869,23 @@ app.patch('/api/grouptabs/token/:ownerToken', uploadGrouptabs.single('receipt'),
       params.push(receiptFilePath);
     }
     
+    // Handle receipt deletion
+    if (req.body.deleteReceipt === 'true') {
+      // Optionally delete the file from disk
+      if (tab.receipt_file_path) {
+        const oldFilePath = path.join(__dirname, tab.receipt_file_path);
+        if (fs.existsSync(oldFilePath)) {
+          try {
+            fs.unlinkSync(oldFilePath);
+          } catch (e) {
+            console.warn('Could not delete old receipt file:', e);
+          }
+        }
+      }
+      updates.push('receipt_file_path = ?');
+      params.push(null);
+    }
+    
     if (updates.length > 0) {
       params.push(tab.id);
       db.prepare(`UPDATE group_tabs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
@@ -6645,14 +6949,19 @@ app.post('/api/grouptabs/token/:token/join', (req, res) => {
         return res.json({ success: true, participant: existing, alreadyJoined: true });
       }
       
+      // Calculate fair share for the new participant
+      const fairShareCents = (tab.total_amount_cents && tab.people_count > 0)
+        ? Math.floor(tab.total_amount_cents / tab.people_count)
+        : 0;
+      
       const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id)
-        VALUES (?, ?, 'participant', 1, ?, ?)
-      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null);
+        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
+        VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0)
+      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
       
       return res.json({
         success: true,
-        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', priceGroupId: priceGroupId || null }
+        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', priceGroupId: priceGroupId || null, fairShareCents, remainingCents: fairShareCents }
       });
     }
     
@@ -6707,10 +7016,15 @@ app.post('/api/grouptabs/token/:token/join', (req, res) => {
     // Create new guest participant
     const newGuestSessionToken = crypto.randomBytes(32).toString('hex');
     
+    // Calculate fair share for the new participant
+    const fairShareCents = (tab.total_amount_cents && tab.people_count > 0)
+      ? Math.floor(tab.total_amount_cents / tab.people_count)
+      : 0;
+    
     const result = db.prepare(`
-      INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id)
-      VALUES (?, ?, ?, 'participant', 0, ?, ?)
-    `).run(tab.id, trimmedName, newGuestSessionToken, joinedAt, priceGroupId || null);
+      INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
+      VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0)
+    `).run(tab.id, trimmedName, newGuestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
     
     // Notify the organizer
     db.prepare(`
@@ -6806,15 +7120,30 @@ app.patch('/api/grouptabs/token/:token/participant/:participantId/group', (req, 
       return res.status(403).json({ error: 'Not authorized to change this participant\'s group' });
     }
     
-    // Update the participant's price group
-    db.prepare(`
-      UPDATE group_tab_participants SET price_group_id = ? WHERE id = ?
-    `).run(priceGroupId || null, participantId);
-    
-    // Get new group name for activity log
+    // Get the new group details
     const newGroup = priceGroupId ? db.prepare(`
       SELECT * FROM group_tab_price_groups WHERE id = ?
     `).get(priceGroupId) : null;
+    
+    const newFairShareCents = newGroup ? newGroup.amount_cents : Math.floor(tab.total_amount_cents / tab.people_count);
+    
+    // Check if this is the host (organizer)
+    const isHost = participant.role === 'organizer';
+    
+    // Update the participant's price group and fair share
+    db.prepare(`
+      UPDATE group_tab_participants SET price_group_id = ?, fair_share_cents = ? WHERE id = ?
+    `).run(priceGroupId || null, newFairShareCents, participantId);
+    
+    // If this is the host, also update the tab's host_overpaid_cents and paid_up_cents
+    if (isHost && tab.total_amount_cents > 0) {
+      const newHostOverpaidCents = tab.total_amount_cents - newFairShareCents;
+      const newPaidUpCents = newFairShareCents; // Host's fair share is considered "settled"
+      
+      db.prepare(`
+        UPDATE group_tabs SET host_overpaid_cents = ?, paid_up_cents = ? WHERE id = ?
+      `).run(newHostOverpaidCents, newPaidUpCents, tab.id);
+    }
     
     const participantName = participant.guest_name || 
       (participant.user_id ? db.prepare(`SELECT full_name FROM users WHERE id = ?`).get(participant.user_id)?.full_name : 'Unknown');
@@ -6837,7 +7166,7 @@ app.patch('/api/grouptabs/token/:token/participant/:participantId/group', (req, 
     
     res.json({
       success: true,
-      participant: { id: participant.id, priceGroupId: priceGroupId || null }
+      participant: { id: participant.id, priceGroupId: priceGroupId || null, fairShareCents: newFairShareCents }
     });
     
   } catch (err) {
@@ -6846,7 +7175,7 @@ app.patch('/api/grouptabs/token/:token/participant/:participantId/group', (req, 
   }
 });
 
-// Get tab by magic token (public) - LEGACY, keep for backwards compatibility
+// Get tab by magic token (public) - for share link access
 app.get('/api/tabs/token/:token', (req, res) => {
   const { token } = req.params;
   
@@ -6866,69 +7195,71 @@ app.get('/api/tabs/token/:token', (req, res) => {
       return res.status(403).json({ error: 'This tab has been closed', closed: true });
     }
     
+    // Get all participants with full details
     const participants = db.prepare(`
-      SELECT gtp.id, gtp.guest_name, gtp.role, gtp.is_member, gtp.seats_claimed,
-        u.full_name
+      SELECT gtp.*, u.full_name, u.profile_picture
       FROM group_tab_participants gtp
       LEFT JOIN users u ON gtp.user_id = u.id
       WHERE gtp.group_tab_id = ?
+      ORDER BY gtp.role DESC, gtp.joined_at ASC
     `).all(tab.id);
     
+    // Check if current user/guest is already a participant
     let currentParticipant = null;
+    let hasJoined = false;
+    
     if (req.user) {
       currentParticipant = db.prepare(`
         SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
       `).get(tab.id, req.user.id);
+      hasJoined = !!currentParticipant || tab.creator_user_id === req.user.id;
     } else {
       currentParticipant = getGuestParticipant(req, tab.id);
+      hasJoined = !!currentParticipant;
     }
     
-    res.json({
-      success: true,
-      tab: {
-        id: tab.id,
-        tabType: tab.tab_type,
-        name: tab.name,
-        template: tab.template,
-        totalAmountCents: tab.total_amount_cents,
-        splitMode: tab.split_mode,
-        expectedPayRate: tab.expected_pay_rate,
-        seatCount: tab.seat_count,
-        proofRequired: tab.proof_required,
-        creatorName: tab.creator_name,
-        status: tab.status
-      },
-      participants,
-      currentParticipant,
-      isLoggedIn: !!req.user,
-      tiers: [],
-      priceGroups: []
-    });
+    // Load price groups
+    let priceGroups = [];
+    try {
+      const pgTableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_price_groups'`).get();
+      if (pgTableExists) {
+        priceGroups = db.prepare(`SELECT * FROM group_tab_price_groups WHERE group_tab_id = ?`).all(tab.id);
+      }
+    } catch (e) {
+      console.warn('Error loading price groups:', e);
+    }
     
-    // Attempt to load tiers and price groups if tables exist
+    // Load tiers
+    let tiers = [];
     try {
       const tiersTableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'`).get();
       if (tiersTableExists) {
-        responseObj.tiers = db.prepare(`SELECT * FROM group_tab_tiers WHERE group_tab_id = ? ORDER BY sort_order`).all(tab.id);
-      }
-      
-      const pgTableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_price_groups'`).get();
-      if (pgTableExists) {
-        const rawPriceGroups = db.prepare(`SELECT * FROM group_tab_price_groups WHERE group_tab_id = ?`).all(tab.id);
-        responseObj.priceGroups = rawPriceGroups.map(pg => ({
-          id: pg.id,
-          groupTabId: pg.group_tab_id,
-          name: pg.name,
-          emoji: pg.emoji,
-          amountCents: pg.amount_cents,
-          createdAt: pg.created_at
-        }));
+        tiers = db.prepare(`SELECT * FROM group_tab_tiers WHERE group_tab_id = ? ORDER BY sort_order`).all(tab.id);
       }
     } catch (e) {
-      console.warn('Error loading extra tab data:', e);
+      console.warn('Error loading tiers:', e);
     }
     
-    res.json(responseObj);
+    // Return full tab data (similar to /api/grouptabs/:id but via token)
+    res.json({
+      success: true,
+      tab: tab, // Full tab object for view page compatibility
+      participants,
+      currentParticipant: currentParticipant ? {
+        id: currentParticipant.id,
+        displayName: currentParticipant.display_name || currentParticipant.guest_name,
+        totalPaidCents: currentParticipant.total_paid_cents || 0,
+        fairShareCents: currentParticipant.fair_share_cents || 0,
+        priceGroupId: currentParticipant.price_group_id
+      } : null,
+      priceGroups,
+      tiers,
+      isLoggedIn: !!req.user,
+      hasJoined, // Important: tells the page whether to show join screen
+      magicToken: token, // Pass token back for join API calls
+      isCreator: req.user && tab.creator_user_id === req.user.id
+    });
+    
   } catch (err) {
     console.error('Error getting tab by token:', err);
     res.status(500).json({ error: 'Failed to get tab' });
@@ -6938,7 +7269,7 @@ app.get('/api/tabs/token/:token', (req, res) => {
 // Join tab
 app.post('/api/tabs/token/:token/join', (req, res) => {
   const { token } = req.params;
-  const { guestName } = req.body;
+  const { guestName, priceGroupId } = req.body;
   
   try {
     const tab = db.prepare(`SELECT * FROM group_tabs WHERE magic_token = ?`).get(token);
@@ -6953,6 +7284,18 @@ app.post('/api/tabs/token/:token/join', (req, res) => {
     
     const joinedAt = new Date().toISOString();
     
+    // Calculate fair share - use price group amount if provided, otherwise equal split
+    let fairShareCents = (tab.total_amount_cents && tab.people_count > 0)
+      ? Math.floor(tab.total_amount_cents / tab.people_count)
+      : 0;
+    
+    if (priceGroupId) {
+      const priceGroup = db.prepare(`SELECT * FROM group_tab_price_groups WHERE id = ? AND group_tab_id = ?`).get(priceGroupId, tab.id);
+      if (priceGroup) {
+        fairShareCents = priceGroup.amount_cents;
+      }
+    }
+    
     if (req.user) {
       // Check if already a participant
       const existing = db.prepare(`
@@ -6964,9 +7307,9 @@ app.post('/api/tabs/token/:token/join', (req, res) => {
       }
       
       const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at)
-        VALUES (?, ?, 'participant', 1, ?)
-      `).run(tab.id, req.user.id, joinedAt);
+        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
+        VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0)
+      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
       
       // Notify the organizer that a member joined
       db.prepare(`
@@ -6983,7 +7326,7 @@ app.post('/api/tabs/token/:token/join', (req, res) => {
       
       res.json({
         success: true,
-        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant' }
+        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', fairShareCents, remainingCents: fairShareCents, priceGroupId: priceGroupId || null }
       });
     } else {
       if (!guestName || !guestName.trim()) {
@@ -6993,9 +7336,9 @@ app.post('/api/tabs/token/:token/join', (req, res) => {
       const guestSessionToken = crypto.randomBytes(32).toString('hex');
       
       const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at)
-        VALUES (?, ?, ?, 'participant', 0, ?)
-      `).run(tab.id, guestName.trim(), guestSessionToken, joinedAt);
+        INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
+        VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0)
+      `).run(tab.id, guestName.trim(), guestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
       
       // Notify the organizer that a guest joined
       db.prepare(`
@@ -7211,6 +7554,11 @@ app.post('/api/grouptabs/:id/participants', requireAuth, (req, res) => {
     
     const createdAt = new Date().toISOString();
     
+    // Calculate fair share for the new participant
+    const fairShareCents = (tab.total_amount_cents && tab.people_count > 0)
+      ? Math.floor(tab.total_amount_cents / tab.people_count)
+      : 0;
+    
     if (userId) {
       // Adding an existing user
       const existingParticipant = db.prepare(`
@@ -7222,19 +7570,19 @@ app.post('/api/grouptabs/:id/participants', requireAuth, (req, res) => {
       }
       
       const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at)
-        VALUES (?, ?, 'participant', 1, ?)
-      `).run(tabId, userId, createdAt);
+        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, fair_share_cents, remaining_cents, total_paid_cents)
+        VALUES (?, ?, 'participant', 1, ?, ?, ?, 0)
+      `).run(tabId, userId, createdAt, fairShareCents, fairShareCents);
       
-      res.json({ success: true, participant: { id: result.lastInsertRowid } });
+      res.json({ success: true, participant: { id: result.lastInsertRowid, fairShareCents, remainingCents: fairShareCents } });
     } else if (guestName) {
       // Adding a guest
       const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, guest_name, role, is_member, joined_at)
-        VALUES (?, ?, 'participant', 0, ?)
-      `).run(tabId, guestName.trim(), createdAt);
+        INSERT INTO group_tab_participants (group_tab_id, guest_name, role, is_member, joined_at, fair_share_cents, remaining_cents, total_paid_cents)
+        VALUES (?, ?, 'participant', 0, ?, ?, ?, 0)
+      `).run(tabId, guestName.trim(), createdAt, fairShareCents, fairShareCents);
       
-      res.json({ success: true, participant: { id: result.lastInsertRowid } });
+      res.json({ success: true, participant: { id: result.lastInsertRowid, fairShareCents, remainingCents: fairShareCents } });
     } else {
       return res.status(400).json({ error: 'Guest name or user ID is required' });
     }
@@ -7305,6 +7653,17 @@ app.patch('/api/grouptabs/:id/participants/:participantId', (req, res) => {
     if (priceGroupId !== undefined) { 
       updates.push('price_group_id = ?'); 
       params.push(priceGroupId); 
+      
+      // Also update fair_share_cents based on the price group amount
+      if (priceGroupId) {
+        const priceGroup = db.prepare(`
+          SELECT amount_cents FROM group_tab_price_groups WHERE id = ? AND group_tab_id = ?
+        `).get(priceGroupId, tabId);
+        if (priceGroup) {
+          updates.push('fair_share_cents = ?');
+          params.push(priceGroup.amount_cents);
+        }
+      }
     }
     
     if (customAmountCents !== undefined) { 
@@ -7317,7 +7676,19 @@ app.patch('/api/grouptabs/:id/participants/:participantId', (req, res) => {
       db.prepare(`UPDATE group_tab_participants SET ${updates.join(', ')} WHERE id = ?`).run(...params);
     }
     
-    res.json({ success: true });
+    // Return updated participant data
+    const updatedParticipant = db.prepare(`
+      SELECT * FROM group_tab_participants WHERE id = ?
+    `).get(participantId);
+    
+    res.json({ 
+      success: true,
+      participant: {
+        id: updatedParticipant.id,
+        priceGroupId: updatedParticipant.price_group_id,
+        fairShareCents: updatedParticipant.fair_share_cents
+      }
+    });
   } catch (err) {
     console.error('Error updating participant:', err);
     res.status(500).json({ error: 'Failed to update participant' });
@@ -7563,6 +7934,450 @@ app.post('/api/grouptabs/:id/payments', uploadGrouptabs.single('proof'), (req, r
   }
 });
 
+// =============================================
+// SIMPLE PAYMENT RECORDING
+// =============================================
+app.post('/api/grouptabs/:id/simple-payment', (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const { participantId, amountCents, method, token, priceGroupId } = req.body;
+  
+  console.log('[SIMPLE-PAYMENT] Recording payment:', { tabId, participantId, amountCents, method, priceGroupId });
+  
+  try {
+    // Validate token access
+    let tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
+    if (!tab) {
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+    }
+    if (!tab) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    // Get the participant
+    const participant = db.prepare(`SELECT * FROM group_tab_participants WHERE id = ? AND group_tab_id = ?`)
+      .get(parseInt(participantId), tabId);
+    
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+    
+    // If priceGroupId is provided, update the participant's group and fair share FIRST
+    if (priceGroupId) {
+        const pg = db.prepare('SELECT amount_cents FROM group_tab_price_groups WHERE id = ?').get(priceGroupId);
+        if (pg) {
+            const newFairShare = pg.amount_cents;
+            const currentTotalPaid = participant.total_paid_cents || 0;
+            // Recalculate remaining based on new fair share, BEFORE this new payment
+            const remainingBeforePayment = Math.max(0, newFairShare - currentTotalPaid);
+            
+            db.prepare(`
+                UPDATE group_tab_participants 
+                SET price_group_id = ?, fair_share_cents = ?, remaining_cents = ?
+                WHERE id = ?
+            `).run(priceGroupId, newFairShare, remainingBeforePayment, participant.id);
+            
+            // Update local object to reflect changes
+            participant.fair_share_cents = newFairShare;
+            participant.remaining_cents = remainingBeforePayment;
+            participant.price_group_id = priceGroupId;
+        }
+    }
+    
+    const amount = parseInt(amountCents);
+    const createdAt = new Date().toISOString();
+    
+    // Calculate new values (after payment)
+    const currentRemaining = participant.remaining_cents ?? participant.fair_share_cents ?? 0;
+    const newRemaining = Math.max(0, currentRemaining - amount);
+    const newTotalPaid = (participant.total_paid_cents || 0) + amount;
+    
+    // Update participant with payment results
+    db.prepare(`
+      UPDATE group_tab_participants 
+      SET remaining_cents = ?, total_paid_cents = ?
+      WHERE id = ?
+    `).run(newRemaining, newTotalPaid, participant.id);
+    
+    // Update tab's paid_up_cents
+    const appliedToTab = Math.min(amount, currentRemaining);
+    db.prepare(`
+      UPDATE group_tabs 
+      SET paid_up_cents = paid_up_cents + ?
+      WHERE id = ?
+    `).run(appliedToTab, tabId);
+    
+    // Record the payment
+    const paymentResult = db.prepare(`
+      INSERT INTO group_tab_payments (
+        group_tab_id, from_participant_id, amount_cents, method, status, created_at, payment_type
+      ) VALUES (?, ?, ?, ?, 'confirmed', ?, 'normal')
+    `).run(tabId, participant.id, amount, method || 'cash', createdAt);
+    
+    console.log('[SIMPLE-PAYMENT] Success! Payment ID:', paymentResult.lastInsertRowid);
+    
+    res.json({ 
+      success: true, 
+      paymentId: paymentResult.lastInsertRowid,
+      participant: {
+        id: participant.id,
+        newRemaining,
+        newTotalPaid,
+        priceGroupId: participant.price_group_id
+      }
+    });
+    
+  } catch (err) {
+    console.error('[SIMPLE-PAYMENT ERROR]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// =============================================
+// GROUPTAB PAYMENT LOGIC - PROCESS PAYMENT (COMPLEX)
+// Handles normal payments, overpay detection, and redistribution
+// =============================================
+app.post('/api/grouptabs/:id/process-payment', upload.single('proof'), (req, res) => {
+  const tabId = parseInt(req.params.id);
+  let paymentRows = [];
+  let confirmOverpay = false;
+  let token = null;
+  let method = null;
+  let note = null;
+
+  console.log('[PAYMENT] Processing payment for tab:', tabId);
+  console.log('[PAYMENT] Request body:', JSON.stringify(req.body, null, 2));
+
+  // Handle FormData parsing
+  try {
+    if (req.body.paymentRows) {
+      paymentRows = typeof req.body.paymentRows === 'string' ? JSON.parse(req.body.paymentRows) : req.body.paymentRows;
+    }
+    confirmOverpay = req.body.confirmOverpay === 'true' || req.body.confirmOverpay === true;
+    token = req.body.token;
+    method = req.body.method;
+    note = req.body.note;
+    console.log('[PAYMENT] Parsed paymentRows:', JSON.stringify(paymentRows, null, 2));
+  } catch (e) {
+    console.error('[PAYMENT] Error parsing payment data:', e);
+    return res.status(400).json({ error: 'Invalid payment data format' });
+  }
+  
+  if (!paymentRows || !Array.isArray(paymentRows) || paymentRows.length === 0) {
+    console.log('[PAYMENT] No payment rows provided');
+    return res.status(400).json({ error: 'Payment rows are required' });
+  }
+  
+  try {
+    console.log('[PAYMENT] Looking up tab with token...');
+    // Get tab with access validation
+    let tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
+    let isCreator = !!tab;
+    
+    if (!tab) {
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+    }
+    
+    if (!tab) {
+      return res.status(404).json({ error: 'Tab not found or invalid token' });
+    }
+    
+    if (tab.status === 'closed') {
+      return res.status(400).json({ error: 'Cannot add payments to a closed tab' });
+    }
+    
+    // Get all participants with current balances
+    const participants = db.prepare(`
+      SELECT gtp.*, 
+        COALESCE(gtp.guest_name, u.full_name) as display_name,
+        u.full_name
+      FROM group_tab_participants gtp
+      LEFT JOIN users u ON gtp.user_id = u.id
+      WHERE gtp.group_tab_id = ?
+    `).all(tabId);
+    
+    console.log('[PAYMENT] Found', participants.length, 'participants');
+    console.log('[PAYMENT] Participant IDs:', participants.map(p => p.id));
+    
+    const participantMap = {};
+    participants.forEach(p => { participantMap[p.id] = p; });
+    
+    // Validate payment rows
+    let totalPaymentCents = 0;
+    const validatedRows = [];
+    
+    for (const row of paymentRows) {
+      const participantId = parseInt(row.participantId);
+      const amountCents = parseInt(row.amountCents);
+      
+      console.log('[PAYMENT] Processing row: participantId=', participantId, 'amountCents=', amountCents);
+      
+      if (!participantId || !amountCents || amountCents <= 0) {
+        console.log('[PAYMENT] Invalid row data');
+        return res.status(400).json({ error: 'Each payment row must have valid participantId and amountCents' });
+      }
+      
+      const participant = participantMap[participantId];
+      if (!participant) {
+        console.log('[PAYMENT] Participant not found:', participantId);
+        return res.status(400).json({ error: `Participant ${participantId} not found` });
+      }
+      
+      console.log('[PAYMENT] Found participant:', participant.display_name || participant.guest_name);
+      
+      validatedRows.push({
+        participantId,
+        amountCents,
+        participant
+      });
+      
+      totalPaymentCents += amountCents;
+    }
+    
+    console.log('[PAYMENT] Total payment:', totalPaymentCents);
+    
+    // Calculate total outstanding - use fair_share_cents if remaining_cents is null
+    const totalOutstanding = participants.reduce((sum, p) => {
+      // If remaining_cents is set, use it; otherwise use fair_share_cents as the initial remaining
+      const remaining = p.remaining_cents !== null && p.remaining_cents !== undefined 
+        ? p.remaining_cents 
+        : (p.fair_share_cents || 0);
+      return sum + remaining;
+    }, 0);
+    
+    // Validate total amount doesn't exceed outstanding (only if there IS an outstanding balance)
+    if (totalOutstanding > 0 && totalPaymentCents > totalOutstanding) {
+      return res.status(400).json({ 
+        error: 'Payment amount exceeds total outstanding balance',
+        totalPaymentCents,
+        totalOutstanding
+      });
+    }
+    
+    // Check for overpayment scenario
+    let totalOverpay = 0;
+    const overpayDetails = [];
+    
+    for (const row of validatedRows) {
+      // Use fair_share_cents if remaining_cents is null
+      const remaining = row.participant.remaining_cents !== null && row.participant.remaining_cents !== undefined
+        ? row.participant.remaining_cents
+        : (row.participant.fair_share_cents || 0);
+      if (row.amountCents > remaining) {
+        const overpay = row.amountCents - remaining;
+        totalOverpay += overpay;
+        overpayDetails.push({
+          participantId: row.participantId,
+          participantName: row.participant.display_name || row.participant.guest_name,
+          remaining: remaining,
+          paymentAmount: row.amountCents,
+          overpayAmount: overpay
+        });
+      }
+    }
+    
+    // If overpay detected and not confirmed, return confirmation request
+    if (totalOverpay > 0 && !confirmOverpay) {
+      // Calculate redistribution preview
+      const payerIds = new Set(validatedRows.map(r => r.participantId));
+      const othersWithRemaining = participants.filter(p => 
+        !payerIds.has(p.id) && (p.remaining_cents || 0) > 0
+      );
+      
+      const sumOthersRemaining = othersWithRemaining.reduce((sum, p) => sum + (p.remaining_cents || 0), 0);
+      
+      const redistribution = othersWithRemaining.map(p => {
+        const currentRemaining = p.remaining_cents || 0;
+        const shareFactor = sumOthersRemaining > 0 ? currentRemaining / sumOthersRemaining : 0;
+        const reduction = Math.floor(totalOverpay * shareFactor);
+        
+        return {
+          participantId: p.id,
+          participantName: p.display_name || p.guest_name,
+          currentRemaining: currentRemaining,
+          reduction: Math.min(reduction, currentRemaining),
+          newRemaining: Math.max(0, currentRemaining - reduction)
+        };
+      });
+      
+      return res.json({
+        requiresConfirmation: true,
+        overpayDetails: {
+          totalAmount: totalPaymentCents,
+          totalRemaining: validatedRows.reduce((sum, r) => sum + (r.participant.remaining_cents || 0), 0),
+          overpayAmount: totalOverpay,
+          participants: overpayDetails,
+          redistribution: redistribution
+        }
+      });
+    }
+    
+    // Process the payment
+    const createdAt = new Date().toISOString();
+    const participantUpdates = {};
+    let totalApplied = 0;
+    
+    // First pass: settle each beneficiary up to their remaining
+    for (const row of validatedRows) {
+      const currentRemaining = row.participant.remaining_cents || 0;
+      const applied = Math.min(row.amountCents, currentRemaining);
+      
+      participantUpdates[row.participantId] = {
+        remaining_cents: Math.max(0, currentRemaining - row.amountCents),
+        total_paid_cents: (row.participant.total_paid_cents || 0) + row.amountCents
+      };
+      
+      totalApplied += applied;
+    }
+    
+    // Second pass: redistribute overpay if confirmed
+    let redistributionApplied = [];
+    if (totalOverpay > 0 && confirmOverpay) {
+      const payerIds = new Set(validatedRows.map(r => r.participantId));
+      const othersWithRemaining = participants
+        .filter(p => !payerIds.has(p.id))
+        .map(p => ({
+          ...p,
+          remaining_cents: participantUpdates[p.id]?.remaining_cents ?? p.remaining_cents ?? 0
+        }))
+        .filter(p => p.remaining_cents > 0);
+      
+      const sumOthersRemaining = othersWithRemaining.reduce((sum, p) => sum + p.remaining_cents, 0);
+      
+      if (sumOthersRemaining > 0) {
+        let remainingOverpay = totalOverpay;
+        
+        for (const p of othersWithRemaining) {
+          const shareFactor = p.remaining_cents / sumOthersRemaining;
+          let reduction = Math.floor(totalOverpay * shareFactor);
+          reduction = Math.min(reduction, p.remaining_cents, remainingOverpay);
+          
+          if (reduction > 0) {
+            if (!participantUpdates[p.id]) {
+              participantUpdates[p.id] = { remaining_cents: p.remaining_cents };
+            }
+            participantUpdates[p.id].remaining_cents = Math.max(0, (participantUpdates[p.id].remaining_cents ?? p.remaining_cents) - reduction);
+            
+            redistributionApplied.push({
+              participantId: p.id,
+              participantName: p.display_name || p.guest_name,
+              reduction: reduction
+            });
+            
+            remainingOverpay -= reduction;
+          }
+        }
+        
+        // Handle rounding - give remaining to first participant
+        if (remainingOverpay > 0 && redistributionApplied.length > 0) {
+          const first = redistributionApplied[0];
+          const maxAdditional = participantUpdates[first.participantId].remaining_cents;
+          const additional = Math.min(remainingOverpay, maxAdditional);
+          participantUpdates[first.participantId].remaining_cents -= additional;
+          first.reduction += additional;
+        }
+      }
+    }
+    
+    // Apply all participant updates in a transaction
+    const updateParticipant = db.prepare(`
+      UPDATE group_tab_participants 
+      SET remaining_cents = ?, total_paid_cents = COALESCE(?, total_paid_cents)
+      WHERE id = ?
+    `);
+    
+    for (const [participantId, updates] of Object.entries(participantUpdates)) {
+      updateParticipant.run(
+        updates.remaining_cents,
+        updates.total_paid_cents !== undefined ? updates.total_paid_cents : null,
+        parseInt(participantId)
+      );
+    }
+    
+    // Calculate new tab totals
+    const updatedParticipants = db.prepare(`
+      SELECT * FROM group_tab_participants WHERE group_tab_id = ?
+    `).all(tabId);
+    
+    let newPaidUpCents = 0;
+    for (const p of updatedParticipants) {
+      const fairShare = p.fair_share_cents || 0;
+      const remaining = p.remaining_cents || 0;
+      newPaidUpCents += (fairShare - remaining);
+    }
+    
+    // Reduce host overpaid
+    const totalSettled = totalApplied + redistributionApplied.reduce((sum, r) => sum + r.reduction, 0);
+    let newHostOverpaid = Math.max(0, (tab.host_overpaid_cents || 0) - totalSettled);
+    
+    // Update tab state
+    db.prepare(`
+      UPDATE group_tabs SET paid_up_cents = ?, host_overpaid_cents = ? WHERE id = ?
+    `).run(newPaidUpCents, newHostOverpaid, tabId);
+    
+    // Record the payment
+    const beneficiaryIds = validatedRows.map(r => r.participantId);
+    const paymentType = totalOverpay > 0 ? 'overpay' : (validatedRows.length > 1 ? 'multi_person' : 'normal');
+    
+    // For single payer, use the first participant as from_participant_id
+    const primaryPayer = validatedRows[0];
+    
+    // Use provided method/note/proof if available, otherwise defaults
+    const paymentMethod = method || 'transfer';
+    const paymentNote = note || (totalOverpay > 0 ? 'Payment with overpay redistribution' : null);
+    const proofFilePath = req.file ? req.file.path : null;
+    
+    db.prepare(`
+      INSERT INTO group_tab_payments (
+        group_tab_id, from_participant_id, to_participant_id, amount_cents, 
+        method, note, status, payment_type, applied_cents, overpay_cents, beneficiary_ids, proof_file_path, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      tabId,
+      primaryPayer.participantId,
+      null,
+      totalPaymentCents,
+      paymentMethod,
+      paymentNote,
+      'confirmed',
+      paymentType,
+      totalApplied,
+      totalOverpay,
+      JSON.stringify(beneficiaryIds),
+      proofFilePath,
+      createdAt
+    );
+    
+    // Check if fully settled
+    const isFullySettled = updatedParticipants.every(p => (p.remaining_cents || 0) <= 0);
+    
+    // Return success response
+    res.json({
+      success: true,
+      payment: {
+        totalAmount: totalPaymentCents,
+        totalApplied: totalApplied,
+        totalOverpay: totalOverpay,
+        redistribution: redistributionApplied
+      },
+      tabState: {
+        paidUpCents: newPaidUpCents,
+        hostOverpaidCents: newHostOverpaid,
+        isFullySettled: isFullySettled
+      },
+      participantUpdates: Object.entries(participantUpdates).map(([id, updates]) => ({
+        participantId: parseInt(id),
+        ...updates
+      }))
+    });
+    
+  } catch (err) {
+    console.error('[PAYMENT ERROR] Error processing payment:', err);
+    console.error('[PAYMENT ERROR] Stack:', err.stack);
+    res.status(500).json({ error: 'Failed to process payment', details: err.message });
+  }
+});
+
 // Get fairness/settlement data (requires participant access)
 app.get('/api/grouptabs/:id/fairness', (req, res) => {
   const tabId = parseInt(req.params.id);
@@ -7766,21 +8581,33 @@ app.get('/grouptabs/view/:publicToken', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'grouptabs-equal-view.html'));
 });
 
-// GroupTabs view page - handle numeric IDs only (legacy)
+// GroupTabs view page - handle numeric IDs only
 app.get('/grouptabs/:id', (req, res, next) => {
   // Skip if ID is not numeric (let other routes handle)
   if (!/^\d+$/.test(req.params.id)) {
     return next();
   }
   
-  if (req.user) {
+  // Serve the view page for all users (logged in or guests)
+  // The page and API will handle access control
     res.sendFile(path.join(__dirname, 'public', 'grouptabs-view.html'));
+});
+
+// GroupTabs receipt view - classic receipt-styled page
+app.get('/grouptabs/:id/receipt', (req, res, next) => {
+  // Skip if ID is not numeric
+  if (!/^\d+$/.test(req.params.id)) {
+    return next();
+  }
+  
+  if (req.user) {
+    res.sendFile(path.join(__dirname, 'public', 'grouptabs-receipt.html'));
   } else {
     res.redirect('/');
   }
 });
 
-// Magic link page (public access)
+// Magic link page (public access) - serve the view page with magic token
 app.get('/tab/:token', (req, res) => {
   const { token } = req.params;
   
@@ -7794,7 +8621,29 @@ app.get('/tab/:token', (req, res) => {
     return res.send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>This tab has been closed</h1><p style="color:#a7b0bd">Only members can view closed tabs.</p><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
   }
   
-  res.sendFile(path.join(__dirname, 'public', 'grouptabs-guest.html'));
+  // For logged-in users who are already participants, redirect to the main view
+  if (req.user) {
+    const participant = db.prepare(`
+      SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
+    `).get(tab.id, req.user.id);
+    if (participant || tab.creator_user_id === req.user.id) {
+      return res.redirect(`/grouptabs/${tab.id}`);
+    }
+  }
+  
+  // Check for existing guest session
+  const guestToken = req.cookies.grouptab_guest_session;
+  if (guestToken) {
+    const guestParticipant = db.prepare(`
+      SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND guest_session_token = ?
+    `).get(tab.id, guestToken);
+    if (guestParticipant) {
+      return res.redirect(`/grouptabs/${tab.id}`);
+    }
+  }
+  
+  // Serve the view page - it will detect the magic token in the URL and show join screen
+  res.sendFile(path.join(__dirname, 'public', 'grouptabs-view.html'));
 });
 
 // Serve GroupTab receipt files

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>PayFriends — Join Split Bill</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  
+  <!-- Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  
+  <style>
+    :root {
+      --bg: #0e1116;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #3ddc97;
+      --accent-dim: rgba(61, 220, 151, 0.15);
+      --danger: #f85149;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(ellipse at top center, #1a2233 0%, #0a0c10 70%);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    /* =========================================
+       Soft Glass B - Dark Crystal Design
+       ========================================= */
+    .invite-container {
+      width: 100%;
+      max-width: 400px;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Header Row */
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .host-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px; /* Squircle */
+      background: linear-gradient(135deg, rgba(61, 220, 151, 0.2), rgba(61, 220, 151, 0.05));
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .header-titles h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .header-titles .host-line {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .header-titles .host-name {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* Name Input - Underline Style */
+    .name-field {
+      margin-bottom: 48px;
+    }
+
+    .name-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .name-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+      padding: 14px 0;
+      font-size: 18px;
+      color: var(--text);
+      font-family: var(--font);
+      transition: border-color 0.3s ease;
+    }
+
+    .name-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .name-input::placeholder {
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Group Selection */
+    .group-section {
+      margin-bottom: 48px;
+    }
+
+    .group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 20px;
+    }
+
+    .group-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .group-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Horizontal Card Stack */
+    .group-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .group-card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 20px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .group-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .group-card.selected {
+      background: linear-gradient(90deg, rgba(61, 220, 151, 0.12) 0%, rgba(61, 220, 151, 0.03) 100%);
+      border-color: rgba(61, 220, 151, 0.4);
+      box-shadow: 0 8px 32px rgba(61, 220, 151, 0.1);
+    }
+
+    .group-card.selected .card-icon-box {
+      background: rgba(61, 220, 151, 0.15);
+      box-shadow: 0 4px 16px rgba(61, 220, 151, 0.2);
+    }
+
+    .card-icon-box {
+      width: 52px;
+      height: 52px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+      transition: all 0.25s ease;
+    }
+
+    .card-info {
+      flex: 1;
+    }
+
+    .card-info h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+
+    .card-info p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* Selection Checkmark */
+    .card-check {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .group-card.selected .card-check {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .card-check svg {
+      width: 14px;
+      height: 14px;
+      stroke: #0e1116;
+      stroke-width: 3;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .group-card.selected .card-check svg {
+      opacity: 1;
+    }
+
+    /* CTA Button - White Pill */
+    .cta-button {
+      width: 100%;
+      background: white;
+      color: #0e1116;
+      border: none;
+      padding: 20px 32px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: none;
+      letter-spacing: 0;
+      box-shadow: 0 4px 24px rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.25s ease;
+      font-family: var(--font);
+    }
+
+    .cta-button:hover {
+      background: #f5f5f5;
+      transform: scale(1.02);
+      box-shadow: 0 8px 32px rgba(255, 255, 255, 0.15);
+    }
+
+    .cta-button:active {
+      transform: scale(0.98);
+    }
+
+    .cta-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .cta-arrow {
+      font-size: 20px;
+      transition: transform 0.25s ease;
+    }
+
+    .cta-button:hover .cta-arrow {
+      transform: translateX(4px);
+    }
+
+    /* Error State */
+    .error-message {
+      color: var(--danger);
+      font-size: 14px;
+      margin-top: 12px;
+      text-align: center;
+      padding: 12px;
+      background: rgba(248, 81, 73, 0.1);
+      border-radius: 12px;
+      display: none;
+    }
+
+    .error-message.visible {
+      display: block;
+    }
+
+    /* Loading State */
+    .loading-container {
+      text-align: center;
+      padding: 64px 24px;
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 420px) {
+      .header-titles h1 {
+        font-size: 20px;
+      }
+
+      .name-input {
+        font-size: 16px;
+      }
+
+      .card-icon-box {
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
+      }
+
+      .cta-button {
+        padding: 18px 28px;
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading State -->
+  <div id="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading your invite...</div>
+  </div>
+
+  <!-- Main Invite Container -->
+  <div id="invite-screen" class="invite-container" style="display: none;">
+    
+    <!-- Header Row -->
+    <div class="header-row">
+      <div class="host-avatar" id="host-avatar">P</div>
+      <div class="header-titles">
+        <h1 id="bill-title">Lunch at Lucia's</h1>
+        <p class="host-line">
+          <span class="host-name" id="host-name">Paul Somers</span> sent you a split bill request.
+        </p>
+      </div>
+    </div>
+
+    <!-- Name Input -->
+    <div class="name-field">
+      <label class="name-label" for="guest-name">Enter your name</label>
+      <input 
+        type="text" 
+        id="guest-name" 
+        class="name-input" 
+        placeholder="Just how your friends call you"
+        maxlength="50"
+        autocomplete="name"
+      >
+    </div>
+
+    <!-- Group Selection -->
+    <div class="group-section">
+      <div class="group-header">
+        <span class="group-title">Select your group</span>
+        <span class="group-subtitle">Choose what applies to you</span>
+      </div>
+
+      <div class="group-cards" id="group-cards">
+        <div class="group-card selected" data-group="drinkers" onclick="selectGroup(this)">
+          <div class="card-icon-box">🍷</div>
+          <div class="card-info">
+            <h3>Drinkers</h3>
+            <p>Wine, cocktails, spirits included</p>
+          </div>
+          <div class="card-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <div class="group-card" data-group="non-drinkers" onclick="selectGroup(this)">
+          <div class="card-icon-box">🥗</div>
+          <div class="card-info">
+            <h3>Non-Drinkers</h3>
+            <p>Food only, no alcohol expenses</p>
+          </div>
+          <div class="card-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA Button -->
+    <button class="cta-button" id="cta-button" onclick="joinTab()">
+      <span>See your share</span>
+      <span class="cta-arrow">→</span>
+    </button>
+
+    <!-- Error Message -->
+    <div id="error-message" class="error-message"></div>
+  </div>
+
+  <script>
+    // State
+    let token = null;
+    let tabData = null;
+    let priceGroups = [];
+    let selectedGroupId = null;
+    let isLoggedIn = false;
+
+    // Get token from URL
+    const pathParts = window.location.pathname.split('/');
+    token = pathParts[pathParts.length - 1];
+
+    // Check for demo mode (?demo=true)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDemo = urlParams.get('demo') === 'true';
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      if (isDemo) {
+        showDemoMode();
+      } else {
+        loadTab();
+      }
+    });
+
+    function showDemoMode() {
+      // Show invite screen with demo data
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('invite-screen').style.display = 'block';
+      
+      // Demo data
+      document.getElementById('bill-title').textContent = 'Lunch at Lucia\'s';
+      document.getElementById('host-name').textContent = 'Paul Somers';
+      document.getElementById('host-avatar').textContent = 'PS';
+    }
+
+    async function loadTab() {
+      try {
+        const response = await fetch(`/api/tabs/token/${token}`);
+        
+        if (!response.ok) {
+          const data = await response.json();
+          if (data.closed) {
+            showError('This tab has been closed. Only members can view closed tabs.');
+            return;
+          }
+          throw new Error(data.error || 'Failed to load tab');
+        }
+        
+        const data = await response.json();
+        tabData = data.tab;
+        priceGroups = data.priceGroups || [];
+        isLoggedIn = data.isLoggedIn;
+
+        // If already joined, redirect to full view
+        if (data.currentParticipant) {
+          window.location.href = `/grouptabs-guest.html?token=${token}`;
+          return;
+        }
+
+        // Populate UI
+        populateInvite();
+        
+        // Show invite screen
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('invite-screen').style.display = 'block';
+
+      } catch (error) {
+        console.error('Error loading tab:', error);
+        showError('Unable to load invite. Please check your link and try again.');
+      }
+    }
+
+    function populateInvite() {
+      // Set bill title
+      document.getElementById('bill-title').textContent = tabData.name || 'Split Bill';
+      
+      // Set host name and avatar
+      const hostName = tabData.creator_name || 'Someone';
+      document.getElementById('host-name').textContent = hostName;
+      
+      // Avatar initials
+      const initials = hostName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+      const avatarEl = document.getElementById('host-avatar');
+      avatarEl.textContent = initials;
+      
+      // If we have price groups, use them for the cards
+      if (priceGroups.length > 0) {
+        renderPriceGroups();
+      }
+      
+      // Select first group by default
+      const firstCard = document.querySelector('.group-card');
+      if (firstCard) {
+        selectedGroupId = firstCard.dataset.group || (priceGroups[0]?.id);
+      }
+    }
+
+    function renderPriceGroups() {
+      const container = document.getElementById('group-cards');
+      
+      // Filter to show only Drinkers and Non-Drinkers if they exist
+      const relevantGroups = priceGroups.filter(g => 
+        g.name.toLowerCase().includes('drinker') || 
+        g.name.toLowerCase().includes('non-drinker') ||
+        g.name.toLowerCase().includes('food') ||
+        g.name.toLowerCase().includes('alcohol')
+      );
+
+      // If we have matching groups, use them; otherwise keep default UI
+      if (relevantGroups.length > 0) {
+        container.innerHTML = relevantGroups.map((group, index) => `
+          <div class="group-card ${index === 0 ? 'selected' : ''}" 
+               data-group-id="${group.id}" 
+               onclick="selectGroup(this)">
+            <div class="card-icon-box">${group.emoji || (index === 0 ? '🍷' : '🥗')}</div>
+            <div class="card-info">
+              <h3>${escapeHtml(group.name)}</h3>
+              <p>${escapeHtml(group.description || '')}</p>
+            </div>
+            <div class="card-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+        `).join('');
+
+        selectedGroupId = relevantGroups[0]?.id;
+      }
+    }
+
+    function selectGroup(cardEl) {
+      // Remove selected from all
+      document.querySelectorAll('.group-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      // Add selected to clicked
+      cardEl.classList.add('selected');
+      
+      // Store selection
+      selectedGroupId = cardEl.dataset.groupId || cardEl.dataset.group;
+    }
+
+    async function joinTab() {
+      const nameInput = document.getElementById('guest-name');
+      const name = nameInput.value.trim();
+      const errorDiv = document.getElementById('error-message');
+      const button = document.getElementById('cta-button');
+
+      // Clear previous error
+      errorDiv.classList.remove('visible');
+
+      // Validate name
+      if (!name) {
+        errorDiv.textContent = 'Please enter your name to continue';
+        errorDiv.classList.add('visible');
+        nameInput.focus();
+        return;
+      }
+
+      // Disable button
+      button.disabled = true;
+      button.innerHTML = '<span>Joining...</span><span class="cta-arrow">⏳</span>';
+
+      try {
+        const body = { guestName: name };
+        
+        // Include price group if selected (numeric ID)
+        if (selectedGroupId && !isNaN(selectedGroupId)) {
+          body.priceGroupId = parseInt(selectedGroupId);
+        }
+
+        const response = await fetch(`/api/tabs/token/${token}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to join');
+        }
+
+        // Success - redirect to full guest view
+        window.location.href = `/grouptabs-guest.html?token=${token}`;
+
+      } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.classList.add('visible');
+        
+        // Re-enable button
+        button.disabled = false;
+        button.innerHTML = '<span>See your share</span><span class="cta-arrow">→</span>';
+      }
+    }
+
+    function showError(message) {
+      document.getElementById('loading').innerHTML = `
+        <div style="text-align: center; padding: 32px;">
+          <div style="font-size: 48px; margin-bottom: 20px;">😕</div>
+          <h2 style="font-size: 20px; margin-bottom: 12px; color: var(--text);">Oops!</h2>
+          <p style="color: var(--muted); margin-bottom: 24px;">${escapeHtml(message)}</p>
+          <a href="/" style="color: var(--accent); text-decoration: none; font-weight: 600;">
+            Go to PayFriends →
+          </a>
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Handle Enter key on name input
+    document.getElementById('guest-name')?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        joinTab();
+      }
+    });
+  </script>
+</body>
+</html>

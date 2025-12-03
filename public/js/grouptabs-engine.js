@@ -127,14 +127,27 @@
 
   /**
    * Calculate what each participant has actually paid
+   * Uses new total_paid_cents field if available, otherwise calculates from payments
    * @param {Array} payments - Array of payment objects
    * @param {Array} expenses - Array of expense objects (for multi-bill)
    * @param {string} tabType - 'one_bill' or 'multi_bill'
+   * @param {Array} participants - Array of participant objects (optional, for new logic)
    * @returns {Object} Map of participantId -> paidCents
    */
-  function calculateActualPaid(payments, expenses, tabType) {
+  function calculateActualPaid(payments, expenses, tabType, participants = []) {
     const paid = {};
 
+    // First, try to use the new total_paid_cents field if available
+    const hasNewLogic = participants.some(p => p.total_paid_cents !== undefined && p.total_paid_cents !== null);
+    
+    if (hasNewLogic) {
+      participants.forEach(p => {
+        paid[p.id] = p.total_paid_cents || 0;
+      });
+      return paid;
+    }
+    
+    // Fallback to old calculation logic
     if (tabType === 'multi_bill') {
       // For multi-bill: count expenses paid by each participant
       expenses.forEach(exp => {
@@ -156,24 +169,33 @@
    * Calculate balance for each participant
    * Positive = overpaid (owed money back)
    * Negative = underpaid (owes money)
+   * Uses new remaining_cents field if available for more accurate balance calculation
    * @param {Object} fairShares - Map of participantId -> fairShareCents
    * @param {Object} actualPaid - Map of participantId -> paidCents
    * @param {Array} participants - Array of participant objects
-   * @returns {Array} Array of { participantId, name, fairShare, actualPaid, balance }
+   * @returns {Array} Array of { participantId, name, fairShare, actualPaid, balance, remainingCents }
    */
   function calculateBalances(fairShares, actualPaid, participants) {
     return participants.map(p => {
-      const fair = fairShares[p.id] || 0;
+      // Use new fields if available
+      const hasNewLogic = p.fair_share_cents !== undefined && p.fair_share_cents !== null;
+      
+      const fair = hasNewLogic ? (p.fair_share_cents || 0) : (fairShares[p.id] || 0);
       const paid = actualPaid[p.id] || 0;
       const balance = paid - fair;
       
+      // remaining_cents is what they still owe (positive = owes money)
+      const remainingCents = hasNewLogic ? (p.remaining_cents || 0) : Math.max(0, fair - paid);
+      
       return {
         participantId: p.id,
-        displayName: p.full_name || p.guest_name || 'Unknown',
+        displayName: p.display_name || p.full_name || p.guest_name || 'Unknown',
         userId: p.user_id,
         fairShare: fair,
         actualPaid: paid,
-        balance: balance // Positive = owed, Negative = owes
+        balance: balance, // Positive = overpaid, Negative = owes
+        remainingCents: remainingCents, // What they still owe (0 = fully paid)
+        priceGroupId: p.price_group_id || p.priceGroupId // Include price group for display
       };
     });
   }
@@ -258,7 +280,7 @@
   /**
    * Get per-person donut chart data
    * @param {Object} balance - Single balance object from calculateBalances()
-   * @returns {Object} { fairShare, actualPaid, percentOfFair, status }
+   * @returns {Object} { fairShare, actualPaid, percentOfFair, status, remainingCents }
    */
   function getParticipantDonutData(balance) {
     const percentOfFair = balance.fairShare > 0 
@@ -266,9 +288,13 @@
       : 100;
 
     let status;
-    if (balance.balance > 50) {
+    // Use remainingCents for more accurate status if available
+    const remaining = balance.remainingCents !== undefined ? balance.remainingCents : 
+      Math.max(0, balance.fairShare - balance.actualPaid);
+    
+    if (remaining <= 0 && balance.actualPaid > balance.fairShare) {
       status = 'overpaid';
-    } else if (balance.balance < -50) {
+    } else if (remaining > 50) {
       status = 'underpaid';
     } else {
       status = 'settled';
@@ -281,7 +307,9 @@
       actualPaid: balance.actualPaid,
       balance: balance.balance,
       percentOfFair: percentOfFair,
-      status: status
+      status: status,
+      remainingCents: remaining,
+      priceGroupId: balance.priceGroupId
     };
   }
 
@@ -299,8 +327,8 @@
     // Calculate fair shares
     const fairShares = calculateFairShares(tab, participants, tiers, expenses, priceGroups);
     
-    // Calculate actual paid
-    const actualPaid = calculateActualPaid(payments, expenses, tab.tab_type);
+    // Calculate actual paid (pass participants for new payment logic)
+    const actualPaid = calculateActualPaid(payments, expenses, tab.tab_type, participants);
     
     // Calculate balances
     const balances = calculateBalances(fairShares, actualPaid, participants);
