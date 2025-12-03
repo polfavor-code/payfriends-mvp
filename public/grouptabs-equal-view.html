@@ -262,10 +262,6 @@
   <div>PRINTING RECEIPT...</div>
 </div>
 
-<!-- Hidden Inputs for Logic -->
-<input type="hidden" id="share-link-input">
-<input type="file" id="edit-receipt" style="display:none;">
-
 <!-- ================= MODALS ================= -->
 
 <!-- Name Capture Modal -->
@@ -1003,7 +999,7 @@
       }
       
       // Only show last 5 items for receipt compactness
-      const recentFeed = activityFeed.slice(0, 5);
+      const recentFeed = activityFeed.slice(-5);
       
       container.innerHTML = recentFeed.map(a => {
         const time = new Date(a.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
