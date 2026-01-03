@@ -9,3 +9,4 @@ data/*.db-wal
 test-results/
 playwright-report/
 playwright/.cache/
+uploads/
