@@ -322,6 +322,21 @@ body {
   transform: translateY(-2px);
 }
 
+/* Skip button - subtle secondary styling */
+.reply-chip.skip-chip {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+}
+
+.reply-chip.skip-chip:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-2px);
+}
+
 /* Ensure emoji/icons inside are sized up */
 .reply-chip span, 
 .reply-chip i {
@@ -1272,6 +1287,25 @@ body {
 .launch-card-receipt-label {
   font-size: 12px;
   color: var(--accent);
+}
+
+.launch-card-receipt-pdf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #1a1f2a 0%, #0e1116 100%);
+  border-radius: 8px;
+  border: 1px dashed var(--accent);
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.launch-card-receipt-pdf:hover {
+  background: linear-gradient(135deg, #242a38 0%, #161b24 100%);
+  transform: scale(1.02);
 }
 
 /* Receipt Lightbox */

@@ -625,6 +625,114 @@ try {
 }
 
 // =============================================
+// GROUP GIFT SPECIFIC COLUMNS
+// =============================================
+
+// Add gift_mode column to group_tabs table (gift_debt, gift_pot_target, gift_pot_open)
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN gift_mode TEXT;`);
+  console.log('[Startup] Added gift_mode column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add recipient_name column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN recipient_name TEXT;`);
+  console.log('[Startup] Added recipient_name column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add about_text column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN about_text TEXT;`);
+  console.log('[Startup] Added about_text column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add about_image_path column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN about_image_path TEXT;`);
+  console.log('[Startup] Added about_image_path column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add about_link column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN about_link TEXT;`);
+  console.log('[Startup] Added about_link column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add is_raising_money_only column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN is_raising_money_only INTEGER DEFAULT 0;`);
+  console.log('[Startup] Added is_raising_money_only column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add amount_target column to group_tabs table (for pot modes)
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN amount_target INTEGER;`);
+  console.log('[Startup] Added amount_target column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add contributor_count column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN contributor_count INTEGER;`);
+  console.log('[Startup] Added contributor_count column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add raising_for_text column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN raising_for_text TEXT;`);
+  console.log('[Startup] Added raising_for_text column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add raising_for_image_path column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN raising_for_image_path TEXT;`);
+  console.log('[Startup] Added raising_for_image_path column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add raising_for_link column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN raising_for_link TEXT;`);
+  console.log('[Startup] Added raising_for_link column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add is_open_pot column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN is_open_pot INTEGER DEFAULT 0;`);
+  console.log('[Startup] Added is_open_pot column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add total_raised_cents column to group_tabs table (track contributions for pot modes)
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN total_raised_cents INTEGER DEFAULT 0;`);
+  console.log('[Startup] Added total_raised_cents column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// =============================================
 // MIGRATE EXISTING GROUPTABS TO NEW PAYMENT LOGIC
 // =============================================
 function migrateExistingGroupTabs() {
@@ -5895,10 +6003,25 @@ function checkTabAccess(req, tabId) {
   return { hasAccess: false, participant: null, isAuthenticated: false };
 }
 
-// Create new tab (with optional receipt upload)
+// Create new tab (with optional receipt/image uploads)
 app.post('/api/grouptabs', requireAuth, (req, res) => {
-  // Handle multer upload with proper error handling
-  uploadGrouptabs.single('receipt')(req, res, (uploadErr) => {
+  // #region agent log
+  const logPath = '/Users/paulsomers/Dev/payfriends-mvp/.cursor/debug.log';
+  fs.appendFileSync(logPath, JSON.stringify({location:'server.js:POST /api/grouptabs',message:'Request received',timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})+'\n');
+  // #endregion
+  
+  // Handle multer upload with proper error handling - accept multiple file fields for gift flow
+  const uploadFields = uploadGrouptabs.fields([
+    { name: 'receipt', maxCount: 1 },
+    { name: 'aboutImage', maxCount: 1 },
+    { name: 'raisingForImage', maxCount: 1 }
+  ]);
+  
+  uploadFields(req, res, (uploadErr) => {
+    // #region agent log
+    fs.appendFileSync(logPath, JSON.stringify({location:'server.js:multer callback',message:'Multer callback',data:{error:uploadErr?.message,code:uploadErr?.code,files:req.files?Object.keys(req.files):null},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})+'\n');
+    // #endregion
+    
     if (uploadErr) {
       console.error('File upload error:', uploadErr);
       if (uploadErr instanceof multer.MulterError) {
@@ -5938,6 +6061,18 @@ function createGroupTab(req, res) {
   // Parse hostGroupId (the price group the host selected for themselves in the wizard)
   const hostGroupId = req.body.hostGroupId ? parseInt(req.body.hostGroupId) : null;
   
+  // ===== GROUP GIFT SPECIFIC FIELDS =====
+  const giftMode = req.body.giftMode || null; // 'gift_debt', 'gift_pot_target', 'gift_pot_open'
+  const recipientName = req.body.recipientName || null;
+  const aboutText = req.body.aboutText || null;
+  const aboutLink = req.body.aboutLink || null;
+  const isRaisingMoneyOnly = req.body.isRaisingMoneyOnly === 'true' || req.body.isRaisingMoneyOnly === true;
+  const amountTarget = req.body.amountTarget ? parseInt(req.body.amountTarget) : null;
+  const contributorCount = req.body.contributorCount ? parseInt(req.body.contributorCount) : null;
+  const raisingForText = req.body.raisingForText || null;
+  const raisingForLink = req.body.raisingForLink || null;
+  const isOpenPot = req.body.isOpenPot === 'true' || req.body.isOpenPot === true;
+  
   if (!name || !tabType) {
     return res.status(400).json({ error: 'Name and tab type are required' });
   }
@@ -5950,14 +6085,42 @@ function createGroupTab(req, res) {
     const magicToken = crypto.randomBytes(32).toString('hex');
     const ownerToken = crypto.randomBytes(32).toString('hex');
     const createdAt = new Date().toISOString();
-    const receiptFilePath = req.file ? `/uploads/grouptabs/${req.file.filename}` : null;
+    
+    // Handle file paths from req.files (using .fields() for multiple file support)
+    const receiptFile = req.files?.receipt?.[0];
+    const aboutImageFile = req.files?.aboutImage?.[0];
+    const raisingForImageFile = req.files?.raisingForImage?.[0];
+    
+    const receiptFilePath = receiptFile ? `/uploads/grouptabs/${receiptFile.filename}` : null;
+    const aboutImagePath = aboutImageFile ? `/uploads/grouptabs/${aboutImageFile.filename}` : null;
+    const raisingForImagePath = raisingForImageFile ? `/uploads/grouptabs/${raisingForImageFile.filename}` : null;
+    
+    // #region agent log
+    const logPath = '/Users/paulsomers/Dev/payfriends-mvp/.cursor/debug.log';
+    fs.appendFileSync(logPath, JSON.stringify({location:'server.js:createGroupTab',message:'Processing files',data:{receiptFilePath,aboutImagePath,raisingForImagePath,giftMode},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})+'\n');
+    // #endregion
     
     // Calculate payment logic values for host's initial payment
     let hostOverpaidCents = 0;
     let paidUpCents = 0;
     let fairShareCents = 0;
     
-    if (totalAmountCents && totalAmountCents > 0 && peopleCount > 0) {
+    // Gift modes have different payment logic
+    const isGiftDebtMode = giftMode === 'gift_debt';
+    const isGiftPotMode = giftMode === 'gift_pot_target' || giftMode === 'gift_pot_open';
+    
+    if (isGiftDebtMode && totalAmountCents && totalAmountCents > 0 && peopleCount > 0) {
+      // Gift debt mode: creator paid upfront, others owe their share
+      fairShareCents = Math.floor(totalAmountCents / peopleCount);
+      hostOverpaidCents = totalAmountCents - fairShareCents;
+      paidUpCents = fairShareCents; // Only host's fair share is considered "settled"
+    } else if (isGiftPotMode) {
+      // Pot modes: no debt, just collecting contributions
+      fairShareCents = 0;
+      hostOverpaidCents = 0;
+      paidUpCents = 0;
+    } else if (totalAmountCents && totalAmountCents > 0 && peopleCount > 0) {
+      // Regular restaurant bill flow
       fairShareCents = Math.floor(totalAmountCents / peopleCount);
       hostOverpaidCents = totalAmountCents - fairShareCents;
       paidUpCents = fairShareCents; // Only host's fair share is considered "settled"
@@ -5967,8 +6130,11 @@ function createGroupTab(req, res) {
       INSERT INTO group_tabs (
         creator_user_id, name, description, tab_type, template, total_amount_cents, 
         split_mode, expected_pay_rate, seat_count, people_count, proof_required, 
-        magic_token, owner_token, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        magic_token, owner_token, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at,
+        gift_mode, recipient_name, about_text, about_link, is_raising_money_only,
+        amount_target, contributor_count, raising_for_text, raising_for_link, is_open_pot,
+        about_image_path, raising_for_image_path
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       name,
@@ -5986,29 +6152,52 @@ function createGroupTab(req, res) {
       receiptFilePath,
       hostOverpaidCents,
       paidUpCents,
-      createdAt
+      createdAt,
+      // Gift-specific fields
+      giftMode,
+      recipientName,
+      aboutText,
+      aboutLink,
+      isRaisingMoneyOnly ? 1 : 0,
+      amountTarget,
+      contributorCount,
+      raisingForText,
+      raisingForLink,
+      isOpenPot ? 1 : 0,
+      aboutImagePath,
+      raisingForImagePath
     );
     
     const tabId = result.lastInsertRowid;
     
     // Add creator as organizer with payment logic fields
-    // Host has remaining_cents = 0 (they paid the bill)
+    // For pot modes, creator has NOT paid yet. For debt modes (restaurant & gift_debt), creator paid upfront.
+    const creatorPaidUpfront = !isGiftPotMode && totalAmountCents && totalAmountCents > 0;
     const participantResult = db.prepare(`
       INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, fair_share_cents, remaining_cents, total_paid_cents)
       VALUES (?, ?, 'organizer', 1, ?, ?, ?, ?)
-    `).run(tabId, req.user.id, createdAt, fairShareCents, 0, totalAmountCents || 0);
+    `).run(
+      tabId, 
+      req.user.id, 
+      createdAt, 
+      fairShareCents, 
+      isGiftPotMode ? 0 : 0, // For pot modes, no debt; for debt modes, creator owes 0 (already paid)
+      creatorPaidUpfront ? totalAmountCents : 0
+    );
     
     const organizerParticipantId = participantResult.lastInsertRowid;
     
     // Record organizer's payment for the full bill (they paid the bill upfront)
-    // Works for both 'equal' and 'price_groups' split modes
-    if ((splitMode === 'equal' || splitMode === 'price_groups') && totalAmountCents && totalAmountCents > 0) {
-      console.log(`Creating initial host payment: tab=${tabId}, org=${organizerParticipantId}, amt=${totalAmountCents}, fairShare=${fairShareCents}, overpaid=${hostOverpaidCents}`);
+    // This applies to: restaurant bills, price_groups, AND gift_debt mode
+    // It does NOT apply to: gift_pot_target, gift_pot_open (pot modes where creator is just collecting)
+    if (!isGiftPotMode && (splitMode === 'equal' || splitMode === 'price_groups') && totalAmountCents && totalAmountCents > 0) {
+      const paymentNote = isGiftDebtMode ? 'Paid for the gift upfront' : 'Paid the full bill';
+      console.log(`Creating initial host payment: tab=${tabId}, org=${organizerParticipantId}, amt=${totalAmountCents}, fairShare=${fairShareCents}, overpaid=${hostOverpaidCents}, giftMode=${giftMode || 'none'}`);
       try {
         db.prepare(`
           INSERT INTO group_tab_payments (group_tab_id, from_participant_id, to_participant_id, amount_cents, method, note, status, payment_type, applied_cents, overpay_cents, created_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(tabId, organizerParticipantId, null, totalAmountCents, 'paid_bill', 'Paid the full bill', 'confirmed', 'initial_host', fairShareCents, hostOverpaidCents, createdAt);
+        `).run(tabId, organizerParticipantId, null, totalAmountCents, 'paid_bill', paymentNote, 'confirmed', 'initial_host', fairShareCents, hostOverpaidCents, createdAt);
       } catch (payErr) {
         console.error('Failed to create initial payment:', payErr);
         // Don't fail the whole tab creation for this, just log it
@@ -6078,12 +6267,19 @@ function createGroupTab(req, res) {
         id: tabId,
         name,
         tabType,
+        template,
         magicToken,
         ownerToken,
         magicLink: `${req.protocol}://${req.get('host')}/tab/${magicToken}`,
         ownerLink: `${req.protocol}://${req.get('host')}/grouptabs/manage/${ownerToken}`,
         organizerParticipantId: organizerParticipantId,
-        priceGroups: createdPriceGroups
+        priceGroups: createdPriceGroups,
+        // Gift-specific fields
+        giftMode: giftMode || null,
+        recipientName: recipientName || null,
+        amountTarget: amountTarget || null,
+        isOpenPot: isOpenPot || false,
+        receipt_file_path: receiptFilePath
       }
     });
   } catch (err) {

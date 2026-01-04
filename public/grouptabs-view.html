@@ -1122,11 +1122,11 @@
         <!-- Bill Summary Stats -->
         <div class="bill-summary-stats">
             <div class="stat-block">
-                <div class="stat-label">TOTAL BILL</div>
+                <div class="stat-label" id="total-bill-label">TOTAL BILL</div>
                 <div class="stat-value" id="total-bill-amount">€0.00</div>
             </div>
             <div class="stat-block stat-right">
-                <div class="stat-label stat-pending">REMAINING</div>
+                <div class="stat-label stat-pending" id="remaining-label">REMAINING</div>
                 <div class="stat-value" id="remaining-amount" style="color: var(--pending);">€0.00</div>
             </div>
         </div>
@@ -1526,42 +1526,92 @@
         // Title & Meta
         document.getElementById('header-title').innerText = tabData.name;
         const date = new Date(tabData.created_at).toLocaleDateString();
-        const splitLabel = (tabData.split_mode === 'price_groups') ? 'GROUP SPLIT' : 'EQUAL SPLIT';
+        
+        // Determine split label based on gift mode or split mode
+        const giftMode = tabData.gift_mode;
+        const isGiftPotMode = giftMode === 'gift_pot_target' || giftMode === 'gift_pot_open';
+        const isGiftDebtMode = giftMode === 'gift_debt';
+        
+        let splitLabel;
+        if (isGiftPotMode) {
+            splitLabel = tabData.is_open_pot ? 'OPEN POT' : 'TARGET POT';
+        } else if (isGiftDebtMode) {
+            splitLabel = 'GIFT DEBT';
+        } else {
+            splitLabel = (tabData.split_mode === 'price_groups') ? 'GROUP SPLIT' : 'EQUAL SPLIT';
+        }
         
         const peopleCount = tabData.people_count || tabData.peopleCount || participants.length || 1;
         document.getElementById('header-meta').innerHTML = `
-            <span>${date}</span> • <span>${peopleCount} Participants</span> • 
+            <span>${date}</span> • <span>${peopleCount} ${isGiftPotMode ? 'Contributors' : 'Participants'}</span> • 
             <span class="split-pill">${splitLabel}</span>
         `;
 
-        // Bill Summary Stats
-        // Total Bill = the actual bill amount from the tab
-        const totalBill = tabData.total_amount_cents || 0;
-        
-        // Calculate what's been "settled" towards the bill
-        // Each participant contributes min(whatTheyPaid, theirFairShare) towards settling the bill
-        let totalSettled = 0;
-        if (fairnessData && fairnessData.participants && fairnessData.participants.length > 0) {
-            totalSettled = fairnessData.participants.reduce((sum, p) => {
-                // Each person has settled up to their fair share
-                const settled = Math.min(p.actualPaid || 0, p.fairShare || 0);
-                return sum + settled;
-            }, 0);
+        // === GIFT POT MODE DISPLAY ===
+        if (isGiftPotMode) {
+            // For pot modes, show amount raised vs target (or just raised for open pot)
+            const totalRaised = tabData.total_raised_cents || 0;
+            const target = tabData.amount_target || 0;
+            const isOpenPot = tabData.is_open_pot;
+            
+            // Calculate from participant contributions
+            let contributionsTotal = 0;
+            if (fairnessData && fairnessData.participants) {
+                contributionsTotal = fairnessData.participants.reduce((sum, p) => sum + (p.actualPaid || 0), 0);
+            }
+            const raised = Math.max(totalRaised, contributionsTotal);
+            
+            const pct = target > 0 ? Math.min(100, Math.round((raised / target) * 100)) : 0;
+            
+            // Update labels for pot mode
+            document.getElementById('total-bill-label').innerText = isOpenPot ? 'Amount Raised' : 'Target';
+            document.getElementById('remaining-label').innerText = isOpenPot ? 'Contributors' : 'Remaining';
+            
+            document.getElementById('total-bill-amount').innerText = isOpenPot ? formatCurrency2(raised) : formatCurrency2(target);
+            document.getElementById('remaining-amount').innerText = isOpenPot 
+                ? (participants.length || 1) + ' people'
+                : formatCurrency2(Math.max(0, target - raised));
+            
+            if (isOpenPot) {
+                document.getElementById('global-progress-fill').style.width = '100%';
+                document.getElementById('progress-percent-text').innerText = formatCurrency2(raised) + ' Raised';
+            } else {
+                document.getElementById('global-progress-fill').style.width = pct + '%';
+                document.getElementById('progress-percent-text').innerText = pct + '% of Goal';
+            }
         } else {
-            // Fallback: use database value or assume host's share is settled
-            const numPeople = tabData.people_count || 1;
-            const fairShareCents = Math.floor(totalBill / numPeople);
-            totalSettled = tabData.paid_up_cents || fairShareCents;
+            // === STANDARD BILL/DEBT MODE DISPLAY (Restaurant & Gift Debt) ===
+            // Total Bill = the actual bill amount from the tab
+            const totalBill = tabData.total_amount_cents || 0;
+            
+            // Update labels for debt mode
+            document.getElementById('total-bill-label').innerText = isGiftDebtMode ? 'Gift Cost' : 'Total Bill';
+            document.getElementById('remaining-label').innerText = 'Remaining';
+            
+            // Calculate what's been "settled" towards the bill
+            let totalSettled = 0;
+            if (fairnessData && fairnessData.participants && fairnessData.participants.length > 0) {
+                totalSettled = fairnessData.participants.reduce((sum, p) => {
+                    // Each person has settled up to their fair share
+                    const settled = Math.min(p.actualPaid || 0, p.fairShare || 0);
+                    return sum + settled;
+                }, 0);
+            } else {
+                // Fallback: use database value or assume host's share is settled
+                const numPeople = tabData.people_count || 1;
+                const fairShareCents = Math.floor(totalBill / numPeople);
+                totalSettled = tabData.paid_up_cents || fairShareCents;
+            }
+            
+            // Remaining = bill minus what's settled
+            const totalRemaining = Math.max(0, totalBill - totalSettled);
+            const totalCollected = totalSettled;
+            const pct = totalBill > 0 ? Math.min(100, Math.round((totalCollected / totalBill) * 100)) : 100;
+            document.getElementById('total-bill-amount').innerText = formatCurrency2(totalBill);
+            document.getElementById('remaining-amount').innerText = formatCurrency2(totalRemaining);
+            document.getElementById('global-progress-fill').style.width = pct + '%';
+            document.getElementById('progress-percent-text').innerText = pct + '% Collected';
         }
-        
-        // Remaining = bill minus what's settled
-        const totalRemaining = Math.max(0, totalBill - totalSettled);
-        const totalCollected = totalSettled;
-        const pct = totalBill > 0 ? Math.min(100, Math.round((totalCollected / totalBill) * 100)) : 100;
-        document.getElementById('total-bill-amount').innerText = formatCurrency2(totalBill);
-        document.getElementById('remaining-amount').innerText = formatCurrency2(totalRemaining);
-        document.getElementById('global-progress-fill').style.width = pct + '%';
-        document.getElementById('progress-percent-text').innerText = pct + '% Collected';
 
         // Receipt
         const rLink = document.getElementById('receipt-view-link');
