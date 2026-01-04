@@ -408,11 +408,64 @@
     .header-main-row {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-items: center;
+        margin-bottom: 24px;
     }
 
-    .page-title { font-size: 28px; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-    .page-meta { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+    .header-title-group {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .page-title { 
+        font-size: 26px; 
+        font-weight: 900; 
+        color: #fff; 
+        margin: 0 0 4px 0;
+        line-height: 1.2;
+    }
+    .page-meta { 
+        font-size: 13px; 
+        color: var(--muted); 
+        display: flex; 
+        gap: 8px; 
+        align-items: center; 
+    }
+
+    /* Gift Image Avatar */
+    .gift-image-row {
+        flex-shrink: 0;
+    }
+    .gift-image-thumb {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        object-fit: cover;
+        cursor: pointer;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        transition: transform 0.2s, border-color 0.2s;
+    }
+    .gift-image-thumb:hover {
+        transform: scale(1.05);
+        border-color: var(--accent);
+    }
+    
+    .gift-about-badge {
+        background: rgba(0, 214, 143, 0.1);
+        border: 1px solid rgba(0, 214, 143, 0.3);
+        color: var(--accent);
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
     
     .split-pill {
         font-size: 10px;
@@ -1109,13 +1162,21 @@
         </div>
 
         <div class="header-main-row">
-            <div>
-                <div class="page-title" id="header-title">
-                    Loading...
+            <div class="header-title-group">
+                <div id="gift-image-row" class="gift-image-row" style="display: none;">
+                    <img id="gift-image-thumb" class="gift-image-thumb" src="" alt="Gift" onclick="showGiftImageModal()">
                 </div>
-                <div class="page-meta" id="header-meta">
-                    ...
+                <div>
+                    <div class="page-title" id="header-title">
+                        Loading...
+                    </div>
+                    <div class="page-meta" id="header-meta">
+                        ...
+                    </div>
                 </div>
+            </div>
+            <div id="gift-about-badge" class="gift-about-badge" style="display: none;">
+                <span id="gift-about-text"></span>
             </div>
         </div>
 
@@ -1523,8 +1584,12 @@
     }
 
     function renderHeader() {
-        // Title & Meta
-        document.getElementById('header-title').innerText = tabData.name;
+        // Title & Meta - show recipient name for gifts
+        let displayTitle = tabData.name;
+        if (tabData.template === 'gift' && tabData.recipient_name) {
+            displayTitle = `Gift for ${tabData.recipient_name}`;
+        }
+        document.getElementById('header-title').innerText = displayTitle;
         const date = new Date(tabData.created_at).toLocaleDateString();
         
         // Determine split label based on gift mode or split mode
@@ -1546,6 +1611,29 @@
             <span>${date}</span> • <span>${peopleCount} ${isGiftPotMode ? 'Contributors' : 'Participants'}</span> • 
             <span class="split-pill">${splitLabel}</span>
         `;
+
+        // === GIFT IMAGE THUMBNAIL (only if image exists) ===
+        const giftImageRow = document.getElementById('gift-image-row');
+        const giftImageThumb = document.getElementById('gift-image-thumb');
+        const giftAboutBadge = document.getElementById('gift-about-badge');
+        const giftAboutText = document.getElementById('gift-about-text');
+        
+        // Only show if there's an actual image uploaded
+        if (tabData.about_image_path) {
+            giftImageThumb.src = tabData.about_image_path;
+            giftImageRow.style.display = 'block';
+            
+            // Show product name as badge if it exists
+            if (tabData.about_text) {
+                giftAboutText.textContent = tabData.about_text;
+                giftAboutBadge.style.display = 'block';
+            } else {
+                giftAboutBadge.style.display = 'none';
+            }
+        } else {
+            giftImageRow.style.display = 'none';
+            giftAboutBadge.style.display = 'none';
+        }
 
         // === GIFT POT MODE DISPLAY ===
         if (isGiftPotMode) {
@@ -2573,6 +2661,9 @@
     function showReceiptModal(url, filename) {
         const body = document.getElementById('receipt-modal-body');
         
+        // Reset modal title for receipt
+        document.querySelector('.receipt-modal-title').textContent = 'Original Receipt';
+        
         // Determine file type
         const ext = filename.split('.').pop().toLowerCase();
         
@@ -2583,6 +2674,19 @@
             // Image viewer
             body.innerHTML = `<img src="${url}" alt="Receipt">`;
         }
+        
+        showModal('receipt-modal');
+    }
+    
+    function showGiftImageModal() {
+        const imageSrc = tabData.about_image_path;
+        if (!imageSrc) return;
+        
+        const body = document.getElementById('receipt-modal-body');
+        body.innerHTML = `<img src="${imageSrc}" alt="Gift">`;
+        
+        // Update modal title
+        document.querySelector('.receipt-modal-title').textContent = tabData.about_text || 'Gift Image';
         
         showModal('receipt-modal');
     }

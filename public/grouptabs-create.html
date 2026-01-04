@@ -3516,10 +3516,6 @@
       try {
         // Use FormData to support file upload
         const formData = new FormData();
-        // #region agent log
-        const fileFields = {aboutImage: !!state.data.aboutImage, raisingForImage: !!state.data.raisingForImage, receiptFile: !!state.data.receiptFile};
-        fetch('http://127.0.0.1:7245/ingest/92ce3b30-ba54-4865-b758-cfee8551dfa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'grouptabs-create.html:createTab',message:'File fields being sent',data:{fileFields,giftMode:state.data.giftMode,template:state.data.template},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
-        // #endregion
         formData.append('name', state.data.name);
         formData.append('tabType', state.data.type);
         formData.append('template', state.data.template);
@@ -3676,19 +3672,10 @@
       const totalCents = state.data.totalCents + state.data.tipCents;
       const perPerson = formatCurrency2(totalCents / state.data.people);
       
-      // Build receipt preview if uploaded
+      // Build receipt indicator if uploaded (simple text, no preview)
       let receiptHtml = '';
       if (tab.receipt_file_path) {
-        const isPdf = tab.receipt_file_path.toLowerCase().endsWith('.pdf');
-        const previewContent = isPdf 
-          ? `<div class="launch-card-receipt-pdf" onclick="window.open('${tab.receipt_file_path}', '_blank')">📄 PDF</div>`
-          : `<img src="${tab.receipt_file_path}" alt="Receipt" onclick="showReceiptModal('${tab.receipt_file_path}')">`;
-        receiptHtml = `
-          <div class="launch-card-receipt">
-            ${previewContent}
-            <span class="launch-card-receipt-label">📄 Receipt attached</span>
-          </div>
-        `;
+        receiptHtml = `<div class="launch-card-receipt-indicator">✓ Receipt attached</div>`;
       }
       
       // Build price groups display if applicable

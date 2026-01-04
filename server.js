@@ -964,7 +964,10 @@ app.use(cookieParser());
 // which requires authentication and authorization (lender or borrower only)
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// GroupTab receipts are served via dedicated API endpoint below (see /api/grouptabs/receipt/:filename)
+// Serve GroupTab uploads (receipts, gift images) - these are public files for tab participants
+app.use('/uploads/grouptabs', express.static(path.join(__dirname, 'uploads', 'grouptabs')));
+
+// GroupTab receipts are also served via dedicated API endpoint below (see /api/grouptabs/receipt/:filename)
 
 // Session middleware - loads user from session cookie
 app.use((req, res, next) => {
@@ -6005,10 +6008,6 @@ function checkTabAccess(req, tabId) {
 
 // Create new tab (with optional receipt/image uploads)
 app.post('/api/grouptabs', requireAuth, (req, res) => {
-  // #region agent log
-  const logPath = '/Users/paulsomers/Dev/payfriends-mvp/.cursor/debug.log';
-  fs.appendFileSync(logPath, JSON.stringify({location:'server.js:POST /api/grouptabs',message:'Request received',timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})+'\n');
-  // #endregion
   
   // Handle multer upload with proper error handling - accept multiple file fields for gift flow
   const uploadFields = uploadGrouptabs.fields([
@@ -6018,10 +6017,6 @@ app.post('/api/grouptabs', requireAuth, (req, res) => {
   ]);
   
   uploadFields(req, res, (uploadErr) => {
-    // #region agent log
-    fs.appendFileSync(logPath, JSON.stringify({location:'server.js:multer callback',message:'Multer callback',data:{error:uploadErr?.message,code:uploadErr?.code,files:req.files?Object.keys(req.files):null},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})+'\n');
-    // #endregion
-    
     if (uploadErr) {
       console.error('File upload error:', uploadErr);
       if (uploadErr instanceof multer.MulterError) {
@@ -6094,12 +6089,7 @@ function createGroupTab(req, res) {
     const receiptFilePath = receiptFile ? `/uploads/grouptabs/${receiptFile.filename}` : null;
     const aboutImagePath = aboutImageFile ? `/uploads/grouptabs/${aboutImageFile.filename}` : null;
     const raisingForImagePath = raisingForImageFile ? `/uploads/grouptabs/${raisingForImageFile.filename}` : null;
-    
-    // #region agent log
-    const logPath = '/Users/paulsomers/Dev/payfriends-mvp/.cursor/debug.log';
-    fs.appendFileSync(logPath, JSON.stringify({location:'server.js:createGroupTab',message:'Processing files',data:{receiptFilePath,aboutImagePath,raisingForImagePath,giftMode},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})+'\n');
-    // #endregion
-    
+
     // Calculate payment logic values for host's initial payment
     let hostOverpaidCents = 0;
     let paidUpCents = 0;

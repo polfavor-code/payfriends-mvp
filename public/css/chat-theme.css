@@ -1333,6 +1333,14 @@ body {
   transform: scale(1.02);
 }
 
+/* Simple Receipt Indicator */
+.launch-card-receipt-indicator {
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
 /* Receipt Lightbox */
 .receipt-lightbox {
   position: fixed;
