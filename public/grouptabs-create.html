@@ -3706,6 +3706,9 @@
       // Show success message
       addBotMessage("Tab created! 🚀");
       
+      // Generate QR code URL
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&bgcolor=0e1116&color=00D68F&data=${encodeURIComponent(shareUrl)}`;
+      
       const cardHtml = `
         <div class="chat-card">
           <div class="form-card launch-card">
@@ -3713,6 +3716,11 @@
             <div class="launch-card-title">${escapeHtml(state.data.name)}</div>
             <div class="launch-card-amount">${formatCurrency2(totalCents)}</div>
             <div class="launch-card-detail">${detailHtml}</div>
+            
+            <div class="launch-card-qr">
+              <img src="${qrCodeUrl}" alt="QR Code" class="qr-code-img">
+              <span class="qr-code-label">Scan to join</span>
+            </div>
             
             <div class="launch-card-actions">
               <button class="share-btn share-btn-primary" onclick="copyShareLink('${shareUrl}')">

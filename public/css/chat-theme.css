@@ -1224,6 +1224,31 @@ body {
   margin-bottom: 20px;
 }
 
+.launch-card-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #0e1116;
+  border-radius: 12px;
+  border: 1px solid #2a303c;
+}
+
+.qr-code-img {
+  width: 140px;
+  height: 140px;
+  border-radius: 8px;
+}
+
+.qr-code-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .share-btn {
   display: flex;
   align-items: center;
