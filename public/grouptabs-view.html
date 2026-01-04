@@ -1612,14 +1612,17 @@
             <span class="split-pill">${splitLabel}</span>
         `;
 
-        // === GIFT IMAGE THUMBNAIL (only if image exists) ===
+        // === GIFT IMAGE THUMBNAIL (only for 'gift' mode, only if image exists) ===
         const giftImageRow = document.getElementById('gift-image-row');
         const giftImageThumb = document.getElementById('gift-image-thumb');
         const giftAboutBadge = document.getElementById('gift-about-badge');
         const giftAboutText = document.getElementById('gift-about-text');
         
-        // Only show if there's an actual image uploaded
-        if (tabData.about_image_path) {
+        // Check if this is a fundraiser (no gift image block) or gift mode
+        const isFundraiserMode = tabData.group_gift_mode === 'fundraiser';
+        
+        // Only show gift image for 'gift' mode with actual image uploaded
+        if (!isFundraiserMode && tabData.about_image_path) {
             giftImageThumb.src = tabData.about_image_path;
             giftImageRow.style.display = 'block';
             

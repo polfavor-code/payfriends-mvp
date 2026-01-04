@@ -636,6 +636,14 @@ try {
   // Column already exists, ignore
 }
 
+// Add group_gift_mode column to group_tabs table ('gift' or 'fundraiser')
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN group_gift_mode TEXT DEFAULT 'gift';`);
+  console.log('[Startup] Added group_gift_mode column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // Add recipient_name column to group_tabs table
 try {
   db.exec(`ALTER TABLE group_tabs ADD COLUMN recipient_name TEXT;`);
@@ -6058,6 +6066,7 @@ function createGroupTab(req, res) {
   
   // ===== GROUP GIFT SPECIFIC FIELDS =====
   const giftMode = req.body.giftMode || null; // 'gift_debt', 'gift_pot_target', 'gift_pot_open'
+  const groupGiftMode = req.body.groupGiftMode || null; // NEW: 'gift' or 'fundraiser'
   const recipientName = req.body.recipientName || null;
   const aboutText = req.body.aboutText || null;
   const aboutLink = req.body.aboutLink || null;
@@ -6121,10 +6130,10 @@ function createGroupTab(req, res) {
         creator_user_id, name, description, tab_type, template, total_amount_cents, 
         split_mode, expected_pay_rate, seat_count, people_count, proof_required, 
         magic_token, owner_token, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at,
-        gift_mode, recipient_name, about_text, about_link, is_raising_money_only,
+        gift_mode, group_gift_mode, recipient_name, about_text, about_link, is_raising_money_only,
         amount_target, contributor_count, raising_for_text, raising_for_link, is_open_pot,
         about_image_path, raising_for_image_path
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       name,
@@ -6145,6 +6154,7 @@ function createGroupTab(req, res) {
       createdAt,
       // Gift-specific fields
       giftMode,
+      groupGiftMode, // NEW: 'gift' or 'fundraiser'
       recipientName,
       aboutText,
       aboutLink,

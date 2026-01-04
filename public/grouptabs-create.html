@@ -714,7 +714,8 @@
       font-weight: 500;
     }
     
-    .gift-about-textarea {
+    .gift-about-textarea,
+    .gift-about-input {
       width: 100%;
       box-sizing: border-box;
       padding: 14px 16px;
@@ -726,17 +727,22 @@
       line-height: 1.5;
       resize: none;
       font-family: inherit;
-      min-height: 70px;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
     
-    .gift-about-textarea:focus {
+    .gift-about-textarea {
+      min-height: 70px;
+    }
+    
+    .gift-about-textarea:focus,
+    .gift-about-input:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(0, 214, 143, 0.1);
     }
     
-    .gift-about-textarea::placeholder {
+    .gift-about-textarea::placeholder,
+    .gift-about-input::placeholder {
       color: #6b7280;
     }
     
@@ -1091,11 +1097,12 @@
         // ===== GROUP GIFT SPECIFIC FIELDS =====
         giftMode: null,           // 'gift_debt' | 'gift_pot_target' | 'gift_pot_open'
         recipientName: null,      // Q1_gift: Who is this gift for?
-        aboutText: null,          // Q2_gift: What is this about?
-        aboutImage: null,         // Q2_gift: Optional image file
-        aboutLink: null,          // Q2_gift: Optional link
-        isRaisingMoneyOnly: false,// Q2_gift: Just raising money (no specific gift)
-        giftPlan: null,           // Q3_gift: 'already_bought' | 'planning_to_buy'
+        groupGiftMode: null,      // NEW: 'gift' | 'fundraiser' - Step 2 choice
+        aboutText: null,          // Gift description (for 'gift' mode)
+        aboutImage: null,         // Optional gift image file
+        aboutLink: null,          // Optional link
+        isRaisingMoneyOnly: false,// Legacy flag - now derived from groupGiftMode
+        giftPlan: null,           // 'already_bought' | 'planning_to_buy'
         amountTarget: 0,          // For pot modes: target amount in cents
         contributorCount: null,   // Number of contributors
         raisingForText: null,     // Q3_raise: What are you raising money for?
@@ -1273,6 +1280,10 @@
         case 'GIFT_RECIPIENT':
           inputField.focus();
           break;
+        
+        case 'GIFT_TYPE_CHOICE':
+          addGiftTypeChoiceBlocks();
+          break;
           
         case 'GIFT_ABOUT':
           addGiftAboutCard();
@@ -1296,6 +1307,19 @@
           
         case 'GIFT_RAISE_TARGET':
           addGiftRaiseTargetCard();
+          break;
+        
+        // Fundraiser minimal flow steps
+        case 'FUNDRAISER_NAME':
+          addFundraiserNameCard();
+          break;
+          
+        case 'FUNDRAISER_TARGET':
+          addFundraiserTargetCard();
+          break;
+          
+        case 'FUNDRAISER_CONTRIBUTORS':
+          addFundraiserContributorsCard();
           break;
       }
     }
@@ -1428,6 +1452,19 @@
         case 'GIFT_RECIPIENT':
           handleGiftRecipient(input);
           break;
+        
+        case 'GIFT_TYPE_CHOICE':
+          handleGiftTypeChoice(input);
+          break;
+        
+        // Gift type selection from blocks
+        case 'gift_type_gift':
+          selectGiftTypeOption('gift');
+          break;
+          
+        case 'gift_type_fundraiser':
+          selectGiftTypeOption('fundraiser');
+          break;
           
         case 'GIFT_ABOUT':
           // Handled by card confirm
@@ -1450,6 +1487,19 @@
           break;
           
         case 'GIFT_RAISE_TARGET':
+          // Handled by card confirm
+          break;
+        
+        // Fundraiser minimal flow steps
+        case 'FUNDRAISER_NAME':
+          // Handled by card confirm
+          break;
+          
+        case 'FUNDRAISER_TARGET':
+          // Handled by card confirm
+          break;
+          
+        case 'FUNDRAISER_CONTRIBUTORS':
           // Handled by card confirm
           break;
       }
@@ -1643,16 +1693,46 @@
       } else {
         state.data.recipientName = trimmed;
         state.data.name = `Gift for ${trimmed}`;
-        addBotMessage(`Got it! A gift for ${trimmed}. 🎁`);
+        addBotMessage(`Lucky ${trimmed}! 🎁`);
       }
       
       clearQuickReplies();
       
+      // NEW Step 2: Ask what type of group gift
       setTimeout(() => {
-        addBotMessage("What is this gift about?");
+        addBotMessage("So what is the plan?");
+        addGiftTypeChoiceBlocks();
+        state.step = 'GIFT_TYPE_CHOICE';
+      }, 500);
+    }
+    
+    function handleGiftTypeChoice(input) {
+      // Handled by selection blocks - this is a fallback
+      if (input.toLowerCase().includes('gift') || input.toLowerCase().includes('buying')) {
+        selectGiftTypeOption('gift');
+      } else if (input.toLowerCase().includes('raising') || input.toLowerCase().includes('money') || input.toLowerCase().includes('fund')) {
+        selectGiftTypeOption('fundraiser');
+      }
+    }
+    
+    function selectGiftTypeOption(type) {
+      pushHistory();
+      state.data.groupGiftMode = type;
+      
+      // Also set legacy flag for compatibility
+      state.data.isRaisingMoneyOnly = (type === 'fundraiser');
+      
+      if (type === 'gift') {
+        // Gift flow - ask for gift description
+        addBotMessage("Add some details about the gift.");
         addGiftAboutCard();
         state.step = 'GIFT_ABOUT';
-      }, 500);
+      } else {
+        // Fundraiser mode - minimal flow
+        addBotMessage("What's this collection for? Give it a name.");
+        addFundraiserNameCard();
+        state.step = 'FUNDRAISER_NAME';
+      }
     }
     
     function handleGiftAboutConfirm(aboutText, aboutImage, aboutLink, isRaisingMoneyOnly) {
@@ -1661,34 +1741,49 @@
       state.data.aboutText = aboutText || null;
       state.data.aboutImage = aboutImage || null;
       state.data.aboutLink = aboutLink || null;
+      // isRaisingMoneyOnly is now determined by groupGiftMode, but keep for backward compat
       state.data.isRaisingMoneyOnly = isRaisingMoneyOnly;
       
-      // Build display message
+      // Build display message with optional image thumbnail
       let displayMsg = '';
-      if (isRaisingMoneyOnly) {
-        displayMsg = 'Just raising money 💰';
-      } else if (aboutText) {
+      if (aboutText) {
         displayMsg = aboutText.substring(0, 50) + (aboutText.length > 50 ? '...' : '');
       } else {
         displayMsg = '(Skipped)';
       }
       
-      addUserMessage(displayMsg);
+      // Create custom user message with image if present
+      if (aboutImage) {
+        const div = document.createElement('div');
+        div.className = 'msg msg-user msg-with-image';
+        div.dataset.historyIndex = historyIndex;
+        
+        // Create image preview from file
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          div.innerHTML = `
+            <img src="${e.target.result}" alt="Gift" class="msg-user-image">
+            <span>${displayMsg}</span>
+          `;
+        };
+        reader.readAsDataURL(aboutImage);
+        
+        // Add placeholder text while image loads
+        div.innerHTML = `<span>${displayMsg}</span>`;
+        chatHistory.appendChild(div);
+        scrollToBottom();
+      } else {
+        addUserMessage(displayMsg);
+      }
+      
       removeActiveCard();
       showInputContainer();
       
+      // In gift mode, always go to the plan choice (Already bought / Planning to buy)
       setTimeout(() => {
-        if (isRaisingMoneyOnly) {
-          // Scenario 3: Raising money only
-          addBotMessage("What are you raising money for?");
-          addGiftRaisingForCard();
-          state.step = 'GIFT_RAISING_FOR';
-        } else {
-          // Scenario 1/2 choice: Already bought or planning to buy
-          addBotMessage("What's the plan for the gift?");
-          addGiftPlanBlocks();
-          state.step = 'GIFT_PLAN';
-        }
+        addBotMessage("Has the gift already been bought?");
+        addGiftPlanBlocks();
+        state.step = 'GIFT_PLAN';
       }, 400);
     }
     
@@ -1761,11 +1856,11 @@
       let summary = '';
       if (state.data.giftMode === 'gift_debt') {
         const shareAmount = Math.floor(state.data.totalCents / count);
-        summary = `Each person owes ${formatCurrency2(shareAmount)}`;
+        summary = `Ok, that means each person should pay up ${formatCurrency2(shareAmount)}`;
         state.data.splitMode = 'equal'; // Use equal split for debt mode
       } else {
         const suggestedAmount = Math.floor(state.data.amountTarget / count);
-        summary = `Suggested contribution: ${formatCurrency2(suggestedAmount)}`;
+        summary = `Suggested contribution: ${formatCurrency2(suggestedAmount)} per person`;
       }
       
       setTimeout(() => {
@@ -2898,16 +2993,14 @@
         <div id="${cardId}" class="chat-card">
           <div class="form-card">
             <div class="gift-about-section">
-              <label class="gift-form-label">Describe the gift (optional)</label>
-              <textarea id="${cardId}-text" 
-                        class="gift-about-textarea" 
-                        placeholder="e.g., New iPhone for Sarah's birthday"
-                        maxlength="200"
-                        rows="2"></textarea>
+              <label class="gift-form-label">Gift name / description</label>
+              <input type="text" id="${cardId}-text" 
+                     class="gift-about-input" 
+                     placeholder="e.g., Marshall speaker, AirPods Pro, etc."
+                     maxlength="200">
             </div>
             
             <div class="gift-media-section">
-              <label class="gift-form-label">Add a photo or link (optional)</label>
               <div class="gift-media-options">
                 <!-- Hidden File Input -->
                 <input type="file" 
@@ -2942,14 +3035,8 @@
               </div>
             </div>
             
-            <!-- Raising Money Toggle -->
-            <div class="gift-toggle-section">
-              <label class="gift-toggle-option" onclick="toggleRaisingMoneyOnly('${cardId}')">
-                <input type="checkbox" id="${cardId}-raising-only" class="gift-toggle-checkbox">
-                <span class="gift-toggle-switch"></span>
-                <span class="gift-toggle-label">Just raising money (no specific gift)</span>
-              </label>
-            </div>
+            <!-- Hidden raising-only checkbox for compatibility (always false in gift mode) -->
+            <input type="checkbox" id="${cardId}-raising-only" style="display:none;">
             
             <div class="gift-card-actions">
               <button class="card-skip-btn" onclick="submitGiftAbout('${cardId}', true)">
@@ -3039,21 +3126,211 @@
       handleGiftAboutConfirm(aboutText, aboutImage, aboutLink, isRaisingMoneyOnly);
     };
     
+    // NEW Step 2: Gift Type Choice (Buying a gift vs Raising money)
+    function addGiftTypeChoiceBlocks() {
+      addSelectionBlocks([
+        {
+          id: 'gift_type_gift',
+          icon: '🎁',
+          title: 'Buying a gift',
+          desc: 'Collecting money to buy something specific'
+        },
+        {
+          id: 'gift_type_fundraiser',
+          icon: '💰',
+          title: 'Raising money',
+          desc: 'General collection, no specific item'
+        }
+      ]);
+    }
+    
+    // Fundraiser minimal flow cards
+    function addFundraiserNameCard() {
+      hideInputContainer();
+      
+      const cardId = 'fundraiser-name-' + Date.now();
+      const recipientName = state.data.recipientName;
+      const placeholder = recipientName 
+        ? `e.g., ${recipientName}'s birthday fund`
+        : 'e.g., Birthday collection, Farewell fund';
+      
+      const cardHtml = `
+        <div class="chat-card form-card" id="${cardId}">
+          <div class="form-card-title">Collection Name</div>
+          <input type="text" 
+                 id="${cardId}-input" 
+                 class="gift-input" 
+                 placeholder="${placeholder}"
+                 maxlength="100">
+          <button class="form-btn" onclick="confirmFundraiserName('${cardId}')">Continue</button>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const card = wrapper.firstElementChild;
+      card.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(card);
+      scrollToBottom();
+      
+      document.getElementById(`${cardId}-input`).focus();
+    }
+    
+    window.confirmFundraiserName = function(cardId) {
+      const input = document.getElementById(`${cardId}-input`);
+      const name = input.value.trim();
+      
+      if (!name) {
+        input.style.borderColor = 'var(--pending)';
+        return;
+      }
+      
+      pushHistory();
+      state.data.name = name;
+      state.data.aboutText = name; // Use same field for consistency
+      
+      addUserMessage(name);
+      removeActiveCard();
+      showInputContainer();
+      
+      setTimeout(() => {
+        addBotMessage("Do you have a target amount in mind?");
+        addFundraiserTargetCard();
+        state.step = 'FUNDRAISER_TARGET';
+      }, 400);
+    };
+    
+    function addFundraiserTargetCard() {
+      hideInputContainer();
+      
+      const cardId = 'fundraiser-target-' + Date.now();
+      
+      const cardHtml = `
+        <div class="chat-card form-card" id="${cardId}">
+          <div class="form-card-title">Target Amount (optional)</div>
+          <div class="gift-amount-input-row">
+            <span class="gift-amount-currency">€</span>
+            <input type="number" 
+                   id="${cardId}-amount" 
+                   class="gift-amount-input" 
+                   placeholder="0"
+                   min="0"
+                   step="0.01">
+          </div>
+          <p style="font-size: 13px; color: var(--muted); margin: 8px 0 16px;">Leave empty for an open-ended collection</p>
+          <div style="display: flex; gap: 10px;">
+            <button class="form-btn-secondary" onclick="confirmFundraiserTarget('${cardId}', true)" style="flex:1;">No target</button>
+            <button class="form-btn" onclick="confirmFundraiserTarget('${cardId}', false)" style="flex:1;">Continue</button>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const card = wrapper.firstElementChild;
+      card.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(card);
+      scrollToBottom();
+      
+      document.getElementById(`${cardId}-amount`).focus();
+    }
+    
+    window.confirmFundraiserTarget = function(cardId, noTarget) {
+      pushHistory();
+      
+      const amountInput = document.getElementById(`${cardId}-amount`);
+      const amountValue = parseFloat(amountInput.value) || 0;
+      const amountCents = Math.round(amountValue * 100);
+      
+      if (noTarget || amountCents === 0) {
+        state.data.amountTarget = 0;
+        state.data.isOpenPot = true;
+        state.data.giftMode = 'gift_pot_open';
+        addUserMessage("No target (open collection)");
+      } else {
+        state.data.amountTarget = amountCents;
+        state.data.isOpenPot = false;
+        state.data.giftMode = 'gift_pot_target';
+        addUserMessage(formatCurrency2(amountCents));
+      }
+      
+      removeActiveCard();
+      showInputContainer();
+      
+      setTimeout(() => {
+        addBotMessage("How many people will contribute?");
+        addFundraiserContributorsCard();
+        state.step = 'FUNDRAISER_CONTRIBUTORS';
+      }, 400);
+    };
+    
+    function addFundraiserContributorsCard() {
+      hideInputContainer();
+      
+      const cardId = 'fundraiser-contributors-' + Date.now();
+      
+      const cardHtml = `
+        <div class="chat-card form-card" id="${cardId}">
+          <div class="form-card-title">Number of Contributors</div>
+          <input type="number" 
+                 id="${cardId}-count" 
+                 class="gift-input" 
+                 placeholder="e.g., 5"
+                 min="1"
+                 max="100">
+          <p style="font-size: 13px; color: var(--muted); margin: 8px 0 16px;">Including yourself</p>
+          <button class="form-btn" onclick="confirmFundraiserContributors('${cardId}')">Create GroupTab</button>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const card = wrapper.firstElementChild;
+      card.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(card);
+      scrollToBottom();
+      
+      document.getElementById(`${cardId}-count`).focus();
+    }
+    
+    window.confirmFundraiserContributors = function(cardId) {
+      const countInput = document.getElementById(`${cardId}-count`);
+      const count = parseInt(countInput.value) || 0;
+      
+      if (count < 1) {
+        countInput.style.borderColor = 'var(--pending)';
+        return;
+      }
+      
+      pushHistory();
+      state.data.contributorCount = count;
+      state.data.people = count;
+      
+      addUserMessage(`${count} people`);
+      removeActiveCard();
+      showInputContainer();
+      
+      // Create the tab
+      setTimeout(() => {
+        createTab();
+      }, 400);
+    };
+    
     function addGiftPlanBlocks() {
       addSelectionBlocks([
         {
           id: 'already_bought',
           icon: '✅',
-          title: 'Already Bought',
-          desc: 'I paid for the gift upfront and want to collect from others.',
-          subtext: 'Others will owe their share'
+          title: 'Yes, already bought',
+          desc: 'I already paid, now collecting from others',
+          subtext: 'Debt mode'
         },
         {
           id: 'planning_to_buy',
           icon: '🛒',
-          title: 'Planning to Buy',
-          desc: 'We\'re collecting money first, then buying the gift.',
-          subtext: 'Set a target amount'
+          title: 'No, not yet',
+          desc: 'We\'re collecting first, buying later',
+          subtext: 'Target mode'
         }
       ]);
     }
@@ -3196,10 +3473,10 @@
       let preview = '';
       if (state.data.giftMode === 'gift_debt') {
         const shareAmount = Math.floor(state.data.totalCents / initialCount);
-        preview = `Each person owes <b>${formatCurrency2(shareAmount)}</b>`;
+        preview = `Ok, that means each person should pay up <b>${formatCurrency2(shareAmount)}</b>`;
       } else {
         const suggestedAmount = Math.floor(state.data.amountTarget / initialCount);
-        preview = `Suggested contribution: <b>${formatCurrency2(suggestedAmount)}</b>`;
+        preview = `Suggested contribution: <b>${formatCurrency2(suggestedAmount)}</b> per person`;
       }
       
       const cardHtml = `
@@ -3255,10 +3532,10 @@
       
       if (state.data.giftMode === 'gift_debt') {
         const shareAmount = Math.floor(state.data.totalCents / count);
-        previewEl.innerHTML = `Each person owes <b>${formatCurrency2(shareAmount)}</b>`;
+        previewEl.innerHTML = `Ok, that means each person should pay up <b>${formatCurrency2(shareAmount)}</b>`;
       } else {
         const suggestedAmount = Math.floor(state.data.amountTarget / count);
-        previewEl.innerHTML = `Suggested contribution: <b>${formatCurrency2(suggestedAmount)}</b>`;
+        previewEl.innerHTML = `Suggested contribution: <b>${formatCurrency2(suggestedAmount)}</b> per person`;
       }
     };
     
@@ -3278,15 +3555,13 @@
           <div class="form-card">
             <div class="gift-about-section">
               <label class="gift-form-label">What are you raising money for?</label>
-              <textarea id="${cardId}-text" 
-                        class="gift-about-textarea" 
-                        placeholder="e.g., Medical expenses, charity, travel fund..."
-                        maxlength="200"
-                        rows="2"></textarea>
+              <input type="text" id="${cardId}-text" 
+                     class="gift-about-input" 
+                     placeholder="e.g., Medical expenses, charity, travel fund..."
+                     maxlength="200">
             </div>
             
             <div class="gift-media-section">
-              <label class="gift-form-label">Add a photo or link (optional)</label>
               <div class="gift-media-options">
                 <input type="file" 
                        id="${cardId}-image-input" 
@@ -3525,6 +3800,7 @@
           // For gift modes, handle amounts differently
           if (state.data.template === 'gift' && state.data.giftMode) {
             formData.append('giftMode', state.data.giftMode);
+            formData.append('groupGiftMode', state.data.groupGiftMode || 'gift'); // 'gift' or 'fundraiser'
             formData.append('splitMode', 'equal'); // Gifts use equal split
             formData.append('expectedPayRate', 100);
             
@@ -3672,12 +3948,6 @@
       const totalCents = state.data.totalCents + state.data.tipCents;
       const perPerson = formatCurrency2(totalCents / state.data.people);
       
-      // Build receipt indicator if uploaded (simple text, no preview)
-      let receiptHtml = '';
-      if (tab.receipt_file_path) {
-        receiptHtml = `<div class="launch-card-receipt-indicator">✓ Receipt attached</div>`;
-      }
-      
       // Build price groups display if applicable
       let detailHtml = `${state.data.people} people · ${perPerson} each`;
       let hasPriceGroups = false;
@@ -3698,15 +3968,14 @@
       
       const cardHtml = `
         <div class="chat-card">
-          <div class="form-card launch-card">
-            ${receiptHtml}
+          <div class="form-card launch-card" style="position: relative;">
+            <button class="launch-card-back" onclick="window.location.href='/grouptabs/create'" title="Start over">←</button>
             <div class="launch-card-title">${escapeHtml(state.data.name)}</div>
             <div class="launch-card-amount">${formatCurrency2(totalCents)}</div>
             <div class="launch-card-detail">${detailHtml}</div>
             
             <div class="launch-card-qr">
               <img src="${qrCodeUrl}" alt="QR Code" class="qr-code-img">
-              <span class="qr-code-label">Scan to join</span>
             </div>
             
             <div class="launch-card-actions">
