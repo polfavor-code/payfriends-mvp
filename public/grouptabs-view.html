@@ -1280,6 +1280,7 @@
     <div id="host-footer" class="footer-bar hide">
     <div class="footer-bar-inner">
         <button class="f-btn btn-sec" onclick="showEditModal()">Edit Details</button>
+        <button id="footer-receipt-btn" class="f-btn btn-sec" onclick="triggerReceiptUpload()" style="display: none;">📄 Upload Receipt</button>
       <button class="f-btn btn-pri" onclick="showPaymentModal()">Add a Payment Received</button>
     </div>
   </div>
@@ -1290,7 +1291,7 @@
   <!-- Payment Modal - Clean Minimalist Design -->
   <div id="payment-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('payment-modal')">
     <div class="modal" style="max-width: 420px; padding: 24px;">
-      <h3 style="margin: 0 0 24px 0; font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px;">ADD A PAYMENT RECEIVED</h3>
+      <h3 id="payment-modal-title" style="margin: 0 0 24px 0; font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px;">ADD A PAYMENT RECEIVED</h3>
       
       <!-- Payment Rows -->
       <div id="payment-rows-container"></div>
@@ -1337,15 +1338,25 @@
       
       <div style="margin-bottom: 20px;">
         <label style="display: block; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Proof (Optional)</label>
-        <input type="file" id="payment-proof" style="
+        <input type="file" id="payment-proof" style="display: none;" accept="image/*,.pdf" onchange="updateProofLabel(this)">
+        <div id="proof-upload-container" onclick="document.getElementById('payment-proof').click()" style="
           width: 100%;
           background: rgba(0,0,0,0.3);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 10px;
-          padding: 10px 14px;
-          color: rgba(255,255,255,0.7);
+          border: 1px dashed rgba(255,255,255,0.2);
+          border-radius: 12px;
+          padding: 16px;
+          color: rgba(255,255,255,0.5);
           font-size: 13px;
-        ">
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="if(!document.getElementById('payment-proof').files.length){this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='rgba(255,255,255,0.5)'}">
+          <span id="proof-upload-icon">📎</span>
+          <span id="proof-upload-text">Add screenshot or receipt</span>
+        </div>
       </div>
       
       <!-- Payment summary -->
@@ -1364,7 +1375,7 @@
       </div>
       
       <!-- Action buttons -->
-      <button class="form-btn" onclick="submitPaymentNew()" style="
+      <button id="payment-modal-submit" class="form-btn" onclick="submitPaymentNew()" style="
         width: 100%;
         padding: 14px;
         font-size: 14px;
@@ -1706,6 +1717,9 @@
 
         // Receipt
         const rLink = document.getElementById('receipt-view-link');
+        const receiptRow = rLink.closest('.header-receipt-row');
+        const footerReceiptBtn = document.getElementById('footer-receipt-btn');
+        
         if (tabData.receipt_file_path) {
             // Extract filename from path and use the secure API endpoint
             const receiptFilename = tabData.receipt_file_path.split('/').pop();
@@ -1717,12 +1731,15 @@
                     </button>
                     ${isCreator ? `<button onclick="deleteReceipt()" class="receipt-delete-btn" title="Delete Receipt">×</button>` : ''}
                 </div>`;
+            // Show the receipt row and hide upload button in footer
+            if (receiptRow) receiptRow.style.display = '';
+            if (footerReceiptBtn) footerReceiptBtn.style.display = 'none';
         } else {
-            rLink.innerHTML = isCreator 
-                ? `<div class="receipt-btn-big" onclick="triggerReceiptUpload()" id="receipt-upload-btn">
-                     <span id="receipt-upload-text">Upload Receipt</span>
-                   </div>`
-                : '';
+            // No receipt - hide the entire receipt row in header
+            rLink.innerHTML = '';
+            if (receiptRow) receiptRow.style.display = 'none';
+            // Show upload button in footer for creator only
+            if (footerReceiptBtn && isCreator) footerReceiptBtn.style.display = '';
         }
     }
 
@@ -2193,6 +2210,24 @@
         document.getElementById('payment-error').style.display = 'none';
         document.getElementById('payment-method').value = 'transfer';
         document.getElementById('payment-proof').value = '';
+        // Reset proof upload UI
+        document.getElementById('proof-upload-icon').textContent = '📎';
+        document.getElementById('proof-upload-text').textContent = 'Add screenshot or receipt';
+        const proofContainer = document.getElementById('proof-upload-container');
+        proofContainer.style.borderColor = 'rgba(255,255,255,0.2)';
+        proofContainer.style.color = 'rgba(255,255,255,0.5)';
+        proofContainer.style.borderStyle = 'dashed';
+        
+        // Set modal text based on whether user is host or participant
+        const isHost = currentParticipant && currentParticipant.user_id === tabData.creator_user_id;
+        if (isHost) {
+            document.getElementById('payment-modal-title').textContent = 'ADD A PAYMENT RECEIVED';
+            document.getElementById('payment-modal-submit').textContent = 'Report receiving this payment';
+        } else {
+            document.getElementById('payment-modal-title').textContent = 'RECORD YOUR PAYMENT';
+            document.getElementById('payment-modal-submit').textContent = 'Confirm payment';
+        }
+        
         showModal('payment-modal');
     }
     
@@ -2206,6 +2241,18 @@
         document.getElementById('payment-error').style.display = 'none';
         document.getElementById('payment-method').value = 'transfer';
         document.getElementById('payment-proof').value = '';
+        // Reset proof upload UI
+        document.getElementById('proof-upload-icon').textContent = '📎';
+        document.getElementById('proof-upload-text').textContent = 'Add screenshot or receipt';
+        const proofContainer2 = document.getElementById('proof-upload-container');
+        proofContainer2.style.borderColor = 'rgba(255,255,255,0.2)';
+        proofContainer2.style.color = 'rgba(255,255,255,0.5)';
+        proofContainer2.style.borderStyle = 'dashed';
+        
+        // Set modal text for paying for someone else
+        document.getElementById('payment-modal-title').textContent = 'RECORD A PAYMENT';
+        document.getElementById('payment-modal-submit').textContent = 'Confirm payment';
+        
         showModal('payment-modal');
     }
     
@@ -2364,6 +2411,28 @@
         if (row) {
             row.remove();
             updatePaymentTotal();
+        }
+    }
+    
+    function updateProofLabel(input) {
+        const container = document.getElementById('proof-upload-container');
+        const icon = document.getElementById('proof-upload-icon');
+        const text = document.getElementById('proof-upload-text');
+        
+        if (input.files && input.files.length > 0) {
+            const fileName = input.files[0].name;
+            const shortName = fileName.length > 25 ? fileName.substring(0, 22) + '...' : fileName;
+            icon.textContent = '✓';
+            text.textContent = shortName;
+            container.style.borderColor = 'var(--accent)';
+            container.style.color = 'var(--accent)';
+            container.style.borderStyle = 'solid';
+        } else {
+            icon.textContent = '📎';
+            text.textContent = 'Add screenshot or receipt';
+            container.style.borderColor = 'rgba(255,255,255,0.2)';
+            container.style.color = 'rgba(255,255,255,0.5)';
+            container.style.borderStyle = 'dashed';
         }
     }
     

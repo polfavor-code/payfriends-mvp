@@ -740,6 +740,14 @@ try {
   // Column already exists, ignore
 }
 
+// Add payment_methods_json column to group_tabs table (how people should pay the starter)
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN payment_methods_json TEXT;`);
+  console.log('[Startup] Added payment_methods_json column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // =============================================
 // MIGRATE EXISTING GROUPTABS TO NEW PAYMENT LOGIC
 // =============================================
@@ -6077,6 +6085,9 @@ function createGroupTab(req, res) {
   const raisingForLink = req.body.raisingForLink || null;
   const isOpenPot = req.body.isOpenPot === 'true' || req.body.isOpenPot === true;
   
+  // Payment methods for how participants should pay the starter
+  const paymentMethodsJson = req.body.paymentMethodsJson || null;
+  
   if (!name || !tabType) {
     return res.status(400).json({ error: 'Name and tab type are required' });
   }
@@ -6132,8 +6143,8 @@ function createGroupTab(req, res) {
         magic_token, owner_token, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at,
         gift_mode, group_gift_mode, recipient_name, about_text, about_link, is_raising_money_only,
         amount_target, contributor_count, raising_for_text, raising_for_link, is_open_pot,
-        about_image_path, raising_for_image_path
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        about_image_path, raising_for_image_path, payment_methods_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       name,
@@ -6165,7 +6176,8 @@ function createGroupTab(req, res) {
       raisingForLink,
       isOpenPot ? 1 : 0,
       aboutImagePath,
-      raisingForImagePath
+      raisingForImagePath,
+      paymentMethodsJson
     );
     
     const tabId = result.lastInsertRowid;

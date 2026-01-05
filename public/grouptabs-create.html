@@ -1108,7 +1108,13 @@
         raisingForText: null,     // Q3_raise: What are you raising money for?
         raisingForImage: null,    // Q3_raise: Optional image
         raisingForLink: null,     // Q3_raise: Optional link
-        isOpenPot: false          // No target (open pot)
+        isOpenPot: false,         // No target (open pot)
+        
+        // ===== PAYMENT METHODS =====
+        paymentMethods: [],       // Array of { type, label, details }
+        
+        // ===== CREATED TAB (to prevent duplicates) =====
+        createdTab: null          // Stores the created tab to prevent duplicate creation
       }
     };
     
@@ -1238,6 +1244,62 @@
       // 3. Restore UI for the current step
       restoreUIForStep();
     }
+    
+    // Undo to a specific history index (for clicking on user messages)
+    // This restores the state to show the question that was asked at that step
+    function undoToIndex(targetIndex) {
+      if (historyStack.length === 0 || targetIndex < 0) return;
+      
+      // Find the state in history that matches this index
+      let targetStateIndex = -1;
+      for (let i = historyStack.length - 1; i >= 0; i--) {
+        if (historyStack[i].index === targetIndex) {
+          targetStateIndex = i;
+          break;
+        }
+      }
+      
+      // If exact match not found, find the closest state at or before target
+      if (targetStateIndex === -1) {
+        for (let i = historyStack.length - 1; i >= 0; i--) {
+          if (historyStack[i].index <= targetIndex) {
+            targetStateIndex = i;
+            targetIndex = historyStack[i].index;
+            break;
+          }
+        }
+      }
+      
+      if (targetStateIndex === -1) return;
+      
+      // Get the target state and remove all states after it
+      const targetState = historyStack[targetStateIndex];
+      historyStack = historyStack.slice(0, targetStateIndex);
+      
+      // 1. Restore Data State
+      Object.assign(state, targetState.state);
+      
+      // 2. Cleanup DOM - Remove elements after target index AND user messages at target index
+      // Keep bot messages at targetIndex (the question), remove user answers and later steps
+      const elements = document.querySelectorAll(`[data-history-index]`);
+      elements.forEach(el => {
+        const elIndex = parseInt(el.dataset.historyIndex);
+        if (elIndex > targetIndex) {
+          // Remove all elements after target index
+          el.remove();
+        } else if (elIndex === targetIndex && el.classList.contains('msg-user')) {
+          // Also remove user messages at target index (the answer we want to re-enter)
+          el.remove();
+        }
+      });
+      
+      // Restore index
+      historyIndex = targetIndex;
+      updateUndoButton();
+      
+      // 3. Restore UI for the current step
+      restoreUIForStep();
+    }
 
     // Re-render interactive elements for the restored step
     function restoreUIForStep() {
@@ -1320,6 +1382,10 @@
           
         case 'FUNDRAISER_CONTRIBUTORS':
           addFundraiserContributorsCard();
+          break;
+          
+        case 'PAYMENT_DETAILS':
+          addPaymentDetailsCard();
           break;
       }
     }
@@ -1502,6 +1568,10 @@
         case 'FUNDRAISER_CONTRIBUTORS':
           // Handled by card confirm
           break;
+          
+        case 'PAYMENT_METHODS':
+          // Handled by card confirm
+          break;
       }
     }
 
@@ -1586,9 +1656,9 @@
           state.step = 'AMOUNT';
         }, 500);
           } else {
-        // For trips, skip directly to creation (no upfront amount)
+        // For trips, go to payment details
             setTimeout(() => {
-          createTab();
+          goToPaymentDetails();
         }, 500);
       }
     }
@@ -1666,9 +1736,9 @@
             state.step = 'GO_DUTCH_SOON';
           }, 400);
         } else {
-          // Create the tab directly for equal
+          // Go to payment details for equal split
           setTimeout(() => {
-            createTab();
+            goToPaymentDetails();
           }, 400);
         }
         
@@ -1722,13 +1792,23 @@
       // Also set legacy flag for compatibility
       state.data.isRaisingMoneyOnly = (type === 'fundraiser');
       
+      // Remove selection blocks if they exist
+      // Note: When coming from handleBlockClick, blocks are already removed.
+      // When coming from text input via handleGiftTypeChoice, blocks still exist.
+      // The user message is already added by handleUserInput (for text) or handleBlockClick (for clicks),
+      // so we don't add it here.
+      const blocks = document.getElementById('active-selection-blocks');
+      if (blocks) {
+        blocks.remove();
+      }
+      
       if (type === 'gift') {
         // Gift flow - ask for gift description
         addBotMessage("Add some details about the gift.");
         addGiftAboutCard();
         state.step = 'GIFT_ABOUT';
       } else {
-        // Fundraiser mode - minimal flow
+        // Fundraiser mode - minimal flow, skip gift-specific questions
         addBotMessage("What's this collection for? Give it a name.");
         addFundraiserNameCard();
         state.step = 'FUNDRAISER_NAME';
@@ -1755,8 +1835,14 @@
       // Create custom user message with image if present
       if (aboutImage) {
         const div = document.createElement('div');
-        div.className = 'msg msg-user msg-with-image';
+        div.className = 'msg msg-user msg-with-image msg-clickable';
         div.dataset.historyIndex = historyIndex;
+        div.title = 'Click to edit';
+        div.onclick = function() {
+          const idx = parseInt(this.dataset.historyIndex);
+          // Go back to the step where this answer was given (user message and bot question share same historyIndex)
+          undoToIndex(idx);
+        };
         
         // Create image preview from file
         const reader = new FileReader();
@@ -1873,7 +1959,7 @@
         }
         
         setTimeout(() => {
-          createTab();
+          goToPaymentDetails();
         }, 500);
       }, 400);
     }
@@ -1927,8 +2013,8 @@
       }
       
       setTimeout(() => {
-        // No contributor count step for Scenario 3 (raising money only)
-        createTab();
+        // Go to payment details (required for raising money)
+        goToPaymentDetails();
       }, 400);
     }
 
@@ -2234,11 +2320,11 @@
         thumb.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300D68F"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8.5 13H10v4H8.5v-4zm3.5 0h1.5v4H12v-4zm3.5 0H17v4h-1.5v-4z"/></svg>');
         thumb.alt = 'PDF';
       } else {
-        const reader = new FileReader();
-        reader.onload = function(e) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
           thumb.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+      };
+      reader.readAsDataURL(file);
       }
     };
 
@@ -2974,9 +3060,9 @@
       removeActiveCard();
       showInputContainer();
       
-      // Create the tab
+      // Go to payment details
       setTimeout(() => {
-        createTab();
+        goToPaymentDetails();
       }, 400);
     };
 
@@ -2985,6 +3071,10 @@
     // =========================================
     
     function addGiftAboutCard() {
+      // Ensure selection blocks are removed (for text input flow)
+      const blocks = document.getElementById('active-selection-blocks');
+      if (blocks) blocks.remove();
+      
       hideInputContainer();
       
       const cardId = 'gift-about-card-' + Date.now();
@@ -3146,6 +3236,10 @@
     
     // Fundraiser minimal flow cards
     function addFundraiserNameCard() {
+      // Ensure selection blocks are removed (for text input flow)
+      const blocks = document.getElementById('active-selection-blocks');
+      if (blocks) blocks.remove();
+      
       hideInputContainer();
       
       const cardId = 'fundraiser-name-' + Date.now();
@@ -3310,7 +3404,390 @@
       removeActiveCard();
       showInputContainer();
       
-      // Create the tab
+      // Go to payment details
+      setTimeout(() => {
+        goToPaymentDetails();
+      }, 400);
+    };
+    
+    // =========================================
+    // PAYMENT DETAILS STEP (Multi-method)
+    // =========================================
+    
+    const PAYMENT_METHOD_TYPES = {
+      bank: {
+        label: 'Bank Transfer',
+        icon: '🏦',
+        fields: [
+          { key: 'accountHolder', label: 'Account holder', placeholder: 'Your name', required: true },
+          { key: 'iban', label: 'IBAN', placeholder: 'NL00 BANK 0000 0000 00', required: true },
+          { key: 'bic', label: 'BIC (optional)', placeholder: 'BANKCODE', required: false },
+          { key: 'reference', label: 'Reference', placeholder: 'Payment for...', required: false, prefill: true }
+        ]
+      },
+      paypal: {
+        label: 'PayPal',
+        icon: '💳',
+        fields: [
+          { key: 'paypalId', label: 'PayPal username or link', placeholder: 'paypal.me/yourname or email', required: true }
+        ]
+      },
+      revolut: {
+        label: 'Revolut',
+        icon: '📱',
+        fields: [
+          { key: 'revolutId', label: 'Revolut username, phone, or link', placeholder: '@username or +31...', required: true }
+        ]
+      },
+      cash: {
+        label: 'Cash',
+        icon: '💵',
+        fields: [] // No form needed - added directly
+      },
+      other: {
+        label: 'Other',
+        icon: '📝',
+        fields: [
+          { key: 'instructions', label: 'Instructions', placeholder: 'How to pay...', required: true },
+          { key: 'link', label: 'Link (optional)', placeholder: 'https://...', required: false }
+        ]
+      }
+    };
+    
+    function isPaymentDetailsRequired() {
+      // Fundraiser/Raising money = always required
+      if (state.data.groupGiftMode === 'fundraiser' || state.data.isRaisingMoneyOnly) {
+        return true;
+      }
+      // Restaurant bill = required (they already paid, now collecting)
+      if (state.data.template === 'restaurant') {
+        return true;
+      }
+      // Gift debt mode (already bought) = required
+      if (state.data.giftMode === 'gift_debt') {
+        return true;
+      }
+      // Trip, gift pot modes = optional
+      return false;
+    }
+    
+    function goToPaymentDetails() {
+      pushHistory();
+      
+      const isRequired = isPaymentDetailsRequired();
+      
+      addBotMessage(isRequired 
+        ? "How should people pay you?" 
+        : "How should people pay you? (optional)");
+      
+      setTimeout(() => {
+        addPaymentDetailsCard();
+        state.step = 'PAYMENT_DETAILS';
+      }, 400);
+    }
+    
+    function addPaymentDetailsCard() {
+      hideInputContainer();
+      
+      const cardId = 'payment-details-' + Date.now();
+      const isRequired = isPaymentDetailsRequired();
+      const methods = state.data.paymentMethods || [];
+      
+      const cardHtml = `
+        <div class="chat-card payment-details-card" id="${cardId}">
+          <div class="payment-methods-list" id="${cardId}-list">
+            ${methods.length === 0 ? `
+              <div class="payment-methods-empty">
+                <span style="font-size: 32px; display: block; margin-bottom: 8px;">💳</span>
+                <span style="color: var(--muted);">No payment methods added yet</span>
+              </div>
+            ` : methods.map((m, idx) => renderPaymentMethodItem(m, idx, cardId)).join('')}
+          </div>
+          
+          <button class="payment-add-btn" onclick="showAddPaymentMethodModal('${cardId}')">
+            <span style="font-size: 18px;">+</span> Add payment method
+          </button>
+          
+          <div style="display: flex; gap: 10px; margin-top: 16px;">
+            ${!isRequired ? `
+              <button class="form-btn-secondary" onclick="skipPaymentDetails('${cardId}')" style="flex:1;">Skip</button>
+            ` : ''}
+            <button class="form-btn" id="${cardId}-create-btn" onclick="confirmPaymentDetails('${cardId}')" style="flex:1;" ${isRequired && methods.length === 0 ? 'disabled' : ''}>
+              Create GroupTab
+            </button>
+          </div>
+        </div>
+        
+        <!-- Add Payment Method Modal -->
+        <div class="payment-method-modal" id="${cardId}-modal" style="display: none;">
+          <div class="payment-method-modal-content">
+            <div class="payment-modal-header">
+              <span id="${cardId}-modal-title">Add Payment Method</span>
+              <button class="payment-modal-close" onclick="closePaymentMethodModal('${cardId}')">&times;</button>
+            </div>
+            
+            <div id="${cardId}-modal-body">
+              <!-- Step 1: Type selection -->
+              <div id="${cardId}-type-select" class="payment-type-select">
+                ${Object.entries(PAYMENT_METHOD_TYPES).map(([key, val]) => `
+                  <button class="payment-type-btn" onclick="selectPaymentType('${cardId}', '${key}')">
+                    <span class="payment-type-icon">${val.icon}</span>
+                    <span class="payment-type-label">${val.label}</span>
+                  </button>
+                `).join('')}
+              </div>
+              
+              <!-- Step 2: Fields (hidden initially) -->
+              <div id="${cardId}-fields" style="display: none;">
+                <div id="${cardId}-fields-content"></div>
+                <button class="form-btn" onclick="savePaymentMethod('${cardId}')" style="width: 100%; margin-top: 16px;">
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const card = wrapper.firstElementChild;
+      const modal = wrapper.children[1];
+      card.dataset.historyIndex = historyIndex;
+      modal.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(card);
+      chatHistory.appendChild(modal);
+      scrollToBottom();
+    }
+    
+    function renderPaymentMethodItem(method, index, cardId) {
+      const typeInfo = PAYMENT_METHOD_TYPES[method.type];
+      const summary = getPaymentMethodSummary(method);
+      
+      return `
+        <div class="payment-method-item">
+          <div class="payment-method-item-icon">${typeInfo.icon}</div>
+          <div class="payment-method-item-info">
+            <div class="payment-method-item-type">${typeInfo.label}</div>
+            <div class="payment-method-item-summary">${escapeHtml(summary)}</div>
+          </div>
+          <button class="payment-method-remove-btn" onclick="removePaymentMethod('${cardId}', ${index})">×</button>
+        </div>
+      `;
+    }
+    
+    function getPaymentMethodSummary(method) {
+      const d = method.details || {};
+      switch (method.type) {
+        case 'bank':
+          return d.iban || 'Bank transfer';
+        case 'paypal':
+          return d.paypalId || 'PayPal';
+        case 'revolut':
+          return d.revolutId || 'Revolut';
+        case 'cash':
+          return 'Pay in cash';
+        case 'other':
+          return d.instructions?.substring(0, 30) || 'Other method';
+        default:
+          return method.type;
+      }
+    }
+    
+    // Track current modal editing state
+    let currentPaymentMethodType = null;
+    let editingPaymentMethodIndex = null;
+    
+    window.showAddPaymentMethodModal = function(cardId) {
+      currentPaymentMethodType = null;
+      editingPaymentMethodIndex = null;
+      
+      const modal = document.getElementById(`${cardId}-modal`);
+      const typeSelect = document.getElementById(`${cardId}-type-select`);
+      const fields = document.getElementById(`${cardId}-fields`);
+      const title = document.getElementById(`${cardId}-modal-title`);
+      
+      title.textContent = 'Add Payment Method';
+      typeSelect.style.display = 'grid';
+      fields.style.display = 'none';
+      modal.style.display = 'flex';
+    };
+    
+    window.closePaymentMethodModal = function(cardId) {
+      const modal = document.getElementById(`${cardId}-modal`);
+      modal.style.display = 'none';
+    };
+    
+    window.selectPaymentType = function(cardId, type) {
+      currentPaymentMethodType = type;
+      const typeInfo = PAYMENT_METHOD_TYPES[type];
+      
+      // Cash is simple - no form needed, add directly
+      if (type === 'cash') {
+        if (!state.data.paymentMethods) {
+          state.data.paymentMethods = [];
+        }
+        state.data.paymentMethods.push({
+          type: 'cash',
+          details: {}
+        });
+        closePaymentMethodModal(cardId);
+        refreshPaymentMethodsList(cardId);
+        return;
+      }
+      
+      const typeSelect = document.getElementById(`${cardId}-type-select`);
+      const fields = document.getElementById(`${cardId}-fields`);
+      const fieldsContent = document.getElementById(`${cardId}-fields-content`);
+      const title = document.getElementById(`${cardId}-modal-title`);
+      
+      title.textContent = `${typeInfo.icon} ${typeInfo.label}`;
+      typeSelect.style.display = 'none';
+      fields.style.display = 'block';
+      
+      // Generate field inputs
+      fieldsContent.innerHTML = typeInfo.fields.map(field => {
+        // Pre-fill reference with GroupTab name
+        let defaultValue = '';
+        if (field.prefill && field.key === 'reference') {
+          defaultValue = state.data.name || '';
+        }
+        
+        return `
+          <div class="payment-field-group">
+            <label class="payment-field-label">${field.label}</label>
+            <input type="text" 
+                   id="${cardId}-field-${field.key}" 
+                   class="payment-field-input" 
+                   placeholder="${field.placeholder}"
+                   value="${escapeHtml(defaultValue)}"
+                   ${field.required ? 'required' : ''}>
+          </div>
+        `;
+      }).join('');
+      
+      // Focus first field
+      const firstInput = fieldsContent.querySelector('input');
+      if (firstInput) firstInput.focus();
+    };
+    
+    window.savePaymentMethod = function(cardId) {
+      if (!currentPaymentMethodType) return;
+      
+      const typeInfo = PAYMENT_METHOD_TYPES[currentPaymentMethodType];
+      const details = {};
+      let isValid = true;
+      
+      // Collect field values
+      typeInfo.fields.forEach(field => {
+        const input = document.getElementById(`${cardId}-field-${field.key}`);
+        const value = input ? input.value.trim() : '';
+        details[field.key] = value;
+        
+        if (field.required && !value) {
+          input.style.borderColor = 'var(--pending)';
+          isValid = false;
+        } else if (input) {
+          input.style.borderColor = '';
+        }
+      });
+      
+      if (!isValid) return;
+      
+      // Add to state
+      if (!state.data.paymentMethods) {
+        state.data.paymentMethods = [];
+      }
+      
+      if (editingPaymentMethodIndex !== null) {
+        state.data.paymentMethods[editingPaymentMethodIndex] = {
+          type: currentPaymentMethodType,
+          details: details
+        };
+      } else {
+        state.data.paymentMethods.push({
+          type: currentPaymentMethodType,
+          details: details
+        });
+      }
+      
+      // Close modal and refresh list
+      closePaymentMethodModal(cardId);
+      refreshPaymentMethodsList(cardId);
+    };
+    
+    window.removePaymentMethod = function(cardId, index) {
+      if (state.data.paymentMethods && state.data.paymentMethods[index]) {
+        state.data.paymentMethods.splice(index, 1);
+        refreshPaymentMethodsList(cardId);
+      }
+    };
+    
+    function refreshPaymentMethodsList(cardId) {
+      const listEl = document.getElementById(`${cardId}-list`);
+      const createBtn = document.getElementById(`${cardId}-create-btn`);
+      const methods = state.data.paymentMethods || [];
+      const isRequired = isPaymentDetailsRequired();
+      
+      if (methods.length === 0) {
+        listEl.innerHTML = `
+          <div class="payment-methods-empty">
+            <span style="font-size: 32px; display: block; margin-bottom: 8px;">💳</span>
+            <span style="color: var(--muted);">No payment methods added yet</span>
+          </div>
+        `;
+        if (isRequired) {
+          createBtn.disabled = true;
+        }
+      } else {
+        listEl.innerHTML = methods.map((m, idx) => renderPaymentMethodItem(m, idx, cardId)).join('');
+        createBtn.disabled = false;
+      }
+    }
+    
+    window.skipPaymentDetails = function(cardId) {
+      pushHistory();
+      state.data.paymentMethods = [];
+      addUserMessage("Skipped");
+      removeActiveCard();
+      
+      // Also remove modal
+      const modal = document.getElementById(`${cardId}-modal`);
+      if (modal) modal.remove();
+      
+      showInputContainer();
+      
+      setTimeout(() => {
+        createTab();
+      }, 400);
+    };
+    
+    window.confirmPaymentDetails = function(cardId) {
+      const methods = state.data.paymentMethods || [];
+      const isRequired = isPaymentDetailsRequired();
+      
+      if (isRequired && methods.length === 0) {
+        return; // Button should be disabled anyway
+      }
+      
+      pushHistory();
+      
+      // Summarize for user message
+      if (methods.length > 0) {
+        const summary = methods.map(m => PAYMENT_METHOD_TYPES[m.type].label).join(', ');
+        addUserMessage(summary);
+      } else {
+        addUserMessage("No payment methods");
+      }
+      
+      removeActiveCard();
+      
+      // Also remove modal
+      const modal = document.getElementById(`${cardId}-modal`);
+      if (modal) modal.remove();
+      
+      showInputContainer();
+      
       setTimeout(() => {
         createTab();
       }, 400);
@@ -3785,6 +4262,13 @@
     // CREATE TAB (API Call)
     // ===========================================
     async function createTab() {
+      // Check if we already created a tab in this session
+      // (user went back and came forward again)
+      if (state.data.createdTab) {
+        showLaunchCard(state.data.createdTab);
+        return;
+      }
+      
       state.step = 'CREATING';
       addBotMessage("Creating your tab...");
       
@@ -3855,17 +4339,17 @@
             }
           } else {
             // Regular restaurant bill flow
-            formData.append('totalAmountCents', state.data.totalCents + state.data.tipCents);
-            formData.append('splitMode', state.data.splitMode);
-            formData.append('expectedPayRate', 100);
-            formData.append('peopleCount', state.data.people);
-            
-            // Include price groups if using price_groups split mode
-            if (state.data.splitMode === 'price_groups' && state.data.priceGroups.length > 0) {
-              formData.append('priceGroups', JSON.stringify(state.data.priceGroups));
-              // Include which group the host belongs to
-              if (state.data.hostGroupId) {
-                formData.append('hostGroupId', state.data.hostGroupId);
+          formData.append('totalAmountCents', state.data.totalCents + state.data.tipCents);
+          formData.append('splitMode', state.data.splitMode);
+          formData.append('expectedPayRate', 100);
+          formData.append('peopleCount', state.data.people);
+          
+          // Include price groups if using price_groups split mode
+          if (state.data.splitMode === 'price_groups' && state.data.priceGroups.length > 0) {
+            formData.append('priceGroups', JSON.stringify(state.data.priceGroups));
+            // Include which group the host belongs to
+            if (state.data.hostGroupId) {
+              formData.append('hostGroupId', state.data.hostGroupId);
               }
             }
           }
@@ -3874,6 +4358,11 @@
         // Add receipt file if present
         if (state.data.receiptFile) {
           formData.append('receipt', state.data.receiptFile);
+        }
+        
+        // Add payment methods if present
+        if (state.data.paymentMethods && state.data.paymentMethods.length > 0) {
+          formData.append('paymentMethodsJson', JSON.stringify(state.data.paymentMethods));
         }
         
         const response = await fetch('/api/grouptabs', {
@@ -3896,6 +4385,9 @@
         if (!response.ok) {
           throw new Error(data.error || 'Failed to create tab');
         }
+        
+        // Store the created tab so we don't create duplicates if user goes back
+        state.data.createdTab = data.tab;
         
         // Show success with share card
         showLaunchCard(data.tab);
@@ -3939,6 +4431,27 @@
       undoStep();
     }
     
+    function goBackFromLaunchCard() {
+      // Remove the launch card and any "Creating your tab..." messages
+      const cards = document.querySelectorAll('.chat-card');
+      cards.forEach(card => {
+        if (card.querySelector('.launch-card')) {
+          card.remove();
+        }
+      });
+      
+      // Remove "Creating your tab..." bot message
+      const messages = document.querySelectorAll('.msg-bot');
+      messages.forEach(msg => {
+        if (msg.textContent.includes('Creating your tab')) {
+          msg.remove();
+        }
+      });
+      
+      // Go back to the previous step using undo
+      undoStep();
+    }
+    
     function showLaunchCard(tab) {
       hideInputContainer();
       
@@ -3969,7 +4482,7 @@
       const cardHtml = `
         <div class="chat-card">
           <div class="form-card launch-card" style="position: relative;">
-            <button class="launch-card-back" onclick="window.location.href='/grouptabs/create'" title="Start over">←</button>
+            <button class="launch-card-back" onclick="goBackFromLaunchCard()" title="Go back">←</button>
             <div class="launch-card-title">${escapeHtml(state.data.name)}</div>
             <div class="launch-card-amount">${formatCurrency2(totalCents)}</div>
             <div class="launch-card-detail">${detailHtml}</div>
@@ -4040,9 +4553,15 @@
 
     function addUserMessage(text) {
       const div = document.createElement('div');
-      div.className = 'msg msg-user';
+      div.className = 'msg msg-user msg-clickable';
       div.textContent = text;
       div.dataset.historyIndex = historyIndex; // Tag with history index
+      div.title = 'Click to edit';
+      div.onclick = function() {
+        const idx = parseInt(this.dataset.historyIndex);
+        // Go back to the step where this answer was given (user message and bot question share same historyIndex)
+        undoToIndex(idx);
+      };
       chatHistory.appendChild(div);
       scrollToBottom();
     }

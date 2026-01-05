@@ -558,6 +558,14 @@
       renderTabs();
     }
 
+    // Helper to determine if a tab is settled (100% paid or status closed)
+    function isTabSettled(tab) {
+      const totalCents = tab.total_amount_cents || 0;
+      const paidCents = tab.paid_up_cents || 0;
+      const unpaidCents = totalCents - paidCents;
+      return tab.status === 'closed' || unpaidCents <= 0;
+    }
+    
     function renderTabs() {
       const list = document.getElementById('tab-list');
       const emptyState = document.getElementById('empty-state');
@@ -565,9 +573,11 @@
       // Filter
       let filteredTabs = allTabs;
       if (currentFilter === 'open') {
-        filteredTabs = allTabs.filter(t => t.status === 'open');
+        // Active = not settled (still has unpaid amount and not closed)
+        filteredTabs = allTabs.filter(t => !isTabSettled(t));
       } else if (currentFilter === 'closed') {
-        filteredTabs = allTabs.filter(t => t.status === 'closed');
+        // Settled = 100% paid OR status is closed
+        filteredTabs = allTabs.filter(t => isTabSettled(t));
       }
 
       // Sort

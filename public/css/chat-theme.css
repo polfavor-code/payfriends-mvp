@@ -226,6 +226,20 @@ body {
   font-weight: 500;
 }
 
+.msg-user.msg-clickable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.msg-user.msg-clickable:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(61, 220, 151, 0.3);
+}
+
+.msg-user.msg-clickable:active {
+  transform: scale(0.98);
+}
+
 .msg-with-image {
   display: flex;
   align-items: center;
@@ -1307,13 +1321,13 @@ body {
 .launch-card-back {
   position: absolute;
   top: 12px;
-  right: 12px;
+  left: 12px;
   width: 28px;
   height: 28px;
   border-radius: 50%;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.25);
   font-size: 14px;
   cursor: pointer;
   display: flex;
@@ -1323,9 +1337,9 @@ body {
 }
 
 .launch-card-back:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .launch-card-qr {
@@ -1509,4 +1523,641 @@ body {
 .undo-btn-header svg {
   width: 20px;
   height: 20px;
+}
+
+/* ===========================================
+   PAYMENT METHODS CARD
+   =========================================== */
+
+.payment-methods-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  max-width: 480px;
+}
+
+.payment-methods-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.payment-methods-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.payment-methods-title-icon {
+  font-size: 18px;
+}
+
+.payment-methods-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Added payment methods list */
+.payment-method-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.payment-method-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  position: relative;
+}
+
+.payment-method-item:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.payment-method-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(61, 220, 151, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.payment-method-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.payment-method-type {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.payment-method-detail {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.payment-method-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.payment-method-action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.payment-method-action-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text);
+}
+
+.payment-method-action-btn.remove:hover {
+  border-color: #f87171;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+/* Add payment method button */
+.add-payment-method-btn {
+  width: 100%;
+  padding: 14px;
+  background: rgba(61, 220, 151, 0.08);
+  border: 2px dashed rgba(61, 220, 151, 0.3);
+  border-radius: 12px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.add-payment-method-btn:hover {
+  background: rgba(61, 220, 151, 0.15);
+  border-color: var(--accent);
+}
+
+.add-payment-method-btn .plus-icon {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Payment method type selector */
+.payment-type-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 400px) {
+  .payment-type-selector {
+    grid-template-columns: 1fr;
+  }
+}
+
+.payment-type-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payment-type-btn:hover {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: var(--accent);
+}
+
+.payment-type-btn.selected {
+  background: rgba(61, 220, 151, 0.1);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.payment-type-icon {
+  font-size: 20px;
+}
+
+/* Payment method form (for adding/editing) */
+.payment-method-form {
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.payment-method-form-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.payment-form-field {
+  margin-bottom: 12px;
+}
+
+.payment-form-field:last-child {
+  margin-bottom: 0;
+}
+
+.payment-form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 6px;
+}
+
+.payment-form-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.payment-form-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(61, 220, 151, 0.15);
+}
+
+.payment-form-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.payment-form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.payment-form-row .payment-form-field {
+  flex: 1;
+}
+
+.payment-form-row .payment-form-field.small {
+  flex: 0.5;
+}
+
+.payment-form-optional {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+
+.payment-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.payment-form-cancel-btn {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payment-form-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.payment-form-save-btn {
+  flex: 1;
+  padding: 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payment-form-save-btn:hover {
+  filter: brightness(1.1);
+}
+
+.payment-form-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Empty state */
+.payment-methods-empty {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--muted);
+}
+
+.payment-methods-empty-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.payment-methods-empty-text {
+  font-size: 13px;
+}
+
+/* Card actions */
+.payment-methods-card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.payment-methods-skip-btn {
+  flex: 0.4;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payment-methods-skip-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.payment-methods-continue-btn {
+  flex: 0.6;
+  padding: 14px;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payment-methods-continue-btn:hover {
+  filter: brightness(1.1);
+}
+
+.payment-methods-continue-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Required indicator */
+.payment-methods-required {
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* =========================================
+   PAYMENT DETAILS CARD (Wizard Step)
+   ========================================= */
+
+.payment-details-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+}
+
+.payment-methods-list {
+  margin-bottom: 16px;
+  min-height: 80px;
+}
+
+.payment-methods-empty {
+  text-align: center;
+  padding: 24px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.payment-method-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.payment-method-item-icon {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.payment-method-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.payment-method-item-type {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.payment-method-item-summary {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.payment-method-remove-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.payment-method-remove-btn:hover {
+  background: rgba(248, 113, 113, 0.3);
+}
+
+.payment-add-btn {
+  width: 100%;
+  padding: 14px;
+  background: rgba(61, 220, 151, 0.1);
+  border: 2px dashed var(--accent);
+  border-radius: 12px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.payment-add-btn:hover {
+  background: rgba(61, 220, 151, 0.2);
+}
+
+/* Payment Method Modal */
+.payment-method-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.payment-method-modal-content {
+  background: var(--card);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+}
+
+.payment-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.payment-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.payment-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.payment-type-select {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 20px;
+}
+
+.payment-type-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payment-type-btn:hover {
+  background: rgba(61, 220, 151, 0.1);
+  border-color: var(--accent);
+}
+
+.payment-type-icon {
+  font-size: 28px;
+}
+
+.payment-type-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.payment-field-group {
+  margin-bottom: 16px;
+  padding: 0 20px;
+}
+
+.payment-field-group:first-child {
+  padding-top: 20px;
+}
+
+.payment-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.payment-field-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 15px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.payment-field-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.payment-field-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+#payment-details-modal .form-btn {
+  margin: 0 20px 20px;
+  width: calc(100% - 40px);
 }
