@@ -748,6 +748,33 @@ try {
   // Column already exists, ignore
 }
 
+// Create payment_reports table for Group Gift payment tracking
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS group_tab_payment_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_tab_id INTEGER NOT NULL,
+      participant_id INTEGER,
+      reporter_name TEXT NOT NULL,
+      amount_cents INTEGER NOT NULL,
+      method TEXT NOT NULL,
+      paid_at TEXT NOT NULL,
+      proof_file_path TEXT,
+      note TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      reviewed_at TEXT,
+      reviewed_by INTEGER,
+      FOREIGN KEY (group_tab_id) REFERENCES group_tabs(id),
+      FOREIGN KEY (participant_id) REFERENCES group_tab_participants(id),
+      FOREIGN KEY (reviewed_by) REFERENCES users(id)
+    )
+  `);
+  console.log('[Startup] Created group_tab_payment_reports table');
+} catch (e) {
+  // Table already exists, ignore
+}
+
 // =============================================
 // MIGRATE EXISTING GROUPTABS TO NEW PAYMENT LOGIC
 // =============================================
@@ -8237,6 +8264,322 @@ app.post('/api/grouptabs/:id/simple-payment', (req, res) => {
   } catch (err) {
     console.error('[SIMPLE-PAYMENT ERROR]', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// =============================================
+// GROUPTAB PAYMENT REPORTS (Group Gift Only)
+// For tracking reported payments pending confirmation
+// =============================================
+
+// Report a payment (for participants in Group Gift tabs)
+app.post('/api/grouptabs/:id/payment-reports', uploadGrouptabs.single('proof'), (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const { reporterName, amountCents, method, paidAt, note, token } = req.body;
+  
+  try {
+    // Validate tab access via magic token
+    const tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+    if (!tab) {
+      return res.status(403).json({ error: 'Access denied or tab not found' });
+    }
+    
+    // Validate required fields
+    if (!reporterName || !reporterName.trim()) {
+      return res.status(400).json({ error: 'Your name is required' });
+    }
+    if (!amountCents || parseInt(amountCents) <= 0) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+    if (!method) {
+      return res.status(400).json({ error: 'Payment method is required' });
+    }
+    if (!paidAt) {
+      return res.status(400).json({ error: 'Payment date is required' });
+    }
+    
+    // Find or create participant
+    let participantId = null;
+    let participant = null;
+    
+    if (req.user) {
+      participant = db.prepare(`
+        SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
+      `).get(tabId, req.user.id);
+    } else {
+      participant = getGuestParticipant(req, tabId);
+    }
+    
+    if (participant) {
+      participantId = participant.id;
+    }
+    
+    const createdAt = new Date().toISOString();
+    // Store path with leading slash for web access
+    const proofPath = req.file ? '/' + req.file.path.replace(/\\/g, '/') : null;
+    
+    const result = db.prepare(`
+      INSERT INTO group_tab_payment_reports (
+        group_tab_id, participant_id, reporter_name, amount_cents, method, paid_at, proof_file_path, note, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+    `).run(
+      tabId,
+      participantId,
+      reporterName.trim(),
+      parseInt(amountCents),
+      method,
+      paidAt,
+      proofPath,
+      note || null,
+      createdAt
+    );
+    
+    // Notify the organizer
+    const organizer = db.prepare(`
+      SELECT user_id FROM group_tab_participants 
+      WHERE group_tab_id = ? AND role = 'organizer'
+    `).get(tabId);
+    
+    if (organizer && organizer.user_id) {
+      const formattedAmount = (parseInt(amountCents) / 100).toFixed(2);
+      db.prepare(`
+        INSERT INTO messages (user_id, tab_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        organizer.user_id,
+        tabId,
+        'Payment Reported',
+        `${reporterName.trim()} reported a payment of €${formattedAmount} for "${tab.name}" - awaiting your confirmation`,
+        createdAt,
+        'GROUPTAB_PAYMENT_REPORTED'
+      );
+    }
+    
+    res.json({ 
+      success: true, 
+      report: { 
+        id: result.lastInsertRowid,
+        status: 'pending',
+        reporterName: reporterName.trim(),
+        amountCents: parseInt(amountCents),
+        method,
+        paidAt,
+        createdAt
+      }
+    });
+    
+  } catch (err) {
+    console.error('Error reporting payment:', err);
+    res.status(500).json({ error: 'Failed to report payment' });
+  }
+});
+
+// Get payment reports for a tab
+app.get('/api/grouptabs/:id/payment-reports', (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const { token } = req.query;
+  
+  try {
+    // Validate access - creator can see all, participants can see their own
+    let tab = null;
+    let isCreator = false;
+    
+    if (token) {
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
+      if (tab) isCreator = true;
+      else {
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+      }
+    }
+    
+    if (!tab && req.user) {
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+      if (tab && tab.creator_user_id === req.user.id) {
+        isCreator = true;
+      }
+    }
+    
+    if (!tab) {
+      return res.status(404).json({ error: 'Tab not found' });
+    }
+    
+    let reports;
+    if (isCreator) {
+      // Creator sees all reports
+      reports = db.prepare(`
+        SELECT pr.*, u.full_name as reviewer_name
+        FROM group_tab_payment_reports pr
+        LEFT JOIN users u ON pr.reviewed_by = u.id
+        WHERE pr.group_tab_id = ?
+        ORDER BY pr.created_at DESC
+      `).all(tabId);
+    } else {
+      // Participant sees only their reports
+      let participantId = null;
+      if (req.user) {
+        const participant = db.prepare(`
+          SELECT id FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
+        `).get(tabId, req.user.id);
+        if (participant) participantId = participant.id;
+      } else {
+        const guest = getGuestParticipant(req, tabId);
+        if (guest) participantId = guest.id;
+      }
+      
+      if (participantId) {
+        reports = db.prepare(`
+          SELECT * FROM group_tab_payment_reports
+          WHERE group_tab_id = ? AND participant_id = ?
+          ORDER BY created_at DESC
+        `).all(tabId, participantId);
+      } else {
+        reports = [];
+      }
+    }
+    
+    res.json({ success: true, reports, isCreator });
+    
+  } catch (err) {
+    console.error('Error getting payment reports:', err);
+    res.status(500).json({ error: 'Failed to get payment reports' });
+  }
+});
+
+// Confirm a payment report (creator only)
+app.patch('/api/grouptabs/:id/payment-reports/:reportId/confirm', (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const reportId = parseInt(req.params.reportId);
+  const { token } = req.body;
+  
+  try {
+    // Validate creator access
+    let tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
+    let isCreator = !!tab;
+    
+    if (!tab && req.user) {
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND creator_user_id = ?`).get(tabId, req.user.id);
+      isCreator = !!tab;
+    }
+    
+    if (!tab || !isCreator) {
+      return res.status(403).json({ error: 'Only the tab creator can confirm payments' });
+    }
+    
+    const report = db.prepare(`
+      SELECT * FROM group_tab_payment_reports WHERE id = ? AND group_tab_id = ?
+    `).get(reportId, tabId);
+    
+    if (!report) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    
+    if (report.status !== 'pending') {
+      return res.status(400).json({ error: 'Report has already been processed' });
+    }
+    
+    const reviewedAt = new Date().toISOString();
+    const reviewerId = req.user ? req.user.id : null;
+    
+    // Update report status
+    db.prepare(`
+      UPDATE group_tab_payment_reports 
+      SET status = 'confirmed', reviewed_at = ?, reviewed_by = ?
+      WHERE id = ?
+    `).run(reviewedAt, reviewerId, reportId);
+    
+    // Update participant's payment totals if participant exists
+    if (report.participant_id) {
+      const participant = db.prepare(`SELECT * FROM group_tab_participants WHERE id = ?`).get(report.participant_id);
+      if (participant) {
+        const newTotalPaid = (participant.total_paid_cents || 0) + report.amount_cents;
+        const fairShare = participant.fair_share_cents || 0;
+        const newRemaining = Math.max(0, fairShare - newTotalPaid);
+        
+        db.prepare(`
+          UPDATE group_tab_participants 
+          SET total_paid_cents = ?, remaining_cents = ?
+          WHERE id = ?
+        `).run(newTotalPaid, newRemaining, report.participant_id);
+      }
+    }
+    
+    // Update tab's paid_up_cents and total_raised_cents for pot modes
+    if (tab.gift_mode === 'gift_pot_target' || tab.gift_mode === 'gift_pot_open') {
+      db.prepare(`
+        UPDATE group_tabs 
+        SET total_raised_cents = COALESCE(total_raised_cents, 0) + ?
+        WHERE id = ?
+      `).run(report.amount_cents, tabId);
+    } else {
+      // Debt mode - update paid_up_cents
+      db.prepare(`
+        UPDATE group_tabs 
+        SET paid_up_cents = COALESCE(paid_up_cents, 0) + ?
+        WHERE id = ?
+      `).run(report.amount_cents, tabId);
+    }
+    
+    // Also record as a proper payment for tracking
+    db.prepare(`
+      INSERT INTO group_tab_payments (
+        group_tab_id, from_participant_id, amount_cents, method, status, created_at, payment_type, note
+      ) VALUES (?, ?, ?, ?, 'confirmed', ?, 'reported', ?)
+    `).run(tabId, report.participant_id, report.amount_cents, report.method, reviewedAt, `Confirmed from report #${reportId}`);
+    
+    res.json({ success: true, message: 'Payment confirmed' });
+    
+  } catch (err) {
+    console.error('Error confirming payment:', err);
+    res.status(500).json({ error: 'Failed to confirm payment' });
+  }
+});
+
+// Reject a payment report (creator only)
+app.patch('/api/grouptabs/:id/payment-reports/:reportId/reject', (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const reportId = parseInt(req.params.reportId);
+  const { token, reason } = req.body;
+  
+  try {
+    // Validate creator access
+    let tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
+    let isCreator = !!tab;
+    
+    if (!tab && req.user) {
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND creator_user_id = ?`).get(tabId, req.user.id);
+      isCreator = !!tab;
+    }
+    
+    if (!tab || !isCreator) {
+      return res.status(403).json({ error: 'Only the tab creator can reject payments' });
+    }
+    
+    const report = db.prepare(`
+      SELECT * FROM group_tab_payment_reports WHERE id = ? AND group_tab_id = ?
+    `).get(reportId, tabId);
+    
+    if (!report) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    
+    if (report.status !== 'pending') {
+      return res.status(400).json({ error: 'Report has already been processed' });
+    }
+    
+    const reviewedAt = new Date().toISOString();
+    const reviewerId = req.user ? req.user.id : null;
+    
+    db.prepare(`
+      UPDATE group_tab_payment_reports 
+      SET status = 'rejected', reviewed_at = ?, reviewed_by = ?, note = COALESCE(note, '') || ?
+      WHERE id = ?
+    `).run(reviewedAt, reviewerId, reason ? ` [Rejected: ${reason}]` : '', reportId);
+    
+    res.json({ success: true, message: 'Payment report rejected' });
+    
+  } catch (err) {
+    console.error('Error rejecting payment:', err);
+    res.status(500).json({ error: 'Failed to reject payment' });
   }
 });
 

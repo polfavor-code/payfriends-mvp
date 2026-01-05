@@ -433,40 +433,178 @@
         align-items: center; 
     }
 
-    /* Gift Image Avatar */
-    .gift-image-row {
+    /* Header Type Icon */
+    .header-icon-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 38px;
         flex-shrink: 0;
+        margin-right: 4px;
     }
-    .gift-image-thumb {
-        width: 60px;
-        height: 60px;
+
+    /* Tab Extras Area (below the line) */
+    /* Tab Extras Area (redesign) */
+    .tab-extras-area {
+        margin-top: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .extras-label {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-left: 4px;
+        margin-bottom: 4px;
+    }
+
+    .product-info-row {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .product-thumb {
+        width: 56px;
+        height: 56px;
         border-radius: 12px;
         object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         cursor: pointer;
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.2s;
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        transition: transform 0.2s, border-color 0.2s;
     }
-    .gift-image-thumb:hover {
-        transform: scale(1.05);
-        border-color: var(--accent);
+    .product-thumb:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+    .product-details-content {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
     }
-    
-    .gift-about-badge {
-        background: rgba(0, 214, 143, 0.1);
-        border: 1px solid rgba(0, 214, 143, 0.3);
+
+    .product-name-badge {
+        display: inline-block;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+
+    .product-actions-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .product-link-btn, .receipt-btn-small {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 700;
         color: var(--accent);
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 600;
-        max-width: 150px;
+        text-decoration: none;
+        background: var(--accent-dim);
+        border: 1px solid rgba(0, 214, 143, 0.2);
+        padding: 4px 10px;
+        border-radius: 6px;
+        transition: all 0.2s;
+        cursor: pointer;
+        font-family: inherit;
+    }
+    .receipt-btn-small {
+        text-transform: uppercase;
+    }
+    .product-link-btn:hover, .receipt-btn-small:hover {
+        background: rgba(0, 214, 143, 0.2);
+        border-color: var(--accent);
+        transform: translateY(-1px);
+    }
+
+    .receipt-row-container {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .receipt-delete-btn {
+        background: rgba(255, 77, 77, 0.1);
+        border: 1px solid rgba(255, 77, 77, 0.2);
+        color: #ff4d4d;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .receipt-delete-btn:hover { background: rgba(255, 77, 77, 0.2); transform: scale(1.1); }
+    .receipt-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
         overflow: hidden;
-        text-overflow: ellipsis;
+    }
+
+    .modal-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .header-action-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--accent);
+        text-decoration: none;
+        background: var(--accent-dim);
+        border: 1px solid rgba(0, 214, 143, 0.2);
+        padding: 2px 8px;
+        border-radius: 100px;
+        transition: all 0.2s;
         white-space: nowrap;
     }
-    
+    .header-action-pill:hover {
+        background: rgba(0, 214, 143, 0.2);
+        transform: translateY(-1px);
+    }
+
+    .modal-image-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .modal-main-image {
+        max-width: 100%;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
     .split-pill {
         font-size: 10px;
         text-transform: uppercase;
@@ -726,8 +864,8 @@
     .hero-pop-box.paid-state .bell-badge-svg,
     .hero-pop-box.paid-state .unfair-text-line { display: none; }
     
-    .hero-pop-box.paid-state .pop-price { color: var(--accent); opacity: 0.3; }
-    .hero-pop-box.paid-state .pop-title, .hero-pop-box.paid-state .pop-sub { opacity: 0.3; }
+    .hero-pop-box.paid-state .pop-price { color: var(--accent); }
+    .hero-pop-box.paid-state .pop-title, .hero-pop-box.paid-state .pop-sub { color: var(--accent); }
 
     /* Pay for someone else link */
     .pay-for-other-link {
@@ -743,6 +881,584 @@
     .pay-for-other-link:hover { 
         opacity: 1; 
         color: var(--accent); 
+    }
+
+    /* === GROUP GIFT SPECIFIC STYLES === */
+    
+    /* Gift Actions inside hero box */
+    .gift-actions-inline {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px dashed rgba(255,255,255,0.1);
+    }
+    
+    .gift-payment-details-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .gift-payment-details-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    
+    /* I've Paid Checkbox Card */
+    .gift-paid-checkbox-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: rgba(61, 220, 151, 0.05);
+        border: 2px solid rgba(61, 220, 151, 0.2);
+        border-radius: 12px;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .gift-paid-checkbox-card:hover {
+        border-color: var(--accent);
+        background: rgba(61, 220, 151, 0.1);
+    }
+    
+    .gift-paid-checkbox-card.checked {
+        background: rgba(61, 220, 151, 0.15);
+        border-color: var(--accent);
+        cursor: default;
+    }
+    
+    .gift-paid-checkbox-card.pending {
+        background: rgba(251, 191, 36, 0.1);
+        border-color: rgba(251, 191, 36, 0.3);
+    }
+    
+    .gift-paid-checkbox-card.confirmed {
+        background: rgba(61, 220, 151, 0.15);
+        border-color: var(--accent);
+        cursor: default;
+        pointer-events: none;
+    }
+    
+    .gift-paid-checkbox-card.rejected {
+        background: rgba(248, 113, 113, 0.1);
+        border-color: rgba(248, 113, 113, 0.3);
+    }
+    
+    .gift-checkbox {
+        width: 24px;
+        height: 24px;
+        border: 2px solid var(--border);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+    
+    .gift-paid-checkbox-card:hover .gift-checkbox {
+        border-color: var(--accent);
+    }
+    
+    .gift-paid-checkbox-card.checked .gift-checkbox,
+    .gift-paid-checkbox-card.confirmed .gift-checkbox {
+        background: var(--accent);
+        border-color: var(--accent);
+    }
+    
+    .gift-paid-checkbox-card.pending .gift-checkbox {
+        background: #fbbf24;
+        border-color: #fbbf24;
+    }
+    
+    .gift-checkbox-icon {
+        display: none;
+        color: #000;
+        font-weight: bold;
+        font-size: 12px;
+    }
+    
+    .gift-paid-checkbox-card.checked .gift-checkbox-icon,
+    .gift-paid-checkbox-card.pending .gift-checkbox-icon,
+    .gift-paid-checkbox-card.confirmed .gift-checkbox-icon {
+        display: block;
+    }
+    
+    .gift-checkbox-content {
+        flex: 1;
+        text-align: left;
+    }
+    
+    .gift-checkbox-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 2px;
+    }
+    
+    .gift-checkbox-sub {
+        font-size: 11px;
+        color: var(--muted);
+    }
+    
+    .gift-paid-checkbox-card.pending .gift-checkbox-sub {
+        color: #fbbf24;
+    }
+    
+    .gift-paid-checkbox-card.confirmed .gift-checkbox-sub {
+        color: var(--accent);
+    }
+    
+    .gift-paid-checkbox-card.rejected .gift-checkbox-sub {
+        color: #f87171;
+    }
+    
+    .gift-pay-for-other-link {
+        display: block;
+        text-align: center;
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+        opacity: 0.7;
+        transition: all 0.2s;
+        margin-top: 4px;
+    }
+    
+    .gift-pay-for-other-link:hover {
+        opacity: 1;
+        color: var(--accent);
+    }
+    
+    /* "I've paid" checkbox inside modal */
+    .gift-paid-checkbox-card.modal-version {
+        background: rgba(61, 220, 151, 0.08);
+        border: 2px solid var(--accent);
+    }
+    
+    .gift-paid-checkbox-card.modal-version .gift-checkbox {
+        border-color: var(--accent);
+    }
+    
+    .gift-paid-checkbox-card.modal-version:hover {
+        background: rgba(61, 220, 151, 0.15);
+        transform: translateY(-1px);
+    }
+    
+    .gift-paid-checkbox-card.modal-version:active {
+        transform: translateY(0);
+    }
+    
+    /* Payment Details Modal */
+    .payment-methods-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        max-height: calc(60vh - 100px);
+        max-height: calc(60dvh - 100px);
+        padding-right: 4px;
+    }
+    
+    @media (max-width: 480px) {
+        .payment-methods-list {
+            max-height: calc(65vh - 140px);
+            max-height: calc(65dvh - 140px);
+            gap: 10px;
+        }
+    }
+    
+    .payment-method-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+    
+    .payment-method-card:hover {
+        border-color: rgba(255,255,255,0.15);
+    }
+    
+    .payment-method-card.collapsible .payment-method-details {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        padding: 0 16px;
+    }
+    
+    .payment-method-card.collapsible.expanded .payment-method-details {
+        max-height: 500px;
+        padding: 0 16px 16px 16px;
+    }
+    
+    .payment-method-card.collapsible .payment-method-chevron {
+        transition: transform 0.3s ease;
+    }
+    
+    .payment-method-card.collapsible.expanded .payment-method-chevron {
+        transform: rotate(180deg);
+    }
+    
+    .payment-method-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 16px;
+    }
+    
+    .payment-method-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .payment-method-chevron {
+        font-size: 12px;
+        color: var(--muted);
+    }
+    
+    .payment-method-icon {
+        font-size: 24px;
+    }
+    
+    .payment-method-type {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+    }
+    
+    .payment-method-details {
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .payment-method-detail {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .payment-method-detail:last-child {
+        border-bottom: none;
+    }
+    
+    .payment-method-detail-label {
+        font-size: 12px;
+        color: var(--muted);
+        flex-shrink: 0;
+    }
+    
+    .payment-method-detail-value {
+        font-size: 14px;
+        color: var(--text);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        word-break: break-all;
+        text-align: right;
+    }
+    
+    @media (max-width: 480px) {
+        .payment-method-detail {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 14px 0;
+        }
+        .payment-method-detail-value {
+            text-align: left;
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+    
+    .copy-btn-small {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-height: 32px;
+        min-width: 50px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .copy-btn-small:hover, .copy-btn-small:active {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    
+    @media (max-width: 480px) {
+        .copy-btn-small {
+            padding: 8px 12px;
+            min-height: 36px;
+            font-size: 13px;
+        }
+    }
+    
+    .open-link-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: var(--accent);
+        color: #000;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        margin-top: 12px;
+        transition: all 0.2s;
+        min-height: 44px;
+        width: 100%;
+    }
+    
+    .open-link-btn:hover, .open-link-btn:active {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+    
+    @media (max-width: 480px) {
+        .open-link-btn {
+            padding: 14px 16px;
+            font-size: 15px;
+            min-height: 48px;
+        }
+    }
+    
+    /* Report Payment Modal Form */
+    .report-form-group {
+        margin-bottom: 20px;
+    }
+    
+    .report-form-label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 8px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .report-form-input {
+        width: 100%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 16px; /* Prevents iOS zoom on focus */
+        color: var(--text);
+        transition: all 0.2s;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    
+    .report-form-input:focus {
+        outline: none;
+        border-color: var(--accent);
+        background: rgba(255,255,255,0.08);
+    }
+    
+    .report-form-select {
+        width: 100%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 16px; /* Prevents iOS zoom on focus */
+        color: var(--text);
+        cursor: pointer;
+        -webkit-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+    }
+    
+    .report-form-select:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+    
+    .report-submit-btn {
+        width: 100%;
+        background: var(--accent);
+        color: #000;
+        border: none;
+        border-radius: 12px;
+        padding: 16px 24px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 8px;
+        min-height: 52px;
+    }
+    
+    .report-submit-btn:hover, .report-submit-btn:active {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+    
+    .report-submit-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .fair-share-pill {
+        background: rgba(61,220,151,0.1);
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        padding: 4px 10px;
+        border-radius: 100px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+    
+    .fair-share-pill:hover, .fair-share-pill:active {
+        background: rgba(61,220,151,0.2);
+        transform: scale(1.02);
+    }
+    
+    /* Modern Upload Dropzone */
+    .upload-dropzone {
+        border: 2px dashed var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: rgba(255,255,255,0.02);
+    }
+    
+    .upload-dropzone:hover {
+        border-color: var(--accent);
+        background: rgba(61,220,151,0.05);
+    }
+    
+    .upload-dropzone.has-file {
+        border-style: solid;
+        border-color: var(--accent);
+        background: rgba(61,220,151,0.08);
+    }
+    
+    .upload-dropzone-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .upload-dropzone-icon {
+        font-size: 28px;
+        opacity: 0.7;
+    }
+    
+    .upload-dropzone-text {
+        font-size: 13px;
+        color: var(--muted);
+    }
+    
+    .upload-dropzone:hover .upload-dropzone-text {
+        color: var(--accent);
+    }
+    
+    .upload-dropzone-preview {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+    }
+    
+    .upload-preview-icon {
+        font-size: 24px;
+    }
+    
+    .upload-preview-name {
+        font-size: 13px;
+        color: var(--text);
+        font-weight: 500;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .upload-preview-remove {
+        background: rgba(248,113,113,0.2);
+        border: none;
+        color: #f87171;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+    
+    .upload-preview-remove:hover {
+        background: rgba(248,113,113,0.3);
+        transform: scale(1.1);
+    }
+    
+    @media (max-width: 480px) {
+        .report-form-input,
+        .report-form-select {
+            padding: 16px;
+            font-size: 16px;
+            border-radius: 12px;
+        }
+        .report-submit-btn {
+            min-height: 56px;
+            padding: 18px 24px;
+        }
+    }
+    
+    /* === END GROUP GIFT STYLES === */
+    
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    
+    @keyframes slideDown {
+        from { opacity: 1; transform: translateX(-50%) translateY(0); }
+        to { opacity: 0; transform: translateX(-50%) translateY(20px); }
     }
 
     /* --- LIST --- */
@@ -1016,7 +1732,8 @@
         padding: 16px 24px;
         z-index: 100;
         display: flex;
-        justify-content: center;
+        flex-direction: column;
+        align-items: center;
     }
     .footer-bar-inner {
         max-width: 960px;
@@ -1034,16 +1751,214 @@
     .btn-sec { background: #21262d; border: 1px solid var(--border); color: var(--text); }
     .btn-pri { background: var(--accent); color: #000; border: 1px solid var(--accent); }
     
+    .footer-badge {
+        background: rgba(251, 191, 36, 0.2);
+        color: #fbbf24;
+        padding: 2px 8px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 6px;
+    }
+    
+    .footer-badge.has-pending {
+        background: rgba(251, 191, 36, 0.3);
+        animation: pulse-badge 2s infinite;
+    }
+    
+    @keyframes pulse-badge {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+    
+    /* Expandable Footer Reports Area */
+    .footer-reports-area {
+      display: none;
+      flex-direction: column;
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      margin-top: 12px;
+      animation: slideUp 0.2s ease-out;
+    }
+    
+    .footer-reports-area.expanded {
+      display: flex;
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        max-height: 0;
+      }
+      to {
+        opacity: 1;
+        max-height: 400px;
+      }
+    }
+    
+    .footer-reports-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .footer-reports-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
+    }
+    
+    .footer-reports-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0 8px;
+      line-height: 1;
+    }
+    
+    .footer-reports-close:hover {
+      color: var(--text);
+    }
+    
+    .footer-reports-list {
+      max-height: 280px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .footer-report-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #21262d;
+      border-radius: 10px;
+      padding: 12px 16px;
+    }
+    
+    .footer-report-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .footer-report-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .footer-report-details {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    
+    .footer-report-amount {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    
+    .footer-report-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    
+    .footer-report-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      white-space: nowrap;
+    }
+    
+    .footer-report-btn.confirm {
+      background: var(--accent);
+      color: #000;
+    }
+    
+    .footer-report-btn.reject {
+      background: #21262d;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    
+    .footer-report-btn:hover {
+      opacity: 0.85;
+    }
+    
+    .footer-report-proof {
+      color: var(--accent);
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    
+    .footer-reports-empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 16px;
+      font-size: 13px;
+    }
+    
     @media (max-width: 768px) {
       .footer-bar {
         padding: 12px 16px;
+        max-height: 70vh;
+        overflow-y: auto;
       }
       .footer-bar-inner {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 8px;
+        width: 100%;
       }
       .f-btn {
-        padding: 12px;
+        padding: 10px 8px;
+        font-size: 12px;
+      }
+      .footer-reports-area {
+        padding-top: 12px;
+        margin-top: 12px;
+        width: 100%;
+      }
+      .footer-reports-list {
+        max-height: 200px;
+      }
+      .footer-report-item {
+        padding: 10px 12px;
+      }
+      .footer-report-name {
         font-size: 13px;
+      }
+      .footer-report-details {
+        font-size: 11px;
+        gap: 6px;
+      }
+      .footer-report-actions {
+        gap: 6px;
+      }
+      .footer-report-btn {
+        padding: 6px 10px;
+        font-size: 12px;
       }
     }
 
@@ -1055,21 +1970,87 @@
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.9); z-index: 1000;
       display: none; justify-content: center; align-items: center;
+      padding: 16px;
+      padding-top: env(safe-area-inset-top, 16px);
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .modal-overlay.visible { display: flex; }
     .modal {
       background: var(--card); border: 1px solid var(--border);
-      width: 90%; max-width: 400px; padding: 24px; border-radius: 16px;
+      width: 100%; max-width: 400px; padding: 24px; border-radius: 16px;
+      max-height: calc(100vh - 32px);
+      max-height: calc(100dvh - 32px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: auto;
     }
-    .form-input { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 8px; margin-bottom: 12px; }
-    .form-btn { width: 100%; padding: 12px; background: var(--accent); color: #000; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; }
+    .modal-content-scroll {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: calc(70vh - 100px);
+    }
+    .form-input { 
+      width: 100%; padding: 14px; background: #000; border: 1px solid var(--border); 
+      color: #fff; border-radius: 8px; margin-bottom: 12px; 
+      font-size: 16px; /* Prevents iOS zoom on focus */
+    }
+    .form-btn { 
+      width: 100%; padding: 14px; background: var(--accent); color: #000; 
+      font-weight: 700; border: none; border-radius: 8px; cursor: pointer;
+      font-size: 16px;
+      min-height: 48px; /* Better touch target */
+    }
+    
+    /* Mobile-specific modal adjustments */
+    @media (max-width: 480px) {
+      .modal-overlay {
+        padding: 12px;
+        align-items: flex-end; /* Slide up from bottom on mobile */
+      }
+      .modal {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        padding: 20px 16px;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        max-height: 85vh;
+        max-height: 85dvh;
+        margin: 0;
+      }
+      .modal-header h3 {
+        font-size: 17px;
+      }
+      .form-input, .form-btn {
+        padding: 16px;
+        font-size: 16px;
+      }
+      .receipt-modal-close {
+        width: 44px;
+        height: 44px;
+        font-size: 28px;
+      }
+    }
     
     /* Receipt Modal */
     .receipt-modal {
       background: var(--card); border: 1px solid var(--border);
       width: 95%; max-width: 600px; max-height: 90vh;
+      max-height: 90dvh;
       border-radius: 16px; overflow: hidden;
       display: flex; flex-direction: column;
+    }
+    
+    @media (max-width: 480px) {
+      .receipt-modal {
+        width: 100%;
+        max-width: 100%;
+        max-height: 95vh;
+        max-height: 95dvh;
+        border-radius: 20px 20px 0 0;
+        margin-top: auto;
+      }
     }
     .receipt-modal-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -1163,8 +2144,8 @@
 
         <div class="header-main-row">
             <div class="header-title-group">
-                <div id="gift-image-row" class="gift-image-row" style="display: none;">
-                    <img id="gift-image-thumb" class="gift-image-thumb" src="" alt="Gift" onclick="showGiftImageModal()">
+                <div id="header-icon-container" class="header-icon-container">
+                    <!-- Type icon (gift, restaurant, etc) filled by JS -->
                 </div>
                 <div>
                     <div class="page-title" id="header-title">
@@ -1175,9 +2156,7 @@
                     </div>
                 </div>
             </div>
-            <div id="gift-about-badge" class="gift-about-badge" style="display: none;">
-                <span id="gift-about-text"></span>
-            </div>
+            <!-- Share button removed from here, already in header-top -->
         </div>
 
         <!-- Bill Summary Stats -->
@@ -1196,10 +2175,30 @@
         </div>
         <div class="progress-percent" id="progress-percent-text">0% Collected</div>
         
-        <!-- Receipt Row -->
-        <div class="header-receipt-row">
-            <div id="receipt-view-link" class="">
-                <!-- Dynamically filled -->
+        <!-- Tab Extras (Product Info, Link, Receipt) -->
+        <div class="tab-extras-area" id="tab-extras-area" style="display: none;">
+            <div class="extras-header">
+                <div class="extras-label" id="extras-label">Gift details</div>
+            </div>
+            
+            <div class="product-info-row" id="product-info-row">
+                <div class="product-image-container" id="product-image-container" style="display: none;">
+                    <img id="product-image-thumb" class="product-thumb" src="" alt="Product" onclick="showGiftImageModal()">
+                </div>
+                <div class="product-details-content">
+                    <div id="product-name-badge" class="product-name-badge" style="display: none;"></div>
+                    <div class="product-actions-row">
+                        <div id="product-link-container" style="display: none;">
+                            <a id="product-link" href="#" target="_blank" rel="noopener noreferrer" class="product-link-btn">
+                                <span>🔗</span> Open Link
+                            </a>
+                        </div>
+                        <!-- Receipt Row -->
+                        <div id="receipt-view-link" class="receipt-row-container" style="display: none;">
+                            <!-- Dynamically filled -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1235,6 +2234,25 @@
             
             <!-- Pay for someone else link -->
             <a class="pay-for-other-link" onclick="showPaymentModalForOther()">Pay for someone else</a>
+            
+            <!-- Group Gift Actions (shown only for gift templates) -->
+            <div class="gift-actions-inline" id="gift-actions-inline" style="display: none;">
+                <button class="gift-payment-details-btn" onclick="showGiftPaymentDetails()">
+                    <span>💳</span> Payment details
+                </button>
+                
+                <div class="gift-paid-checkbox-card" id="gift-paid-checkbox" onclick="handleGiftPaidCheckbox()">
+                    <div class="gift-checkbox">
+                        <span class="gift-checkbox-icon">✓</span>
+                    </div>
+                    <div class="gift-checkbox-content">
+                        <div class="gift-checkbox-label" id="gift-checkbox-label">I've paid</div>
+                        <div class="gift-checkbox-sub" id="gift-checkbox-sub">After paying, confirm it here so the starter can verify.</div>
+                    </div>
+                </div>
+                
+                <a class="gift-pay-for-other-link" onclick="showPaymentModalForOther()">Pay for someone else</a>
+            </div>
         </div>
     </div>
 
@@ -1278,10 +2296,25 @@
 
   <!-- FOOTER (Host Only) - Outside app-container for full-width positioning -->
     <div id="host-footer" class="footer-bar hide">
+    <!-- Button row -->
     <div class="footer-bar-inner">
         <button class="f-btn btn-sec" onclick="showEditModal()">Edit Details</button>
-        <button id="footer-receipt-btn" class="f-btn btn-sec" onclick="triggerReceiptUpload()" style="display: none;">📄 Upload Receipt</button>
+        <button id="footer-receipt-btn" class="f-btn btn-sec" onclick="triggerReceiptUpload()" style="display: none;">Upload Receipt</button>
+        <button id="footer-reports-btn" class="f-btn btn-sec" onclick="togglePaymentReports()" style="display: none;">
+          Pending payments <span id="footer-reports-count" class="footer-badge">0</span>
+        </button>
       <button class="f-btn btn-pri" onclick="showPaymentModal()">Add a Payment Received</button>
+    </div>
+    
+    <!-- Expandable reports area (below buttons) -->
+    <div id="footer-reports-area" class="footer-reports-area">
+      <div class="footer-reports-header">
+        <span class="footer-reports-title">Pending Payments</span>
+        <button onclick="togglePaymentReports()" class="footer-reports-close">&times;</button>
+      </div>
+      <div id="footer-reports-list" class="footer-reports-list">
+        <!-- Dynamically filled -->
+      </div>
     </div>
   </div>
 
@@ -1430,12 +2463,111 @@
   <div id="receipt-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('receipt-modal')">
     <div class="receipt-modal">
       <div class="receipt-modal-header">
-        <span class="receipt-modal-title">Original Receipt</span>
+        <div class="modal-header-left">
+            <span class="receipt-modal-title">Original Receipt</span>
+            <div id="modal-header-actions" class="modal-header-actions"></div>
+        </div>
         <button class="receipt-modal-close" onclick="hideModal('receipt-modal')">&times;</button>
       </div>
       <div class="receipt-modal-body" id="receipt-modal-body">
         <!-- Content loaded dynamically -->
       </div>
+    </div>
+  </div>
+
+  <!-- Gift Payment Details Modal -->
+  <div id="gift-payment-details-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('gift-payment-details-modal')">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700;">Payment Details</h3>
+        <button class="receipt-modal-close" onclick="hideModal('gift-payment-details-modal')">&times;</button>
+      </div>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 4px;">
+        Here's how you can pay <span id="payment-details-host">the starter</span>:
+      </p>
+      <p id="payment-details-amount" style="font-size: 28px; font-weight: 700; color: var(--accent); margin: 0 0 20px 0;"></p>
+      <div class="payment-methods-list" id="gift-payment-methods-list">
+        <!-- Filled dynamically -->
+      </div>
+      <!-- I've Paid checkbox at bottom -->
+      <div id="payment-details-footer" class="payment-details-footer" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
+        <div class="gift-paid-checkbox-card modal-version" onclick="switchToReportPaymentModal()">
+          <div class="gift-checkbox">
+            <span class="gift-checkbox-icon">✓</span>
+          </div>
+          <div class="gift-checkbox-content">
+            <div class="gift-checkbox-label">I've paid</div>
+            <div class="gift-checkbox-sub">Tap to report your payment</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Payment Modal -->
+  <div id="report-payment-modal" class="modal-overlay" onclick="if(event.target === this) closeReportPaymentModal()">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700;">Report your payment</h3>
+        <button class="receipt-modal-close" onclick="closeReportPaymentModal()">&times;</button>
+      </div>
+      
+      <form id="report-payment-form" onsubmit="submitPaymentReport(event)">
+        <div class="report-form-group">
+          <label class="report-form-label">Your name *</label>
+          <input type="text" id="report-name" class="report-form-input" placeholder="Enter your name" required maxlength="50">
+          <p id="report-name-hint" class="form-hint" style="font-size: 11px; color: var(--muted); margin-top: 6px; opacity: 0.6;"></p>
+        </div>
+        
+        <div class="report-form-group">
+          <label class="report-form-label">How did you pay? *</label>
+          <select id="report-method" class="report-form-select" required>
+            <option value="">Select method...</option>
+            <option value="bank_transfer">🏦 Bank transfer</option>
+            <option value="payment_link">🔗 Payment link (PayPal, Revolut, etc.)</option>
+            <option value="cash">💵 Cash</option>
+            <option value="other">📝 Other</option>
+          </select>
+        </div>
+        
+        <div class="report-form-group">
+          <label class="report-form-label" style="display: flex; align-items: center; justify-content: space-between;">
+            <span>Amount paid *</span>
+            <button type="button" id="report-fair-share-btn" class="fair-share-pill" style="display: none;" onclick="copyReportFairShare()">
+              € <span id="report-fair-share-value">0.00</span>
+            </button>
+          </label>
+          <div style="position: relative;">
+            <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted);">€</span>
+            <input type="number" id="report-amount" class="report-form-input" style="padding-left: 28px;" placeholder="0.00" step="0.01" min="0.01" required>
+          </div>
+        </div>
+        
+        <div class="report-form-group">
+          <label class="report-form-label">Payment date *</label>
+          <input type="date" id="report-date" class="report-form-input" required>
+        </div>
+        
+        <div class="report-form-group">
+          <label class="report-form-label">Proof (optional)</label>
+          <div class="upload-dropzone" id="proof-dropzone" onclick="document.getElementById('report-proof').click()">
+            <input type="file" id="report-proof" accept="image/*,.pdf,application/pdf" style="display: none;" onchange="handleProofSelect(event)">
+            <div class="upload-dropzone-content" id="proof-dropzone-content">
+              <span class="upload-dropzone-icon">📎</span>
+              <span class="upload-dropzone-text">Tap to add screenshot or receipt</span>
+            </div>
+            <div class="upload-dropzone-preview" id="proof-preview" style="display: none;">
+              <span class="upload-preview-icon" id="proof-preview-icon">📄</span>
+              <span class="upload-preview-name" id="proof-preview-name"></span>
+              <button type="button" class="upload-preview-remove" onclick="event.stopPropagation(); removeProofFile()">✕</button>
+            </div>
+          </div>
+        </div>
+        
+        <div id="report-error" style="color: #f87171; font-size: 13px; margin-bottom: 12px; display: none;"></div>
+        
+        <button type="submit" class="report-submit-btn" id="report-submit-btn">Confirm payment</button>
+      </form>
     </div>
   </div>
 
@@ -1589,9 +2721,11 @@
     function renderAll() {
         renderHeader();
         renderHero();
+        renderGiftHero(); // Group Gift specific UI
         renderGroups();
         renderParticipants();
         renderFooter();
+        loadPaymentReports(); // Load payment reports for Group Gift
     }
 
     function renderHeader() {
@@ -1623,31 +2757,80 @@
             <span class="split-pill">${splitLabel}</span>
         `;
 
-        // === GIFT IMAGE THUMBNAIL (only for 'gift' mode, only if image exists) ===
-        const giftImageRow = document.getElementById('gift-image-row');
-        const giftImageThumb = document.getElementById('gift-image-thumb');
-        const giftAboutBadge = document.getElementById('gift-about-badge');
-        const giftAboutText = document.getElementById('gift-about-text');
-        
-        // Check if this is a fundraiser (no gift image block) or gift mode
-        const isFundraiserMode = tabData.group_gift_mode === 'fundraiser';
-        
-        // Only show gift image for 'gift' mode with actual image uploaded
-        if (!isFundraiserMode && tabData.about_image_path) {
-            giftImageThumb.src = tabData.about_image_path;
-            giftImageRow.style.display = 'block';
-            
-            // Show product name as badge if it exists
-            if (tabData.about_text) {
-                giftAboutText.textContent = tabData.about_text;
-                giftAboutBadge.style.display = 'block';
+        // === HEADER ICON (based on type) ===
+        const iconContainer = document.getElementById('header-icon-container');
+        let typeIcon = '📋'; // Default
+        if (tabData.template === 'restaurant') {
+            typeIcon = '🍽️';
+        } else if (tabData.template === 'trip') {
+            typeIcon = '✈️';
+        } else if (tabData.template === 'gift') {
+            if (tabData.group_gift_mode === 'fundraiser') {
+                typeIcon = '💰';
             } else {
-                giftAboutBadge.style.display = 'none';
+                typeIcon = '🎁';
             }
-        } else {
-            giftImageRow.style.display = 'none';
-            giftAboutBadge.style.display = 'none';
         }
+        iconContainer.innerHTML = typeIcon;
+
+        // === PRODUCT INFO (below the line) ===
+        const productInfoRow = document.getElementById('product-info-row');
+        const productImageContainer = document.getElementById('product-image-container');
+        const productImageThumb = document.getElementById('product-image-thumb');
+        const productNameBadge = document.getElementById('product-name-badge');
+        const productLinkContainer = document.getElementById('product-link-container');
+        const productLink = document.getElementById('product-link');
+        
+        const isGiftMode = tabData.template === 'gift';
+        const hasProductImage = tabData.about_image_path || tabData.raising_for_image_path;
+        const productName = tabData.about_text || tabData.raising_for_text;
+        const productLinkUrl = tabData.about_link || tabData.raising_for_link;
+
+        let showProductRow = false;
+
+        if (isGiftMode) {
+            // Show image if it exists
+            if (hasProductImage) {
+                productImageThumb.src = tabData.about_image_path || tabData.raising_for_image_path;
+                productImageContainer.style.display = 'block';
+                showProductRow = true;
+            } else {
+                productImageContainer.style.display = 'none';
+            }
+
+            // Show name as badge if it exists
+            if (productName) {
+                productNameBadge.textContent = productName;
+                productNameBadge.style.display = 'inline-block';
+                showProductRow = true;
+            } else {
+                productNameBadge.style.display = 'none';
+            }
+
+            // Show link if it exists
+            if (productLinkUrl) {
+                const finalUrl = productLinkUrl.startsWith('http') ? productLinkUrl : `https://${productLinkUrl}`;
+                productLink.href = finalUrl;
+                
+                // Extract domain name from URL
+                try {
+                    const urlObj = new URL(finalUrl);
+                    const domain = urlObj.hostname.replace(/^www\./, '');
+                    // Capitalize first letter only: amazon.com -> Amazon.com
+                    const displayDomain = domain.charAt(0).toUpperCase() + domain.slice(1);
+                    productLink.innerHTML = `<span>🔗</span> ${displayDomain}`;
+                } catch (e) {
+                    productLink.innerHTML = `<span>🔗</span> Open Link`;
+                }
+                
+                productLinkContainer.style.display = 'block';
+                showProductRow = true;
+            } else {
+                productLinkContainer.style.display = 'none';
+            }
+        }
+
+        productInfoRow.style.display = showProductRow ? 'flex' : 'none';
 
         // === GIFT POT MODE DISPLAY ===
         if (isGiftPotMode) {
@@ -1717,30 +2900,42 @@
 
         // Receipt
         const rLink = document.getElementById('receipt-view-link');
-        const receiptRow = rLink.closest('.header-receipt-row');
+        const extrasArea = document.getElementById('tab-extras-area');
         const footerReceiptBtn = document.getElementById('footer-receipt-btn');
+        const extrasLabel = document.getElementById('extras-label');
         
+        // Update label text based on type
+        if (tabData.template === 'restaurant') {
+            extrasLabel.textContent = 'Bill details';
+        } else if (tabData.template === 'trip') {
+            extrasLabel.textContent = 'Trip details';
+        } else {
+            extrasLabel.textContent = 'Gift details';
+        }
+
+        let hasReceipt = false;
         if (tabData.receipt_file_path) {
+            hasReceipt = true;
             // Extract filename from path and use the secure API endpoint
             const receiptFilename = tabData.receipt_file_path.split('/').pop();
             const receiptUrl = `/api/grouptabs/receipt/${receiptFilename}`;
             rLink.innerHTML = `
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <button onclick="showReceiptModal('${receiptUrl}', '${receiptFilename}')" class="receipt-btn-big" style="flex: 1;">
-                    <span style="font-size:18px">📄</span> View Original Receipt
-                    </button>
-                    ${isCreator ? `<button onclick="deleteReceipt()" class="receipt-delete-btn" title="Delete Receipt">×</button>` : ''}
-                </div>`;
-            // Show the receipt row and hide upload button in footer
-            if (receiptRow) receiptRow.style.display = '';
+                <button onclick="showReceiptModal('${receiptUrl}', '${receiptFilename}')" class="receipt-btn-small">
+                    <span>📄</span> View Receipt
+                </button>`;
+            rLink.style.display = 'inline-block';
             if (footerReceiptBtn) footerReceiptBtn.style.display = 'none';
         } else {
-            // No receipt - hide the entire receipt row in header
+            // No receipt
             rLink.innerHTML = '';
-            if (receiptRow) receiptRow.style.display = 'none';
+            rLink.style.display = 'none';
             // Show upload button in footer for creator only
             if (footerReceiptBtn && isCreator) footerReceiptBtn.style.display = '';
         }
+
+        // Show/hide the entire extras area based on whether there's a product row or a receipt
+        // Redesign note: we show it if we have image, name, link OR receipt
+        extrasArea.style.display = (showProductRow || hasReceipt) ? 'flex' : 'none';
     }
 
     function renderHero() {
@@ -1796,6 +2991,835 @@
                 warningEl.classList.add('hide');
             }
         }
+    }
+
+    // ===========================================
+    // GROUP GIFT SPECIFIC UI
+    // ===========================================
+    let myPaymentReport = null; // Track current participant's report status
+    
+    function renderGiftHero() {
+        const giftActionsEl = document.getElementById('gift-actions-inline');
+        const payNowBtn = document.querySelector('.pay-btn-big');
+        const payForOtherLink = document.querySelector('.pay-for-other-link');
+        
+        // Only show gift actions for gift templates
+        if (tabData.template !== 'gift') {
+            giftActionsEl.style.display = 'none';
+            if (payNowBtn) payNowBtn.style.display = 'block';
+            if (payForOtherLink) payForOtherLink.style.display = 'block';
+            return;
+        }
+        
+        // For gift templates: hide PAY NOW, show gift actions
+        giftActionsEl.style.display = 'flex';
+        if (payNowBtn) payNowBtn.style.display = 'none';
+        if (payForOtherLink) payForOtherLink.style.display = 'none';
+        
+        // Update checkbox state based on user's report status
+        updateGiftCheckboxState();
+        
+        // Payment reports are now in the footer, reset expanded state
+        paymentReportsExpanded = false;
+    }
+    
+    function updateGiftCheckboxState() {
+        const checkbox = document.getElementById('gift-paid-checkbox');
+        const label = document.getElementById('gift-checkbox-label');
+        const sub = document.getElementById('gift-checkbox-sub');
+        
+        // Check if participant has fully paid (balance >= 0 means settled/overpaid)
+        let isFullyPaid = false;
+        if (fairnessData && currentParticipant) {
+            const myData = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
+            if (myData && myData.balance >= 0) {
+                isFullyPaid = true;
+            }
+        }
+        
+        // If fully paid (balance >= 0), always show as confirmed
+        if (isFullyPaid) {
+            checkbox.className = 'gift-paid-checkbox-card confirmed';
+            label.textContent = "Payment confirmed ✓";
+            const myData = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
+            const paidAmount = myData ? myData.actualPaid : 0;
+            sub.textContent = paidAmount > 0 ? `${formatCurrency2(paidAmount)} paid` : 'Fully settled';
+        } else if (!myPaymentReport) {
+            // No report yet
+            checkbox.className = 'gift-paid-checkbox-card';
+            label.textContent = "I've paid";
+            sub.textContent = 'After paying, confirm it here so the starter can verify.';
+        } else if (myPaymentReport.status === 'pending') {
+            checkbox.className = 'gift-paid-checkbox-card pending';
+            label.textContent = "Payment reported";
+            sub.textContent = 'Pending confirmation from the starter';
+        } else if (myPaymentReport.status === 'confirmed') {
+            checkbox.className = 'gift-paid-checkbox-card confirmed';
+            label.textContent = "Payment confirmed ✓";
+            sub.textContent = `${formatCurrency2(myPaymentReport.amount_cents)} confirmed`;
+        } else if (myPaymentReport.status === 'rejected') {
+            checkbox.className = 'gift-paid-checkbox-card rejected';
+            label.textContent = "Payment not confirmed";
+            sub.textContent = 'Please report again or contact the starter';
+        }
+    }
+    
+    function switchToReportPaymentModal() {
+        // Close payment details modal and open report payment modal
+        hideModal('gift-payment-details-modal');
+        setTimeout(() => {
+            showReportPaymentModal();
+        }, 150); // Small delay for smooth transition
+    }
+    
+    function showGiftPaymentDetails() {
+        const listEl = document.getElementById('gift-payment-methods-list');
+        const hostNameEl = document.getElementById('payment-details-host');
+        const amountEl = document.getElementById('payment-details-amount');
+        
+        hostNameEl.textContent = tabData.creator_name || 'the starter';
+        
+        // Calculate fair share amount to display
+        let fairShareAmount = 0;
+        const giftMode = tabData.gift_mode;
+        
+        if (giftMode === 'gift_debt') {
+            // Debt mode: show owed share
+            const totalAmount = tabData.total_amount_cents || 0;
+            const peopleCount = tabData.people_count || tabData.contributor_count || 1;
+            fairShareAmount = Math.floor(totalAmount / peopleCount);
+        } else if (giftMode === 'gift_pot_target') {
+            // Target pot mode: show suggested contribution
+            const targetAmount = tabData.amount_target || tabData.total_amount_cents || 0;
+            const contributorCount = tabData.contributor_count || tabData.people_count || 1;
+            fairShareAmount = Math.floor(targetAmount / contributorCount);
+        }
+        // For gift_pot_open, fairShareAmount stays 0 (any amount)
+        
+        if (fairShareAmount > 0) {
+            amountEl.textContent = formatCurrency2(fairShareAmount);
+            amountEl.style.display = 'block';
+        } else {
+            amountEl.style.display = 'none';
+        }
+        
+        // Parse payment methods from tab data
+        let paymentMethods = [];
+        if (tabData.payment_methods_json) {
+            try {
+                paymentMethods = JSON.parse(tabData.payment_methods_json);
+            } catch (e) {
+                console.error('Error parsing payment methods:', e);
+            }
+        }
+        
+        if (!paymentMethods || paymentMethods.length === 0) {
+            listEl.innerHTML = `
+                <div style="text-align: center; padding: 32px; color: var(--muted);">
+                    <span style="font-size: 40px; display: block; margin-bottom: 12px;">💳</span>
+                    <p>Payment details not added yet.</p>
+                    <p style="font-size: 13px;">Contact ${escapeHtml(tabData.creator_name || 'the starter')} for payment instructions.</p>
+                </div>
+            `;
+        } else {
+            listEl.innerHTML = paymentMethods.map((method, idx) => renderPaymentMethodCard(method, idx)).join('');
+        }
+        
+        // Hide "I've paid" footer if user is already fully paid
+        const footerEl = document.getElementById('payment-details-footer');
+        let isFullyPaid = false;
+        if (fairnessData && currentParticipant) {
+            const myData = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
+            if (myData && myData.balance >= 0) {
+                isFullyPaid = true;
+            }
+        }
+        footerEl.style.display = isFullyPaid ? 'none' : 'block';
+        
+        showModal('gift-payment-details-modal');
+    }
+    
+    function renderPaymentMethodCard(method, idx) {
+        const icons = {
+            bank: '🏦',
+            paypal: '💳',
+            revolut: '📱',
+            cash: '💵',
+            other: '📝'
+        };
+        
+        const labels = {
+            bank: 'Bank Transfer',
+            paypal: 'PayPal',
+            revolut: 'Revolut',
+            cash: 'Cash',
+            other: 'Other'
+        };
+        
+        const icon = icons[method.type] || '💳';
+        const label = labels[method.type] || method.type;
+        const details = method.details || {};
+        
+        let detailsHtml = '';
+        
+        if (method.type === 'bank') {
+            if (details.accountHolder) {
+                detailsHtml += `
+                    <div class="payment-method-detail">
+                        <span class="payment-method-detail-label">Account Holder</span>
+                        <span class="payment-method-detail-value">
+                            ${escapeHtml(details.accountHolder)}
+                            <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(details.accountHolder)}')">Copy</button>
+                        </span>
+                    </div>`;
+            }
+            if (details.iban) {
+                detailsHtml += `
+                    <div class="payment-method-detail">
+                        <span class="payment-method-detail-label">IBAN</span>
+                        <span class="payment-method-detail-value">
+                            ${escapeHtml(details.iban)}
+                            <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(details.iban)}')">Copy</button>
+                        </span>
+                    </div>`;
+            }
+            if (details.bic) {
+                detailsHtml += `
+                    <div class="payment-method-detail">
+                        <span class="payment-method-detail-label">BIC</span>
+                        <span class="payment-method-detail-value">
+                            ${escapeHtml(details.bic)}
+                            <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(details.bic)}')">Copy</button>
+                        </span>
+                    </div>`;
+            }
+            if (details.reference) {
+                detailsHtml += `
+                    <div class="payment-method-detail">
+                        <span class="payment-method-detail-label">Reference</span>
+                        <span class="payment-method-detail-value">
+                            ${escapeHtml(details.reference)}
+                            <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(details.reference)}')">Copy</button>
+                        </span>
+                    </div>`;
+            }
+        } else if (method.type === 'paypal') {
+            // PayPal stores as paypalId (can be username, email, or paypal.me link)
+            const paypalValue = details.paypalId || details.username || '';
+            if (paypalValue) {
+                // Check if it's a link
+                const isLink = paypalValue.includes('paypal.me') || paypalValue.startsWith('http');
+                if (isLink) {
+                    const linkUrl = paypalValue.startsWith('http') ? paypalValue : `https://${paypalValue}`;
+                    detailsHtml += `
+                        <div class="payment-method-detail">
+                            <span class="payment-method-detail-label">PayPal Link</span>
+                            <span class="payment-method-detail-value">
+                                ${escapeHtml(paypalValue)}
+                                <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(paypalValue)}')">Copy</button>
+                            </span>
+                        </div>
+                        <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="open-link-btn" onclick="event.stopPropagation();">
+                            Open PayPal →
+                        </a>`;
+                } else {
+                    detailsHtml += `
+                        <div class="payment-method-detail">
+                            <span class="payment-method-detail-label">PayPal Username / Email</span>
+                            <span class="payment-method-detail-value">
+                                ${escapeHtml(paypalValue)}
+                                <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(paypalValue)}')">Copy</button>
+                            </span>
+                        </div>`;
+                }
+            } else {
+                detailsHtml += `
+                    <div class="payment-method-detail">
+                        <span class="payment-method-detail-value" style="color: var(--muted);">
+                            Use PayPal to send payment
+                        </span>
+                    </div>`;
+            }
+        } else if (method.type === 'revolut') {
+            // Revolut stores as revolutId (can be username, phone, or link)
+            const revolutValue = details.revolutId || details.username || '';
+            if (revolutValue) {
+                // Check if it's a link
+                const isLink = revolutValue.includes('revolut.me') || revolutValue.startsWith('http');
+                if (isLink) {
+                    const linkUrl = revolutValue.startsWith('http') ? revolutValue : `https://${revolutValue}`;
+                    detailsHtml += `
+                        <div class="payment-method-detail">
+                            <span class="payment-method-detail-label">Revolut Link</span>
+                            <span class="payment-method-detail-value">
+                                ${escapeHtml(revolutValue)}
+                                <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(revolutValue)}')">Copy</button>
+                            </span>
+                        </div>
+                        <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="open-link-btn" onclick="event.stopPropagation();">
+                            Open Revolut →
+                        </a>`;
+                } else {
+                    detailsHtml += `
+                        <div class="payment-method-detail">
+                            <span class="payment-method-detail-label">Revolut Username / Phone</span>
+                            <span class="payment-method-detail-value">
+                                ${escapeHtml(revolutValue)}
+                                <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(revolutValue)}')">Copy</button>
+                            </span>
+                        </div>`;
+                }
+            } else {
+                detailsHtml += `
+                    <div class="payment-method-detail">
+                        <span class="payment-method-detail-value" style="color: var(--muted);">
+                            Use Revolut to send payment
+                        </span>
+                    </div>`;
+            }
+        } else if (method.type === 'cash') {
+            detailsHtml += `
+                <div class="payment-method-detail">
+                    <span class="payment-method-detail-value" style="color: var(--muted);">
+                        ${details.instructions ? escapeHtml(details.instructions) : 'Pay in cash directly'}
+                    </span>
+                </div>`;
+        } else if (method.type === 'other') {
+            if (details.instructions) {
+                detailsHtml += `
+                    <div class="payment-method-detail">
+                        <span class="payment-method-detail-value">${escapeHtml(details.instructions)}</span>
+                    </div>`;
+            }
+            if (details.link) {
+                const linkUrl = details.link.startsWith('http') ? details.link : `https://${details.link}`;
+                detailsHtml += `
+                    <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="open-link-btn" onclick="event.stopPropagation();">
+                        Open Link →
+                    </a>`;
+            }
+            // If no details provided, show placeholder
+            if (!details.instructions && !details.link) {
+                detailsHtml += `
+                    <div class="payment-method-detail">
+                        <span class="payment-method-detail-value" style="color: var(--muted);">
+                            Contact starter for details
+                        </span>
+                    </div>`;
+            }
+        }
+        
+        const cardId = `payment-method-card-${idx}`;
+        
+        return `
+            <div class="payment-method-card collapsible" id="${cardId}" onclick="togglePaymentMethodCard('${cardId}')">
+                <div class="payment-method-header">
+                    <div class="payment-method-header-left">
+                        <span class="payment-method-icon">${icon}</span>
+                        <span class="payment-method-type">${label}</span>
+                    </div>
+                    <span class="payment-method-chevron">▼</span>
+                </div>
+                <div class="payment-method-details">
+                    ${detailsHtml}
+                </div>
+            </div>
+        `;
+    }
+    
+    window.togglePaymentMethodCard = function(cardId) {
+        const card = document.getElementById(cardId);
+        if (card) {
+            card.classList.toggle('expanded');
+        }
+    }
+    
+    window.copyToClipboard = async function(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            // Visual feedback
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '✓';
+            btn.style.color = 'var(--accent)';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.color = '';
+            }, 1500);
+        } catch (err) {
+            console.error('Copy failed:', err);
+        }
+    };
+    
+    function handleGiftPaidCheckbox() {
+        // Check if participant has fully paid (balance >= 0)
+        if (fairnessData && currentParticipant) {
+            const myData = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
+            if (myData && myData.balance >= 0) {
+                // Fully paid, do nothing
+                return;
+            }
+        }
+        
+        // If already confirmed, do nothing
+        if (myPaymentReport && myPaymentReport.status === 'confirmed') {
+            return;
+        }
+        
+        // If pending, allow viewing/editing
+        if (myPaymentReport && myPaymentReport.status === 'pending') {
+            // Could allow editing here, for now just show info
+            alert('Your payment is pending confirmation from the starter.');
+            return;
+        }
+        
+        // Open report payment modal
+        showReportPaymentModal();
+    }
+    
+    function copyReportFairShare() {
+        const fairShareBtn = document.getElementById('report-fair-share-btn');
+        const amountInput = document.getElementById('report-amount');
+        const amount = fairShareBtn.dataset.amount;
+        if (amount) {
+            amountInput.value = amount;
+            // Brief visual feedback
+            fairShareBtn.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                fairShareBtn.style.transform = '';
+            }, 100);
+        }
+    }
+    
+    function handleProofSelect(event) {
+        const file = event.target.files[0];
+        const dropzone = document.getElementById('proof-dropzone');
+        const content = document.getElementById('proof-dropzone-content');
+        const preview = document.getElementById('proof-preview');
+        const previewIcon = document.getElementById('proof-preview-icon');
+        const previewName = document.getElementById('proof-preview-name');
+        
+        if (file) {
+            // Show preview
+            content.style.display = 'none';
+            preview.style.display = 'flex';
+            dropzone.classList.add('has-file');
+            
+            // Set icon based on file type
+            if (file.type.startsWith('image/')) {
+                previewIcon.textContent = '🖼️';
+            } else if (file.type === 'application/pdf') {
+                previewIcon.textContent = '📄';
+            } else {
+                previewIcon.textContent = '📎';
+            }
+            
+            previewName.textContent = file.name;
+        }
+    }
+    
+    function removeProofFile() {
+        const fileInput = document.getElementById('report-proof');
+        const dropzone = document.getElementById('proof-dropzone');
+        const content = document.getElementById('proof-dropzone-content');
+        const preview = document.getElementById('proof-preview');
+        
+        // Clear the file input
+        fileInput.value = '';
+        
+        // Reset UI
+        content.style.display = 'flex';
+        preview.style.display = 'none';
+        dropzone.classList.remove('has-file');
+    }
+    
+    function resetProofUpload() {
+        const content = document.getElementById('proof-dropzone-content');
+        const preview = document.getElementById('proof-preview');
+        const dropzone = document.getElementById('proof-dropzone');
+        
+        if (content) content.style.display = 'flex';
+        if (preview) preview.style.display = 'none';
+        if (dropzone) dropzone.classList.remove('has-file');
+    }
+    
+    function showReportPaymentModal() {
+        const form = document.getElementById('report-payment-form');
+        form.reset();
+        document.getElementById('report-error').style.display = 'none';
+        resetProofUpload(); // Reset the upload dropzone UI
+        
+        // Set subtle hint showing who can see the name
+        const creatorFirstName = (tabData.creator_name || 'the starter').split(' ')[0];
+        document.getElementById('report-name-hint').textContent = `(only visible to ${creatorFirstName})`;
+        
+        // Pre-fill date with today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('report-date').value = today;
+        
+        // Populate payment method dropdown with only configured methods
+        const methodSelect = document.getElementById('report-method');
+        methodSelect.innerHTML = '<option value="">Select method...</option>';
+        
+        let paymentMethods = [];
+        if (tabData.payment_methods_json) {
+            try {
+                paymentMethods = JSON.parse(tabData.payment_methods_json);
+            } catch (e) {
+                console.error('Error parsing payment methods:', e);
+            }
+        }
+        
+        if (paymentMethods && paymentMethods.length > 0) {
+            const methodLabels = {
+                bank: '🏦 Bank Transfer',
+                paypal: '💳 PayPal',
+                revolut: '📱 Revolut',
+                cash: '💵 Cash',
+                other: '📝 Other'
+            };
+            
+            paymentMethods.forEach((method, idx) => {
+                const label = methodLabels[method.type] || method.type;
+                const option = document.createElement('option');
+                option.value = method.type;
+                option.textContent = label;
+                methodSelect.appendChild(option);
+            });
+        } else {
+            // Fallback to generic options if no payment methods configured
+            methodSelect.innerHTML = `
+                <option value="">Select method...</option>
+                <option value="bank_transfer">🏦 Bank transfer</option>
+                <option value="payment_link">🔗 Payment link</option>
+                <option value="cash">💵 Cash</option>
+                <option value="other">📝 Other</option>
+            `;
+        }
+        
+        // Pre-fill amount based on gift mode
+        const giftMode = tabData.gift_mode;
+        let prefillAmount = 0;
+        
+        if (giftMode === 'gift_debt') {
+            // Owed amount
+            if (fairnessData && currentParticipant) {
+                const myData = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
+                if (myData) {
+                    prefillAmount = Math.abs(myData.balance < 0 ? myData.balance : myData.fairShare);
+                }
+            }
+        } else if (giftMode === 'gift_pot_target') {
+            // Suggested amount
+            const targetAmount = tabData.amount_target || tabData.total_amount_cents || 0;
+            const contributorCount = tabData.contributor_count || tabData.people_count || 1;
+            prefillAmount = contributorCount > 0 ? Math.round(targetAmount / contributorCount) : 0;
+        }
+        // For open pot, leave empty
+        
+        // Show/hide fair share pill and set its value
+        const fairShareBtn = document.getElementById('report-fair-share-btn');
+        const fairShareValue = document.getElementById('report-fair-share-value');
+        
+        if (prefillAmount > 0) {
+            fairShareValue.textContent = (prefillAmount / 100).toFixed(2);
+            fairShareBtn.style.display = 'inline-flex';
+            fairShareBtn.dataset.amount = (prefillAmount / 100).toFixed(2);
+            // Don't auto-fill, let user click to fill
+        } else {
+            fairShareBtn.style.display = 'none';
+        }
+        
+        // Pre-fill name if available - check multiple sources
+        let participantName = '';
+        if (currentParticipant) {
+            // Look up from full participants list (has most complete data)
+            const fullParticipant = participants.find(p => p.id === currentParticipant.id);
+            participantName = fullParticipant?.full_name || 
+                             fullParticipant?.guest_name || 
+                             currentParticipant.full_name ||
+                             currentParticipant.display_name || 
+                             currentParticipant.displayName || 
+                             currentParticipant.guest_name || 
+                             '';
+        }
+        if (participantName) {
+            document.getElementById('report-name').value = participantName;
+        }
+        
+        showModal('report-payment-modal');
+    }
+    
+    function closeReportPaymentModal() {
+        hideModal('report-payment-modal');
+        // Reset checkbox state if no report exists
+        updateGiftCheckboxState();
+    }
+    
+    async function submitPaymentReport(event) {
+        event.preventDefault();
+        
+        const errorEl = document.getElementById('report-error');
+        const submitBtn = document.getElementById('report-submit-btn');
+        errorEl.style.display = 'none';
+        
+        const reporterName = document.getElementById('report-name').value.trim();
+        const method = document.getElementById('report-method').value;
+        const amountEuros = parseFloat(document.getElementById('report-amount').value);
+        const paidAt = document.getElementById('report-date').value;
+        const proofFile = document.getElementById('report-proof').files[0];
+        
+        // Validation
+        if (!reporterName) {
+            errorEl.textContent = 'Please enter your name';
+            errorEl.style.display = 'block';
+            return;
+        }
+        if (!method) {
+            errorEl.textContent = 'Please select how you paid';
+            errorEl.style.display = 'block';
+            return;
+        }
+        if (!amountEuros || amountEuros <= 0) {
+            errorEl.textContent = 'Please enter a valid amount';
+            errorEl.style.display = 'block';
+            return;
+        }
+        if (!paidAt) {
+            errorEl.textContent = 'Please select the payment date';
+            errorEl.style.display = 'block';
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        
+        try {
+            const formData = new FormData();
+            formData.append('reporterName', reporterName);
+            formData.append('method', method);
+            formData.append('amountCents', Math.round(amountEuros * 100));
+            formData.append('paidAt', paidAt);
+            formData.append('token', window.currentMagicToken || tabData.magic_token);
+            
+            if (proofFile) {
+                formData.append('proof', proofFile);
+            }
+            
+            const response = await fetch(`/api/grouptabs/${tabData.id}/payment-reports`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to report payment');
+            }
+            
+            // Success!
+            myPaymentReport = data.report;
+            updateGiftCheckboxState();
+            hideModal('report-payment-modal');
+            
+            // Show success toast/notification
+            showToast('Payment reported! Waiting for confirmation.');
+            
+        } catch (err) {
+            errorEl.textContent = err.message;
+            errorEl.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Confirm payment';
+        }
+    }
+    
+    // Load payment reports
+    async function loadPaymentReports() {
+        if (tabData.template !== 'gift') return;
+        
+        try {
+            const token = ownerToken || window.currentMagicToken || tabData.magic_token;
+            const response = await fetch(`/api/grouptabs/${tabData.id}/payment-reports?token=${token}`);
+            
+            if (!response.ok) return;
+            
+            const data = await response.json();
+            const reports = data.reports || [];
+            
+            // Find current user's report
+            if (currentParticipant) {
+                myPaymentReport = reports.find(r => r.participant_id === currentParticipant.id);
+                updateGiftCheckboxState();
+            }
+            
+            // Render reports for creator
+            if (data.isCreator) {
+                renderPaymentReports(reports);
+            }
+            
+        } catch (err) {
+            console.error('Error loading payment reports:', err);
+        }
+    }
+    
+    let paymentReportsExpanded = false;
+    
+    function togglePaymentReports() {
+        const footerArea = document.getElementById('footer-reports-area');
+        paymentReportsExpanded = !paymentReportsExpanded;
+        
+        if (paymentReportsExpanded) {
+            footerArea.classList.add('expanded');
+        } else {
+            footerArea.classList.remove('expanded');
+        }
+    }
+    
+    function renderPaymentReports(reports) {
+        const footerListEl = document.getElementById('footer-reports-list');
+        const footerBtn = document.getElementById('footer-reports-btn');
+        const footerCount = document.getElementById('footer-reports-count');
+        
+        const pendingReports = reports.filter(r => r.status === 'pending');
+        
+        // Update footer button
+        if (reports.length > 0 && isCreator) {
+            footerBtn.style.display = 'block';
+            footerCount.textContent = reports.length;
+            if (pendingReports.length > 0) {
+                footerCount.classList.add('has-pending');
+            } else {
+                footerCount.classList.remove('has-pending');
+            }
+        } else {
+            footerBtn.style.display = 'none';
+        }
+        
+        // Render into footer area
+        if (reports.length === 0) {
+            footerListEl.innerHTML = `<div class="footer-reports-empty">No pending payments yet.</div>`;
+            return;
+        }
+        
+        const methodLabels = {
+            bank_transfer: 'Bank transfer',
+            payment_link: 'Payment link',
+            cash: 'Cash',
+            other: 'Other'
+        };
+        
+        footerListEl.innerHTML = reports.map(report => {
+            const date = new Date(report.paid_at).toLocaleDateString();
+            
+            let actionsHtml = '';
+            if (report.status === 'pending') {
+                actionsHtml = `
+                    <div class="footer-report-actions">
+                        <button class="footer-report-btn confirm" onclick="confirmPaymentReport(${report.id})">Confirm</button>
+                        <button class="footer-report-btn reject" onclick="rejectPaymentReport(${report.id})">Reject</button>
+                    </div>
+                `;
+            } else {
+                const statusLabel = report.status === 'confirmed' ? '✓ Confirmed' : '✗ Rejected';
+                const statusColor = report.status === 'confirmed' ? 'var(--accent)' : '#f87171';
+                actionsHtml = `<span style="color: ${statusColor}; font-size: 12px; font-weight: 600;">${statusLabel}</span>`;
+            }
+            
+            const proofHtml = report.proof_file_path 
+                ? `<span class="footer-report-proof" onclick="showProofModal('${escapeHtml(report.proof_file_path)}', '${escapeHtml(report.reporter_name)}')">📎 Proof</span>` 
+                : '';
+            
+            return `
+                <div class="footer-report-item">
+                    <div class="footer-report-info">
+                        <div class="footer-report-name">${escapeHtml(report.reporter_name)}</div>
+                        <div class="footer-report-details">
+                            <span class="footer-report-amount">${formatCurrency2(report.amount_cents)}</span>
+                            <span>${methodLabels[report.method] || report.method}</span>
+                            <span>${date}</span>
+                            ${proofHtml}
+                        </div>
+                    </div>
+                    ${actionsHtml}
+                </div>
+            `;
+        }).join('');
+    }
+    
+    window.confirmPaymentReport = async function(reportId) {
+        if (!confirm('Confirm this payment? This will update the collection totals.')) return;
+        
+        try {
+            const token = ownerToken || tabData.owner_token;
+            const response = await fetch(`/api/grouptabs/${tabData.id}/payment-reports/${reportId}/confirm`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to confirm');
+            }
+            
+            showToast('Payment confirmed!');
+            loadPaymentReports();
+            renderHeader(); // Refresh totals
+            
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+    
+    window.rejectPaymentReport = async function(reportId) {
+        const reason = prompt('Reason for rejection (optional):');
+        
+        try {
+            const token = ownerToken || tabData.owner_token;
+            const response = await fetch(`/api/grouptabs/${tabData.id}/payment-reports/${reportId}/reject`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, reason })
+            });
+            
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to reject');
+            }
+            
+            showToast('Payment report rejected.');
+            loadPaymentReports();
+            
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+    
+    function showToast(message) {
+        // Simple toast notification
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9999;
+            animation: slideUp 0.3s ease;
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideDown 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 
     function renderGroups() {
@@ -2732,6 +4756,10 @@
     
     function showReceiptModal(url, filename) {
         const body = document.getElementById('receipt-modal-body');
+        const headerActions = document.getElementById('modal-header-actions');
+        
+        // Reset header actions
+        headerActions.innerHTML = '';
         
         // Reset modal title for receipt
         document.querySelector('.receipt-modal-title').textContent = 'Original Receipt';
@@ -2739,26 +4767,96 @@
         // Determine file type
         const ext = filename.split('.').pop().toLowerCase();
         
+        let contentHtml = '';
         if (ext === 'pdf') {
             // PDF viewer
-            body.innerHTML = `<iframe src="${url}" title="Receipt PDF"></iframe>`;
+            contentHtml = `<iframe src="${url}" title="Receipt PDF"></iframe>`;
         } else {
             // Image viewer
-            body.innerHTML = `<img src="${url}" alt="Receipt">`;
+            contentHtml = `<img src="${url}" alt="Receipt">`;
         }
+
+        body.innerHTML = contentHtml;
         
         showModal('receipt-modal');
     }
     
+    function showProofModal(filePath, reporterName) {
+        const body = document.getElementById('receipt-modal-body');
+        const headerActions = document.getElementById('modal-header-actions');
+        
+        // Reset header actions
+        headerActions.innerHTML = '';
+        
+        // Set modal title for proof
+        document.querySelector('.receipt-modal-title').textContent = `Payment Proof from ${reporterName}`;
+        
+        // Ensure URL has leading slash for proper resolution
+        let url = filePath;
+        if (!url.startsWith('/')) {
+            url = '/' + url;
+        }
+        
+        // Determine file type
+        const ext = filePath.split('.').pop().toLowerCase();
+        
+        let contentHtml = '';
+        if (ext === 'pdf') {
+            // PDF viewer
+            contentHtml = `<iframe src="${url}" title="Payment Proof PDF"></iframe>`;
+        } else {
+            // Image viewer
+            contentHtml = `<img src="${url}" alt="Payment Proof" style="max-width: 100%; max-height: 70vh; object-fit: contain;">`;
+        }
+
+        body.innerHTML = contentHtml;
+        
+        showModal('receipt-modal');
+    }
+
     function showGiftImageModal() {
-        const imageSrc = tabData.about_image_path;
+        const imageSrc = tabData.about_image_path || tabData.raising_for_image_path;
         if (!imageSrc) return;
         
         const body = document.getElementById('receipt-modal-body');
-        body.innerHTML = `<img src="${imageSrc}" alt="Gift">`;
+        const headerActions = document.getElementById('modal-header-actions');
+        
+        // Build header actions
+        let actionsHtml = '';
+        const productLinkUrl = tabData.about_link || tabData.raising_for_link;
+        if (productLinkUrl) {
+            const finalUrl = productLinkUrl.startsWith('http') ? productLinkUrl : `https://${productLinkUrl}`;
+            // Extract domain name from URL
+            let displayDomain = 'Link';
+            try {
+                const urlObj = new URL(finalUrl);
+                const domain = urlObj.hostname.replace(/^www\./, '');
+                displayDomain = domain.charAt(0).toUpperCase() + domain.slice(1);
+            } catch (e) {}
+            actionsHtml += `
+                <a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="header-action-pill">
+                    <span>🔗</span> ${displayDomain}
+                </a>`;
+        }
+        
+        if (tabData.receipt_file_path) {
+            const receiptFilename = tabData.receipt_file_path.split('/').pop();
+            const receiptUrl = `/api/grouptabs/receipt/${receiptFilename}`;
+            actionsHtml += `
+                <button onclick="showReceiptModal('${receiptUrl}', '${receiptFilename}')" class="header-action-pill" style="border:none; cursor:pointer; font-family:inherit;">
+                    <span>📄</span> Receipt
+                </button>`;
+        }
+        headerActions.innerHTML = actionsHtml;
+
+        body.innerHTML = `
+            <div class="modal-image-wrapper">
+                <img src="${imageSrc}" alt="Product" class="modal-main-image">
+            </div>
+        `;
         
         // Update modal title
-        document.querySelector('.receipt-modal-title').textContent = tabData.about_text || 'Gift Image';
+        document.querySelector('.receipt-modal-title').textContent = tabData.about_text || tabData.raising_for_text || 'Product Image';
         
         showModal('receipt-modal');
     }
