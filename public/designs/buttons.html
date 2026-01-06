@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Buttons - 6 Designs</title>
+    <style>
+        :root {
+            --bg: #0f1419;
+            --card: #1a1f26;
+            --border: #2a3038;
+            --text: #e7e9ea;
+            --muted: #71767b;
+            --accent: #22c55e;
+            --accent-dim: rgba(34, 197, 94, 0.1);
+            --pending: #f59e0b;
+            --pending-dim: rgba(245, 158, 11, 0.1);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--muted);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .item {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        
+        .preview {
+            background: var(--card);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        
+        .btn-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Shared checkbox styles */
+        .checkbox-box {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .checkbox-box svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--accent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        /* ============================================
+           V1: Minimal Flat
+           ============================================ */
+        .v1-payment {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.04);
+            border: none;
+            border-radius: 10px;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v1-payment:hover {
+            background: rgba(255,255,255,0.08);
+            color: var(--text);
+        }
+        .v1-paid {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.04);
+            border: none;
+            border-radius: 10px;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v1-paid:hover {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+        .v1-paid:hover .checkbox-box {
+            background: var(--accent-dim);
+        }
+
+        /* ============================================
+           V2: Soft Colored
+           ============================================ */
+        .v2-payment {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            background: var(--pending-dim);
+            border: none;
+            border-radius: 10px;
+            color: var(--pending);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v2-payment:hover {
+            background: rgba(245, 158, 11, 0.15);
+        }
+        .v2-paid {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            background: var(--accent-dim);
+            border: none;
+            border-radius: 10px;
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v2-paid:hover {
+            background: rgba(34, 197, 94, 0.15);
+        }
+
+        /* ============================================
+           V3: Ghost with Icons
+           ============================================ */
+        .v3-payment {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 18px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v3-payment:hover {
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+        }
+        .v3-paid {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 18px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v3-paid:hover {
+            background: var(--accent-dim);
+        }
+
+        /* ============================================
+           V4: Pill Style
+           ============================================ */
+        .v4-payment {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: rgba(255,255,255,0.06);
+            border: none;
+            border-radius: 50px;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v4-payment:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-1px);
+        }
+        .v4-paid {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: var(--accent-dim);
+            border: none;
+            border-radius: 50px;
+            color: var(--accent);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v4-paid:hover {
+            background: rgba(34, 197, 94, 0.15);
+            transform: translateY(-1px);
+        }
+        .v4-paid .checkbox-box {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+        }
+
+        /* ============================================
+           V5: Card Style
+           ============================================ */
+        .v5-payment {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            padding: 16px 18px;
+            background: rgba(255,255,255,0.03);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v5-payment:hover {
+            background: rgba(255,255,255,0.06);
+        }
+        .v5-payment-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        .v5-payment-label {
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .v5-payment-sub {
+            color: var(--muted);
+            font-size: 12px;
+        }
+        .v5-paid {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 18px;
+            background: rgba(255,255,255,0.03);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v5-paid:hover {
+            background: var(--accent-dim);
+        }
+        .v5-paid-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+        }
+        .v5-paid-label {
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .v5-paid-sub {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        /* ============================================
+           V6: Clean Modern
+           ============================================ */
+        .v6-payment {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: rgba(245, 158, 11, 0.06);
+            border: none;
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v6-payment:hover {
+            background: rgba(245, 158, 11, 0.12);
+        }
+        .v6-payment-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--pending-dim);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .v6-paid {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: rgba(34, 197, 94, 0.06);
+            border: none;
+            border-radius: 12px;
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .v6-paid:hover {
+            background: rgba(34, 197, 94, 0.12);
+        }
+        .v6-paid .checkbox-box {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+            .btn-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Payment Buttons — 6 Designs</h1>
+
+    <div class="grid">
+        
+        <!-- V1: Minimal Flat -->
+        <div class="item">
+            <div class="preview">
+                <div class="btn-row">
+                    <button class="v1-payment">
+                        💳 Payment details
+                    </button>
+                    <button class="v1-paid">
+                        <div class="checkbox-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        I've paid
+                    </button>
+                </div>
+            </div>
+            <span class="label">V1: Minimal Flat</span>
+        </div>
+
+        <!-- V2: Soft Colored -->
+        <div class="item">
+            <div class="preview">
+                <div class="btn-row">
+                    <button class="v2-payment">
+                        💳 Payment details
+                    </button>
+                    <button class="v2-paid">
+                        <div class="checkbox-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        I've paid
+                    </button>
+                </div>
+            </div>
+            <span class="label">V2: Soft Colored</span>
+        </div>
+
+        <!-- V3: Ghost with Icons -->
+        <div class="item">
+            <div class="preview">
+                <div class="btn-row">
+                    <button class="v3-payment">
+                        💳 Payment details
+                    </button>
+                    <button class="v3-paid">
+                        <div class="checkbox-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        I've paid
+                    </button>
+                </div>
+            </div>
+            <span class="label">V3: Ghost Style</span>
+        </div>
+
+        <!-- V4: Pill Style -->
+        <div class="item">
+            <div class="preview">
+                <div class="btn-row">
+                    <button class="v4-payment">
+                        💳 Payment details
+                    </button>
+                    <button class="v4-paid">
+                        <div class="checkbox-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        I've paid
+                    </button>
+                </div>
+            </div>
+            <span class="label">V4: Pill Style</span>
+        </div>
+
+        <!-- V5: Card Style -->
+        <div class="item">
+            <div class="preview">
+                <div class="btn-row">
+                    <button class="v5-payment">
+                        <span class="v5-payment-icon">💳</span>
+                        <span class="v5-payment-label">Payment details</span>
+                        <span class="v5-payment-sub">View how to pay</span>
+                    </button>
+                    <button class="v5-paid">
+                        <div class="checkbox-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="v5-paid-content">
+                            <span class="v5-paid-label">I've paid</span>
+                            <span class="v5-paid-sub">Report your payment</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <span class="label">V5: Card Style</span>
+        </div>
+
+        <!-- V6: Clean Modern -->
+        <div class="item">
+            <div class="preview">
+                <div class="btn-row">
+                    <button class="v6-payment">
+                        <div class="v6-payment-icon">💳</div>
+                        Payment details
+                    </button>
+                    <button class="v6-paid">
+                        <div class="checkbox-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        I've paid
+                    </button>
+                </div>
+            </div>
+            <span class="label">V6: Clean Modern</span>
+        </div>
+
+    </div>
+
+</body>
+</html>
+

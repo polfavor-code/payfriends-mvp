@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remake Proposals - All-in-One Header</title>
+    <style>
+        :root {
+            --bg: #0f1419;
+            --card: #1a1f26;
+            --border: #2a3038;
+            --text: #e7e9ea;
+            --muted: #71767b;
+            --accent: #22c55e;
+            --accent-dim: rgba(34, 197, 94, 0.1);
+            --pending: #f59e0b;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .proposal {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .v-label {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        /* Shared elements */
+        .header-top { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .gift-img { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; }
+        .gift-icon { font-size: 32px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
+        
+        .title-group { flex: 1; }
+        .main-title { font-size: 22px; font-weight: 800; color: #fff; }
+        .sub-meta { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+        .tag { font-size: 10px; font-weight: 800; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+
+        .bill-area { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+        .bill-col { display: flex; flex-direction: column; }
+        .bill-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+        .bill-val { font-size: 32px; font-weight: 800; line-height: 1; }
+        .val-remaining { color: var(--pending); }
+
+        .prog-area { margin-bottom: 20px; }
+        .prog-track { height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-bottom: 8px; }
+        .prog-fill { height: 100%; background: var(--accent); border-radius: 4px; width: 17%; }
+        .prog-text { font-size: 12px; font-weight: 700; color: var(--accent); }
+
+        .action-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        .btn-s { 
+            display: inline-flex; align-items: center; gap: 6px; 
+            font-size: 11px; font-weight: 700; padding: 8px 14px; 
+            border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03); color: var(--text);
+            cursor: pointer; text-decoration: none;
+        }
+        .btn-accent { color: var(--accent); border-color: rgba(34,197,94,0.3); background: var(--accent-dim); }
+
+        .status-msg { 
+            font-size: 11px; font-weight: 600; color: var(--muted); 
+            margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+        /* ============================================
+           V1: Clean Box (Refined Current)
+           ============================================ */
+        
+        /* ============================================
+           V2: Blurred Backdrop
+           ============================================ */
+        .v2-bg { position: absolute; top: 0; left: 0; width: 100%; height: 150px; background: url('/api/placeholder/400/200') center; filter: blur(40px); opacity: 0.15; z-index: 0; }
+        .v2-content { position: relative; z-index: 1; }
+
+        /* ============================================
+           V3: Split Banner
+           ============================================ */
+        .v3-top-split { display: flex; gap: 20px; align-items: flex-start; }
+        .v3-img { width: 100px; height: 100px; border-radius: 12px; }
+
+        /* ============================================
+           V4: Center Aligned
+           ============================================ */
+        .v4-center { text-align: center; }
+        .v4-header { flex-direction: column; align-items: center; }
+        .v4-bill { justify-content: center; gap: 40px; }
+
+        /* ============================================
+           V5: Modern Minimalist
+           ============================================ */
+        .v5-compact { display: grid; grid-template-columns: 1fr 200px; gap: 20px; }
+
+        /* ============================================
+           V6: Dark Mode Elegance
+           ============================================ */
+        .v6-dark { background: #000; border-color: #333; }
+
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid">
+        
+        <!-- V1: Clean Box -->
+        <div class="proposal">
+            <div class="v-label">V1: Integrated Row</div>
+            <div class="header-top">
+                <img src="/api/placeholder/48/48" class="gift-img" alt="">
+                <div class="title-group">
+                    <div class="main-title">New jacket for Arnold</div>
+                    <div class="sub-meta">
+                        <span>06/01/2026</span> · <span>6 Participants</span> · <span class="tag">Equal Split</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bill-area">
+                <div class="bill-col">
+                    <span class="bill-label">Gift Cost</span>
+                    <span class="bill-val">€ 234,00</span>
+                </div>
+                <div class="bill-col" style="text-align: right;">
+                    <span class="bill-label">Remaining</span>
+                    <span class="bill-val val-remaining">€ 195,00</span>
+                </div>
+            </div>
+
+            <div class="prog-area">
+                <div class="prog-track"><div class="prog-fill"></div></div>
+                <span class="prog-text">17% Collected</span>
+            </div>
+
+            <div class="action-row">
+                <a href="#" class="btn-s btn-accent"><span>🔗</span> Amazon.com</a>
+                <button class="btn-s"><span>📄</span> View Receipt</button>
+                <button class="btn-s"><span>💳</span> Payment details</button>
+            </div>
+
+            <div class="status-msg">
+                <span class="status-dot"></span> Fully paid by Paul · Raising from group
+            </div>
+        </div>
+
+        <!-- V2: Blurred Backdrop -->
+        <div class="proposal">
+            <div class="v2-bg"></div>
+            <div class="v-label">V2: Atmospheric</div>
+            <div class="v2-content">
+                <div class="header-top">
+                    <div class="gift-icon">🎁</div>
+                    <div class="title-group">
+                        <div class="main-title">New jacket for Arnold</div>
+                        <div class="sub-meta">Equal split · Still raising by Paul</div>
+                    </div>
+                </div>
+
+                <div class="bill-area" style="margin-bottom: 24px;">
+                    <div class="bill-col">
+                        <span class="bill-label">Total Bill</span>
+                        <span class="bill-val">€ 234,00</span>
+                    </div>
+                    <div class="bill-col" style="text-align: right;">
+                        <span class="bill-label">Remaining</span>
+                        <span class="bill-val val-remaining">€ 195,00</span>
+                    </div>
+                </div>
+
+                <div class="prog-area">
+                    <div class="prog-track" style="height: 4px;"><div class="prog-fill"></div></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="prog-text" style="font-size: 11px;">17% Collected</span>
+                        <div class="action-row">
+                            <a href="#" class="btn-s" style="padding: 4px 10px; font-size: 10px;">Link</a>
+                            <button class="btn-s" style="padding: 4px 10px; font-size: 10px;">Receipt</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- V3: Split Banner -->
+        <div class="proposal">
+            <div class="v-label">V3: Split Banner</div>
+            <div class="v3-top-split">
+                <img src="/api/placeholder/100/100" class="v3-img" alt="">
+                <div style="flex: 1;">
+                    <div class="main-title" style="margin-bottom: 4px;">New jacket for Arnold</div>
+                    <div class="sub-meta" style="margin-bottom: 12px;">6 Participants · Equal Split</div>
+                    <div class="action-row">
+                        <a href="#" class="btn-s" style="font-size: 10px; padding: 6px 10px;">🔗 Link</a>
+                        <button class="btn-s" style="font-size: 10px; padding: 6px 10px;">📄 Receipt</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bill-area" style="margin-top: 24px;">
+                <div class="bill-col">
+                    <span class="bill-label">Gift Cost</span>
+                    <span class="bill-val" style="font-size: 24px;">€ 234,00</span>
+                </div>
+                <div class="bill-col" style="text-align: right;">
+                    <span class="bill-label">Uncollected</span>
+                    <span class="bill-val val-remaining" style="font-size: 24px;">€ 195,00</span>
+                </div>
+            </div>
+            
+            <div class="prog-area" style="margin-bottom: 0;">
+                <div class="prog-track"><div class="prog-fill"></div></div>
+                <div class="status-msg" style="border: none; padding-top: 0; margin-top: 8px;">
+                    Fully paid by Paul · 17% back
+                </div>
+            </div>
+        </div>
+
+        <!-- V4: Center Aligned -->
+        <div class="proposal">
+            <div class="v-label">V4: Modern Center</div>
+            <div class="v4-center">
+                <div class="header-top v4-header">
+                    <img src="/api/placeholder/64/64" class="gift-img" style="width: 64px; height: 64px;" alt="">
+                    <div class="main-title">New jacket for Arnold</div>
+                    <div class="sub-meta">Equal split · Fully paid by Paul</div>
+                </div>
+
+                <div class="bill-area v4-bill">
+                    <div class="bill-col">
+                        <span class="bill-label">Cost</span>
+                        <span class="bill-val" style="font-size: 24px;">€ 234,00</span>
+                    </div>
+                    <div class="bill-col">
+                        <span class="bill-label">To go</span>
+                        <span class="bill-val val-remaining" style="font-size: 24px;">€ 195,00</span>
+                    </div>
+                </div>
+
+                <div class="prog-area">
+                    <div class="prog-track"><div class="prog-fill" style="margin: 0 auto;"></div></div>
+                    <span class="prog-text">17% Collected</span>
+                </div>
+
+                <div class="action-row" style="justify-content: center;">
+                    <a href="#" class="btn-s">🔗 Amazon</a>
+                    <button class="btn-s">📄 Receipt</button>
+                    <button class="btn-s">💳 Payments</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- V5: Minimalist Column -->
+        <div class="proposal">
+            <div class="v-label">V5: Compact Grid</div>
+            <div class="v5-compact">
+                <div>
+                    <div class="main-title">New jacket for Arnold</div>
+                    <div class="sub-meta" style="margin-top: 4px;">Equal split · Paid by Paul</div>
+                    
+                    <div class="action-row" style="margin-top: 16px;">
+                        <a href="#" class="btn-s">🔗 Link</a>
+                        <button class="btn-s">📄 Receipt</button>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="bill-label">Total</span>
+                    <div class="bill-val" style="font-size: 24px; margin-bottom: 8px;">€ 234,00</div>
+                    <span class="bill-label">Remaining</span>
+                    <div class="bill-val val-remaining" style="font-size: 24px;">€ 195,00</div>
+                </div>
+            </div>
+            <div class="prog-area" style="margin-top: 20px; margin-bottom: 0;">
+                <div class="prog-track"><div class="prog-fill"></div></div>
+                <span class="prog-text">17% back to Paul</span>
+            </div>
+        </div>
+
+        <!-- V6: Visual Focus -->
+        <div class="proposal v6-dark">
+            <div class="v-label">V6: Visual Focus</div>
+            <div style="display: flex; gap: 20px;">
+                <img src="/api/placeholder/120/150" style="width: 100px; height: 130px; object-fit: cover; border-radius: 12px;" alt="">
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="main-title" style="font-size: 18px;">New jacket for Arnold</div>
+                        <div class="sub-meta" style="margin-top: 4px;">6 People · Equal Split</div>
+                    </div>
+                    
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                            <div class="bill-val" style="font-size: 22px;">€ 234,00</div>
+                            <div class="bill-val val-remaining" style="font-size: 18px;">€ 195 to go</div>
+                        </div>
+                        <div class="prog-track" style="height: 4px; margin-bottom: 0;"><div class="prog-fill"></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="action-row" style="margin-top: 20px;">
+                <a href="#" class="btn-s" style="flex: 1; justify-content: center;">🔗 Amazon.com</a>
+                <button class="btn-s" style="flex: 1; justify-content: center;">📄 Receipt</button>
+                <button class="btn-s" style="flex: 1; justify-content: center;">💳 Details</button>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
+

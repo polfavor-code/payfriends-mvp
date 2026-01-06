@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Details - 6 Versions</title>
+    <style>
+        :root {
+            --bg: #0f1419;
+            --card: #1a1f26;
+            --border: #2a3038;
+            --text: #e7e9ea;
+            --muted: #71767b;
+            --accent: #22c55e;
+            --accent-dim: rgba(34, 197, 94, 0.1);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .version {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        
+        .v-label {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: var(--accent);
+            color: #000;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        /* Shared elements */
+        .btn-small {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            background: var(--accent-dim);
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .product-img {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        /* ============================================
+           V1: Standard (Current)
+           ============================================ */
+        .v1-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .v1-info { flex: 1; }
+        .v1-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+        .v1-actions { display: flex; gap: 8px; }
+
+        /* ============================================
+           V2: Card Focus
+           ============================================ */
+        .v2-top { display: flex; gap: 12px; margin-bottom: 12px; }
+        .v2-name { font-weight: 700; font-size: 16px; }
+        .v2-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .v2-actions .btn-small { justify-content: center; }
+
+        /* ============================================
+           V3: Minimalist List
+           ============================================ */
+        .v3-row { display: flex; align-items: flex-start; gap: 12px; }
+        .v3-content { flex: 1; }
+        .v3-name { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+        .v3-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        /* ============================================
+           V4: Large Image Header
+           ============================================ */
+        .v4-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .v4-img { width: 60px; height: 60px; }
+        .v4-name { font-weight: 800; font-size: 18px; color: #fff; }
+        .v4-actions { display: flex; gap: 10px; }
+
+        /* ============================================
+           V5: Borderless / Transparent
+           ============================================ */
+        .v5-container { background: transparent; padding: 0; border: none; }
+        .v5-row { display: flex; align-items: center; gap: 16px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 12px; }
+        .v5-actions { margin-left: auto; display: flex; flex-direction: column; gap: 4px; }
+
+        /* ============================================
+           V6: Side-by-Side Split
+           ============================================ */
+        .v6-split { display: grid; grid-template-columns: auto 1fr; gap: 20px; }
+        .v6-left { border-right: 1px solid var(--border); padding-right: 20px; }
+        .v6-name { font-weight: 700; font-size: 15px; margin-bottom: 12px; }
+        .v6-actions { display: flex; flex-direction: column; gap: 8px; }
+        
+        .section-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 800px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid">
+        
+        <!-- V1 -->
+        <div class="version">
+            <div class="v-label">V1: Standard Row</div>
+            <div class="section-label">Gift details</div>
+            <div class="v1-row">
+                <img src="/api/placeholder/48/48" class="product-img" alt="Product">
+                <div class="v1-info">
+                    <div class="v1-name">New jacket</div>
+                    <div class="v1-actions">
+                        <a href="#" class="btn-small"><span>🔗</span> Amazon.com</a>
+                        <button class="btn-small"><span>📄</span> View Receipt</button>
+                        <button class="btn-small"><span>💳</span> Payment details</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- V2 -->
+        <div class="version">
+            <div class="v-label">V2: Grid Actions</div>
+            <div class="section-label">Gift details</div>
+            <div class="v2-top">
+                <img src="/api/placeholder/48/48" class="product-img" alt="Product">
+                <div class="v2-name">New jacket</div>
+            </div>
+            <div class="v2-actions">
+                <a href="#" class="btn-small"><span>🔗</span> Amazon.com</a>
+                <button class="btn-small"><span>📄</span> View Receipt</button>
+                <button class="btn-small" style="grid-column: span 2;"><span>💳</span> Payment details</button>
+            </div>
+        </div>
+
+        <!-- V3 -->
+        <div class="version">
+            <div class="v-label">V3: Minimal List</div>
+            <div class="section-label">Gift details</div>
+            <div class="v3-row">
+                <img src="/api/placeholder/40/40" class="product-img" style="width:40px; height:40px;" alt="Product">
+                <div class="v3-content">
+                    <div class="v3-name">New jacket</div>
+                    <div class="v3-actions">
+                        <a href="#" class="btn-small">🔗 Amazon.com</a>
+                        <button class="btn-small">📄 Receipt</button>
+                        <button class="btn-small">💳 Payments</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- V4 -->
+        <div class="version">
+            <div class="v-label">V4: Prominent Header</div>
+            <div class="v4-header">
+                <img src="/api/placeholder/60/60" class="product-img v4-img" alt="Product">
+                <div class="v4-name">New jacket</div>
+            </div>
+            <div class="v4-actions">
+                <a href="#" class="btn-small">🔗 Link</a>
+                <button class="btn-small">📄 Receipt</button>
+                <button class="btn-small">💳 Payment Details</button>
+            </div>
+        </div>
+
+        <!-- V5 -->
+        <div class="version v5-container">
+            <div class="v-label">V5: Flush Bar</div>
+            <div class="v5-row">
+                <img src="/api/placeholder/48/48" class="product-img" alt="Product">
+                <div>
+                    <div class="section-label" style="margin-bottom:2px;">Gift details</div>
+                    <div class="v1-name" style="margin-bottom:0;">New jacket</div>
+                </div>
+                <div class="v5-actions">
+                    <a href="#" class="btn-small">🔗 Amazon.com</a>
+                    <button class="btn-small">📄 Receipt</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- V6 -->
+        <div class="version">
+            <div class="v-label">V6: Split View</div>
+            <div class="v6-split">
+                <div class="v6-left">
+                    <img src="/api/placeholder/80/80" class="product-img" style="width:80px; height:80px; margin-bottom:8px;" alt="Product">
+                    <div class="section-label" style="text-align:center;">Gift</div>
+                </div>
+                <div>
+                    <div class="v6-name">New jacket</div>
+                    <div class="v6-actions">
+                        <a href="#" class="btn-small"><span>🔗</span> Amazon.com</a>
+                        <button class="btn-small"><span>📄</span> View Receipt</button>
+                        <button class="btn-small"><span>💳</span> Payment details</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
+

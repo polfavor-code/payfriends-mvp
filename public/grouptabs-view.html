@@ -429,7 +429,6 @@
       padding: 24px 32px;
       border: 1px solid var(--border);
       border-radius: 16px;
-      margin-top: 24px;
       position: relative;
     }
     
@@ -438,32 +437,73 @@
         border-radius: 0;
         border-left: none;
         border-right: none;
-        margin-top: 0;
         margin-left: -16px;
         margin-right: -16px;
         padding: 20px 16px;
       }
+      .header-nav-bar {
+        margin-top: 12px;
+        margin-bottom: 8px;
+      }
     }
 
-    .header-top {
+    .header-nav-bar {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+        margin-top: 12px;
+        margin-bottom: 12px;
     }
     .back-btn { font-size: 20px; color: var(--text); text-decoration: none; cursor: pointer; }
     
     .share-btn-header {
-        background: var(--accent-dim);
-        color: var(--accent);
-        border: 1px solid var(--accent);
-        border-radius: 20px;
-        padding: 6px 12px;
-        font-size: 11px;
-        font-weight: 700;
-        display: flex; align-items: center; gap: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted);
         cursor: pointer;
-        text-transform: uppercase;
+        transition: all 0.2s ease;
+    }
+    .share-btn-header:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-dim);
+        transform: scale(1.08);
+    }
+    .share-btn-header .share-icon {
+        width: 18px;
+        height: 18px;
+    }
+    
+    /* Footer Share Button (V5 style) */
+    .share-btn-footer {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+    .share-btn-footer:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-dim);
+        transform: scale(1.08);
+    }
+    .share-btn-footer .share-icon {
+        width: 20px;
+        height: 20px;
     }
 
     .header-main-row {
@@ -502,6 +542,11 @@
         font-size: 38px;
         flex-shrink: 0;
         margin-right: 4px;
+    }
+    .header-icon-container img:hover {
+        opacity: 0.85;
+        transform: scale(1.02);
+        transition: all 0.15s ease;
     }
 
     /* Tab Extras Area (below the line) */
@@ -701,8 +746,8 @@
         font-size: 10px;
         text-transform: uppercase;
         font-weight: 700;
-        background: rgba(255,255,255,0.1);
-        color: #fff;
+        background: rgba(255,255,255,0.08);
+        color: var(--muted);
         padding: 2px 6px;
         border-radius: 4px;
         letter-spacing: 0.5px;
@@ -765,6 +810,63 @@
         font-size: 14px;
         font-weight: 700;
         color: var(--accent);
+    }
+    
+    /* Header Action Buttons Row */
+    .header-actions-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .header-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 10px;
+        border: none;
+        background: rgba(255,255,255,0.03);
+        color: var(--text);
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.15s ease;
+    }
+    .header-action-btn:first-child {
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--accent);
+    }
+    .header-action-btn:hover {
+        background: rgba(255,255,255,0.06);
+        transform: translateY(-1px);
+    }
+    .header-action-btn:first-child:hover {
+        background: rgba(34, 197, 94, 0.15);
+    }
+    
+    /* Header Status Line */
+    .header-status-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+        font-size: 12px;
+        color: var(--muted);
+    }
+    .header-status-line .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .header-status-line .status-dot.green {
+        background: var(--accent);
+    }
+    .header-status-line .status-dot.orange {
+        background: var(--pending);
     }
     
     /* --- RECEIPT --- */
@@ -1569,16 +1671,9 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 18px 16px;
-        border-bottom: 1px solid var(--border);
-        cursor: pointer;
+        padding: 18px 0 18px 10px;
+        margin-top: 28px;
         user-select: none;
-        transition: background 0.2s;
-        background: rgba(255,255,255,0.03); /* Default visible background */
-        border-radius: 12px;
-    }
-    .participants-header:hover {
-        background: rgba(255,255,255,0.06); /* Brighter on hover */
     }
     
     .participants-summary {
@@ -1592,29 +1687,33 @@
         width: 18px;
         height: 18px;
         opacity: 1;
-        color: #fff;
+        color: var(--muted);
     }
     .participants-summary-title {
         font-size: 15px; /* Slightly larger */
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: #fff;
+        color: var(--muted);
     }
     .participants-summary-stats {
         display: flex;
         align-items: center;
         gap: 12px;
+        font-size: 12px;
         font-weight: 500;
+        color: var(--muted);
+        margin-right: 3px;
     }
     .stat-item {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
+        color: var(--muted);
     }
     .stat-dot {
-        width: 7px;
-        height: 7px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
         flex-shrink: 0;
     }
@@ -1682,18 +1781,16 @@
         margin-bottom: 12px;
     }
     
-    .unbalanced-explanation {
+    .unbalanced-alert {
+        background: rgba(239, 68, 68, 0.08);
+        border: none;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-top: 32px;
+        margin-bottom: 16px;
         font-size: 14px;
         color: var(--danger);
         font-weight: 500;
-        line-height: 1;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        align-items: center;
-    }
-    .unbalanced-explanation:empty {
-        display: none;
     }
 
     .p-row {
@@ -1703,10 +1800,14 @@
         gap: 8px 16px;
         align-items: center;
         padding: 16px;
-        background: var(--card);
-        border: 1px solid var(--row-color, var(--border)); /* Use row color for border */
-        border-radius: 16px;
+        background: rgba(255,255,255,0.02);
+        border-left: 3px solid var(--row-color, var(--border));
+        border-radius: 10px;
         margin-bottom: 12px;
+        transition: background 0.15s ease;
+    }
+    .p-row:hover {
+        background: rgba(255,255,255,0.05);
     }
     
     .p-avatar {
@@ -1722,8 +1823,17 @@
 
     .p-info { display: flex; flex-direction: column; gap: 4px; }
     .p-name-row { display: flex; align-items: center; gap: 8px; }
-    .p-name { font-size: 15px; font-weight: 600; color: #fff; }
-    .host-badge { font-size: 10px; font-weight: 800; background: #fff; color: #000; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    .p-name { font-size: 15px; font-weight: 600; color: var(--muted); }
+    .host-badge {
+        font-size: 10px;
+        font-weight: 800;
+        background: rgba(255,255,255,0.08);
+        color: var(--muted);
+        padding: 3px 8px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
     
     .reveal-name-btn {
         background: none;
@@ -1737,7 +1847,7 @@
     }
     .reveal-name-btn:hover { opacity: 1; }
     
-    .p-amt-line { font-size: 12px; color: #fff; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+    .p-amt-line { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; }
     .p-amt-sub { color: var(--muted); }
 
     /* Status Column (Right) */
@@ -1753,33 +1863,175 @@
     .stamp.pending { color: var(--pending); }
     .stamp.overpaid { color: var(--danger); margin-bottom: 2px; }
     .stamp.pending-new { color: var(--pending); } /* Orange text, no background - matches OVERPAID style */
+    .p-pending-amount { color: var(--pending); font-weight: 700; font-size: 13px; margin-top: 2px; }
     .overpaid-val { color: var(--danger); font-weight: 700; font-size: 12px; }
     
-    /* Pending participant styles - use CSS variable for colored dashed border */
+    /* Pending participant styles - solid left accent, grey bg (orange on hover) */
     .p-row.pending-participant {
-        border-style: dashed;
-        border-width: 1px; /* Thinner dashed border, same as waiting-guest */
-        border-color: var(--row-color, #d29922); /* Use row color (orange) for pending */
+        border-left: 3px solid var(--pending);
+        background: rgba(255, 255, 255, 0.02);
         grid-template-rows: auto; /* Single row for pending - no progress bar */
+    }
+    .p-row.pending-participant:hover {
+        background: rgba(245, 158, 11, 0.05);
     }
     .p-row.pending-participant .p-info {
         grid-row: 1; /* Stay in first row */
         align-self: center; /* Vertically center with avatar */
     }
-    .remove-pending-btn {
-        background: rgba(245, 158, 11, 0.2);
-        border: none;
-        color: var(--pending); /* Orange X button */
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 14px;
+    
+    /* Expanded participant card (for current user who is pending) */
+    .p-row.p-row-expanded {
+        display: block;
+        position: relative;
+        padding: 20px;
+        border-left: 3px solid var(--pending);
+        background: rgba(245, 158, 11, 0.03);
+    }
+    .p-row.p-row-expanded:hover {
+        background: rgba(245, 158, 11, 0.05);
+    }
+    
+    .p-expanded-bell {
+        position: absolute;
+        top: -12px;
+        right: -8px;
+        font-size: 40px;
+        line-height: 1;
+        filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.2));
+        transform: rotate(15deg);
+    }
+    
+    .p-expanded-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .p-expanded-header {
+        margin-bottom: 16px;
+    }
+    
+    .p-expanded-subtitle {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--pending);
+        text-transform: uppercase;
+        letter-spacing: 1px;
         margin-bottom: 4px;
+    }
+    
+    .p-expanded-amount {
+        font-size: 48px; /* Bigger orange amount */
+        font-weight: 800;
+        margin: 8px 0;
+    }
+
+    .p-expanded-calc {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+    }
+    
+    .p-expanded-actions {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        margin-top: 16px;
+    }
+    
+    .payment-details-btn-inline {
+        flex: 1;
+        background: rgba(245, 158, 11, 0.08);
+        border: none;
+        border-radius: 10px;
+        padding: 12px 14px;
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+    .payment-details-btn-inline:hover {
+        background: rgba(245, 158, 11, 0.15);
+    }
+    
+    .p-expanded-checkbox {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: rgba(61, 220, 151, 0.08);
+        border: none;
+        border-radius: 10px;
+        padding: 12px 14px;
+        cursor: pointer;
         transition: all 0.2s;
     }
+    .p-expanded-checkbox:hover {
+        background: rgba(61, 220, 151, 0.15);
+    }
+    
+    .p-checkbox-box {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--accent);
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .p-checkbox-box svg {
+        width: 12px;
+        height: 12px;
+        stroke: var(--accent);
+        opacity: 0;
+    }
+    
+    .p-checkbox-text {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+    .p-checkbox-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent);
+    }
+    .p-checkbox-sub {
+        font-size: 10px;
+        color: var(--accent);
+    }
+    
+    .p-row-expanded .p-status-col {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+    }
+    .remove-pending-btn {
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: var(--pending);
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition: all 0.2s;
+        vertical-align: middle;
+    }
     .remove-pending-btn:hover {
-        background: rgba(248, 81, 73, 0.4);
+        background: rgba(245, 158, 11, 0.3);
+        border-color: var(--pending);
         transform: scale(1.1);
     }
 
@@ -1828,28 +2080,43 @@
     }
     .share-link-btn:hover { opacity: 0.8; }
 
+    /* Invite Button for waiting guests */
+    .invite-btn {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s;
+        pointer-events: none; /* Let parent handle click */
+    }
+    .p-row.waiting-guest:hover .invite-btn {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
     /* Waiting Guest Card */
     .p-row.waiting-guest {
-        border-style: dashed;
-        border-color: #444;
-        background: transparent;
+        border-left: 3px solid #444;
+        background: rgba(255,255,255,0.02);
+        cursor: pointer;
     }
-    .p-row.waiting-guest .share-link-btn {
-        color: #666;
-    }
-    .p-row.waiting-guest .share-link-btn:hover {
-        color: #888;
+    .p-row.waiting-guest:hover {
+        background: rgba(255,255,255,0.08);
     }
     .p-avatar.waiting {
-        border-style: dashed;
-        border-color: #444;
+        border: 1px solid #555;
         color: #666;
         background: transparent;
         font-size: 20px;
     }
     .p-name.waiting-text {
         color: var(--muted);
-        font-style: italic;
     }
 
     /* --- FOOTER --- */
@@ -2207,6 +2474,71 @@
       width: 100%; height: 80vh; border: none;
     }
 
+    /* Toast Notification */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+    }
+    .toast {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: 10px;
+        padding: 14px 18px;
+        min-width: 280px;
+        max-width: 360px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        pointer-events: auto;
+        animation: toastSlideIn 0.3s ease-out;
+    }
+    .toast.fade-out {
+        animation: toastFadeOut 0.3s ease-out forwards;
+    }
+    .toast-message {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .toast-message .toast-icon {
+        color: var(--accent);
+        font-size: 16px;
+    }
+    .toast-subtext {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+        padding-left: 24px;
+    }
+    @keyframes toastSlideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    @keyframes toastFadeOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+
   </style>
 </head>
 <body>
@@ -2274,15 +2606,19 @@
 
   <div class="app-container" id="main-content">
     
-    <!-- HEADER -->
+    <!-- NAV BAR (above card) -->
+    <div class="header-nav-bar">
+        <a href="/grouptabs" class="back-btn" id="back-btn" style="visibility: hidden;">←</a>
+        <button class="share-btn-header" onclick="copyShareLink()" title="Copy share link">
+            <svg class="share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+        </button>
+    </div>
+    
+    <!-- HEADER CARD -->
     <div class="app-header">
-        <div class="header-top">
-            <a href="/grouptabs" class="back-btn">←</a>
-            <button class="share-btn-header" onclick="copyShareLink()">
-                <span>🔗</span> <span id="share-link-text">Share Link</span>
-            </button>
-        </div>
-
         <div class="header-main-row">
             <div class="header-title-group">
                 <div id="header-icon-container" class="header-icon-container">
@@ -2316,31 +2652,23 @@
         </div>
         <div class="progress-percent" id="progress-percent-text">0% Collected</div>
         
-        <!-- Tab Extras (Product Info, Link, Receipt) -->
-        <div class="tab-extras-area" id="tab-extras-area" style="display: none;">
-            <div class="extras-header">
-                <div class="extras-label" id="extras-label">Gift details</div>
-            </div>
-            
-            <div class="product-info-row" id="product-info-row">
-                <div class="product-image-container" id="product-image-container" style="display: none;">
-                    <img id="product-image-thumb" class="product-thumb" src="" alt="Product" onclick="showGiftImageModal()">
-                </div>
-                <div class="product-details-content">
-                    <div id="product-name-badge" class="product-name-badge" style="display: none;"></div>
-                    <div class="product-actions-row">
-                        <div id="product-link-container" style="display: none;">
-                            <a id="product-link" href="#" target="_blank" rel="noopener noreferrer" class="product-link-btn">
-                                <span>🔗</span> Open Link
-                            </a>
-                        </div>
-                        <!-- Receipt Row -->
-                        <div id="receipt-view-link" class="receipt-row-container" style="display: none;">
-                            <!-- Dynamically filled -->
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- Action Buttons Row -->
+        <div class="header-actions-row" id="header-actions-row" style="display: none;">
+            <a id="product-link" href="#" target="_blank" rel="noopener noreferrer" class="header-action-btn" style="display: none;" onclick="event.preventDefault(); window.open(this.href, '_blank');">
+                <span>🔗</span> <span id="product-link-text">Link</span>
+            </a>
+            <button id="receipt-btn" class="header-action-btn" style="display: none;" onclick="showReceiptFromHeader()">
+                <span>📄</span> View Receipt
+            </button>
+            <button class="header-action-btn" onclick="showGiftPaymentDetails()">
+                <span>💳</span> Payment details
+            </button>
+        </div>
+        
+        <!-- Status Line -->
+        <div class="header-status-line" id="header-status-line" style="display: none;">
+            <span class="status-dot green"></span>
+            <span id="header-status-text">Fully paid by Paul · Collecting from the group</span>
         </div>
     </div>
 
@@ -2349,8 +2677,8 @@
         <!-- Dynamically filled -->
     </div>
 
-    <!-- HERO BOX -->
-    <div class="hero-pop-container">
+    <!-- HERO BOX - Hidden, using participant card instead -->
+    <div class="hero-pop-container" style="display: none;">
         <div id="hero-box" class="hero-pop-box">
             
             <!-- Funky SVG Bell -->
@@ -2386,10 +2714,10 @@
                     <div class="gift-checkbox">
                         <span class="gift-checkbox-icon">✓</span>
                     </div>
-                    <div class="gift-checkbox-content">
-                        <div class="gift-checkbox-label" id="gift-checkbox-label">I've paid</div>
-                        <div class="gift-checkbox-sub" id="gift-checkbox-sub">After paying, confirm it here so the starter can verify.</div>
-                    </div>
+                        <div class="gift-checkbox-content">
+                            <div class="gift-checkbox-label" id="gift-checkbox-label">I've paid</div>
+                            <div class="gift-checkbox-sub" id="gift-checkbox-sub"></div>
+                        </div>
                 </div>
                 
                 <a class="gift-pay-for-other-link" onclick="showPaymentModalForOther()">Pay for someone else</a>
@@ -2399,8 +2727,8 @@
 
     <!-- LIST -->
     <div class="list-section">
-        <!-- Collapsed Header (clickable) -->
-        <div class="participants-header" onclick="toggleParticipants()">
+        <!-- Participants Header -->
+        <div class="participants-header">
             <div class="participants-summary">
                 <svg class="participants-summary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -2409,27 +2737,22 @@
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
                 <span class="participants-summary-title" id="participants-collapsed-title">Participants (0)</span>
-                <span class="participants-summary-stats" id="participants-collapsed-stats"></span>
             </div>
-            <span class="chevron" id="participants-chevron">▼</span>
+            <span class="participants-summary-stats" id="participants-collapsed-stats"></span>
         </div>
         
-        <!-- Expanded Content (hidden by default) -->
-        <div class="participants-expanded-content" id="participants-expanded">
-            <div class="participants-expanded-header">
-                <div class="fairness-row">
-                <div class="fairness-pill" id="fairness-badge">
-                    <img id="fairness-icon" src="/images/payfriends-handshake.svg" style="width:16px; height:16px; margin-right:4px;" onerror="this.style.display='none'">
-                    <span id="fairness-text">CALCULATING...</span>
-                </div>
-                    <span class="unbalanced-explanation" id="unbalanced-explanation"></span>
-            </div>
-        </div>
+        <!-- Expanded Content (always visible now) -->
+        <div class="participants-expanded-content expanded" id="participants-expanded">
 
         <!-- Participants Container -->
         <div id="participants-list">
             <!-- Dynamically filled -->
             </div>
+        </div>
+        
+        <!-- Unbalanced Alert (below participants) -->
+        <div class="unbalanced-alert" id="unbalanced-alert" style="display: none;">
+            <span id="unbalanced-explanation"></span>
         </div>
         </div>
 
@@ -2439,6 +2762,12 @@
     <div id="host-footer" class="footer-bar hide">
     <!-- Button row -->
     <div class="footer-bar-inner">
+        <button class="share-btn-footer" onclick="copyShareLink()" title="Copy share link">
+            <svg class="share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+        </button>
         <button class="f-btn btn-sec" onclick="showEditModal()">Edit Details</button>
         <button id="footer-receipt-btn" class="f-btn btn-sec" onclick="triggerReceiptUpload()" style="display: none;">Upload Receipt</button>
         <button id="footer-reports-btn" class="f-btn btn-sec" onclick="togglePaymentReports()" style="display: none;">
@@ -2638,7 +2967,7 @@
           </div>
           <div class="gift-checkbox-content">
             <div class="gift-checkbox-label">I've paid</div>
-            <div class="gift-checkbox-sub">Tap to report your payment</div>
+            <div class="gift-checkbox-sub"></div>
           </div>
         </div>
       </div>
@@ -2748,6 +3077,9 @@
     </div>
   </div>
 
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
   <!-- Hidden file input for receipt upload -->
   <input type="file" id="receipt-upload-input" accept="image/*,.pdf" style="display:none;" onchange="handleReceiptUpload(event)">
 
@@ -2759,7 +3091,7 @@
     let tabData = null;
     let participants = [];
     let priceGroups = [];
-    let participantsExpanded = false; // Collapsed by default
+    let participantsExpanded = true; // Always expanded now
     let currentParticipant = null;
     let fairnessData = null;
     let isCreator = false;
@@ -2947,24 +3279,35 @@
 
     function renderHeader() {
         // Title & Meta - show recipient name for gifts
+        const giftMode = tabData.gift_mode;
+        const isGiftPotMode = giftMode === 'gift_pot_target' || giftMode === 'gift_pot_open';
+        const isGiftDebtMode = giftMode === 'gift_debt';
+        const productName = tabData.about_text || tabData.raising_for_text;
+        const recipientName = tabData.recipient_name;
+        
         let displayTitle = tabData.name;
-        if (tabData.template === 'gift' && tabData.recipient_name) {
-            displayTitle = `Gift for ${tabData.recipient_name}`;
+        if (tabData.template === 'gift') {
+            if (isGiftPotMode) {
+                // Fundraiser/raising mode
+                displayTitle = recipientName ? `Raising for ${recipientName}` : 'Raising funds';
+            } else if (productName && recipientName) {
+                // Has product name and recipient
+                displayTitle = `Gift: ${productName} for ${recipientName}`;
+            } else if (recipientName) {
+                displayTitle = `Gift for ${recipientName}`;
+            } else if (productName) {
+                displayTitle = `Gift: ${productName}`;
+            }
         }
         document.getElementById('header-title').innerText = displayTitle;
         const date = new Date(tabData.created_at).toLocaleDateString();
         
         // Determine split label based on gift mode or split mode
-        const giftMode = tabData.gift_mode;
-        const isGiftPotMode = giftMode === 'gift_pot_target' || giftMode === 'gift_pot_open';
-        const isGiftDebtMode = giftMode === 'gift_debt';
-        
         let splitLabel;
         if (isGiftPotMode) {
             splitLabel = tabData.is_open_pot ? 'OPEN POT' : 'TARGET POT';
-        } else if (isGiftDebtMode) {
-            splitLabel = 'GIFT DEBT';
         } else {
+            // Both gift_debt and normal splits use EQUAL SPLIT or GROUP SPLIT
             splitLabel = (tabData.split_mode === 'price_groups') ? 'GROUP SPLIT' : 'EQUAL SPLIT';
         }
         
@@ -2974,84 +3317,33 @@
             <span class="split-pill">${splitLabel}</span>
         `;
 
-        // === HEADER ICON (based on type) ===
+        // === HEADER ICON (use product image if available, otherwise emoji) ===
         const iconContainer = document.getElementById('header-icon-container');
-        let typeIcon = '📋'; // Default
-        if (tabData.template === 'restaurant') {
-            typeIcon = '🍽️';
-        } else if (tabData.template === 'trip') {
-            typeIcon = '✈️';
-        } else if (tabData.template === 'gift') {
-            if (tabData.group_gift_mode === 'fundraiser') {
-                typeIcon = '💰';
-            } else {
-                typeIcon = '🎁';
-            }
-        }
-        iconContainer.innerHTML = typeIcon;
-
-        // === PRODUCT INFO (below the line) ===
-        const productInfoRow = document.getElementById('product-info-row');
-        const productImageContainer = document.getElementById('product-image-container');
-        const productImageThumb = document.getElementById('product-image-thumb');
-        const productNameBadge = document.getElementById('product-name-badge');
-        const productLinkContainer = document.getElementById('product-link-container');
-        const productLink = document.getElementById('product-link');
-        
-        const isGiftMode = tabData.template === 'gift';
         const hasProductImage = tabData.about_image_path || tabData.raising_for_image_path;
-        const productName = tabData.about_text || tabData.raising_for_text;
-        const productLinkUrl = tabData.about_link || tabData.raising_for_link;
-
-        let showProductRow = false;
-
-        if (isGiftMode) {
-            // Show image if it exists
-            if (hasProductImage) {
-                const imagePath = tabData.about_image_path || tabData.raising_for_image_path;
-                productImageThumb.src = imagePath;
-                productImageContainer.style.display = 'block';
-                // Set blurred background effect
-                productInfoRow.style.setProperty('--product-bg-image', `url(${imagePath})`);
-                showProductRow = true;
-            } else {
-                productImageContainer.style.display = 'none';
-                productInfoRow.style.removeProperty('--product-bg-image');
-            }
-
-            // Show name as badge if it exists
-            if (productName) {
-                productNameBadge.textContent = productName;
-                productNameBadge.style.display = 'inline-block';
-                showProductRow = true;
-            } else {
-                productNameBadge.style.display = 'none';
-            }
-
-            // Show link if it exists
-            if (productLinkUrl) {
-                const finalUrl = productLinkUrl.startsWith('http') ? productLinkUrl : `https://${productLinkUrl}`;
-                productLink.href = finalUrl;
-                
-                // Extract domain name from URL
-                try {
-                    const urlObj = new URL(finalUrl);
-                    const domain = urlObj.hostname.replace(/^www\./, '');
-                    // Capitalize first letter only: amazon.com -> Amazon.com
-                    const displayDomain = domain.charAt(0).toUpperCase() + domain.slice(1);
-                    productLink.innerHTML = `<span>🔗</span> ${displayDomain}`;
-                } catch (e) {
-                    productLink.innerHTML = `<span>🔗</span> Open Link`;
+        
+        if (hasProductImage) {
+            // Use product image (clickable to open modal)
+            const imagePath = tabData.about_image_path || tabData.raising_for_image_path;
+            iconContainer.innerHTML = `<img src="${imagePath}" alt="" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover; cursor: pointer;" onclick="showGiftImageModal()">`;
+        } else {
+            // Use emoji icon
+            let typeIcon = '📋'; // Default
+            if (tabData.template === 'restaurant') {
+                typeIcon = '🍽️';
+            } else if (tabData.template === 'trip') {
+                typeIcon = '✈️';
+            } else if (tabData.template === 'gift') {
+                if (tabData.group_gift_mode === 'fundraiser') {
+                    typeIcon = '💰';
+                } else {
+                    typeIcon = '🎁';
                 }
-                
-                productLinkContainer.style.display = 'block';
-                showProductRow = true;
-            } else {
-                productLinkContainer.style.display = 'none';
             }
+            iconContainer.innerHTML = typeIcon;
         }
 
-        productInfoRow.style.display = showProductRow ? 'flex' : 'none';
+        // Product link URL for header buttons
+        const productLinkUrl = tabData.about_link || tabData.raising_for_link;
 
         // === GIFT POT MODE DISPLAY ===
         if (isGiftPotMode) {
@@ -3075,7 +3367,7 @@
             
             document.getElementById('total-bill-amount').innerText = isOpenPot ? formatCurrency2(raised) : formatCurrency2(target);
             document.getElementById('remaining-amount').innerText = isOpenPot 
-                ? (participants.length || 1) + ' people'
+                ? (participants.length || 1) + ' participants'
                 : formatCurrency2(Math.max(0, target - raised));
             
             if (isOpenPot) {
@@ -3119,44 +3411,79 @@
             document.getElementById('progress-percent-text').innerText = pct + '% Collected';
         }
 
-        // Receipt
-        const rLink = document.getElementById('receipt-view-link');
-        const extrasArea = document.getElementById('tab-extras-area');
+        // Header Action Buttons Row
+        const actionsRow = document.getElementById('header-actions-row');
+        const productLinkBtn = document.getElementById('product-link');
+        const productLinkText = document.getElementById('product-link-text');
+        const receiptBtn = document.getElementById('receipt-btn');
         const footerReceiptBtn = document.getElementById('footer-receipt-btn');
-        const extrasLabel = document.getElementById('extras-label');
         
-        // Update label text based on type
-        if (tabData.template === 'restaurant') {
-            extrasLabel.textContent = 'Bill details';
-        } else if (tabData.template === 'trip') {
-            extrasLabel.textContent = 'Trip details';
+        // Product Link
+        if (productLinkUrl) {
+            const finalUrl = productLinkUrl.startsWith('http') ? productLinkUrl : `https://${productLinkUrl}`;
+            productLinkBtn.href = finalUrl;
+            try {
+                const urlObj = new URL(finalUrl);
+                const domain = urlObj.hostname.replace(/^www\./, '');
+                productLinkText.textContent = domain.charAt(0).toUpperCase() + domain.slice(1);
+            } catch (e) {
+                productLinkText.textContent = 'Link';
+            }
+            productLinkBtn.style.display = 'inline-flex';
         } else {
-            extrasLabel.textContent = 'Gift details';
+            productLinkBtn.style.display = 'none';
         }
-
-        let hasReceipt = false;
+        
+        // Receipt Button
         if (tabData.receipt_file_path) {
-            hasReceipt = true;
-            // Extract filename from path and use the secure API endpoint
+            receiptBtn.style.display = 'inline-flex';
+            // Store receipt info for the click handler
             const receiptFilename = tabData.receipt_file_path.split('/').pop();
-            const receiptUrl = `/api/grouptabs/receipt/${receiptFilename}`;
-            rLink.innerHTML = `
-                <button onclick="showReceiptModal('${receiptUrl}', '${receiptFilename}')" class="receipt-btn-small">
-                    <span>📄</span> View Receipt
-                </button>`;
-            rLink.style.display = 'inline-block';
+            receiptBtn.dataset.receiptUrl = `/api/grouptabs/receipt/${receiptFilename}`;
+            receiptBtn.dataset.receiptFilename = receiptFilename;
             if (footerReceiptBtn) footerReceiptBtn.style.display = 'none';
         } else {
-            // No receipt
-            rLink.innerHTML = '';
-            rLink.style.display = 'none';
-            // Show upload button in footer for creator only
+            receiptBtn.style.display = 'none';
             if (footerReceiptBtn && isCreator) footerReceiptBtn.style.display = '';
         }
-
-        // Show/hide the entire extras area based on whether there's a product row or a receipt
-        // Redesign note: we show it if we have image, name, link OR receipt
-        extrasArea.style.display = (showProductRow || hasReceipt) ? 'flex' : 'none';
+        
+        // Always show the actions row (payment details is always there)
+        actionsRow.style.display = 'flex';
+        
+        // Status Line (Fully paid by X · Raising from group)
+        const statusLine = document.getElementById('header-status-line');
+        const statusText = document.getElementById('header-status-text');
+        const statusDot = statusLine.querySelector('.status-dot');
+        
+        // Find who paid the full bill (if anyone)
+        const totalBill = tabData.total_amount_cents || 0;
+        const hostParticipant = participants.find(p => p.is_host || p.user_id === tabData.creator_user_id);
+        const hostPaid = hostParticipant ? (hostParticipant.total_paid_cents || hostParticipant.totalPaidCents || 0) : 0;
+        const hostName = hostParticipant?.full_name?.split(' ')[0] || hostParticipant?.guest_name?.split(' ')[0] || tabData.creator_name?.split(' ')[0] || 'Host';
+        
+        if (hostPaid >= totalBill && totalBill > 0) {
+            // Host fully paid
+            statusText.textContent = `Fully paid by ${hostName} · Collecting from the group`;
+            statusDot.className = 'status-dot green';
+            statusLine.style.display = 'flex';
+        } else if (hostPaid > 0) {
+            // Host partially paid
+            statusText.textContent = `Paid by ${hostName} · Collecting from the group`;
+            statusDot.className = 'status-dot green';
+            statusLine.style.display = 'flex';
+        } else {
+            // No one has paid yet or different scenario
+            statusLine.style.display = 'none';
+        }
+    }
+    
+    function showReceiptFromHeader() {
+        const btn = document.getElementById('receipt-btn');
+        const url = btn.dataset.receiptUrl;
+        const filename = btn.dataset.receiptFilename;
+        if (url && filename) {
+            showReceiptModal(url, filename);
+        }
     }
 
     function renderHero() {
@@ -3179,7 +3506,7 @@
         const fullParticipant = participants.find(p => p.id === currentParticipant.id);
         const participantName = fullParticipant?.full_name || fullParticipant?.guest_name || currentParticipant.display_name || currentParticipant.displayName || currentParticipant.guest_name || 'You';
         const firstName = participantName.split(' ')[0]; // Get first name only
-        titleEl.innerText = `${firstName}'s Fair Share`;
+        titleEl.innerText = `Your Fair Share`;
 
         priceEl.innerText = formatCurrency2(myData.fairShare);
         
@@ -3269,7 +3596,7 @@
             // No report yet
             checkbox.className = 'gift-paid-checkbox-card';
             label.textContent = "I've paid";
-            sub.textContent = 'After paying, confirm it here so the starter can verify.';
+            sub.textContent = '';
         } else if (myPaymentReport.status === 'pending') {
             checkbox.className = 'gift-paid-checkbox-card pending';
             label.textContent = "Payment reported";
@@ -3283,6 +3610,12 @@
             label.textContent = "Payment not confirmed";
             sub.textContent = 'Please report again or contact the starter';
         }
+    }
+    
+    // Toggle I've paid from the inline participant card
+    function toggleIvePaidFromCard() {
+        // Same as clicking the gift-paid-checkbox
+        handleGiftPaidCheckbox();
     }
     
     function switchToReportPaymentModal() {
@@ -3440,7 +3773,7 @@
                                 <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(paypalValue)}')">Copy</button>
                             </span>
                         </div>
-                        <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="open-link-btn" onclick="event.stopPropagation();">
+                        <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="open-link-btn" onclick="event.stopPropagation(); event.preventDefault(); window.open(this.href, '_blank');">
                             Open PayPal →
                         </a>`;
                 } else {
@@ -3477,7 +3810,7 @@
                                 <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(revolutValue)}')">Copy</button>
                             </span>
                         </div>
-                        <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="open-link-btn" onclick="event.stopPropagation();">
+                        <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="open-link-btn" onclick="event.stopPropagation(); event.preventDefault(); window.open(this.href, '_blank');">
                             Open Revolut →
                         </a>`;
                 } else {
@@ -3515,7 +3848,7 @@
             if (details.link) {
                 const linkUrl = details.link.startsWith('http') ? details.link : `https://${details.link}`;
                 detailsHtml += `
-                    <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="open-link-btn" onclick="event.stopPropagation();">
+                    <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="open-link-btn" onclick="event.stopPropagation(); event.preventDefault(); window.open(this.href, '_blank');">
                         Open Link →
                     </a>`;
             }
@@ -4181,6 +4514,11 @@
         if (unpaidCount > 0) {
             collapsedStatsHtml += `<span class="stat-item"><span class="stat-dot amber"></span>${unpaidCount} Unpaid</span>`;
         }
+        // Add unbalanced indicator if the tab is not balanced and someone has paid
+        const anyoneHasPaid = list.some(p => (p.total_paid_cents || p.totalPaidCents || 0) > 0);
+        if (fairnessData && fairnessData.globalScore < 100 && anyoneHasPaid) {
+            collapsedStatsHtml += `<span class="stat-item"><span class="stat-dot red"></span>Unbalanced</span>`;
+        }
         
         // Build plain text for expanded header
         const statsParts = [];
@@ -4217,6 +4555,15 @@
                     return dateB - dateA;
                 });
                 break;
+        }
+        
+        // For invited users (not creators), show their own card first
+        if (!isCreator && currentParticipant) {
+            const myIndex = list.findIndex(p => p.id === currentParticipant.id);
+            if (myIndex > 0) {
+                const [myCard] = list.splice(myIndex, 1);
+                list.unshift(myCard);
+            }
         }
         
         list.forEach(p => {
@@ -4299,7 +4646,44 @@
                 stampText = `PENDING`;
             }
             
-            const html = `
+            // Special expanded card for current user who is pending
+            const isMyPendingCard = isMe && isPending && !isHost;
+            const totalBill = tabData.total_amount_cents || 0;
+            const numParticipants = expectedPeopleCount;
+            
+            const html = isMyPendingCard ? `
+                <div class="p-row p-row-expanded pending-participant" style="--row-color:${rowColor};">
+                    <!-- Main content area -->
+                    <div class="p-expanded-content">
+                        <div class="p-expanded-header">
+                            <div class="p-expanded-subtitle">YOUR SHARE TO PAY</div>
+                            <div class="p-expanded-amount" style="color:${rowColor};">${formatCurrency2(fairShare)}</div>
+                            <div class="p-expanded-calc">(${fairShareLabel} : ${formatCurrency2(totalBill)} ÷ ${numParticipants} participants)</div>
+                        </div>
+                        
+                        <div class="p-expanded-actions">
+                            <button class="payment-details-btn-inline" onclick="showGiftPaymentDetails()">
+                                💳 Payment details
+                            </button>
+                            
+                            <div class="p-expanded-checkbox" onclick="toggleIvePaidFromCard()">
+                                <div class="p-checkbox-box">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="p-checkbox-text">
+                                    <span class="p-checkbox-label">I've paid</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-status-col">
+                        <div class="stamp ${stampClass}">${stampText}</div>
+                    </div>
+                </div>
+            ` : `
                 <div class="p-row ${isPending ? 'pending-participant' : ''}" style="--row-color:${rowColor};">
                     ${profilePicUrl ? `
                         <div class="p-avatar" style="border: none !important; padding: 0; overflow: hidden;">
@@ -4313,14 +4697,15 @@
                     
                     <div class="p-info">
                         <div class="p-name-row">
-                            <span class="p-name" style="color:${rowColor} !important;">${getDisplayName(p)} ${isMe ? '(You)' : ''}</span>
+                            <span class="p-name">${getDisplayName(p)} ${isMe ? '(You)' : ''}</span>
+                            ${isPending && isCreator ? `<button class="remove-pending-btn" onclick="removePendingParticipant(${p.id}, '${escapeHtml(getDisplayName(p))}')" title="Remove pending participant" style="margin-left: 4px;">✕</button>` : ''}
                             ${p.hide_name && isCreator ? `<button class="reveal-name-btn" onclick="revealName(this, '${escapeHtml(getFullName(p))}')" title="Click to reveal name">👁</button>` : ''}
-                            ${isHost ? '<span class="host-badge">HOST</span>' : ''}
+                            ${isHost ? '<span class="host-badge">ORGANIZER</span>' : ''}
                         </div>
-                        <div class="p-amt-line" style="color:${rowColor} !important;">
+                        <div class="p-amt-line">
                             ${isPending 
                                 ? `<span>Joined ${timeAgo(p.joined_at)} • Waiting for payment</span>`
-                                : `<span>${fairShareLabel} group: ${formatCurrency2(fairShare)} • ${isHost ? 'Paid full bill' : 'Paid'}: ${formatCurrency2(paidAmt)}${timeAgoStr ? ` • <span style="opacity:0.8; font-weight:500;">${timeAgoStr}</span>` : ''}</span>`
+                                : `<span>${fairShareLabel} group: ${formatCurrency2(fairShare)} • ${isHost ? 'Paid full bill' : 'Paid'}: ${formatCurrency2(paidAmt)}${timeAgoStr ? ` • ${timeAgoStr}` : ''}</span>`
                             }
                         </div>
                     </div>
@@ -4337,8 +4722,8 @@
                     `}
 
                     <div class="p-status-col">
-                        ${isPending && isCreator ? `<button class="remove-pending-btn" onclick="removePendingParticipant(${p.id}, '${escapeHtml(getDisplayName(p))}')" title="Remove pending participant">✕</button>` : ''}
                         <div class="stamp ${stampClass}">${stampText}</div>
+                        ${isPending && isCreator ? `<div class="p-pending-amount">${formatCurrency2(fairShare)}</div>` : ''}
                         ${overpaidHtml}
                     </div>
                 </div>
@@ -4355,29 +4740,29 @@
         const code = tabData.inviteCode || tabData.invite_code || tabData.magic_token;
         const shareUrl = `${window.location.origin}/tab/${code}`;
         
+        // Calculate fair share for waiting slots
+        const waitingFairShare = expectedPeopleCount > 0 ? Math.floor((tabData.total_amount_cents || 0) / expectedPeopleCount) : 0;
+        
         for (let i = 0; i < waitingGuestCount; i++) {
+            const participantNum = list.length + i + 1;
             const waitingHtml = `
-                <div class="p-row waiting-guest">
+                <div class="p-row waiting-guest" onclick="copyShareLink('${shareUrl}')" title="Click to copy share link">
                     <div class="p-avatar waiting">
-                        ?
+                        ${participantNum}
                     </div>
                     
                     <div class="p-info" style="justify-content: center; margin-top: 2px;">
                         <div class="p-name-row">
-                            <span class="p-name waiting-text">Waiting for guest to respond...</span>
+                            <span class="p-name waiting-text">Awaiting participant ${participantNum}</span>
                         </div>
                         <div class="p-amt-line">
-                            <span class="p-amt-sub">Please remind the other people to pay their share.</span>
+                            <span class="p-amt-sub">${formatCurrency2(waitingFairShare)} share</span>
                         </div>
                     </div>
 
                     <div class="p-status-col">
-                        <button class="share-link-btn" onclick="copyShareLink('${shareUrl}')">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                            </svg> 
-                            SHARE LINK
+                        <button class="invite-btn" onclick="copyShareLink('${shareUrl}')">
+                            INVITE
                         </button>
                     </div>
                 </div>
@@ -4385,36 +4770,26 @@
             container.innerHTML += waitingHtml;
         }
         
-        // Fairness Badge
-        const badge = document.getElementById('fairness-badge');
-        const badgeText = document.getElementById('fairness-text');
-        const badgeIcon = document.getElementById('fairness-icon');
+        // Unbalanced Alert
+        const unbalancedAlert = document.getElementById('unbalanced-alert');
         const unbalancedExplanation = document.getElementById('unbalanced-explanation');
         
         if (fairnessData.globalScore >= 100) {
-            badge.classList.add('balanced');
-            badgeText.innerText = "100% BALANCED";
-            badge.style.display = 'flex';
+            // Balanced - hide alert
+            unbalancedAlert.style.display = 'none';
             unbalancedExplanation.innerText = '';
-            // Green filter for balanced state
-            if (badgeIcon) badgeIcon.style.filter = 'brightness(0) saturate(100%) invert(76%) sepia(52%) saturate(497%) hue-rotate(101deg) brightness(92%) contrast(87%)';
         } else {
-            badge.classList.remove('balanced');
-            badgeText.innerText = "UNBALANCED";
-            // Red filter for unbalanced state
-            if (badgeIcon) badgeIcon.style.filter = 'brightness(0) saturate(100%) invert(37%) sepia(93%) saturate(1352%) hue-rotate(336deg) brightness(101%) contrast(97%)';
-            
             // Generate dynamic unbalanced explanation text
             const explanationText = generateUnbalancedExplanation(participants, fairnessData);
-            unbalancedExplanation.innerText = explanationText;
             
-            // Hide badge and explanation if nobody has paid anything
+            // Hide if nobody has paid anything
             const anyoneHasPaid = participants.some(p => (p.total_paid_cents || p.totalPaidCents || 0) > 0);
-            if (!anyoneHasPaid) {
-                badge.style.display = 'none';
+            if (!anyoneHasPaid || !explanationText) {
+                unbalancedAlert.style.display = 'none';
                 unbalancedExplanation.innerText = '';
             } else {
-                badge.style.display = 'flex';
+                unbalancedExplanation.innerText = explanationText;
+                unbalancedAlert.style.display = 'block';
             }
         }
     }
@@ -4477,10 +4852,14 @@
 
     function renderFooter() {
         const footer = document.getElementById('host-footer');
+        const backBtn = document.getElementById('back-btn');
+        
         if (isCreator) {
             footer.classList.remove('hide');
+            backBtn.style.visibility = 'visible';
         } else {
             footer.classList.add('hide');
+            backBtn.style.visibility = 'hidden';
         }
     }
 
@@ -5054,23 +5433,61 @@
         }
     }
     
+    function showToast(message, subtext) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `
+            <div class="toast-message">
+                <span class="toast-icon">✓</span>
+                ${message}
+            </div>
+            ${subtext ? `<div class="toast-subtext">${subtext}</div>` : ''}
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
+    }
+    
     function copyShareLink(customUrl) {
         // Use short invite code if available, fall back to legacy magic_token
         const code = tabData.inviteCode || tabData.invite_code || tabData.magic_token;
         const url = customUrl || `${window.location.origin}/tab/${code}`;
         navigator.clipboard.writeText(url).then(() => {
-            const shareText = document.getElementById('share-link-text');
-            if (shareText) {
-                shareText.innerText = "COPIED!";
-                setTimeout(() => shareText.innerText = "Share Link", 2000);
-            }
-            // Visual feedback on clicked button
+            // Always show toast for all share link clicks
+            showToast('Invite link copied!', 'Share it with awaiting participants');
+            
+            // Visual feedback on buttons
             if (event && event.target) {
                 const btn = event.target.closest('button');
                 if (btn) {
                     const orig = btn.innerHTML;
-                    btn.innerHTML = '✓ COPIED!';
-                    setTimeout(() => btn.innerHTML = orig, 2000);
+                    // Check if it's the icon-only circular buttons
+                    if (btn.classList.contains('share-btn-header') || btn.classList.contains('share-btn-footer')) {
+                        btn.innerHTML = '<svg class="share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>';
+                        btn.style.borderColor = 'var(--accent)';
+                        btn.style.color = 'var(--accent)';
+                        setTimeout(() => {
+                            btn.innerHTML = orig;
+                            btn.style.borderColor = '';
+                            btn.style.color = '';
+                        }, 1500);
+                    } else if (btn.classList.contains('invite-btn')) {
+                        btn.innerHTML = '✓ COPIED';
+                        setTimeout(() => btn.innerHTML = orig, 1500);
+                    } else {
+                        btn.innerHTML = '✓ COPIED!';
+                        setTimeout(() => btn.innerHTML = orig, 2000);
+                    }
                 }
             }
         });
@@ -5181,7 +5598,7 @@
                 displayDomain = domain.charAt(0).toUpperCase() + domain.slice(1);
             } catch (e) {}
             actionsHtml += `
-                <a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="header-action-pill">
+                <a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="header-action-pill" onclick="event.preventDefault(); window.open(this.href, '_blank');">
                     <span>🔗</span> ${displayDomain}
                 </a>`;
         }
@@ -5666,7 +6083,11 @@
     if (window.PayFriendsHeader) {
         window.PayFriendsHeader.initialize({ hasActivitySection: false, skipAuthRedirect: true }).catch(err => {
             console.log('Header init for guest:', err.message);
-            // Guest users - header will show minimal/guest version
+            // Guest users - hide Activity button and user avatar (logged-in only elements)
+            const activityBtn = document.getElementById('activity-button');
+            const userMenu = document.querySelector('.header-user-menu');
+            if (activityBtn) activityBtn.style.display = 'none';
+            if (userMenu) userMenu.style.display = 'none';
         });
     }
 
