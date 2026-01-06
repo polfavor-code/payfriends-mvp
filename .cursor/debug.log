@@ -1,0 +1,8 @@
+{"location":"refreshTabData:start","message":"Starting refresh","data":{"magicToken":false,"tabId":36},"timestamp":1767661242254,"sessionId":"debug-session","hypothesisId":"R1"}
+{"location":"refreshTabData:afterFetch","message":"Fetch complete","data":{"ok":true,"status":200},"timestamp":1767661242267,"sessionId":"debug-session","hypothesisId":"R2"}
+{"location":"refreshTabData:beforeRender","message":"About to renderAll","data":{"participantCount":2},"timestamp":1767661242268,"sessionId":"debug-session","hypothesisId":"R3"}
+{"location":"refreshTabData:complete","message":"Refresh complete","data":{},"timestamp":1767661242272,"sessionId":"debug-session","hypothesisId":"R4"}
+{"location":"refreshTabData:start","message":"Starting refresh","data":{"magicToken":false,"tabId":36},"timestamp":1767661252256,"sessionId":"debug-session","hypothesisId":"R1"}
+{"location":"refreshTabData:afterFetch","message":"Fetch complete","data":{"ok":true,"status":200},"timestamp":1767661252276,"sessionId":"debug-session","hypothesisId":"R2"}
+{"location":"refreshTabData:beforeRender","message":"About to renderAll","data":{"participantCount":2},"timestamp":1767661252277,"sessionId":"debug-session","hypothesisId":"R3"}
+{"location":"refreshTabData:complete","message":"Refresh complete","data":{},"timestamp":1767661252281,"sessionId":"debug-session","hypothesisId":"R4"}
