@@ -8568,8 +8568,12 @@ app.post('/api/grouptabs/:id/payment-reports', uploadGrouptabs.single('proof'), 
   const { reporterName, amountCents, method, paidAt, note, token } = req.body;
   
   try {
-    // Validate tab access via magic token
-    const tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+    // Validate tab access via magic token OR invite_code (for invited guests)
+    let tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+    if (!tab) {
+      // Also try invite_code for invited guests
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND invite_code = ?`).get(tabId, token);
+    }
     if (!tab) {
       return res.status(403).json({ error: 'Access denied or tab not found' });
     }
@@ -8675,10 +8679,24 @@ app.get('/api/grouptabs/:id/payment-reports', (req, res) => {
     let isCreator = false;
     
     if (token) {
+      // Check owner_token first (creator access)
       tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
       if (tab) isCreator = true;
-      else {
+      
+      // Also check manage_code (short creator token)
+      if (!tab) {
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND manage_code = ?`).get(tabId, token);
+        if (tab) isCreator = true;
+      }
+      
+      // Check magic_token (viewer access)
+      if (!tab) {
         tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+      }
+      
+      // Also try invite_code for invited guests
+      if (!tab) {
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND invite_code = ?`).get(tabId, token);
       }
     }
     

@@ -409,6 +409,7 @@
     .app-container {
       max-width: 960px;
       margin: 0 auto;
+      margin-top: -20px;
       padding: 0 24px;
       background: transparent;
       min-height: 100vh;
@@ -442,7 +443,7 @@
         padding: 20px 16px;
       }
       .header-nav-bar {
-        margin-top: 12px;
+        margin-top: 0;
         margin-bottom: 8px;
       }
     }
@@ -451,7 +452,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 12px;
+        margin-top: 0;
         margin-bottom: 12px;
     }
     .back-btn { font-size: 20px; color: var(--text); text-decoration: none; cursor: pointer; }
@@ -506,13 +507,6 @@
         height: 20px;
     }
 
-    .header-main-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-    }
-
     .header-title-group {
         display: flex;
         align-items: center;
@@ -534,6 +528,20 @@
         align-items: center; 
     }
 
+    /* Header Top Section - icon + content side by side */
+    .header-top-section {
+        display: flex;
+        gap: 20px;
+        align-items: stretch;
+        margin-bottom: 24px;
+    }
+    .header-content-side {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
     /* Header Type Icon */
     .header-icon-container {
         display: flex;
@@ -542,6 +550,17 @@
         font-size: 38px;
         flex-shrink: 0;
         margin-right: 4px;
+    }
+    .header-icon-container.header-icon-large {
+        font-size: 72px;
+        margin-right: 0;
+        align-self: stretch;
+    }
+    .header-icon-container.header-icon-large img {
+        width: 110px;
+        height: 110px;
+        border-radius: 12px;
+        object-fit: cover;
     }
     .header-icon-container img:hover {
         opacity: 0.85;
@@ -707,27 +726,34 @@
     .modal-header-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 16px;
+        margin-left: 16px;
     }
 
-    .header-action-pill {
+    .modal-action-link {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        font-size: 10px;
-        font-weight: 700;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
         color: var(--accent);
         text-decoration: none;
-        background: var(--accent-dim);
-        border: 1px solid rgba(0, 214, 143, 0.2);
-        padding: 2px 8px;
-        border-radius: 100px;
+        background: transparent;
+        border: none;
+        padding: 0;
+        cursor: pointer;
         transition: all 0.2s;
         white-space: nowrap;
+        font-family: inherit;
     }
-    .header-action-pill:hover {
-        background: rgba(0, 214, 143, 0.2);
-        transform: translateY(-1px);
+    .modal-action-link:hover {
+        opacity: 0.8;
+    }
+    .modal-action-link svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        fill: none;
     }
 
     .modal-image-wrapper {
@@ -758,7 +784,7 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-top: 24px;
+        margin-top: 32px;
         margin-bottom: 16px;
     }
 
@@ -807,6 +833,7 @@
     }
     .progress-percent {
         margin-top: 8px;
+        margin-bottom: 8px;
         font-size: 14px;
         font-weight: 700;
         color: var(--accent);
@@ -816,7 +843,7 @@
     .header-actions-row {
         display: flex;
         gap: 10px;
-        margin-top: 20px;
+        margin-top: 12px;
     }
     .header-action-btn {
         display: inline-flex;
@@ -1703,7 +1730,7 @@
         font-size: 12px;
         font-weight: 500;
         color: var(--muted);
-        margin-right: 3px;
+        margin-right: 6px;
     }
     .stat-item {
         display: flex;
@@ -1786,7 +1813,7 @@
         border: none;
         border-radius: 10px;
         padding: 14px 16px;
-        margin-top: 32px;
+        margin-top: 44px;
         margin-bottom: 16px;
         font-size: 14px;
         color: var(--danger);
@@ -1800,6 +1827,7 @@
         gap: 8px 16px;
         align-items: center;
         padding: 16px;
+        margin-bottom: 10px;
         background: rgba(255,255,255,0.02);
         border-left: 3px solid var(--row-color, var(--border));
         border-radius: 10px;
@@ -1891,6 +1919,14 @@
     .p-row.p-row-expanded:hover {
         background: rgba(245, 158, 11, 0.05);
     }
+    /* Fully paid variant - green */
+    .p-row.p-row-expanded.fully-paid {
+        border-left: 3px solid var(--accent);
+        background: rgba(61, 220, 151, 0.05);
+    }
+    .p-row.p-row-expanded.fully-paid:hover {
+        background: rgba(61, 220, 151, 0.08);
+    }
     
     .p-expanded-bell {
         position: absolute;
@@ -1944,9 +1980,9 @@
         background: rgba(245, 158, 11, 0.08);
         border: none;
         border-radius: 10px;
-        padding: 12px 14px;
+        padding: 14px 16px;
         color: var(--text);
-        font-size: 13px;
+        font-size: 15px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
@@ -1964,11 +2000,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 12px;
         background: rgba(61, 220, 151, 0.08);
         border: none;
         border-radius: 10px;
-        padding: 12px 14px;
+        padding: 14px 16px;
         cursor: pointer;
         transition: all 0.2s;
     }
@@ -1977,20 +2013,50 @@
     }
     
     .p-checkbox-box {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         border: 2px solid var(--accent);
-        border-radius: 5px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
     }
     .p-checkbox-box svg {
-        width: 12px;
-        height: 12px;
+        width: 14px;
+        height: 14px;
         stroke: var(--accent);
         opacity: 0;
+    }
+    .p-checkbox-box.checked {
+        background: var(--accent);
+        border-color: var(--accent);
+    }
+    .p-checkbox-box.checked svg {
+        opacity: 1;
+        stroke: #000;
+    }
+    
+    .p-expanded-checkbox.pending-report {
+        background: rgba(245, 158, 11, 0.15);
+    }
+    .p-expanded-checkbox.pending-report .p-checkbox-box {
+        border-color: var(--pending);
+        background: var(--pending);
+    }
+    .p-expanded-checkbox.pending-report .p-checkbox-box svg {
+        opacity: 1;
+        stroke: #000;
+    }
+    .p-expanded-checkbox.pending-report .p-checkbox-label {
+        color: var(--pending);
+    }
+    
+    .p-expanded-checkbox.confirmed {
+        background: rgba(61, 220, 151, 0.2);
+    }
+    .p-expanded-checkbox.confirmed .p-checkbox-label {
+        color: var(--accent);
     }
     
     .p-checkbox-text {
@@ -1999,7 +2065,7 @@
         gap: 1px;
     }
     .p-checkbox-label {
-        font-size: 13px;
+        font-size: 15px;
         font-weight: 600;
         color: var(--accent);
     }
@@ -2160,13 +2226,35 @@
     }
     
     .footer-badge.has-pending {
-        background: rgba(251, 191, 36, 0.3);
+        background: #f59e0b;
+        color: #000;
+        font-weight: 700;
         animation: pulse-badge 2s infinite;
+    }
+    
+    /* Prominent button when there are pending reports */
+    .f-btn.has-pending-reports {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border: 2px solid #f59e0b;
+        color: #000;
+        font-weight: 700;
+        animation: attention-pulse 2s infinite;
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+    }
+    .f-btn.has-pending-reports:hover {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 25px rgba(245, 158, 11, 0.5);
     }
     
     @keyframes pulse-badge {
         0%, 100% { opacity: 1; }
-        50% { opacity: 0.6; }
+        50% { opacity: 0.7; }
+    }
+    
+    @keyframes attention-pulse {
+        0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+        50% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.6); }
     }
     
     /* Expandable Footer Reports Area */
@@ -2289,8 +2377,20 @@
     }
     
     .footer-report-btn.confirm {
-      background: var(--accent);
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
       color: #000;
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+      animation: confirm-pulse 2s infinite;
+    }
+    .footer-report-btn.confirm:hover {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+    }
+    
+    @keyframes confirm-pulse {
+      0%, 100% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); }
+      50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.6); }
     }
     
     .footer-report-btn.reject {
@@ -2619,27 +2719,36 @@
     
     <!-- HEADER CARD -->
     <div class="app-header">
-        <div class="header-main-row">
-            <div class="header-title-group">
-                <div id="header-icon-container" class="header-icon-container">
-                    <!-- Type icon (gift, restaurant, etc) filled by JS -->
+        <div class="header-top-section">
+            <div id="header-icon-container" class="header-icon-container header-icon-large">
+                <!-- Type icon (gift, restaurant, etc) filled by JS -->
+            </div>
+            <div class="header-content-side">
+                <div class="page-title" id="header-title">
+                    Loading...
                 </div>
-                <div>
-                    <div class="page-title" id="header-title">
-                        Loading...
-                    </div>
-                    <div class="page-meta" id="header-meta">
-                        ...
-                    </div>
+                <div class="page-meta" id="header-meta">
+                    ...
+                </div>
+                <!-- Action Buttons Row (moved here) -->
+                <div class="header-actions-row" id="header-actions-row" style="display: none;">
+                    <a id="product-link" href="#" target="_blank" rel="noopener noreferrer" class="header-action-btn" style="display: none;" onclick="event.preventDefault(); window.open(this.href, '_blank');">
+                        <span>🔗</span> <span id="product-link-text">Link</span>
+                    </a>
+                    <button id="receipt-btn" class="header-action-btn" style="display: none;" onclick="showReceiptFromHeader()">
+                        <span>📄</span> View Receipt
+                    </button>
+                    <button class="header-action-btn" onclick="showGiftPaymentDetails()">
+                        <span>💳</span> Payment details
+                    </button>
                 </div>
             </div>
-            <!-- Share button removed from here, already in header-top -->
         </div>
 
         <!-- Bill Summary Stats -->
         <div class="bill-summary-stats">
             <div class="stat-block">
-                <div class="stat-label" id="total-bill-label">TOTAL BILL</div>
+                <div class="stat-label" id="total-bill-label">GIFT COST</div>
                 <div class="stat-value" id="total-bill-amount">€0.00</div>
             </div>
             <div class="stat-block stat-right">
@@ -2651,19 +2760,6 @@
             <div class="progress-fill" id="global-progress-fill"></div>
         </div>
         <div class="progress-percent" id="progress-percent-text">0% Collected</div>
-        
-        <!-- Action Buttons Row -->
-        <div class="header-actions-row" id="header-actions-row" style="display: none;">
-            <a id="product-link" href="#" target="_blank" rel="noopener noreferrer" class="header-action-btn" style="display: none;" onclick="event.preventDefault(); window.open(this.href, '_blank');">
-                <span>🔗</span> <span id="product-link-text">Link</span>
-            </a>
-            <button id="receipt-btn" class="header-action-btn" style="display: none;" onclick="showReceiptFromHeader()">
-                <span>📄</span> View Receipt
-            </button>
-            <button class="header-action-btn" onclick="showGiftPaymentDetails()">
-                <span>💳</span> Payment details
-            </button>
-        </div>
         
         <!-- Status Line -->
         <div class="header-status-line" id="header-status-line" style="display: none;">
@@ -3168,11 +3264,16 @@
             isCreator = data.isCreator; // API returns this
             ownerToken = data.ownerToken; // For receipt uploads
             
-            // Store invite code or magic token for join API calls
-            // API returns snake_case: invite_code, magic_token
-            const tokenForJoin = data.tab?.invite_code || data.tab?.inviteCode || data.tab?.magic_token || data.magicToken;
-            if (tokenForJoin) {
-                window.currentMagicToken = tokenForJoin;
+            // Store the appropriate token for API calls
+            // For creators, use manage_code to maintain isCreator status
+            // For guests, use invite_code
+            if (isCreator && (data.tab?.manage_code || data.tab?.manageCode)) {
+                window.currentMagicToken = data.tab?.manage_code || data.tab?.manageCode;
+            } else {
+                const tokenForJoin = data.tab?.invite_code || data.tab?.inviteCode || data.tab?.magic_token || data.magicToken;
+                if (tokenForJoin) {
+                    window.currentMagicToken = tokenForJoin;
+                }
             }
             
             // Check if user needs to join first (via tab code link, not yet a participant)
@@ -3324,7 +3425,7 @@
         if (hasProductImage) {
             // Use product image (clickable to open modal)
             const imagePath = tabData.about_image_path || tabData.raising_for_image_path;
-            iconContainer.innerHTML = `<img src="${imagePath}" alt="" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover; cursor: pointer;" onclick="showGiftImageModal()">`;
+            iconContainer.innerHTML = `<img src="${imagePath}" alt="" style="cursor: pointer;" onclick="showGiftImageModal()">`;
         } else {
             // Use emoji icon
             let typeIcon = '📋'; // Default
@@ -4247,17 +4348,20 @@
         // Update footer button - show if there are any reports
         if (reports.length > 0 && isCreator) {
             footerBtn.style.display = 'block';
-            // Only show badge count if there are pending reports
+            // Make button prominent if there are pending reports
             if (pendingReports.length > 0) {
                 footerCount.textContent = pendingReports.length;
                 footerCount.style.display = 'inline-flex';
                 footerCount.classList.add('has-pending');
+                footerBtn.classList.add('has-pending-reports');
             } else {
                 footerCount.style.display = 'none';
                 footerCount.classList.remove('has-pending');
+                footerBtn.classList.remove('has-pending-reports');
             }
         } else {
             footerBtn.style.display = 'none';
+            footerBtn.classList.remove('has-pending-reports');
         }
         
         // Render into footer area
@@ -4274,7 +4378,8 @@
         };
         
         footerListEl.innerHTML = sortedReports.map(report => {
-            const date = new Date(report.paid_at).toLocaleDateString();
+            const dateObj = new Date(report.created_at || report.paid_at);
+            const date = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
             let actionsHtml = '';
             if (report.status === 'pending') {
@@ -4648,39 +4753,49 @@
             
             // Special expanded card for current user who is pending
             const isMyPendingCard = isMe && isPending && !isHost;
+            // Special card for current user who has fully paid
+            const isMyFullyPaidCard = isMe && !isPending && balance >= 0 && paidAmt > 0 && !isHost;
             const totalBill = tabData.total_amount_cents || 0;
             const numParticipants = expectedPeopleCount;
             
-            const html = isMyPendingCard ? `
-                <div class="p-row p-row-expanded pending-participant" style="--row-color:${rowColor};">
+            // Determine checkbox state based on myPaymentReport
+            const hasPendingReport = myPaymentReport && myPaymentReport.status === 'pending';
+            const hasConfirmedReport = myPaymentReport && myPaymentReport.status === 'confirmed';
+            const checkboxChecked = hasPendingReport || hasConfirmedReport || isMyFullyPaidCard;
+            const checkboxLabel = isMyFullyPaidCard ? 'Fully paid ✓' : (hasConfirmedReport ? 'Confirmed ✓' : (hasPendingReport ? 'Awaiting approval' : "I've paid"));
+            const checkboxDisabled = hasPendingReport || hasConfirmedReport || isMyFullyPaidCard;
+            const checkboxClass = isMyFullyPaidCard ? 'p-expanded-checkbox confirmed' : (hasConfirmedReport ? 'p-expanded-checkbox confirmed' : (hasPendingReport ? 'p-expanded-checkbox pending-report' : 'p-expanded-checkbox'));
+            
+            const html = (isMyPendingCard || isMyFullyPaidCard) ? `
+                <div class="p-row p-row-expanded ${isMyFullyPaidCard ? 'fully-paid' : 'pending-participant'}" style="--row-color:${isMyFullyPaidCard ? 'var(--accent)' : rowColor};">
                     <!-- Main content area -->
                     <div class="p-expanded-content">
                         <div class="p-expanded-header">
-                            <div class="p-expanded-subtitle">YOUR SHARE TO PAY</div>
-                            <div class="p-expanded-amount" style="color:${rowColor};">${formatCurrency2(fairShare)}</div>
+                            <div class="p-expanded-subtitle" style="${isMyFullyPaidCard ? 'color: var(--accent);' : ''}">${isMyFullyPaidCard ? 'YOUR SHARE - PAID' : 'YOUR SHARE TO PAY'}</div>
+                            <div class="p-expanded-amount" style="color:${isMyFullyPaidCard ? 'var(--accent)' : rowColor};">${formatCurrency2(fairShare)}</div>
                             <div class="p-expanded-calc">(${fairShareLabel} : ${formatCurrency2(totalBill)} ÷ ${numParticipants} participants)</div>
                         </div>
                         
-                        <div class="p-expanded-actions">
-                            <button class="payment-details-btn-inline" onclick="showGiftPaymentDetails()">
+                        <div class="p-expanded-actions" style="${isMyFullyPaidCard ? 'justify-content: center;' : ''}">
+                            ${!isMyFullyPaidCard ? `<button class="payment-details-btn-inline" onclick="showGiftPaymentDetails()">
                                 💳 Payment details
-                            </button>
+                            </button>` : ''}
                             
-                            <div class="p-expanded-checkbox" onclick="toggleIvePaidFromCard()">
-                                <div class="p-checkbox-box">
+                            <div class="${checkboxClass}" ${checkboxDisabled ? '' : 'onclick="toggleIvePaidFromCard()"'} style="${checkboxDisabled ? 'cursor: default; opacity: 0.9;' : ''} ${isMyFullyPaidCard ? 'flex: none; padding: 14px 32px;' : ''}">
+                                <div class="p-checkbox-box ${checkboxChecked ? 'checked' : ''}">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                     </svg>
                                 </div>
                                 <div class="p-checkbox-text">
-                                    <span class="p-checkbox-label">I've paid</span>
+                                    <span class="p-checkbox-label">${checkboxLabel}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="p-status-col">
-                        <div class="stamp ${stampClass}">${stampText}</div>
+                        <div class="stamp ${isMyFullyPaidCard ? 'paid' : stampClass}" style="${isMyFullyPaidCard ? 'color: var(--accent);' : ''}">${isMyFullyPaidCard ? 'FULLY PAID' : stampText}</div>
                     </div>
                 </div>
             ` : `
@@ -4704,8 +4819,8 @@
                         </div>
                         <div class="p-amt-line">
                             ${isPending 
-                                ? `<span>Joined ${timeAgo(p.joined_at)} • Waiting for payment</span>`
-                                : `<span>${fairShareLabel} group: ${formatCurrency2(fairShare)} • ${isHost ? 'Paid full bill' : 'Paid'}: ${formatCurrency2(paidAmt)}${timeAgoStr ? ` • ${timeAgoStr}` : ''}</span>`
+                                ? `<span>Joined ${timeAgo(p.joined_at)} • ${formatCurrency2(fairShare)} share</span>`
+                                : `<span>${fairShareLabel}: ${formatCurrency2(fairShare)} • ${isHost ? 'Paid full bill' : 'Paid'}: ${formatCurrency2(paidAmt)}${timeAgoStr ? ` • ${timeAgoStr}` : ''}</span>`
                             }
                         </div>
                     </div>
@@ -4813,41 +4928,25 @@
             return '';
         }
         
-        // Get host's name (the organizer)
-        const host = participants.find(p => p.role === 'organizer');
-        const hostName = host ? (host.full_name || host.guest_name || host.display_name || 'Host')?.split(' ')[0] : 'Host';
+        // Find the main overpayer (person who paid the most over their share)
+        const mainOverpayer = overpayers.reduce((max, p) => {
+            const paid = p.total_paid_cents || p.totalPaidCents || 0;
+            const fairShare = p.fair_share_cents || p.fairShareCents || 0;
+            const overpayment = paid - fairShare;
+            
+            const maxPaid = max ? (max.total_paid_cents || max.totalPaidCents || 0) : 0;
+            const maxFairShare = max ? (max.fair_share_cents || max.fairShareCents || 0) : 0;
+            const maxOverpayment = maxPaid - maxFairShare;
+            
+            return overpayment > maxOverpayment ? p : max;
+        }, null);
         
-        // Check if host is among overpayers
-        const hostOverpaid = overpayers.some(p => p.role === 'organizer');
-        
-        // Get non-host overpayers
-        const guestOverpayers = overpayers.filter(p => p.role !== 'organizer');
-        
-        // Generate text based on count and who overpaid
-        if (overpayers.length === 1) {
-            if (hostOverpaid) {
-                return `${hostName} covered most of the bill — please settle your share.`;
-            } else {
-                const guestName = (guestOverpayers[0].full_name || guestOverpayers[0].guest_name || guestOverpayers[0].display_name || 'A guest')?.split(' ')[0];
-                return `${guestName} covered most of the bill — please settle your share.`;
-            }
-        } else if (overpayers.length === 2) {
-            if (hostOverpaid && guestOverpayers.length === 1) {
-                const guestName = (guestOverpayers[0].full_name || guestOverpayers[0].guest_name || guestOverpayers[0].display_name || 'a guest')?.split(' ')[0];
-                return `${hostName} and ${guestName} covered extra — remaining guests, please settle your share.`;
-            } else if (!hostOverpaid && guestOverpayers.length === 2) {
-                const name1 = (guestOverpayers[0].full_name || guestOverpayers[0].guest_name || guestOverpayers[0].display_name || 'Guest 1')?.split(' ')[0];
-                const name2 = (guestOverpayers[1].full_name || guestOverpayers[1].guest_name || guestOverpayers[1].display_name || 'Guest 2')?.split(' ')[0];
-                return `${name1} and ${name2} covered extra — please settle your share.`;
-            }
+        if (mainOverpayer) {
+            const name = (mainOverpayer.full_name || mainOverpayer.guest_name || mainOverpayer.display_name || 'Someone')?.split(' ')[0];
+            return `${name} covered most of the bill — All contributors please settle your share!`;
         }
         
-        // More than 2 overpayers
-        if (hostOverpaid) {
-            return `Several guests, including ${hostName}, paid more — please settle your share.`;
-        } else {
-            return `Several guests have paid more — please settle your share.`;
-        }
+        return 'All contributors please settle your share!';
     }
 
     function renderFooter() {
@@ -5585,7 +5684,7 @@
         const body = document.getElementById('receipt-modal-body');
         const headerActions = document.getElementById('modal-header-actions');
         
-        // Build header actions
+        // Build header actions with cleaner styling
         let actionsHtml = '';
         const productLinkUrl = tabData.about_link || tabData.raising_for_link;
         if (productLinkUrl) {
@@ -5598,8 +5697,9 @@
                 displayDomain = domain.charAt(0).toUpperCase() + domain.slice(1);
             } catch (e) {}
             actionsHtml += `
-                <a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="header-action-pill" onclick="event.preventDefault(); window.open(this.href, '_blank');">
-                    <span>🔗</span> ${displayDomain}
+                <a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="modal-action-link" onclick="event.preventDefault(); window.open(this.href, '_blank');">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    ${displayDomain}
                 </a>`;
         }
         
@@ -5607,8 +5707,9 @@
             const receiptFilename = tabData.receipt_file_path.split('/').pop();
             const receiptUrl = `/api/grouptabs/receipt/${receiptFilename}`;
             actionsHtml += `
-                <button onclick="showReceiptModal('${receiptUrl}', '${receiptFilename}')" class="header-action-pill" style="border:none; cursor:pointer; font-family:inherit;">
-                    <span>📄</span> Receipt
+                <button onclick="showReceiptModal('${receiptUrl}', '${receiptFilename}')" class="modal-action-link">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Receipt
                 </button>`;
         }
         headerActions.innerHTML = actionsHtml;
