@@ -592,6 +592,14 @@ try {
   // Column already exists, ignore
 }
 
+// Add hide_name column to group_tab_participants table (privacy option)
+try {
+  db.exec(`ALTER TABLE group_tab_participants ADD COLUMN hide_name INTEGER DEFAULT 0;`);
+  console.log('[Startup] Added hide_name column to group_tab_participants');
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // Add payment_type column to group_tab_payments table
 try {
   db.exec(`ALTER TABLE group_tab_payments ADD COLUMN payment_type TEXT DEFAULT 'normal';`);
@@ -1009,6 +1017,9 @@ app.use(cookieParser());
 
 // Serve GroupTab uploads (receipts, gift images) - these are public files for tab participants
 app.use('/uploads/grouptabs', express.static(path.join(__dirname, 'uploads', 'grouptabs')));
+
+// Serve profile pictures - needed for public pages like GroupTab invite links
+app.use('/uploads/profiles', express.static(path.join(__dirname, 'uploads', 'profiles')));
 
 // GroupTab receipts are also served via dedicated API endpoint below (see /api/grouptabs/receipt/:filename)
 
@@ -6358,7 +6369,7 @@ app.get('/api/grouptabs/:id', (req, res) => {
   
   try {
     const tab = db.prepare(`
-      SELECT gt.*, u.full_name as creator_name
+      SELECT gt.*, u.full_name as creator_name, u.profile_picture as creator_avatar_url
       FROM group_tabs gt
       JOIN users u ON gt.creator_user_id = u.id
       WHERE gt.id = ?
@@ -6629,7 +6640,7 @@ app.get('/api/grouptabs/token/:token', (req, res) => {
   try {
     // First check if it's an owner_token (creator access)
     let tab = db.prepare(`
-      SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id
+      SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
       FROM group_tabs gt
       JOIN users u ON gt.creator_user_id = u.id
       WHERE gt.owner_token = ?
@@ -6640,7 +6651,7 @@ app.get('/api/grouptabs/token/:token', (req, res) => {
     // If not owner_token, try magic_token (viewer access)
     if (!tab) {
       tab = db.prepare(`
-        SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id
+        SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
         FROM group_tabs gt
         JOIN users u ON gt.creator_user_id = u.id
         WHERE gt.magic_token = ?
@@ -7151,7 +7162,7 @@ app.patch('/api/grouptabs/token/:ownerToken', uploadGrouptabs.single('receipt'),
 // Join tab via token (for name capture flow)
 app.post('/api/grouptabs/token/:token/join', (req, res) => {
   const { token } = req.params;
-  const { guestName, priceGroupId } = req.body;
+  const { guestName, priceGroupId, hideName } = req.body;
   
   try {
     // Only allow joining via magic_token (not owner_token)
@@ -7181,6 +7192,12 @@ app.post('/api/grouptabs/token/:token/join', (req, res) => {
           db.prepare(`UPDATE group_tab_participants SET price_group_id = ? WHERE id = ?`)
             .run(priceGroupId, existing.id);
         }
+        // Update hide_name if provided
+        if (hideName !== undefined) {
+          db.prepare(`UPDATE group_tab_participants SET hide_name = ? WHERE id = ?`)
+            .run(hideName ? 1 : 0, existing.id);
+          existing.hide_name = hideName ? 1 : 0;
+        }
         return res.json({ success: true, participant: existing, alreadyJoined: true });
       }
       
@@ -7190,13 +7207,13 @@ app.post('/api/grouptabs/token/:token/join', (req, res) => {
         : 0;
       
       const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
-        VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0)
-      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
+        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
+        VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0, ?)
+      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
       
       return res.json({
         success: true,
-        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', priceGroupId: priceGroupId || null, fairShareCents, remainingCents: fairShareCents }
+        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', priceGroupId: priceGroupId || null, fairShareCents, remainingCents: fairShareCents, hideName: hideName ? 1 : 0 }
       });
     }
     
@@ -7214,6 +7231,12 @@ app.post('/api/grouptabs/token/:token/join', (req, res) => {
       `).get(tab.id, guestSessionToken);
       
       if (existing) {
+        // Update hide_name if provided
+        if (hideName !== undefined) {
+          db.prepare(`UPDATE group_tab_participants SET hide_name = ? WHERE id = ?`)
+            .run(hideName ? 1 : 0, existing.id);
+          existing.hide_name = hideName ? 1 : 0;
+        }
         return res.json({ success: true, participant: existing, alreadyJoined: true });
       }
     }
@@ -7257,9 +7280,9 @@ app.post('/api/grouptabs/token/:token/join', (req, res) => {
       : 0;
     
     const result = db.prepare(`
-      INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
-      VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0)
-    `).run(tab.id, trimmedName, newGuestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
+      INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
+      VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0, ?)
+    `).run(tab.id, trimmedName, newGuestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
     
     // Notify the organizer
     db.prepare(`
@@ -7416,7 +7439,7 @@ app.get('/api/tabs/token/:token', (req, res) => {
   
   try {
     const tab = db.prepare(`
-      SELECT gt.*, u.full_name as creator_name
+      SELECT gt.*, u.full_name as creator_name, u.profile_picture as creator_avatar_url
       FROM group_tabs gt
       JOIN users u ON gt.creator_user_id = u.id
       WHERE gt.magic_token = ?
@@ -7504,7 +7527,7 @@ app.get('/api/tabs/token/:token', (req, res) => {
 // Join tab
 app.post('/api/tabs/token/:token/join', (req, res) => {
   const { token } = req.params;
-  const { guestName, priceGroupId } = req.body;
+  const { guestName, priceGroupId, hideName } = req.body;
   
   try {
     const tab = db.prepare(`SELECT * FROM group_tabs WHERE magic_token = ?`).get(token);
@@ -7538,13 +7561,19 @@ app.post('/api/tabs/token/:token/join', (req, res) => {
       `).get(tab.id, req.user.id);
       
       if (existing) {
+        // Update hide_name if provided
+        if (hideName !== undefined) {
+          db.prepare(`UPDATE group_tab_participants SET hide_name = ? WHERE id = ?`)
+            .run(hideName ? 1 : 0, existing.id);
+          existing.hide_name = hideName ? 1 : 0;
+        }
         return res.json({ success: true, participant: existing, alreadyJoined: true });
       }
       
       const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
-        VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0)
-      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
+        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
+        VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0, ?)
+      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
       
       // Notify the organizer that a member joined
       db.prepare(`
@@ -7561,7 +7590,7 @@ app.post('/api/tabs/token/:token/join', (req, res) => {
       
       res.json({
         success: true,
-        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', fairShareCents, remainingCents: fairShareCents, priceGroupId: priceGroupId || null }
+        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', fairShareCents, remainingCents: fairShareCents, priceGroupId: priceGroupId || null, hideName: hideName ? 1 : 0 }
       });
     } else {
       if (!guestName || !guestName.trim()) {
@@ -7571,9 +7600,9 @@ app.post('/api/tabs/token/:token/join', (req, res) => {
       const guestSessionToken = crypto.randomBytes(32).toString('hex');
       
       const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
-        VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0)
-      `).run(tab.id, guestName.trim(), guestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
+        INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
+        VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0, ?)
+      `).run(tab.id, guestName.trim(), guestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
       
       // Notify the organizer that a guest joined
       db.prepare(`

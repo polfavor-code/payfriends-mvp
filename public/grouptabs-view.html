@@ -101,6 +101,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
       font-size: 20px;
       font-weight: 700;
       color: var(--accent);
@@ -161,6 +162,66 @@
 
     .join-input::placeholder {
       color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Privacy Option */
+    .join-privacy-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .join-privacy-checkbox {
+      display: none;
+    }
+    
+    .join-privacy-check {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    
+    .join-privacy-checkbox:checked + .join-privacy-check {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    
+    .join-privacy-checkbox:checked + .join-privacy-check::after {
+      content: '✓';
+      color: #000;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    
+    .join-privacy-option:hover .join-privacy-check {
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+    
+    .join-privacy-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .join-privacy-label {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 500;
+    }
+    
+    .join-privacy-sub {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.35);
     }
 
     /* Group Selection */
@@ -1635,6 +1696,18 @@
     .p-name { font-size: 15px; font-weight: 600; color: #fff; }
     .host-badge { font-size: 10px; font-weight: 800; background: #fff; color: #000; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
     
+    .reveal-name-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        opacity: 0.5;
+        padding: 0 4px;
+        margin-left: 4px;
+        transition: opacity 0.2s;
+    }
+    .reveal-name-btn:hover { opacity: 1; }
+    
     .p-amt-line { font-size: 12px; color: #fff; display: flex; flex-wrap: wrap; gap: 4px 12px; }
     .p-amt-sub { color: var(--muted); }
 
@@ -2093,7 +2166,7 @@
         <div class="join-header-titles">
           <h2 id="join-tab-name">Loading...</h2>
           <p class="join-host-line">
-            <span class="join-host-name" id="join-host-name">Someone</span> sent you a split bill request.
+            <span class="join-host-name" id="join-host-name">Someone</span> <span id="join-request-type">sent you a split bill request.</span>
           </p>
         </div>
       </div>
@@ -2109,6 +2182,16 @@
           maxlength="50"
           autocomplete="name"
         >
+        
+        <!-- Privacy Option -->
+        <label class="join-privacy-option" id="join-privacy-option">
+          <input type="checkbox" id="join-hide-name" class="join-privacy-checkbox">
+          <span class="join-privacy-check"></span>
+          <span class="join-privacy-text">
+            <span class="join-privacy-label">Hide my name from others</span>
+            <span class="join-privacy-sub" id="join-privacy-sub">Only the starter can see your full name</span>
+          </span>
+        </label>
       </div>
 
       <!-- Group Selection -->
@@ -2301,7 +2384,7 @@
         <button class="f-btn btn-sec" onclick="showEditModal()">Edit Details</button>
         <button id="footer-receipt-btn" class="f-btn btn-sec" onclick="triggerReceiptUpload()" style="display: none;">Upload Receipt</button>
         <button id="footer-reports-btn" class="f-btn btn-sec" onclick="togglePaymentReports()" style="display: none;">
-          Pending payments <span id="footer-reports-count" class="footer-badge">0</span>
+          Payment reports <span id="footer-reports-count" class="footer-badge" style="display: none;">0</span>
         </button>
       <button class="f-btn btn-pri" onclick="showPaymentModal()">Add a Payment Received</button>
     </div>
@@ -2309,7 +2392,7 @@
     <!-- Expandable reports area (below buttons) -->
     <div id="footer-reports-area" class="footer-reports-area">
       <div class="footer-reports-header">
-        <span class="footer-reports-title">Pending Payments</span>
+        <span class="footer-reports-title">Payment Reports</span>
         <button onclick="togglePaymentReports()" class="footer-reports-close">&times;</button>
       </div>
       <div id="footer-reports-list" class="footer-reports-list">
@@ -2623,6 +2706,10 @@
     let fairnessData = null;
     let isCreator = false;
     let ownerToken = null;
+    
+    // Polling state
+    let pollingInterval = null;
+    const POLL_INTERVAL_MS = 10000; // 10 seconds
 
     // Init - detect route type
     const pathParts = window.location.pathname.split('/');
@@ -2641,6 +2728,28 @@
     async function init() {
         if (!tabId && !magicToken) return;
         await loadTabData();
+        startPolling();
+    }
+    
+    // ===========================================
+    // BACKGROUND POLLING
+    // ===========================================
+    function startPolling() {
+        if (pollingInterval) return; // Already polling
+        
+        pollingInterval = setInterval(async () => {
+            // Only poll if page is visible
+            if (document.visibilityState === 'visible') {
+                await refreshTabData();
+            }
+        }, POLL_INTERVAL_MS);
+    }
+    
+    function stopPolling() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
     }
 
     async function loadTabData() {
@@ -2712,6 +2821,51 @@
         } catch (e) {
             console.error(e);
             document.getElementById('header-title').innerText = "Error loading tab";
+        }
+    }
+
+    // Refresh all tab data and re-render UI (for instant updates)
+    async function refreshTabData() {
+        try {
+            let response;
+            if (magicToken) {
+                response = await fetch(`/api/tabs/token/${magicToken}`);
+            } else {
+                response = await fetch(`/api/grouptabs/${tabId}`);
+            }
+            
+            if (!response.ok) return;
+            
+            const data = await response.json();
+            tabData = data.tab;
+            participants = data.participants || [];
+            priceGroups = data.priceGroups || [];
+            currentParticipant = data.currentParticipant;
+            
+            // Process payments for last_payment_at (same as loadTabData)
+            const payments = data.payments || [];
+            participants.forEach(p => {
+                const participantPayments = payments.filter(pay => pay.from_participant_id === p.id);
+                if (participantPayments.length > 0) {
+                    const mostRecent = participantPayments.reduce((latest, pay) => {
+                        const payDate = new Date(pay.created_at);
+                        return payDate > latest ? payDate : latest;
+                    }, new Date(0));
+                    p.last_payment_at = mostRecent.toISOString();
+                }
+            });
+            
+            // Recalculate fairness data with all required arguments
+            if (window.GroupTabsEngine) {
+                fairnessData = window.GroupTabsEngine.calculateFairnessData(
+                    tabData, participants, data.expenses || [], payments, data.tiers || [], priceGroups
+                );
+            }
+            
+            // Re-render everything
+            renderAll();
+        } catch (err) {
+            console.error('Error refreshing tab data:', err);
         }
     }
 
@@ -3619,11 +3773,13 @@
             
             // Success!
             myPaymentReport = data.report;
-            updateGiftCheckboxState();
             hideModal('report-payment-modal');
             
             // Show success toast/notification
             showToast('Payment reported! Waiting for confirmation.');
+            
+            // Instant full UI update
+            await refreshTabData();
             
         } catch (err) {
             errorEl.textContent = err.message;
@@ -3682,14 +3838,22 @@
         const footerCount = document.getElementById('footer-reports-count');
         
         const pendingReports = reports.filter(r => r.status === 'pending');
+        const confirmedReports = reports.filter(r => r.status === 'confirmed');
+        const rejectedReports = reports.filter(r => r.status === 'rejected');
         
-        // Update footer button
+        // Sort: pending first, then confirmed, then rejected (newest first within each group)
+        const sortedReports = [...pendingReports, ...confirmedReports, ...rejectedReports];
+        
+        // Update footer button - show if there are any reports
         if (reports.length > 0 && isCreator) {
             footerBtn.style.display = 'block';
-            footerCount.textContent = reports.length;
+            // Only show badge count if there are pending reports
             if (pendingReports.length > 0) {
+                footerCount.textContent = pendingReports.length;
+                footerCount.style.display = 'inline-flex';
                 footerCount.classList.add('has-pending');
             } else {
+                footerCount.style.display = 'none';
                 footerCount.classList.remove('has-pending');
             }
         } else {
@@ -3698,7 +3862,7 @@
         
         // Render into footer area
         if (reports.length === 0) {
-            footerListEl.innerHTML = `<div class="footer-reports-empty">No pending payments yet.</div>`;
+            footerListEl.innerHTML = `<div class="footer-reports-empty">No payment reports yet.</div>`;
             return;
         }
         
@@ -3709,7 +3873,7 @@
             other: 'Other'
         };
         
-        footerListEl.innerHTML = reports.map(report => {
+        footerListEl.innerHTML = sortedReports.map(report => {
             const date = new Date(report.paid_at).toLocaleDateString();
             
             let actionsHtml = '';
@@ -3764,9 +3928,7 @@
             }
             
             showToast('Payment confirmed!');
-            loadPaymentReports();
-            renderHeader(); // Refresh totals
-            
+            await refreshTabData(); // Instant full UI update
         } catch (err) {
             alert(err.message);
         }
@@ -3789,7 +3951,7 @@
             }
             
             showToast('Payment report rejected.');
-            loadPaymentReports();
+            await refreshTabData(); // Instant full UI update
             
         } catch (err) {
             alert(err.message);
@@ -4039,13 +4201,14 @@
                         </div>
                     ` : `
                         <div class="p-avatar" style="border-color:${rowColor} !important; color:${rowColor} !important;">
-                        ${getInitials(p.full_name || p.guest_name)}
+                        ${getInitials(getDisplayName(p))}
                     </div>
                     `}
                     
                     <div class="p-info">
                         <div class="p-name-row">
-                            <span class="p-name" style="color:${rowColor} !important;">${p.full_name || p.guest_name} ${isMe ? '(You)' : ''}</span>
+                            <span class="p-name" style="color:${rowColor} !important;">${getDisplayName(p)} ${isMe ? '(You)' : ''}</span>
+                            ${p.hide_name && isCreator ? `<button class="reveal-name-btn" onclick="revealName(this, '${escapeHtml(getFullName(p))}')" title="Click to reveal name">👁</button>` : ''}
                             ${isHost ? '<span class="host-badge">HOST</span>' : ''}
                         </div>
                         <div class="p-amt-line" style="color:${rowColor} !important;">
@@ -4600,7 +4763,7 @@
             
             // All payments successful
             hideModal('payment-modal');
-            await loadTabData(); // Refresh data
+            await refreshTabData(); // Instant full UI update
             
         } catch (error) {
             console.error('Payment error:', error);
@@ -4707,6 +4870,43 @@
     function getInitials(name) {
         if(!name) return '?';
         return name.substring(0,2).toUpperCase();
+    }
+    
+    // Get display name with privacy masking applied
+    // If hide_name is true, always show masked format (even to creator and self)
+    function getDisplayName(participant) {
+        const fullName = participant.full_name || participant.guest_name || participant.display_name || 'Unknown';
+        
+        // If hide_name is set, ALWAYS mask the name (even for creator and self)
+        if (participant.hide_name) {
+            const firstLetter = fullName.charAt(0).toUpperCase();
+            return `${firstLetter}*****`;
+        }
+        
+        return fullName;
+    }
+    
+    // Get the actual full name (for creator's reveal feature)
+    function getFullName(participant) {
+        return participant.full_name || participant.guest_name || participant.display_name || 'Unknown';
+    }
+    
+    // Temporarily reveal a hidden name (for creator only)
+    function revealName(btn, fullName) {
+        if (!isCreator) return;
+        
+        const nameSpan = btn.previousElementSibling;
+        const originalText = nameSpan.innerText;
+        
+        // Show full name
+        nameSpan.innerText = originalText.replace(/^[A-Z]\*+/, fullName.split(' ')[0]);
+        btn.style.opacity = '1';
+        
+        // Hide after 2 seconds
+        setTimeout(() => {
+            nameSpan.innerText = originalText;
+            btn.style.opacity = '0.5';
+        }, 2000);
     }
     
     function copyShareLink(customUrl) {
@@ -4909,6 +5109,10 @@
     }
 
     async function handleReceiptUpload(event) {
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/92ce3b30-ba54-4865-b758-cfee8551dfa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'handleReceiptUpload:start',message:'Receipt upload triggered',data:{hasFile:!!event.target.files[0],ownerToken:ownerToken},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
+        
         const file = event.target.files[0];
         if (!file) return;
 
@@ -4936,10 +5140,18 @@
             const formData = new FormData();
             formData.append('receipt', file);
 
+            // #region agent log
+            fetch('http://127.0.0.1:7245/ingest/92ce3b30-ba54-4865-b758-cfee8551dfa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'handleReceiptUpload:beforeAPI',message:'About to call API',data:{ownerToken:ownerToken,url:`/api/grouptabs/token/${ownerToken}`},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+            // #endregion
+
             const response = await fetch(`/api/grouptabs/token/${ownerToken}`, {
                 method: 'PATCH',
                 body: formData
             });
+
+            // #region agent log
+            fetch('http://127.0.0.1:7245/ingest/92ce3b30-ba54-4865-b758-cfee8551dfa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'handleReceiptUpload:afterAPI',message:'API response received',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+            // #endregion
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -4948,22 +5160,26 @@
 
             const data = await response.json();
             
+            // #region agent log
+            fetch('http://127.0.0.1:7245/ingest/92ce3b30-ba54-4865-b758-cfee8551dfa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'handleReceiptUpload:success',message:'Upload successful',data:{hasReceiptPath:!!(data.tab && data.tab.receiptFilePath)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{});
+            // #endregion
+            
             // Update local data
             if (data.tab && data.tab.receiptFilePath) {
                 tabData.receipt_file_path = data.tab.receiptFilePath;
             }
             
-            // Re-render header to show the receipt link
-            renderHeader();
-            
-            // Show success message briefly
+            // Show success message
             if (uploadText) uploadText.textContent = 'Uploaded!';
-            setTimeout(() => {
-                // Refresh data to ensure consistency
-                loadTabData();
-            }, 1000);
+            
+            // Instant full UI refresh
+            await refreshTabData();
 
         } catch (error) {
+            // #region agent log
+            fetch('http://127.0.0.1:7245/ingest/92ce3b30-ba54-4865-b758-cfee8551dfa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'handleReceiptUpload:error',message:'Upload error caught',data:{errorMessage:error.message,errorStack:error.stack},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+            // #endregion
+            
             console.error('Receipt upload error:', error);
             alert('Failed to upload receipt: ' + error.message);
             
@@ -5130,16 +5346,19 @@
     let selectedJoinGroupId = null;
     
     function showJoinScreen() {
-        // Hide main content, show join screen
+        // Hide main content and header, show join screen
         const mainContent = document.getElementById('main-content');
         const joinScreen = document.getElementById('join-screen');
+        const siteHeader = document.querySelector('.container');
         
         if (mainContent) mainContent.style.display = 'none';
+        if (siteHeader) siteHeader.style.display = 'none';
         if (joinScreen) joinScreen.style.display = 'flex';
         
         // Populate join screen with tab data
         const tabName = tabData.name || 'Split Bill';
         const hostName = tabData.creator_name || 'Someone';
+        const hostAvatarUrl = tabData.creator_avatar_url;
         
         const tabNameEl = document.getElementById('join-tab-name');
         const hostNameEl = document.getElementById('join-host-name');
@@ -5148,10 +5367,36 @@
         if (tabNameEl) tabNameEl.innerText = tabName;
         if (hostNameEl) hostNameEl.innerText = hostName;
         
-        // Set host avatar initials
+        // Update request type text based on GroupTab type
+        const requestTypeEl = document.getElementById('join-request-type');
+        if (requestTypeEl) {
+            let requestText = 'sent you a payment request.';
+            if (tabData.template === 'gift') {
+                if (tabData.group_gift_mode === 'fundraiser') {
+                    requestText = 'is raising money.';
+                } else {
+                    requestText = 'is collecting for a group gift.';
+                }
+            } else if (tabData.template === 'trip') {
+                requestText = 'invited you to split trip costs.';
+            } else if (tabData.template === 'restaurant') {
+                requestText = 'wants to split the bill.';
+            }
+            requestTypeEl.innerText = requestText;
+        }
+        
+        // Update privacy option subtitle with creator's name
+        const privacySub = document.getElementById('join-privacy-sub');
+        if (privacySub) privacySub.innerText = `Only ${hostName} can see your full name`;
+        
+        // Set host avatar - use image if available, otherwise initials
         if (hostAvatarEl) {
-            const initials = hostName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
-            hostAvatarEl.innerText = initials;
+            if (hostAvatarUrl) {
+                hostAvatarEl.innerHTML = `<img src="${hostAvatarUrl}" alt="${hostName}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">`;
+            } else {
+                const initials = hostName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+                hostAvatarEl.innerText = initials;
+            }
         }
         
         // Show price groups if applicable
@@ -5199,14 +5444,19 @@
     
     async function submitJoin() {
         const nameInput = document.getElementById('join-name-input');
+        const hideNameCheckbox = document.getElementById('join-hide-name');
         const errorEl = document.getElementById('join-error');
         const submitBtn = document.getElementById('join-submit-btn');
         
-        const guestName = nameInput.value.trim();
-        if (!guestName) {
+        const hideName = hideNameCheckbox?.checked || false;
+        
+        // Use original name if hidden, otherwise use input value
+        const guestName = (hideName && originalJoinName) ? originalJoinName : nameInput.value.trim();
+        
+        if (!guestName || guestName.includes('*****')) {
             errorEl.innerText = 'Please enter your name to continue';
             errorEl.style.display = 'block';
-            nameInput.focus();
+            if (!hideName) nameInput.focus();
             return;
         }
         
@@ -5220,7 +5470,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     guestName,
-                    priceGroupId: selectedJoinGroupId 
+                    priceGroupId: selectedJoinGroupId,
+                    hideName
                 })
             });
             
@@ -5249,6 +5500,34 @@
         }
     });
     
+    // Store original name for privacy toggle
+    let originalJoinName = '';
+    
+    // Handle hide name checkbox toggle
+    document.getElementById('join-hide-name')?.addEventListener('change', (e) => {
+        const nameInput = document.getElementById('join-name-input');
+        if (!nameInput) return;
+        
+        if (e.target.checked) {
+            // Store original name and mask it
+            const currentName = nameInput.value.trim();
+            if (currentName) {
+                originalJoinName = currentName;
+                const firstLetter = currentName.charAt(0).toUpperCase();
+                nameInput.value = `${firstLetter}*****`;
+                nameInput.disabled = true;
+                nameInput.style.opacity = '0.6';
+            }
+        } else {
+            // Restore original name
+            if (originalJoinName) {
+                nameInput.value = originalJoinName;
+            }
+            nameInput.disabled = false;
+            nameInput.style.opacity = '1';
+        }
+    });
+    
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -5263,6 +5542,14 @@
         });
     }
 
+    // Handle visibility changes - refresh immediately when tab becomes visible
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            // Immediately refresh when user returns to tab
+            refreshTabData();
+        }
+    });
+    
     // Start
     init();
 
