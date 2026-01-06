@@ -8,6 +8,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const fs = require('fs');
 const multer = require('multer');
+const { nanoid } = require('nanoid');
 const { formatCurrency0, formatCurrency2, formatEuro0, formatEuro2 } = require('./lib/formatters');
 
 // --- basic setup ---
@@ -554,6 +555,54 @@ try {
   }
 } catch (e) {
   console.error('[Startup] Error generating owner_tokens:', e.message);
+}
+
+// =============================================
+// SHORT URL CODES (user-friendly tokens)
+// =============================================
+
+// Add invite_code column (12 char nanoid) for short invite URLs
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN invite_code TEXT;`);
+  console.log('[Startup] Added invite_code column to group_tabs');
+} catch (e) {
+  // Column already exists - check if it's there
+  if (e.message && e.message.includes('duplicate column')) {
+    // Column exists, good
+  } else {
+    console.log('[Startup] invite_code column check:', e.message);
+  }
+}
+
+// Add manage_code column (12 char nanoid) for short manage URLs  
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN manage_code TEXT;`);
+  console.log('[Startup] Added manage_code column to group_tabs');
+} catch (e) {
+  // Column already exists
+  if (e.message && e.message.includes('duplicate column')) {
+    // Column exists, good
+  } else {
+    console.log('[Startup] manage_code column check:', e.message);
+  }
+}
+
+// Migrate existing group_tabs: generate short codes for tabs that don't have them
+try {
+  const tabsWithoutInviteCode = db.prepare(`
+    SELECT id FROM group_tabs WHERE invite_code IS NULL
+  `).all();
+  if (tabsWithoutInviteCode.length > 0) {
+    console.log(`[Startup] Generating invite_codes for ${tabsWithoutInviteCode.length} group tabs`);
+    const updateStmt = db.prepare('UPDATE group_tabs SET invite_code = ?, manage_code = ? WHERE id = ?');
+    for (const tab of tabsWithoutInviteCode) {
+      const inviteCode = nanoid(12);
+      const manageCode = nanoid(12);
+      updateStmt.run(inviteCode, manageCode, tab.id);
+    }
+  }
+} catch (e) {
+  console.error('[Startup] Error generating invite_codes:', e.message);
 }
 
 // =============================================
@@ -6137,6 +6186,9 @@ function createGroupTab(req, res) {
   try {
     const magicToken = crypto.randomBytes(32).toString('hex');
     const ownerToken = crypto.randomBytes(32).toString('hex');
+    // Short, user-friendly codes (12 chars) for sharing
+    const inviteCode = nanoid(12);
+    const manageCode = nanoid(12);
     const createdAt = new Date().toISOString();
     
     // Handle file paths from req.files (using .fields() for multiple file support)
@@ -6178,11 +6230,11 @@ function createGroupTab(req, res) {
       INSERT INTO group_tabs (
         creator_user_id, name, description, tab_type, template, total_amount_cents, 
         split_mode, expected_pay_rate, seat_count, people_count, proof_required, 
-        magic_token, owner_token, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at,
+        magic_token, owner_token, invite_code, manage_code, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at,
         gift_mode, group_gift_mode, recipient_name, about_text, about_link, is_raising_money_only,
         amount_target, contributor_count, raising_for_text, raising_for_link, is_open_pot,
         about_image_path, raising_for_image_path, payment_methods_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       name,
@@ -6197,6 +6249,8 @@ function createGroupTab(req, res) {
       proofRequired || 'optional',
       magicToken,
       ownerToken,
+      inviteCode,
+      manageCode,
       receiptFilePath,
       hostOverpaidCents,
       paidUpCents,
@@ -6320,6 +6374,11 @@ function createGroupTab(req, res) {
         template,
         magicToken,
         ownerToken,
+        inviteCode,
+        manageCode,
+        // Short, user-friendly tab link (primary sharing URL)
+        tabLink: `${req.protocol}://${req.get('host')}/tab/${inviteCode}`,
+        // Legacy long-form links (still supported but redirect to short)
         magicLink: `${req.protocol}://${req.get('host')}/tab/${magicToken}`,
         ownerLink: `${req.protocol}://${req.get('host')}/grouptabs/manage/${ownerToken}`,
         organizerParticipantId: organizerParticipantId,
@@ -6632,7 +6691,154 @@ app.post('/api/grouptabs/:id/close', requireAuth, (req, res) => {
 // UNIFIED TOKEN-BASED TAB ACCESS
 // =============================================
 
-// Get tab by either owner_token or magic_token (public)
+// Get tab by short code (invite_code), manage_code, or legacy magic_token
+// PRIMARY API for /tab/:code URLs
+app.get('/api/grouptabs/code/:code', (req, res) => {
+  const { code } = req.params;
+  
+  try {
+    // First check if it's a manage_code (creator access)
+    let tab = db.prepare(`
+      SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
+      FROM group_tabs gt
+      JOIN users u ON gt.creator_user_id = u.id
+      WHERE gt.manage_code = ?
+    `).get(code);
+    
+    let accessedViaManageCode = !!tab;
+    
+    // If not manage_code, try invite_code (viewer access)
+    if (!tab) {
+      tab = db.prepare(`
+        SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
+        FROM group_tabs gt
+        JOIN users u ON gt.creator_user_id = u.id
+        WHERE gt.invite_code = ?
+      `).get(code);
+    }
+    
+    // If still not found, try legacy magic_token (for old URLs)
+    if (!tab) {
+      tab = db.prepare(`
+        SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
+        FROM group_tabs gt
+        JOIN users u ON gt.creator_user_id = u.id
+        WHERE gt.magic_token = ?
+      `).get(code);
+    }
+    
+    if (!tab) {
+      return res.status(404).json({ error: 'Tab not found' });
+    }
+    
+    // Determine if user is the creator (either via manage_code OR logged in as creator)
+    const isCreator = accessedViaManageCode || (req.user && req.user.id === tab.creator_user_id);
+    
+    if (tab.status === 'closed' && !isCreator) {
+      return res.status(403).json({ error: 'This tab has been closed', closed: true });
+    }
+    
+    // Get all participants with payment summaries
+    const participants = db.prepare(`
+      SELECT gtp.id, gtp.user_id, gtp.guest_name, gtp.guest_session_token, gtp.role, gtp.is_member, 
+             gtp.seats_claimed, gtp.tier_id, gtp.price_group_id, gtp.joined_at, gtp.hide_name,
+             gtp.fair_share_cents, gtp.remaining_cents, gtp.total_paid_cents as participant_paid_cents,
+             COALESCE(u.full_name, gtp.guest_name) as display_name,
+             u.profile_picture,
+             (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id AND status = 'confirmed') as total_paid_cents,
+             (SELECT MAX(created_at) FROM group_tab_payments WHERE from_participant_id = gtp.id) as last_payment_at
+      FROM group_tab_participants gtp
+      LEFT JOIN users u ON gtp.user_id = u.id
+      WHERE gtp.group_tab_id = ?
+      ORDER BY gtp.role DESC, gtp.joined_at ASC
+    `).all(tab.id);
+    
+    // Get all payments
+    const payments = db.prepare(`
+      SELECT p.*, 
+             COALESCE(fp.guest_name, fu.full_name) as from_name,
+             COALESCE(tp.guest_name, tu.full_name) as to_name
+      FROM group_tab_payments p
+      LEFT JOIN group_tab_participants fp ON p.from_participant_id = fp.id
+      LEFT JOIN users fu ON fp.user_id = fu.id
+      LEFT JOIN group_tab_participants tp ON p.to_participant_id = tp.id
+      LEFT JOIN users tu ON tp.user_id = tu.id
+      WHERE p.group_tab_id = ?
+      ORDER BY p.created_at DESC
+    `).all(tab.id);
+    
+    // Get price groups if applicable
+    let priceGroups = [];
+    if (tab.split_mode === 'price_groups') {
+      priceGroups = db.prepare(`
+        SELECT * FROM group_tab_price_groups WHERE group_tab_id = ? ORDER BY id
+      `).all(tab.id);
+    }
+    
+    // Determine current participant (from session or cookie)
+    let currentParticipant = null;
+    const guestSessionToken = req.cookies?.grouptab_guest_session;
+    
+    if (isCreator) {
+      currentParticipant = participants.find(p => p.role === 'organizer') || null;
+    } else if (req.user) {
+      currentParticipant = participants.find(p => p.user_id === req.user.id) || null;
+    } else if (guestSessionToken) {
+      currentParticipant = participants.find(p => p.guest_session_token === guestSessionToken) || null;
+    }
+    
+    // Calculate per-person share for equal split
+    const peopleCount = tab.people_count || participants.length || 1;
+    const totalAmountCents = tab.total_amount_cents || 0;
+    const perPersonCents = Math.round(totalAmountCents / peopleCount);
+    
+    // Calculate collected totals
+    const collectedTotal = payments
+      .filter(p => p.status === 'confirmed')
+      .reduce((sum, p) => sum + (p.amount_cents || 0), 0);
+    
+    // Determine if user has joined this tab
+    let hasJoined = false;
+    if (req.user) {
+      hasJoined = !!currentParticipant || tab.creator_user_id === req.user.id;
+    } else if (guestSessionToken) {
+      hasJoined = !!currentParticipant;
+    }
+    
+    // Return response in same format as /api/grouptabs/:id for compatibility
+    res.json({
+      success: true,
+      isCreator,
+      hasJoined, // Important: tells the page whether to show join screen
+      // Return raw tab object with snake_case fields (frontend expects this format)
+      tab: {
+        ...tab,
+        // Hide tokens from non-creators
+        magic_token: isCreator ? tab.magic_token : undefined,
+        owner_token: isCreator ? tab.owner_token : undefined,
+        manage_code: isCreator ? tab.manage_code : undefined
+      },
+      // Return raw participants (frontend expects snake_case)
+      participants: participants.map(p => ({
+        ...p,
+        display_name: p.hide_name ? 'Anonymous' : p.display_name
+      })),
+      // Return raw payments
+      payments,
+      priceGroups,
+      currentParticipant: currentParticipant ? {
+        id: currentParticipant.id,
+        displayName: currentParticipant.display_name,
+        role: currentParticipant.role
+      } : null
+    });
+  } catch (err) {
+    console.error('Error fetching tab by invite code:', err);
+    res.status(500).json({ error: 'Failed to fetch tab' });
+  }
+});
+
+// Get tab by either owner_token or magic_token (public) - LEGACY, still supported
 // Returns isCreator: true if accessed via owner_token
 app.get('/api/grouptabs/token/:token', (req, res) => {
   const { token } = req.params;
@@ -7524,14 +7730,18 @@ app.get('/api/tabs/token/:token', (req, res) => {
   }
 });
 
-// Join tab
+// Join tab - supports both invite_code (short) and magic_token (legacy)
 app.post('/api/tabs/token/:token/join', (req, res) => {
   const { token } = req.params;
   const { guestName, priceGroupId, hideName } = req.body;
   
   try {
-    const tab = db.prepare(`SELECT * FROM group_tabs WHERE magic_token = ?`).get(token);
-    
+    // Try invite_code first (short codes), then magic_token (legacy)
+    let tab = db.prepare(`SELECT * FROM group_tabs WHERE invite_code = ?`).get(token);
+    if (!tab) {
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE magic_token = ?`).get(token);
+    }
+
     if (!tab) {
       return res.status(404).json({ error: 'Tab not found' });
     }
@@ -7853,6 +8063,57 @@ app.post('/api/grouptabs/:id/participants', requireAuth, (req, res) => {
   } catch (err) {
     console.error('Error adding participant:', err);
     res.status(500).json({ error: 'Failed to add participant' });
+  }
+});
+
+// Remove pending participant (organizer only)
+// Only allows removing participants who have no payments
+app.delete('/api/grouptabs/:id/participants/:participantId', requireAuth, (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const participantId = parseInt(req.params.participantId);
+  
+  try {
+    // Check if user is the tab creator
+    const tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+    if (!tab) {
+      return res.status(404).json({ error: 'Tab not found' });
+    }
+    
+    if (tab.creator_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the tab creator can remove participants' });
+    }
+    
+    // Get the participant
+    const participant = db.prepare(`
+      SELECT * FROM group_tab_participants WHERE id = ? AND group_tab_id = ?
+    `).get(participantId, tabId);
+    
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+    
+    // Don't allow removing the organizer
+    if (participant.role === 'organizer') {
+      return res.status(400).json({ error: 'Cannot remove the organizer' });
+    }
+    
+    // Check if participant has any payments
+    const payments = db.prepare(`
+      SELECT COUNT(*) as count FROM group_tab_payments WHERE from_participant_id = ?
+    `).get(participantId);
+    
+    if (payments.count > 0) {
+      return res.status(400).json({ error: 'Cannot remove participant who has made payments' });
+    }
+    
+    // Delete the participant
+    db.prepare(`DELETE FROM group_tab_participants WHERE id = ?`).run(participantId);
+    
+    res.json({ success: true, message: 'Participant removed' });
+    
+  } catch (err) {
+    console.error('Error removing participant:', err);
+    res.status(500).json({ error: 'Failed to remove participant' });
   }
 });
 
@@ -9187,42 +9448,41 @@ app.get('/grouptabs/:id/receipt', (req, res, next) => {
   }
 });
 
-// Magic link page (public access) - serve the view page with magic token
-app.get('/tab/:token', (req, res) => {
-  const { token } = req.params;
+// Tab page - handles both short codes (12 chars) and legacy long tokens (64 chars)
+// /tab/:code is the PRIMARY sharing URL
+app.get('/tab/:code', (req, res) => {
+  const { code } = req.params;
   
-  const tab = db.prepare(`SELECT id, status FROM group_tabs WHERE magic_token = ?`).get(token);
+  // Try short invite_code first (primary), then fall back to legacy magic_token
+  let tab = db.prepare(`SELECT id, status, magic_token, invite_code FROM group_tabs WHERE invite_code = ?`).get(code);
+  
+  if (!tab) {
+    // Try legacy long magic_token
+    tab = db.prepare(`SELECT id, status, magic_token, invite_code FROM group_tabs WHERE magic_token = ?`).get(code);
+    
+    // If found with long token but has short code, redirect to short URL
+    if (tab && tab.invite_code) {
+      return res.redirect(`/tab/${tab.invite_code}`);
+    }
+  }
   
   if (!tab) {
     return res.status(404).send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>Tab not found</h1><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
   }
   
   if (tab.status === 'closed') {
-    return res.send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>This tab has been closed</h1><p style="color:#a7b0bd">Only members can view closed tabs.</p><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
-  }
-  
-  // For logged-in users who are already participants, redirect to the main view
-  if (req.user) {
-    const participant = db.prepare(`
-      SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
-    `).get(tab.id, req.user.id);
-    if (participant || tab.creator_user_id === req.user.id) {
-      return res.redirect(`/grouptabs/${tab.id}`);
+    // For closed tabs, still allow viewing if the user is logged in or has a guest session
+    const guestToken = req.cookies.grouptab_guest_session;
+    const hasAccess = req.user || (guestToken && db.prepare(`
+      SELECT 1 FROM group_tab_participants WHERE group_tab_id = ? AND guest_session_token = ?
+    `).get(tab.id, guestToken));
+    
+    if (!hasAccess) {
+      return res.send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>This tab has been closed</h1><p style="color:#a7b0bd">Only members can view closed tabs.</p><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
     }
   }
   
-  // Check for existing guest session
-  const guestToken = req.cookies.grouptab_guest_session;
-  if (guestToken) {
-    const guestParticipant = db.prepare(`
-      SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND guest_session_token = ?
-    `).get(tab.id, guestToken);
-    if (guestParticipant) {
-      return res.redirect(`/grouptabs/${tab.id}`);
-    }
-  }
-  
-  // Serve the view page - it will detect the magic token in the URL and show join screen
+  // Serve the view page - it will detect the code in the URL and use the API
   res.sendFile(path.join(__dirname, 'public', 'grouptabs-view.html'));
 });
 

@@ -32,7 +32,7 @@
       --danger: #f85149; /* Red */
       --danger-dim: rgba(248, 81, 73, 0.15);
       
-      --pending: #d29922; /* Orange */
+      --pending: #f59e0b; /* Bright orange - matches dutch-orange */
       
       /* Going Dutch Box Colors */
       --dutch-border: #664d03;
@@ -514,12 +514,11 @@
     }
 
     .extras-label {
-        font-size: 11px;
-        font-weight: 800;
+        font-size: 12px;
+        font-weight: 600;
         color: var(--muted);
         text-transform: uppercase;
         letter-spacing: 1px;
-        margin-left: 4px;
         margin-bottom: 4px;
     }
 
@@ -531,8 +530,39 @@
         display: flex;
         align-items: center;
         gap: 16px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Blurred background image effect */
+    .product-info-row::before {
+        content: '';
+        position: absolute;
+        top: -20px;
+        left: -20px;
+        right: -20px;
+        bottom: -20px;
+        background-image: var(--product-bg-image);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        filter: blur(25px);
+        opacity: 0.35;
+        z-index: 0;
+        pointer-events: none;
+    }
+    
+    .product-info-row > * {
+        position: relative;
+        z-index: 1;
     }
 
+    .product-image-container {
+        display: flex;
+        align-items: center;
+        align-self: center; /* Ensure vertical centering in flex parent */
+    }
+    
     .product-thumb {
         width: 56px;
         height: 56px;
@@ -542,6 +572,7 @@
         cursor: pointer;
         transition: all 0.2s;
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        display: block; /* Remove any inline spacing */
     }
     .product-thumb:hover { transform: translateY(-2px); border-color: var(--accent); }
 
@@ -550,6 +581,7 @@
         flex-direction: column;
         gap: 8px;
         flex: 1;
+        justify-content: center; /* Vertically center content */
     }
 
     .product-name-badge {
@@ -557,7 +589,6 @@
         color: #fff;
         font-size: 15px;
         font-weight: 700;
-        margin-bottom: 2px;
     }
 
     .product-actions-row {
@@ -584,7 +615,7 @@
         font-family: inherit;
     }
     .receipt-btn-small {
-        text-transform: uppercase;
+        /* No uppercase - keep natural case */
     }
     .product-link-btn:hover, .receipt-btn-small:hover {
         background: rgba(0, 214, 143, 0.2);
@@ -844,7 +875,7 @@
     
     .hero-pop-box {
         background: var(--dutch-bg);
-        border: 2px dashed var(--dutch-border);
+        border: 1px dashed var(--pending); /* Orange dashed border for pending */
         border-radius: 24px;
         padding: 20px 24px;
         text-align: center;
@@ -854,15 +885,14 @@
     }
     
     .hero-pop-box.paid-state {
-        border-color: var(--accent);
+        border: 1px solid var(--accent); /* Green solid border when paid */
         background: rgba(61, 220, 151, 0.05);
-        border-style: solid;
     }
 
-    .pop-title { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 2px; margin-top: 8px; }
-    .pop-sub { font-size: 13px; color: var(--accent); opacity:0.8; margin-bottom: 8px; font-weight:600; }
+    .pop-title { font-size: 18px; font-weight: 800; color: var(--pending); margin-bottom: 2px; margin-top: 8px; }
+    .pop-sub { font-size: 13px; color: var(--pending); opacity:0.8; margin-bottom: 8px; font-weight:600; }
     
-    .pop-price { font-size: 48px; font-weight: 800; color: var(--accent); margin: 4px 0; display: block; }
+    .pop-price { font-size: 48px; font-weight: 800; color: var(--pending); margin: 4px 0; display: block; }
     
     /* Unfair Text - NOW ORANGE */
     .unfair-text-line {
@@ -1539,17 +1569,16 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 18px 0; /* Increased vertical padding */
+        padding: 18px 16px;
         border-bottom: 1px solid var(--border);
         cursor: pointer;
         user-select: none;
         transition: background 0.2s;
+        background: rgba(255,255,255,0.03); /* Default visible background */
+        border-radius: 12px;
     }
     .participants-header:hover {
-        background: rgba(255,255,255,0.02);
-        margin: 0 -16px;
-        padding: 18px 16px; /* Match increased padding */
-        border-radius: 12px;
+        background: rgba(255,255,255,0.06); /* Brighter on hover */
     }
     
     .participants-summary {
@@ -1675,7 +1704,7 @@
         align-items: center;
         padding: 16px;
         background: var(--card);
-        border: 1px solid var(--border);
+        border: 1px solid var(--row-color, var(--border)); /* Use row color for border */
         border-radius: 16px;
         margin-bottom: 12px;
     }
@@ -1723,7 +1752,36 @@
     .stamp.paid { color: var(--accent); }
     .stamp.pending { color: var(--pending); }
     .stamp.overpaid { color: var(--danger); margin-bottom: 2px; }
+    .stamp.pending-new { color: var(--pending); } /* Orange text, no background - matches OVERPAID style */
     .overpaid-val { color: var(--danger); font-weight: 700; font-size: 12px; }
+    
+    /* Pending participant styles - use CSS variable for colored dashed border */
+    .p-row.pending-participant {
+        border-style: dashed;
+        border-width: 1px; /* Thinner dashed border, same as waiting-guest */
+        border-color: var(--row-color, #d29922); /* Use row color (orange) for pending */
+        grid-template-rows: auto; /* Single row for pending - no progress bar */
+    }
+    .p-row.pending-participant .p-info {
+        grid-row: 1; /* Stay in first row */
+        align-self: center; /* Vertically center with avatar */
+    }
+    .remove-pending-btn {
+        background: rgba(245, 158, 11, 0.2);
+        border: none;
+        color: var(--pending); /* Orange X button */
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 14px;
+        margin-bottom: 4px;
+        transition: all 0.2s;
+    }
+    .remove-pending-btn:hover {
+        background: rgba(248, 81, 73, 0.4);
+        transform: scale(1.1);
+    }
 
     /* Progress Row */
     .p-stats-row {
@@ -2713,20 +2771,22 @@
 
     // Init - detect route type
     const pathParts = window.location.pathname.split('/');
-    let magicToken = null;
+    let tabCode = null;  // Short invite_code or legacy magic_token
     
-    // Handle /tab/:token (magic link) vs /grouptabs/:id routes
+    // Handle /tab/:code (short code or legacy token) or /grouptabs/:id routes
     if (pathParts[1] === 'tab' && pathParts[2]) {
-        magicToken = pathParts[2];
+        // Could be short invite_code (12 chars) or legacy magic_token (64 chars)
+        // The API will handle both
+        tabCode = pathParts[2];
     } else {
-    const lastPart = pathParts[pathParts.length - 1];
-    if (!isNaN(parseInt(lastPart))) {
-        tabId = parseInt(lastPart);
+        const lastPart = pathParts[pathParts.length - 1];
+        if (!isNaN(parseInt(lastPart))) {
+            tabId = parseInt(lastPart);
         }
     }
 
     async function init() {
-        if (!tabId && !magicToken) return;
+        if (!tabId && !tabCode) return;
         await loadTabData();
         startPolling();
     }
@@ -2756,8 +2816,9 @@
         try {
             // Use different API endpoint based on access type
             let response;
-            if (magicToken) {
-                response = await fetch(`/api/tabs/token/${magicToken}`);
+            if (tabCode) {
+                // Short code or legacy token (both handled by same endpoint)
+                response = await fetch(`/api/grouptabs/code/${tabCode}`);
             } else {
                 response = await fetch(`/api/grouptabs/${tabId}`);
             }
@@ -2775,13 +2836,15 @@
             isCreator = data.isCreator; // API returns this
             ownerToken = data.ownerToken; // For receipt uploads
             
-            // Store magic token if provided (for join API calls)
-            if (data.magicToken) {
-                window.currentMagicToken = data.magicToken;
+            // Store invite code or magic token for join API calls
+            // API returns snake_case: invite_code, magic_token
+            const tokenForJoin = data.tab?.invite_code || data.tab?.inviteCode || data.tab?.magic_token || data.magicToken;
+            if (tokenForJoin) {
+                window.currentMagicToken = tokenForJoin;
             }
             
-            // Check if user needs to join first (via magic link, not yet a participant)
-            if (magicToken && data.hasJoined === false) {
+            // Check if user needs to join first (via tab code link, not yet a participant)
+            if (tabCode && data.hasJoined === false) {
                 showJoinScreen();
                 return;
             }
@@ -2828,8 +2891,8 @@
     async function refreshTabData() {
         try {
             let response;
-            if (magicToken) {
-                response = await fetch(`/api/tabs/token/${magicToken}`);
+            if (tabCode) {
+                response = await fetch(`/api/grouptabs/code/${tabCode}`);
             } else {
                 response = await fetch(`/api/grouptabs/${tabId}`);
             }
@@ -2945,11 +3008,15 @@
         if (isGiftMode) {
             // Show image if it exists
             if (hasProductImage) {
-                productImageThumb.src = tabData.about_image_path || tabData.raising_for_image_path;
+                const imagePath = tabData.about_image_path || tabData.raising_for_image_path;
+                productImageThumb.src = imagePath;
                 productImageContainer.style.display = 'block';
+                // Set blurred background effect
+                productInfoRow.style.setProperty('--product-bg-image', `url(${imagePath})`);
                 showProductRow = true;
             } else {
                 productImageContainer.style.display = 'none';
+                productInfoRow.style.removeProperty('--product-bg-image');
             }
 
             // Show name as badge if it exists
@@ -4044,8 +4111,35 @@
         // Use people_count from tab data for expected total, fallback to participants.length
         const expectedPeopleCount = tabData.people_count || tabData.peopleCount || participants.length || 1;
         
+        // 24-hour pending timeout in milliseconds
+        const PENDING_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        
+        // Filter participants: show if they have payments OR are organizer OR joined within 24h
+        const visibleParticipants = participants.filter(p => {
+            const paidCents = p.total_paid_cents || 0;
+            const isOrganizer = p.role === 'organizer';
+            const joinedAt = p.joined_at ? new Date(p.joined_at).getTime() : 0;
+            const isWithinPendingWindow = (now - joinedAt) < PENDING_TIMEOUT_MS;
+            
+            // Visible if: has payment, is organizer, or joined within 24h
+            return paidCents > 0 || isOrganizer || isWithinPendingWindow;
+        });
+        
+        // Mark pending status for each visible participant
+        visibleParticipants.forEach(p => {
+            const paidCents = p.total_paid_cents || 0;
+            const isOrganizer = p.role === 'organizer';
+            const joinedAt = p.joined_at ? new Date(p.joined_at).getTime() : 0;
+            const msRemaining = PENDING_TIMEOUT_MS - (now - joinedAt);
+            
+            // Pending if: no payment, not organizer, and within 24h window
+            p._isPending = paidCents === 0 && !isOrganizer && msRemaining > 0;
+            p._pendingHoursLeft = p._isPending ? Math.ceil(msRemaining / (60 * 60 * 1000)) : 0;
+        });
+        
         // Get computed data for participants
-        let list = participants.map(p => {
+        let list = visibleParticipants.map(p => {
             const data = fairnessData ? fairnessData.participants.find(d => d.participantId === p.id) : {};
             return { ...p, ...data };
         });
@@ -4085,7 +4179,7 @@
             collapsedStatsHtml += `<span class="stat-item"><span class="stat-dot amber"></span>${partialCount} Partial</span>`;
         }
         if (unpaidCount > 0) {
-            collapsedStatsHtml += `<span class="stat-item"><span class="stat-dot red"></span>${unpaidCount} Unpaid</span>`;
+            collapsedStatsHtml += `<span class="stat-item"><span class="stat-dot amber"></span>${unpaidCount} Unpaid</span>`;
         }
         
         // Build plain text for expanded header
@@ -4173,16 +4267,17 @@
             // - Red (danger) if overpaid (paid more than fair share)
             // - Orange (pending) if partial/underpaid (including 0%)
             // - Green (accent) if fully paid (exactly equal)
-            let rowColor = '#d29922'; // default orange for pending
+            let rowColor = '#f59e0b'; // default bright orange for pending (matches --pending)
             if (paidAmt > fairShare && fairShare > 0) {
                 rowColor = '#f85149'; // red - overpaid
             } else if (paidAmt >= fairShare && fairShare > 0) {
                 rowColor = '#3ddc97'; // green - fully paid
             }
 
-            // Check for profile picture (from user_id)
-            const hasProfilePic = p.user_id && (p.profile_picture || p.profilePicture);
-            const profilePicUrl = hasProfilePic ? `/api/profile/picture/${p.user_id}` : null;
+            // Check for profile picture - use direct file path (not API which requires auth)
+            const profilePicPath = p.profile_picture || p.profilePicture;
+            const hasProfilePic = p.user_id && profilePicPath;
+            const profilePicUrl = hasProfilePic ? profilePicPath : null;
             
             // Time ago - for host, show dinner date; for guests, show their payment time
             let timeAgoStr = '';
@@ -4193,8 +4288,19 @@
                 timeAgoStr = (p.last_payment_at || p.lastPaymentAt) ? timeAgo(p.last_payment_at || p.lastPaymentAt) : '';
             }
 
+            // For pending participants (joined but no payment yet), show special styling
+            const isPending = p._isPending;
+            const pendingHoursLeft = p._pendingHoursLeft || 0;
+            
+            // Override stamp for pending participants (keep orange color, just change badge)
+            if (isPending) {
+                // Keep rowColor as default orange (#d29922) - don't override
+                stampClass = 'pending-new';
+                stampText = `PENDING`;
+            }
+            
             const html = `
-                <div class="p-row" style="--row-color:${rowColor};">
+                <div class="p-row ${isPending ? 'pending-participant' : ''}" style="--row-color:${rowColor};">
                     ${profilePicUrl ? `
                         <div class="p-avatar" style="border: none !important; padding: 0; overflow: hidden;">
                             <img src="${profilePicUrl}" alt="" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
@@ -4212,10 +4318,14 @@
                             ${isHost ? '<span class="host-badge">HOST</span>' : ''}
                         </div>
                         <div class="p-amt-line" style="color:${rowColor} !important;">
-                            <span>${fairShareLabel} group: ${formatCurrency2(fairShare)} • ${isHost ? 'Paid full bill' : 'Paid'}: ${formatCurrency2(paidAmt)}${timeAgoStr ? ` • <span style="opacity:0.8; font-weight:500;">${timeAgoStr}</span>` : ''}</span>
+                            ${isPending 
+                                ? `<span>Joined ${timeAgo(p.joined_at)} • Waiting for payment</span>`
+                                : `<span>${fairShareLabel} group: ${formatCurrency2(fairShare)} • ${isHost ? 'Paid full bill' : 'Paid'}: ${formatCurrency2(paidAmt)}${timeAgoStr ? ` • <span style="opacity:0.8; font-weight:500;">${timeAgoStr}</span>` : ''}</span>`
+                            }
                         </div>
                     </div>
                     
+                    ${isPending ? '' : `
                     <div class="p-stats-row" style="grid-column:2; margin-top:4px;">
                         <div class="prog-wrapper">
                             <div class="user-prog-track">
@@ -4224,8 +4334,10 @@
                             <span class="prog-pct ${barClass}">${pctText}</span>
                         </div>
                     </div>
+                    `}
 
                     <div class="p-status-col">
+                        ${isPending && isCreator ? `<button class="remove-pending-btn" onclick="removePendingParticipant(${p.id}, '${escapeHtml(getDisplayName(p))}')" title="Remove pending participant">✕</button>` : ''}
                         <div class="stamp ${stampClass}">${stampText}</div>
                         ${overpaidHtml}
                     </div>
@@ -4235,9 +4347,13 @@
         });
         
         // Add "Waiting for guest" cards for unjoined participant slots
-        const joinedCount = participants.length;
-        const waitingGuestCount = expectedPeopleCount - joinedCount;
-        const shareUrl = `${window.location.origin}/tab/${tabData.magic_token}`;
+        // Count pending participants (visible but no payment) separately from waiting
+        const pendingCount = list.filter(p => p._isPending).length;
+        const paidOrHostCount = list.filter(p => !p._isPending).length;
+        // Waiting = expected - (paid participants + pending participants)
+        const waitingGuestCount = Math.max(0, expectedPeopleCount - list.length);
+        const code = tabData.inviteCode || tabData.invite_code || tabData.magic_token;
+        const shareUrl = `${window.location.origin}/tab/${code}`;
         
         for (let i = 0; i < waitingGuestCount; i++) {
             const waitingHtml = `
@@ -4909,8 +5025,39 @@
         }, 2000);
     }
     
+    // Remove a pending participant (creator only)
+    async function removePendingParticipant(participantId, displayName) {
+        if (!isCreator) return;
+        
+        if (!confirm(`Remove "${displayName}" from this tab?\n\nThey will need to enter their name again to rejoin.`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/grouptabs/${tabData.id}/participants/${participantId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to remove participant');
+            }
+            
+            // Remove from local array and re-render
+            participants = participants.filter(p => p.id !== participantId);
+            renderParticipants();
+            
+        } catch (err) {
+            console.error('Error removing participant:', err);
+            alert('Failed to remove participant: ' + err.message);
+        }
+    }
+    
     function copyShareLink(customUrl) {
-        const url = customUrl || `${window.location.origin}/tab/${tabData.magic_token}`;
+        // Use short invite code if available, fall back to legacy magic_token
+        const code = tabData.inviteCode || tabData.invite_code || tabData.magic_token;
+        const url = customUrl || `${window.location.origin}/tab/${code}`;
         navigator.clipboard.writeText(url).then(() => {
             const shareText = document.getElementById('share-link-text');
             if (shareText) {
@@ -5109,9 +5256,6 @@
     }
 
     async function handleReceiptUpload(event) {
-        // #region agent log
-        fetch('http://127.0.0.1:7245/ingest/92ce3b30-ba54-4865-b758-cfee8551dfa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'handleReceiptUpload:start',message:'Receipt upload triggered',data:{hasFile:!!event.target.files[0],ownerToken:ownerToken},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-        // #endregion
         
         const file = event.target.files[0];
         if (!file) return;
@@ -5140,18 +5284,10 @@
             const formData = new FormData();
             formData.append('receipt', file);
 
-            // #region agent log
-            fetch('http://127.0.0.1:7245/ingest/92ce3b30-ba54-4865-b758-cfee8551dfa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'handleReceiptUpload:beforeAPI',message:'About to call API',data:{ownerToken:ownerToken,url:`/api/grouptabs/token/${ownerToken}`},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
-            // #endregion
-
             const response = await fetch(`/api/grouptabs/token/${ownerToken}`, {
                 method: 'PATCH',
                 body: formData
             });
-
-            // #region agent log
-            fetch('http://127.0.0.1:7245/ingest/92ce3b30-ba54-4865-b758-cfee8551dfa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'handleReceiptUpload:afterAPI',message:'API response received',data:{ok:response.ok,status:response.status},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
-            // #endregion
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -5159,10 +5295,6 @@
             }
 
             const data = await response.json();
-            
-            // #region agent log
-            fetch('http://127.0.0.1:7245/ingest/92ce3b30-ba54-4865-b758-cfee8551dfa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'handleReceiptUpload:success',message:'Upload successful',data:{hasReceiptPath:!!(data.tab && data.tab.receiptFilePath)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{});
-            // #endregion
             
             // Update local data
             if (data.tab && data.tab.receiptFilePath) {
@@ -5176,10 +5308,6 @@
             await refreshTabData();
 
         } catch (error) {
-            // #region agent log
-            fetch('http://127.0.0.1:7245/ingest/92ce3b30-ba54-4865-b758-cfee8551dfa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'handleReceiptUpload:error',message:'Upload error caught',data:{errorMessage:error.message,errorStack:error.stack},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
-            // #endregion
-            
             console.error('Receipt upload error:', error);
             alert('Failed to upload receipt: ' + error.message);
             

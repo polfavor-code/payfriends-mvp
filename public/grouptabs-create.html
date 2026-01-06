@@ -4487,9 +4487,10 @@
     function showLaunchCard(tab) {
       hideInputContainer();
       
-      // Use magic link for sharing (public token), view link for creator view
-      const shareUrl = tab.magicLink || `${window.location.origin}/tab/${tab.magicToken}`;
-      const viewUrl = `${window.location.origin}/grouptabs/${tab.id}`;
+      // Use short tab link for sharing (user-friendly)
+      const code = tab.inviteCode || tab.magicToken;
+      const shareUrl = tab.tabLink || `${window.location.origin}/tab/${code}`;
+      const viewUrl = `${window.location.origin}/tab/${code}`;
       const totalCents = state.data.totalCents + state.data.tipCents;
       const perPerson = formatCurrency2(totalCents / state.data.people);
       

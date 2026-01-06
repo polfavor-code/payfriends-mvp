@@ -618,10 +618,10 @@
       // Creator info - dynamic logic
       const isCreatedByMe = tab.creator_user_id === currentUserId;
       
-      // Always use numeric ID for main view URL
-      const tabUrl = `/grouptabs/${tab.id}`;
+      // Use short invite code for URLs (user-friendly)
+      const tabUrl = tab.invite_code ? `/tab/${tab.invite_code}` : `/grouptabs/${tab.id}`;
       
-      // Receipt URL
+      // Receipt URL (still uses numeric ID, requires login)
       const receiptUrl = `/grouptabs/${tab.id}/receipt`;
       
       let creatorDisplay;
