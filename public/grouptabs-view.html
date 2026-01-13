@@ -540,6 +540,33 @@
         display: flex;
         gap: 10px;
         margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .header-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .header-action-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .header-action-btn span:first-child {
+        font-size: 16px;
     }
     
     /* Mobile: smaller icon and adjust layout */
@@ -2163,6 +2190,16 @@
         font-weight: 800;
         background: rgba(255,255,255,0.08);
         color: var(--muted);
+        padding: 3px 8px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .you-badge {
+        font-size: 10px;
+        font-weight: 700;
+        background: rgba(61, 220, 151, 0.15);
+        color: var(--accent);
         padding: 3px 8px;
         border-radius: 6px;
         text-transform: uppercase;
@@ -5369,7 +5406,8 @@
                     
                     <div class="p-info">
                         <div class="p-name-row">
-                            <span class="p-name">${getDisplayName(p)} ${isMe ? '(You)' : ''}</span>
+                            <span class="p-name">${getDisplayName(p)}</span>
+                            ${isMe ? '<span class="you-badge">You</span>' : ''}
                             ${isPending && isCreator ? `<button class="remove-pending-btn" onclick="removePendingParticipant(${p.id}, '${escapeHtml(getDisplayName(p))}')" title="Remove pending participant" style="margin-left: 4px;">✕</button>` : ''}
                             ${p.hide_name && isCreator ? `<button class="reveal-name-btn" onclick="revealName(this, '${escapeHtml(getFullName(p))}')" title="Click to reveal name">👁</button>` : ''}
                             ${isHost ? '<span class="host-badge">ORGANIZER</span>' : ''}

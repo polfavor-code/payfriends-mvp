@@ -279,39 +279,30 @@
 
     /* --- MORE MENU --- */
     .tab-more-btn {
-      width: 36px;
-      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 10px;
+      background: transparent;
+      border: none;
       color: var(--muted);
       cursor: pointer;
       transition: all 0.2s;
       flex-shrink: 0;
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: 1px;
+      padding: 8px;
       position: relative;
     }
 
     .tab-more-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.15);
       color: var(--text);
     }
 
     .more-dots {
-      font-size: 14px;
-      letter-spacing: 2px;
+      font-size: 16px;
+      letter-spacing: 3px;
       line-height: 1;
     }
 
     .tab-card.menu-open .tab-more-btn {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.2);
       color: var(--text);
     }
 
@@ -801,6 +792,7 @@
       
       if (filteredTabs.length === 0) {
         list.innerHTML = '';
+        updateEmptyState();
         emptyState.style.display = 'block';
         return;
       }
@@ -973,6 +965,35 @@
       // Older than 30 days: show "12 Dec" format
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return `${date.getDate()} ${monthNames[date.getMonth()]}`;
+    }
+
+    function updateEmptyState() {
+      const iconEl = document.querySelector('.empty-state-icon');
+      const titleEl = document.querySelector('.empty-state-title');
+      const textEl = document.querySelector('.empty-state-text');
+      const btnEl = document.querySelector('.empty-state-btn');
+      
+      if (currentFilter === 'open') {
+        // Active filter - no active tabs
+        iconEl.textContent = '✨';
+        titleEl.textContent = 'All caught up!';
+        textEl.textContent = 'No active tabs right now. All your expenses are settled.';
+        btnEl.innerHTML = '<span>+</span> Start a new tab';
+        btnEl.style.display = 'inline-flex';
+      } else if (currentFilter === 'closed') {
+        // Settled filter - no settled tabs
+        iconEl.textContent = '📊';
+        titleEl.textContent = 'No settled tabs';
+        textEl.textContent = 'Tabs will appear here once they\'re fully paid or closed.';
+        btnEl.style.display = 'none';
+      } else {
+        // All filter - no tabs at all
+        iconEl.textContent = '📭';
+        titleEl.textContent = 'No tabs yet';
+        textEl.textContent = 'Start a new tab to split dinner, a trip, or any shared expense with friends.';
+        btnEl.innerHTML = '<span>+</span> Create your first tab';
+        btnEl.style.display = 'inline-flex';
+      }
     }
 
     function escapeHtml(str) {
