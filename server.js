@@ -822,6 +822,7 @@ try {
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       reviewed_at TEXT,
       reviewed_by INTEGER,
+      additional_names TEXT,
       FOREIGN KEY (group_tab_id) REFERENCES group_tabs(id),
       FOREIGN KEY (participant_id) REFERENCES group_tab_participants(id),
       FOREIGN KEY (reviewed_by) REFERENCES users(id)
@@ -830,6 +831,14 @@ try {
   console.log('[Startup] Created group_tab_payment_reports table');
 } catch (e) {
   // Table already exists, ignore
+}
+
+// Add additional_names column to payment_reports for multi-person payments
+try {
+  db.exec(`ALTER TABLE group_tab_payment_reports ADD COLUMN additional_names TEXT;`);
+  console.log('[Migration] Added additional_names column to group_tab_payment_reports');
+} catch (e) {
+  // Column already exists, ignore
 }
 
 // =============================================
@@ -8565,7 +8574,7 @@ app.post('/api/grouptabs/:id/simple-payment', (req, res) => {
 // Report a payment (for participants in Group Gift tabs)
 app.post('/api/grouptabs/:id/payment-reports', uploadGrouptabs.single('proof'), (req, res) => {
   const tabId = parseInt(req.params.id);
-  const { reporterName, amountCents, method, paidAt, note, token } = req.body;
+  const { reporterName, amountCents, method, paidAt, note, token, additionalNames } = req.body;
   
   try {
     // Validate tab access via magic token OR invite_code (for invited guests)
@@ -8612,10 +8621,51 @@ app.post('/api/grouptabs/:id/payment-reports', uploadGrouptabs.single('proof'), 
     // Store path with leading slash for web access
     const proofPath = req.file ? '/' + req.file.path.replace(/\\/g, '/') : null;
     
+    // Parse additional names (JSON string from frontend)
+    let parsedAdditionalNames = null;
+    if (additionalNames) {
+      try {
+        parsedAdditionalNames = JSON.parse(additionalNames);
+        if (!Array.isArray(parsedAdditionalNames)) {
+          parsedAdditionalNames = null;
+        }
+      } catch (e) {
+        // Invalid JSON, ignore
+      }
+    }
+    
+    // Calculate fair share for new participants
+    const peopleCount = tab.people_count || 1;
+    const totalAmount = tab.total_amount_cents || 0;
+    const fairShareCents = Math.floor(totalAmount / peopleCount);
+    
+    // Create pending participant entries for additional names IMMEDIATELY
+    // They appear as pending until payment is confirmed
+    const additionalParticipantIds = [];
+    if (parsedAdditionalNames && parsedAdditionalNames.length > 0) {
+      for (const name of parsedAdditionalNames) {
+        if (name && name.trim()) {
+          // Create a new pending participant entry (total_paid_cents = 0, remaining = fairShare)
+          const insertResult = db.prepare(`
+            INSERT INTO group_tab_participants (
+              group_tab_id, guest_name, role, fair_share_cents, total_paid_cents, remaining_cents, joined_at
+            ) VALUES (?, ?, 'contributor', ?, 0, ?, ?)
+          `).run(
+            tabId,
+            name.trim(),
+            fairShareCents,
+            fairShareCents, // They still owe their share until payment is confirmed
+            createdAt
+          );
+          additionalParticipantIds.push(insertResult.lastInsertRowid);
+        }
+      }
+    }
+    
     const result = db.prepare(`
       INSERT INTO group_tab_payment_reports (
-        group_tab_id, participant_id, reporter_name, amount_cents, method, paid_at, proof_file_path, note, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+        group_tab_id, participant_id, reporter_name, amount_cents, method, paid_at, proof_file_path, note, status, created_at, additional_names
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
     `).run(
       tabId,
       participantId,
@@ -8625,7 +8675,8 @@ app.post('/api/grouptabs/:id/payment-reports', uploadGrouptabs.single('proof'), 
       paidAt,
       proofPath,
       note || null,
-      createdAt
+      createdAt,
+      parsedAdditionalNames ? JSON.stringify(parsedAdditionalNames) : null
     );
     
     // Notify the organizer
@@ -8636,6 +8687,9 @@ app.post('/api/grouptabs/:id/payment-reports', uploadGrouptabs.single('proof'), 
     
     if (organizer && organizer.user_id) {
       const formattedAmount = (parseInt(amountCents) / 100).toFixed(2);
+      const additionalInfo = parsedAdditionalNames && parsedAdditionalNames.length > 0 
+        ? ` (also paying for: ${parsedAdditionalNames.join(', ')})` 
+        : '';
       db.prepare(`
         INSERT INTO messages (user_id, tab_id, subject, body, created_at, event_type)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -8643,7 +8697,7 @@ app.post('/api/grouptabs/:id/payment-reports', uploadGrouptabs.single('proof'), 
         organizer.user_id,
         tabId,
         'Payment Reported',
-        `${reporterName.trim()} reported a payment of €${formattedAmount} for "${tab.name}" - awaiting your confirmation`,
+        `${reporterName.trim()} reported a payment of €${formattedAmount}${additionalInfo} for "${tab.name}" - awaiting your confirmation`,
         createdAt,
         'GROUPTAB_PAYMENT_REPORTED'
       );
@@ -8795,6 +8849,11 @@ app.patch('/api/grouptabs/:id/payment-reports/:reportId/confirm', (req, res) => 
       WHERE id = ?
     `).run(reviewedAt, reviewerId, reportId);
     
+    // Calculate fair share for new participants
+    const peopleCount = tab.people_count || 1;
+    const totalAmount = tab.total_amount_cents || 0;
+    const fairShareCents = Math.floor(totalAmount / peopleCount);
+    
     // Update participant's payment totals if participant exists
     if (report.participant_id) {
       const participant = db.prepare(`SELECT * FROM group_tab_participants WHERE id = ?`).get(report.participant_id);
@@ -8808,6 +8867,28 @@ app.patch('/api/grouptabs/:id/payment-reports/:reportId/confirm', (req, res) => 
           SET total_paid_cents = ?, remaining_cents = ?
           WHERE id = ?
         `).run(newTotalPaid, newRemaining, report.participant_id);
+      }
+    }
+    
+    // Update additional participants to mark them as fully paid (they were created as pending when report was submitted)
+    if (report.additional_names) {
+      try {
+        const additionalNames = JSON.parse(report.additional_names);
+        if (Array.isArray(additionalNames) && additionalNames.length > 0) {
+          for (const name of additionalNames) {
+            if (name && name.trim()) {
+              // Find the pending participant by name and update to fully paid
+              db.prepare(`
+                UPDATE group_tab_participants 
+                SET total_paid_cents = fair_share_cents, remaining_cents = 0
+                WHERE group_tab_id = ? AND guest_name = ? AND total_paid_cents = 0
+              `).run(tabId, name.trim());
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Payment Confirm] Error processing additional names:', e);
+        // Don't fail the confirmation, just log the error
       }
     }
     
@@ -8882,6 +8963,26 @@ app.patch('/api/grouptabs/:id/payment-reports/:reportId/reject', (req, res) => {
       SET status = 'rejected', reviewed_at = ?, reviewed_by = ?, note = COALESCE(note, '') || ?
       WHERE id = ?
     `).run(reviewedAt, reviewerId, reason ? ` [Rejected: ${reason}]` : '', reportId);
+    
+    // Remove pending participants that were created for additional names
+    if (report.additional_names) {
+      try {
+        const additionalNames = JSON.parse(report.additional_names);
+        if (Array.isArray(additionalNames) && additionalNames.length > 0) {
+          for (const name of additionalNames) {
+            if (name && name.trim()) {
+              // Delete the pending participant (only if still unpaid)
+              db.prepare(`
+                DELETE FROM group_tab_participants 
+                WHERE group_tab_id = ? AND guest_name = ? AND total_paid_cents = 0
+              `).run(tabId, name.trim());
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Payment Reject] Error removing additional participants:', e);
+      }
+    }
     
     res.json({ success: true, message: 'Payment report rejected' });
     

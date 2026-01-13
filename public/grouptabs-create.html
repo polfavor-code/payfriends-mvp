@@ -852,6 +852,123 @@
       color: #f87171;
     }
     
+    /* ===== FUNDRAISER TARGET CARD ===== */
+    .fundraiser-target-card {
+      background: var(--card-bg, #1e2329);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 24px;
+    }
+    
+    .fundraiser-target-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .fundraiser-target-icon {
+      font-size: 20px;
+    }
+    
+    .fundraiser-target-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .fundraiser-target-optional {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    
+    .fundraiser-amount-wrapper {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 16px 20px;
+      transition: all 0.2s ease;
+    }
+    
+    .fundraiser-amount-wrapper:focus-within {
+      border-color: var(--accent);
+      background: rgba(61, 220, 151, 0.03);
+    }
+    
+    .fundraiser-currency {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-right: 8px;
+    }
+    
+    .fundraiser-amount-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text);
+      outline: none;
+      min-width: 0;
+    }
+    
+    .fundraiser-amount-input::placeholder {
+      color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .fundraiser-hint {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 12px 0 20px;
+      text-align: center;
+    }
+    
+    .fundraiser-actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .fundraiser-btn-skip {
+      flex: 1;
+      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .fundraiser-btn-skip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: var(--text);
+    }
+    
+    .fundraiser-btn-continue {
+      flex: 1;
+      padding: 14px 20px;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      color: #000;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .fundraiser-btn-continue:hover {
+      background: #4ade80;
+      transform: translateY(-1px);
+    }
+    
     .gift-toggle-section {
       margin-bottom: 20px;
       padding: 12px 14px;
@@ -1348,7 +1465,9 @@
           break;
           
         case 'GIFT_ABOUT':
-          addGiftAboutCard();
+          // Pass the correct mode based on groupGiftMode
+          const aboutMode = state.data.groupGiftMode === 'fundraiser' ? 'fundraiser' : 'gift';
+          addGiftAboutCard(aboutMode);
           break;
           
         case 'GIFT_PLAN':
@@ -1777,8 +1896,14 @@
     }
     
     function handleGiftTypeChoice(input) {
-      // Handled by selection blocks - this is a fallback
-      if (input.toLowerCase().includes('gift') || input.toLowerCase().includes('buying')) {
+      // First check for exact block IDs (from selection blocks)
+      if (input === 'gift_type_gift') {
+        selectGiftTypeOption('gift');
+      } else if (input === 'gift_type_fundraiser') {
+        selectGiftTypeOption('fundraiser');
+      }
+      // Fallback: check for text input (typed by user)
+      else if (input.toLowerCase().includes('buying') || (input.toLowerCase().includes('gift') && !input.toLowerCase().includes('fundraiser'))) {
         selectGiftTypeOption('gift');
       } else if (input.toLowerCase().includes('raising') || input.toLowerCase().includes('money') || input.toLowerCase().includes('fund')) {
         selectGiftTypeOption('fundraiser');
@@ -1805,13 +1930,13 @@
       if (type === 'gift') {
         // Gift flow - ask for gift description
         addBotMessage("Add some details about the gift.");
-        addGiftAboutCard();
+        addGiftAboutCard('gift');
         state.step = 'GIFT_ABOUT';
       } else {
-        // Fundraiser mode - minimal flow, skip gift-specific questions
-        addBotMessage("What's this collection for? Give it a name.");
-        addFundraiserNameCard();
-        state.step = 'FUNDRAISER_NAME';
+        // Fundraiser mode - use same detailed form but with fundraiser text
+        addBotMessage("What are you raising money for?");
+        addGiftAboutCard('fundraiser');
+        state.step = 'GIFT_ABOUT';
       }
     }
     
@@ -1848,7 +1973,7 @@
         const reader = new FileReader();
         reader.onload = function(e) {
           div.innerHTML = `
-            <img src="${e.target.result}" alt="Gift" class="msg-user-image">
+            <img src="${e.target.result}" alt="${isRaisingMoneyOnly ? 'Fund' : 'Gift'}" class="msg-user-image">
             <span>${displayMsg}</span>
           `;
         };
@@ -1865,12 +1990,28 @@
       removeActiveCard();
       showInputContainer();
       
-      // In gift mode, always go to the plan choice (Already bought / Planning to buy)
-      setTimeout(() => {
-        addBotMessage("Has the gift already been bought?");
-        addGiftPlanBlocks();
-        state.step = 'GIFT_PLAN';
-      }, 400);
+      // Check if this is fundraiser mode - skip the "already bought" question
+      const isFundraiser = state.data.groupGiftMode === 'fundraiser' || isRaisingMoneyOnly;
+      
+      if (isFundraiser) {
+        // Fundraiser mode: Skip "already bought" question, go straight to target amount
+        // Store the aboutText as the name if not already set
+        if (!state.data.name && aboutText) {
+          state.data.name = aboutText;
+        }
+        setTimeout(() => {
+          addBotMessage("Do you have a target amount in mind?");
+          addFundraiserTargetCard();
+          state.step = 'FUNDRAISER_TARGET';
+        }, 400);
+      } else {
+        // Gift mode: Ask if already bought
+        setTimeout(() => {
+          addBotMessage("Has the gift already been bought?");
+          addGiftPlanBlocks();
+          state.step = 'GIFT_PLAN';
+        }, 400);
+      }
     }
     
     function handleGiftPlan(input) {
@@ -3078,7 +3219,7 @@
     // GROUP GIFT UI CARDS
     // =========================================
     
-    function addGiftAboutCard() {
+    function addGiftAboutCard(mode = 'gift') {
       // Ensure selection blocks are removed (for text input flow)
       const blocks = document.getElementById('active-selection-blocks');
       if (blocks) blocks.remove();
@@ -3087,14 +3228,21 @@
       
       const cardId = 'gift-about-card-' + Date.now();
       
+      // Different text based on mode (gift vs fundraiser)
+      const isFundraiser = mode === 'fundraiser';
+      const labelText = isFundraiser ? 'What are you raising money for?' : 'Gift name / description';
+      const placeholderText = isFundraiser 
+        ? 'e.g., Birthday collection, Medical fund, Team outing...'
+        : 'e.g., Marshall speaker, AirPods Pro, etc.';
+      
       const cardHtml = `
-        <div id="${cardId}" class="chat-card">
+        <div id="${cardId}" class="chat-card" data-mode="${mode}">
           <div class="form-card">
             <div class="gift-about-section">
-              <label class="gift-form-label">Gift name / description</label>
+              <label class="gift-form-label">${labelText}</label>
               <input type="text" id="${cardId}-text" 
                      class="gift-about-input" 
-                     placeholder="e.g., Marshall speaker, AirPods Pro, etc."
+                     placeholder="${placeholderText}"
                      maxlength="200">
             </div>
             
@@ -3118,7 +3266,7 @@
               
               <!-- Image Preview (hidden initially) -->
               <div id="${cardId}-image-preview" class="gift-image-preview" style="display: none;">
-                <img id="${cardId}-image-thumb" src="" alt="Gift image">
+                <img id="${cardId}-image-thumb" src="" alt="${isFundraiser ? 'Fund' : 'Gift'} image">
                 <button class="gift-media-remove" onclick="removeGiftImage('${cardId}')">×</button>
               </div>
               
@@ -3134,7 +3282,7 @@
             </div>
             
             <!-- Hidden raising-only checkbox for compatibility (always false in gift mode) -->
-            <input type="checkbox" id="${cardId}-raising-only" style="display:none;">
+            <input type="checkbox" id="${cardId}-raising-only" style="display:none;" ${isFundraiser ? 'checked' : ''}>
             
             <div class="gift-card-actions">
               <button class="card-skip-btn" onclick="submitGiftAbout('${cardId}', true)">
@@ -3316,21 +3464,34 @@
       const cardId = 'fundraiser-target-' + Date.now();
       
       const cardHtml = `
-        <div class="chat-card form-card" id="${cardId}">
-          <div class="form-card-title">Target Amount (optional)</div>
-          <div class="gift-amount-input-row">
-            <span class="gift-amount-currency">€</span>
-            <input type="number" 
-                   id="${cardId}-amount" 
-                   class="gift-amount-input" 
-                   placeholder="0"
-                   min="0"
-                   step="0.01">
-          </div>
-          <p style="font-size: 13px; color: var(--muted); margin: 8px 0 16px;">Leave empty for an open-ended collection</p>
-          <div style="display: flex; gap: 10px;">
-            <button class="form-btn-secondary" onclick="confirmFundraiserTarget('${cardId}', true)" style="flex:1;">No target</button>
-            <button class="form-btn" onclick="confirmFundraiserTarget('${cardId}', false)" style="flex:1;">Continue</button>
+        <div class="chat-card" id="${cardId}">
+          <div class="form-card fundraiser-target-card">
+            <div class="fundraiser-target-header">
+              <span class="fundraiser-target-icon">🎯</span>
+              <span class="fundraiser-target-title">Target Amount</span>
+              <span class="fundraiser-target-optional">(optional)</span>
+            </div>
+            
+            <div class="fundraiser-amount-wrapper">
+              <span class="fundraiser-currency">€</span>
+              <input type="text" 
+                     id="${cardId}-amount" 
+                     class="fundraiser-amount-input" 
+                     placeholder="0.00"
+                     inputmode="decimal"
+                     autocomplete="off">
+            </div>
+            
+            <p class="fundraiser-hint">Leave empty for an open-ended collection</p>
+            
+            <div class="fundraiser-actions">
+              <button class="fundraiser-btn-skip" onclick="confirmFundraiserTarget('${cardId}', true)">
+                No target
+              </button>
+              <button class="fundraiser-btn-continue" onclick="confirmFundraiserTarget('${cardId}', false)">
+                Continue
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -3367,11 +3528,18 @@
       removeActiveCard();
       showInputContainer();
       
-      setTimeout(() => {
-        addBotMessage("How many people will contribute?");
-        addFundraiserContributorsCard();
-        state.step = 'FUNDRAISER_CONTRIBUTORS';
-      }, 400);
+      // If no target, skip contributors question
+      if (noTarget || amountCents === 0) {
+        setTimeout(() => {
+          goToPaymentDetails();
+        }, 400);
+      } else {
+        setTimeout(() => {
+          addBotMessage("How many people will contribute?");
+          addFundraiserContributorsCard();
+          state.step = 'FUNDRAISER_CONTRIBUTORS';
+        }, 400);
+      }
     };
     
     function addFundraiserContributorsCard() {
@@ -3389,7 +3557,10 @@
                  min="1"
                  max="100">
           <p style="font-size: 13px; color: var(--muted); margin: 8px 0 16px;">Including yourself</p>
-          <button class="form-btn" onclick="confirmFundraiserContributors('${cardId}')">Create GroupTab</button>
+          <div style="display: flex; gap: 10px;">
+            <button class="form-btn-secondary" onclick="confirmFundraiserContributors('${cardId}', true)" style="flex:1;">Skip</button>
+            <button class="form-btn" onclick="confirmFundraiserContributors('${cardId}', false)" style="flex:1;">Create GroupTab</button>
+          </div>
         </div>
       `;
       
@@ -3403,20 +3574,27 @@
       document.getElementById(`${cardId}-count`).focus();
     }
     
-    window.confirmFundraiserContributors = function(cardId) {
+    window.confirmFundraiserContributors = function(cardId, isSkip = false) {
       const countInput = document.getElementById(`${cardId}-count`);
       const count = parseInt(countInput.value) || 0;
       
-      if (count < 1) {
+      if (!isSkip && count < 1) {
         countInput.style.borderColor = 'var(--pending)';
         return;
       }
       
       pushHistory();
-      state.data.contributorCount = count;
-      state.data.people = count;
       
-      addUserMessage(`${count} people`);
+      if (isSkip) {
+        state.data.contributorCount = null;
+        state.data.people = 1;
+        addUserMessage("Skip contributor count");
+      } else {
+        state.data.contributorCount = count;
+        state.data.people = count;
+        addUserMessage(`${count} people`);
+      }
+      
       removeActiveCard();
       showInputContainer();
       

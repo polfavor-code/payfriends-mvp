@@ -440,11 +440,11 @@
         border-right: none;
         margin-left: -16px;
         margin-right: -16px;
-        padding: 20px 16px;
+        padding: 16px 16px; /* Reduced vertical padding */
       }
       .header-nav-bar {
-        margin-top: 0;
-        margin-bottom: 8px;
+        margin-top: -4px; /* Pull navigation up */
+        margin-bottom: 4px;
       }
     }
 
@@ -532,9 +532,102 @@
     .header-top-section {
         display: flex;
         gap: 20px;
-        align-items: stretch;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    
+    .header-actions-row {
+        display: flex;
+        gap: 10px;
         margin-bottom: 24px;
     }
+    
+    /* Mobile: smaller icon and adjust layout */
+    @media (max-width: 480px) {
+        .header-top-section {
+            gap: 12px;
+            margin-bottom: 8px;
+            align-items: flex-start;
+        }
+        .header-actions-row {
+            gap: 6px !important;
+            width: 100%;
+            flex-wrap: nowrap !important;
+            margin-bottom: 20px;
+        }
+        .header-icon-container.header-icon-large img {
+            width: 60px !important;
+            height: 60px !important;
+        }
+        .page-title {
+            font-size: 18px !important;
+            line-height: 1.2;
+            margin-top: -2px;
+        }
+        .page-meta {
+            font-size: 10px !important;
+            margin-top: 2px;
+        }
+        .bill-summary-stats {
+            flex-direction: row !important; /* Keep side-by-side but smaller */
+            justify-content: space-between;
+            margin-top: 28px !important;
+            margin-bottom: 12px !important;
+            gap: 0;
+        }
+        .stat-block {
+            flex: 1;
+        }
+        .stat-block.stat-right {
+            text-align: right !important;
+        }
+        .stat-label {
+            font-size: 9px !important;
+            margin-bottom: 2px !important;
+        }
+        .stat-value {
+            font-size: 20px !important;
+        }
+        .progress-container {
+            margin-top: 8px !important;
+        }
+        .progress-percent {
+            font-size: 11px !important;
+            margin-bottom: 4px !important;
+        }
+        .header-status-line {
+            padding-top: 10px !important;
+            font-size: 11px !important;
+        }
+        .header-nav-bar {
+            margin-bottom: 4px !important;
+        }
+        .share-btn-header {
+            width: 32px !important;
+            height: 32px !important;
+        }
+        .share-btn-header .share-icon {
+            width: 14px !important;
+            height: 14px !important;
+        }
+
+        /* Header Action Buttons: Re-add icons */
+        .header-action-btn {
+            padding: 10px 12px !important;
+            font-size: 13px !important;
+            justify-content: center;
+            text-align: center;
+            flex: 1; /* Allow them to grow equally */
+            white-space: nowrap;
+            min-height: 44px;
+            gap: 6px !important;
+        }
+        .header-action-btn span:first-child {
+            display: inline-block !important;
+            font-size: 14px;
+        }
+    }
+    
     .header-content-side {
         flex: 1;
         display: flex;
@@ -679,7 +772,7 @@
         font-family: inherit;
     }
     .receipt-btn-small {
-        /* No uppercase - keep natural case */
+        text-transform: none; /* Keep natural case */
     }
     .product-link-btn:hover, .receipt-btn-small:hover {
         background: rgba(0, 214, 143, 0.2);
@@ -839,39 +932,6 @@
         color: var(--accent);
     }
     
-    /* Header Action Buttons Row */
-    .header-actions-row {
-        display: flex;
-        gap: 10px;
-        margin-top: 12px;
-    }
-    .header-action-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 20px;
-        font-size: 13px;
-        font-weight: 600;
-        border-radius: 10px;
-        border: none;
-        background: rgba(255,255,255,0.03);
-        color: var(--text);
-        cursor: pointer;
-        text-decoration: none;
-        transition: all 0.15s ease;
-    }
-    .header-action-btn:first-child {
-        background: rgba(34, 197, 94, 0.1);
-        color: var(--accent);
-    }
-    .header-action-btn:hover {
-        background: rgba(255,255,255,0.06);
-        transform: translateY(-1px);
-    }
-    .header-action-btn:first-child:hover {
-        background: rgba(34, 197, 94, 0.15);
-    }
-    
     /* Header Status Line */
     .header-status-line {
         display: flex;
@@ -879,7 +939,7 @@
         gap: 8px;
         margin-top: 20px;
         padding-top: 20px;
-        border-top: 1px solid var(--border);
+        border-top: 1px solid rgba(255,255,255,0.05);
         font-size: 12px;
         color: var(--muted);
     }
@@ -1295,9 +1355,91 @@
     
     @media (max-width: 480px) {
         .payment-methods-list {
-            max-height: calc(65vh - 140px);
-            max-height: calc(65dvh - 140px);
-            gap: 10px;
+            max-height: calc(85vh - 180px);
+            max-height: calc(85dvh - 180px);
+            gap: 8px;
+            padding-bottom: 10px;
+        }
+        #gift-payment-details-modal .modal {
+            padding: 16px 16px !important;
+            max-height: 96vh;
+            max-height: 96dvh;
+        }
+        .modal-header {
+            margin-bottom: 12px !important;
+        }
+        #payment-details-amount {
+            font-size: 22px !important;
+            margin-bottom: 12px !important;
+        }
+        .payment-method-card {
+            border-radius: 10px;
+        }
+        .payment-method-header {
+            padding: 12px 14px !important;
+        }
+        .payment-method-details {
+            padding: 0 14px 14px 14px !important;
+            max-height: 0;
+            overflow: hidden;
+        }
+        .payment-method-card.expanded .payment-method-details {
+            max-height: 600px !important;
+        }
+        .payment-method-detail {
+            padding: 8px 0 !important;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+        .payment-method-detail:last-child {
+            border-bottom: none;
+        }
+        .payment-method-detail-label {
+            font-size: 9px !important;
+            margin-bottom: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.5;
+        }
+        .payment-method-detail-value {
+            font-size: 13px !important;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px !important;
+        }
+        .copy-btn-small {
+            padding: 4px 8px !important;
+            min-height: 28px !important;
+            font-size: 11px !important;
+            background: rgba(255,255,255,0.05) !important;
+        }
+        .payment-details-footer {
+            margin-top: 12px !important;
+            padding-top: 12px !important;
+        }
+        .gift-paid-checkbox-card.modal-version {
+            padding: 12px !important;
+            justify-content: center;
+            background: var(--accent);
+            border: none;
+            color: #000;
+        }
+        .gift-paid-checkbox-card.modal-version .gift-checkbox {
+            border-color: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.05);
+        }
+        .gift-paid-checkbox-card.modal-version .gift-checkbox-label {
+            color: #000;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .gift-paid-checkbox-card.modal-version .gift-checkbox-icon {
+            color: #000;
         }
     }
     
@@ -1571,6 +1713,106 @@
         transform: scale(1.02);
     }
     
+    /* Add Another Person Section */
+    .add-person-link {
+        background: none;
+        border: none;
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 4px 0;
+        margin-top: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s;
+    }
+    .add-person-link:hover {
+        opacity: 0.8;
+    }
+    .add-person-link.hidden {
+        display: none;
+    }
+    
+    .additional-names-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 12px;
+    }
+    .additional-names-container:empty {
+        display: none;
+    }
+    
+    .additional-name-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: slideDown 0.2s ease-out;
+    }
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .additional-name-row .report-form-input {
+        flex: 1;
+    }
+    
+    .additional-name-row .remove-person-btn {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.2s;
+    }
+    .additional-name-row .remove-person-btn:hover {
+        background: rgba(239, 68, 68, 0.2);
+    }
+    
+    .additional-name-row .add-more-btn {
+        background: rgba(61, 220, 151, 0.1);
+        border: 1px solid rgba(61, 220, 151, 0.3);
+        color: var(--accent);
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .additional-name-row .add-more-btn:hover {
+        background: rgba(61, 220, 151, 0.2);
+    }
+    
+    .additional-name-label {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    
     /* Modern Upload Dropzone */
     .upload-dropzone {
         border: 2px dashed var(--border);
@@ -1664,8 +1906,9 @@
             border-radius: 12px;
         }
         .report-submit-btn {
-            min-height: 56px;
-            padding: 18px 24px;
+            min-height: 48px;
+            padding: 14px 24px;
+            border-radius: 10px;
         }
     }
     
@@ -1731,12 +1974,27 @@
         font-weight: 500;
         color: var(--muted);
         margin-right: 6px;
+        flex-wrap: wrap;
     }
     .stat-item {
         display: flex;
         align-items: center;
         gap: 4px;
         color: var(--muted);
+        white-space: nowrap;
+    }
+    
+    /* Mobile: Stack stats below title */
+    @media (max-width: 480px) {
+        .participants-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .participants-summary-stats {
+            gap: 8px;
+            font-size: 11px;
+        }
     }
     .stat-dot {
         width: 6px;
@@ -1847,7 +2105,55 @@
         display: flex; align-items: center; justify-content: center;
         font-weight: 700; color: var(--text);
     }
-    @media (max-width: 600px) { .p-avatar { display: none; } .p-row { grid-template-columns: 1fr auto; } }
+    @media (max-width: 600px) { 
+        .p-avatar { display: none; } 
+        .p-row { 
+            grid-template-columns: 1fr auto; 
+            gap: 4px 12px;
+            padding: 14px;
+        }
+        .p-stats-row {
+            grid-column: 1 / span 2 !important;
+            margin-top: 8px !important;
+            width: 100%;
+        }
+        .user-prog-track {
+            height: 8px; /* Slightly thicker on mobile for better visibility */
+        }
+        .p-status-col {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .p-status-col .stamp {
+            font-size: 10px;
+        }
+        .invite-btn {
+            padding: 6px 12px !important;
+            font-size: 10px !important;
+        }
+        .p-name {
+            font-size: 14px;
+        }
+        .p-amt-line {
+            font-size: 11px;
+        }
+        /* Make the expanded card more compact on mobile */
+        .p-row.p-row-expanded {
+            padding: 16px;
+        }
+        .p-expanded-amount {
+            margin: 4px 0 12px 0 !important;
+        }
+        .p-expanded-subtitle {
+            font-size: 10px !important;
+        }
+        .p-expanded-calc {
+            font-size: 11px !important;
+        }
+    }
 
     .p-info { display: flex; flex-direction: column; gap: 4px; }
     .p-name-row { display: flex; align-items: center; gap: 8px; }
@@ -1973,6 +2279,22 @@
         flex-direction: row;
         gap: 10px;
         margin-top: 16px;
+    }
+    
+    /* Mobile: Stack buttons and adjust font sizes */
+    @media (max-width: 480px) {
+        .p-expanded-amount {
+            font-size: 36px;
+        }
+        .p-expanded-actions {
+            flex-direction: column;
+            gap: 8px;
+        }
+        .payment-details-btn-inline,
+        .p-expanded-checkbox {
+            padding: 12px 14px !important;
+            font-size: 14px !important;
+        }
     }
     
     .payment-details-btn-inline {
@@ -2354,6 +2676,13 @@
       margin-top: 4px;
     }
     
+    .footer-report-additional {
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 2px;
+      font-style: italic;
+    }
+    
     .footer-report-amount {
       color: var(--accent);
       font-weight: 600;
@@ -2425,13 +2754,33 @@
       }
       .footer-bar-inner {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: auto 1fr 1fr;
         gap: 8px;
         width: 100%;
+        align-items: center;
+      }
+      .share-btn-footer {
+        width: 40px;
+        height: 40px;
       }
       .f-btn {
         padding: 10px 8px;
-        font-size: 12px;
+        font-size: 11px;
+      }
+    }
+    
+    /* Very small screens: stack footer buttons */
+    @media (max-width: 400px) {
+      .footer-bar-inner {
+        grid-template-columns: 1fr 1fr;
+      }
+      .share-btn-footer {
+        grid-column: span 2;
+        margin: 0 auto 8px auto;
+      }
+      .f-btn {
+        font-size: 10px;
+        padding: 8px 6px;
       }
       .footer-reports-area {
         padding-top: 12px;
@@ -2504,30 +2853,56 @@
     /* Mobile-specific modal adjustments */
     @media (max-width: 480px) {
       .modal-overlay {
-        padding: 12px;
+        padding: 0; /* Remove padding to fill full width/height */
         align-items: flex-end; /* Slide up from bottom on mobile */
       }
       .modal {
         width: 100%;
         max-width: 100%;
         border-radius: 20px 20px 0 0;
-        padding: 20px 16px;
-        padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-        max-height: 85vh;
-        max-height: 85dvh;
+        padding: 16px 16px;
+        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        max-height: 92vh; /* Taller modal */
+        max-height: 92dvh;
         margin: 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+      }
+      .modal-header {
+        margin-bottom: 12px !important;
       }
       .modal-header h3 {
-        font-size: 17px;
+        font-size: 18px;
       }
       .form-input, .form-btn {
-        padding: 16px;
-        font-size: 16px;
+        padding: 14px;
+        font-size: 15px;
+      }
+      .report-form-group {
+        margin-bottom: 16px !important;
+      }
+      .report-form-label {
+        margin-bottom: 4px !important;
+        font-size: 11px !important;
+      }
+      .report-form-input, .report-form-select {
+        padding: 12px 14px !important;
+        font-size: 15px !important;
+      }
+      .upload-dropzone {
+        padding: 16px 12px !important;
+      }
+      .upload-dropzone-icon {
+        font-size: 22px !important;
+      }
+      .upload-dropzone-text {
+        font-size: 12px !important;
       }
       .receipt-modal-close {
-        width: 44px;
-        height: 44px;
-        font-size: 28px;
+        width: 36px;
+        height: 36px;
+        font-size: 24px;
       }
     }
     
@@ -2730,19 +3105,20 @@
                 <div class="page-meta" id="header-meta">
                     ...
                 </div>
-                <!-- Action Buttons Row (moved here) -->
-                <div class="header-actions-row" id="header-actions-row" style="display: none;">
-                    <a id="product-link" href="#" target="_blank" rel="noopener noreferrer" class="header-action-btn" style="display: none;" onclick="event.preventDefault(); window.open(this.href, '_blank');">
-                        <span>🔗</span> <span id="product-link-text">Link</span>
-                    </a>
-                    <button id="receipt-btn" class="header-action-btn" style="display: none;" onclick="showReceiptFromHeader()">
-                        <span>📄</span> View Receipt
-                    </button>
-                    <button class="header-action-btn" onclick="showGiftPaymentDetails()">
-                        <span>💳</span> Payment details
-                    </button>
-                </div>
             </div>
+        </div>
+
+        <!-- Action Buttons Row -->
+        <div class="header-actions-row" id="header-actions-row" style="display: none;">
+            <a id="product-link" href="#" target="_blank" rel="noopener noreferrer" class="header-action-btn" style="display: none;" onclick="event.preventDefault(); window.open(this.href, '_blank');">
+                <span>🔗</span> <span id="product-link-text">Link</span>
+            </a>
+            <button id="receipt-btn" class="header-action-btn" style="display: none;" onclick="showReceiptFromHeader()">
+                <span>📄</span> View Receipt
+            </button>
+            <button class="header-action-btn" onclick="showGiftPaymentDetails()">
+                <span>💳</span> Payment details
+            </button>
         </div>
 
         <!-- Bill Summary Stats -->
@@ -3080,9 +3456,20 @@
       
       <form id="report-payment-form" onsubmit="submitPaymentReport(event)">
         <div class="report-form-group">
-          <label class="report-form-label">Your name *</label>
+          <label class="report-form-label" style="display: flex; align-items: baseline; gap: 8px;">
+            <span>Your name *</span>
+            <span id="report-name-hint" style="font-size: 11px; color: var(--muted); opacity: 0.6; font-weight: 400; text-transform: none; letter-spacing: 0;"></span>
+          </label>
           <input type="text" id="report-name" class="report-form-input" placeholder="Enter your name" required maxlength="50">
-          <p id="report-name-hint" class="form-hint" style="font-size: 11px; color: var(--muted); margin-top: 6px; opacity: 0.6;"></p>
+          
+          <!-- Pay for another person section -->
+          <button type="button" class="add-person-link" id="add-person-link" onclick="addAnotherPerson()">
+            + I also paid for another person
+          </button>
+          
+          <div class="additional-names-container" id="additional-names-container">
+            <!-- Dynamic name fields will be added here -->
+          </div>
         </div>
         
         <div class="report-form-group">
@@ -3822,57 +4209,55 @@
                 detailsHtml += `
                     <div class="payment-method-detail">
                         <span class="payment-method-detail-label">Account Holder</span>
-                        <span class="payment-method-detail-value">
-                            ${escapeHtml(details.accountHolder)}
+                        <div class="payment-method-detail-value">
+                            <span>${escapeHtml(details.accountHolder)}</span>
                             <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(details.accountHolder)}')">Copy</button>
-                        </span>
+                        </div>
                     </div>`;
             }
             if (details.iban) {
                 detailsHtml += `
                     <div class="payment-method-detail">
                         <span class="payment-method-detail-label">IBAN</span>
-                        <span class="payment-method-detail-value">
-                            ${escapeHtml(details.iban)}
+                        <div class="payment-method-detail-value">
+                            <span class="mono">${escapeHtml(details.iban)}</span>
                             <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(details.iban)}')">Copy</button>
-                        </span>
+                        </div>
                     </div>`;
             }
             if (details.bic) {
                 detailsHtml += `
                     <div class="payment-method-detail">
                         <span class="payment-method-detail-label">BIC</span>
-                        <span class="payment-method-detail-value">
-                            ${escapeHtml(details.bic)}
+                        <div class="payment-method-detail-value">
+                            <span class="mono">${escapeHtml(details.bic)}</span>
                             <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(details.bic)}')">Copy</button>
-                        </span>
+                        </div>
                     </div>`;
             }
             if (details.reference) {
                 detailsHtml += `
                     <div class="payment-method-detail">
                         <span class="payment-method-detail-label">Reference</span>
-                        <span class="payment-method-detail-value">
-                            ${escapeHtml(details.reference)}
+                        <div class="payment-method-detail-value">
+                            <span>${escapeHtml(details.reference)}</span>
                             <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(details.reference)}')">Copy</button>
-                        </span>
+                        </div>
                     </div>`;
             }
         } else if (method.type === 'paypal') {
-            // PayPal stores as paypalId (can be username, email, or paypal.me link)
             const paypalValue = details.paypalId || details.username || '';
             if (paypalValue) {
-                // Check if it's a link
                 const isLink = paypalValue.includes('paypal.me') || paypalValue.startsWith('http');
                 if (isLink) {
                     const linkUrl = paypalValue.startsWith('http') ? paypalValue : `https://${paypalValue}`;
                     detailsHtml += `
                         <div class="payment-method-detail">
                             <span class="payment-method-detail-label">PayPal Link</span>
-                            <span class="payment-method-detail-value">
-                                ${escapeHtml(paypalValue)}
+                            <div class="payment-method-detail-value">
+                                <span>${escapeHtml(paypalValue)}</span>
                                 <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(paypalValue)}')">Copy</button>
-                            </span>
+                            </div>
                         </div>
                         <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="open-link-btn" onclick="event.stopPropagation(); event.preventDefault(); window.open(this.href, '_blank');">
                             Open PayPal →
@@ -3881,35 +4266,33 @@
                     detailsHtml += `
                         <div class="payment-method-detail">
                             <span class="payment-method-detail-label">PayPal Username / Email</span>
-                            <span class="payment-method-detail-value">
-                                ${escapeHtml(paypalValue)}
+                            <div class="payment-method-detail-value">
+                                <span>${escapeHtml(paypalValue)}</span>
                                 <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(paypalValue)}')">Copy</button>
-                            </span>
+                            </div>
                         </div>`;
                 }
             } else {
                 detailsHtml += `
                     <div class="payment-method-detail">
-                        <span class="payment-method-detail-value" style="color: var(--muted);">
+                        <div class="payment-method-detail-value" style="color: var(--muted);">
                             Use PayPal to send payment
-                        </span>
+                        </div>
                     </div>`;
             }
         } else if (method.type === 'revolut') {
-            // Revolut stores as revolutId (can be username, phone, or link)
             const revolutValue = details.revolutId || details.username || '';
             if (revolutValue) {
-                // Check if it's a link
                 const isLink = revolutValue.includes('revolut.me') || revolutValue.startsWith('http');
                 if (isLink) {
                     const linkUrl = revolutValue.startsWith('http') ? revolutValue : `https://${revolutValue}`;
                     detailsHtml += `
                         <div class="payment-method-detail">
                             <span class="payment-method-detail-label">Revolut Link</span>
-                            <span class="payment-method-detail-value">
-                                ${escapeHtml(revolutValue)}
+                            <div class="payment-method-detail-value">
+                                <span>${escapeHtml(revolutValue)}</span>
                                 <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(revolutValue)}')">Copy</button>
-                            </span>
+                            </div>
                         </div>
                         <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="open-link-btn" onclick="event.stopPropagation(); event.preventDefault(); window.open(this.href, '_blank');">
                             Open Revolut →
@@ -3918,32 +4301,32 @@
                     detailsHtml += `
                         <div class="payment-method-detail">
                             <span class="payment-method-detail-label">Revolut Username / Phone</span>
-                            <span class="payment-method-detail-value">
-                                ${escapeHtml(revolutValue)}
+                            <div class="payment-method-detail-value">
+                                <span>${revolutValue.startsWith('@') ? '' : '@'}${escapeHtml(revolutValue)}</span>
                                 <button class="copy-btn-small" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(revolutValue)}')">Copy</button>
-                            </span>
+                            </div>
                         </div>`;
                 }
             } else {
                 detailsHtml += `
                     <div class="payment-method-detail">
-                        <span class="payment-method-detail-value" style="color: var(--muted);">
+                        <div class="payment-method-detail-value" style="color: var(--muted);">
                             Use Revolut to send payment
-                        </span>
+                        </div>
                     </div>`;
             }
         } else if (method.type === 'cash') {
             detailsHtml += `
                 <div class="payment-method-detail">
-                    <span class="payment-method-detail-value" style="color: var(--muted);">
+                    <div class="payment-method-detail-value" style="color: var(--muted);">
                         ${details.instructions ? escapeHtml(details.instructions) : 'Pay in cash directly'}
-                    </span>
+                    </div>
                 </div>`;
         } else if (method.type === 'other') {
             if (details.instructions) {
                 detailsHtml += `
                     <div class="payment-method-detail">
-                        <span class="payment-method-detail-value">${escapeHtml(details.instructions)}</span>
+                        <div class="payment-method-detail-value">${escapeHtml(details.instructions)}</div>
                     </div>`;
             }
             if (details.link) {
@@ -3953,21 +4336,21 @@
                         Open Link →
                     </a>`;
             }
-            // If no details provided, show placeholder
             if (!details.instructions && !details.link) {
                 detailsHtml += `
                     <div class="payment-method-detail">
-                        <span class="payment-method-detail-value" style="color: var(--muted);">
+                        <div class="payment-method-detail-value" style="color: var(--muted);">
                             Contact starter for details
-                        </span>
+                        </div>
                     </div>`;
             }
         }
         
         const cardId = `payment-method-card-${idx}`;
+        const expandedClass = (idx === 0) ? 'expanded' : '';
         
         return `
-            <div class="payment-method-card collapsible" id="${cardId}" onclick="togglePaymentMethodCard('${cardId}')">
+            <div class="payment-method-card collapsible ${expandedClass}" id="${cardId}" onclick="togglePaymentMethodCard('${cardId}')">
                 <div class="payment-method-header">
                     <div class="payment-method-header-left">
                         <span class="payment-method-icon">${icon}</span>
@@ -3978,8 +4361,7 @@
                 <div class="payment-method-details">
                     ${detailsHtml}
                 </div>
-            </div>
-        `;
+            </div>`;
     }
     
     window.togglePaymentMethodCard = function(cardId) {
@@ -4032,12 +4414,138 @@
         showReportPaymentModal();
     }
     
+    // Track additional people to pay for
+    let additionalPeopleCount = 0;
+    
+    function addAnotherPerson(prefillName = '') {
+        const container = document.getElementById('additional-names-container');
+        const addLink = document.getElementById('add-person-link');
+        
+        additionalPeopleCount++;
+        const index = additionalPeopleCount;
+        
+        // Hide the "add another person" link after first click
+        addLink.classList.add('hidden');
+        
+        const row = document.createElement('div');
+        row.className = 'additional-name-row';
+        row.id = `additional-person-${index}`;
+        row.innerHTML = `
+            <div style="flex: 1;">
+                <div class="additional-name-label">Other person's name *</div>
+                <input type="text" class="report-form-input additional-person-name" placeholder="Enter their name" value="${prefillName}" maxlength="50" oninput="updateFairSharePill()">
+            </div>
+            <button type="button" class="remove-person-btn" onclick="removePersonField(${index})" title="Remove">✕</button>
+            <button type="button" class="add-more-btn" onclick="addAnotherPerson()" title="Add another person">+</button>
+        `;
+        
+        container.appendChild(row);
+        
+        // Update the fair share pill to reflect the new count
+        updateFairSharePill();
+        
+        // Focus on the new input
+        const newInput = row.querySelector('input');
+        if (newInput && !prefillName) {
+            newInput.focus();
+        }
+    }
+    
+    function removePersonField(index) {
+        const row = document.getElementById(`additional-person-${index}`);
+        if (row) {
+            row.remove();
+        }
+        
+        // Check if there are any remaining additional names
+        const container = document.getElementById('additional-names-container');
+        const remainingRows = container.querySelectorAll('.additional-name-row');
+        
+        if (remainingRows.length === 0) {
+            // Show the "add another person" link again
+            const addLink = document.getElementById('add-person-link');
+            addLink.classList.remove('hidden');
+            additionalPeopleCount = 0;
+        }
+        
+        // Update the fair share pill
+        updateFairSharePill();
+    }
+    
+    function updateFairSharePill() {
+        const fairShareBtn = document.getElementById('report-fair-share-btn');
+        const fairShareValue = document.getElementById('report-fair-share-value');
+        // dataset.amount is in euros (e.g., "43.85"), convert to cents for formatCurrency2
+        const baseFairShareEuros = parseFloat(fairShareBtn.dataset.amount) || 0;
+        const baseFairShareCents = Math.round(baseFairShareEuros * 100);
+        
+        // Count how many people (1 for self + any additional)
+        const container = document.getElementById('additional-names-container');
+        const additionalInputs = container.querySelectorAll('.additional-person-name');
+        const totalPeople = 1 + additionalInputs.length;
+        
+        const totalAmountCents = baseFairShareCents * totalPeople;
+        
+        // Update the pill display
+        if (totalPeople === 1) {
+            fairShareValue.textContent = formatCurrency2(baseFairShareCents).replace('€', '').trim();
+        } else {
+            // Show format: "2 × €43.85 = €87.70"
+            const singleShare = formatCurrency2(baseFairShareCents);
+            const total = formatCurrency2(totalAmountCents);
+            fairShareValue.innerHTML = `${totalPeople} × ${singleShare} = ${total}`;
+        }
+        
+        // Store the total amount for auto-fill (in euros for the input field)
+        fairShareBtn.dataset.totalAmount = (totalAmountCents / 100).toFixed(2);
+    }
+    
+    function openPayForSlot(slotNumber) {
+        // Show the report payment modal with a pre-filled additional person
+        showReportPaymentModal();
+        
+        // Give the modal time to appear, then add a person field
+        setTimeout(() => {
+            addAnotherPerson(''); // Empty name, user will fill it in
+            // Focus on the new input
+            const container = document.getElementById('additional-names-container');
+            const lastInput = container.querySelector('.additional-name-row:last-child input');
+            if (lastInput) {
+                lastInput.focus();
+                lastInput.placeholder = `Enter name for participant ${slotNumber}`;
+            }
+        }, 100);
+    }
+    
+    function getAdditionalNames() {
+        const container = document.getElementById('additional-names-container');
+        const inputs = container.querySelectorAll('.additional-person-name');
+        const names = [];
+        inputs.forEach(input => {
+            const name = input.value.trim();
+            if (name) {
+                names.push(name);
+            }
+        });
+        return names;
+    }
+    
+    function resetAdditionalPersonFields() {
+        const container = document.getElementById('additional-names-container');
+        container.innerHTML = '';
+        const addLink = document.getElementById('add-person-link');
+        addLink.classList.remove('hidden');
+        additionalPeopleCount = 0;
+    }
+    
     function copyReportFairShare() {
         const fairShareBtn = document.getElementById('report-fair-share-btn');
         const amountInput = document.getElementById('report-amount');
-        const amount = fairShareBtn.dataset.amount;
-        if (amount) {
-            amountInput.value = amount;
+        
+        // Use total amount (which accounts for additional people)
+        const totalAmount = fairShareBtn.dataset.totalAmount || fairShareBtn.dataset.amount;
+        if (totalAmount) {
+            amountInput.value = totalAmount;
             // Brief visual feedback
             fairShareBtn.style.transform = 'scale(0.95)';
             setTimeout(() => {
@@ -4103,6 +4611,7 @@
         form.reset();
         document.getElementById('report-error').style.display = 'none';
         resetProofUpload(); // Reset the upload dropzone UI
+        resetAdditionalPersonFields(); // Reset any additional person fields
         
         // Set subtle hint showing who can see the name
         const creatorFirstName = (tabData.creator_name || 'the starter').split(' ')[0];
@@ -4157,12 +4666,18 @@
         let prefillAmount = 0;
         
         if (giftMode === 'gift_debt') {
-            // Owed amount
+            // Owed amount - try fairnessData first, fall back to simple calculation
             if (fairnessData && currentParticipant) {
                 const myData = fairnessData.participants.find(p => p.participantId === currentParticipant.id);
                 if (myData) {
                     prefillAmount = Math.abs(myData.balance < 0 ? myData.balance : myData.fairShare);
                 }
+            }
+            // Fallback: simple fair share calculation if fairnessData didn't work
+            if (prefillAmount === 0) {
+                const totalAmount = tabData.total_amount_cents || 0;
+                const peopleCount = tabData.people_count || 1;
+                prefillAmount = peopleCount > 0 ? Math.round(totalAmount / peopleCount) : 0;
             }
         } else if (giftMode === 'gift_pot_target') {
             // Suggested amount
@@ -4180,6 +4695,7 @@
             fairShareValue.textContent = (prefillAmount / 100).toFixed(2);
             fairShareBtn.style.display = 'inline-flex';
             fairShareBtn.dataset.amount = (prefillAmount / 100).toFixed(2);
+            fairShareBtn.dataset.totalAmount = (prefillAmount / 100).toFixed(2); // Initialize total (updated when adding people)
             // Don't auto-fill, let user click to fill
         } else {
             fairShareBtn.style.display = 'none';
@@ -4224,12 +4740,28 @@
         const paidAt = document.getElementById('report-date').value;
         const proofFile = document.getElementById('report-proof').files[0];
         
+        // Get additional names
+        const additionalNames = getAdditionalNames();
+        
         // Validation
         if (!reporterName) {
             errorEl.textContent = 'Please enter your name';
             errorEl.style.display = 'block';
             return;
         }
+        
+        // Check if there are empty additional name fields
+        const container = document.getElementById('additional-names-container');
+        const additionalInputs = container.querySelectorAll('.additional-person-name');
+        for (const input of additionalInputs) {
+            if (!input.value.trim()) {
+                errorEl.textContent = 'Please fill in all additional person names or remove empty fields';
+                errorEl.style.display = 'block';
+                input.focus();
+                return;
+            }
+        }
+        
         if (!method) {
             errorEl.textContent = 'Please select how you paid';
             errorEl.style.display = 'block';
@@ -4257,6 +4789,11 @@
             formData.append('paidAt', paidAt);
             formData.append('token', window.currentMagicToken || tabData.magic_token);
             
+            // Add additional names as JSON
+            if (additionalNames.length > 0) {
+                formData.append('additionalNames', JSON.stringify(additionalNames));
+            }
+            
             if (proofFile) {
                 formData.append('proof', proofFile);
             }
@@ -4276,8 +4813,15 @@
             myPaymentReport = data.report;
             hideModal('report-payment-modal');
             
+            // Reset the additional person fields
+            resetAdditionalPersonFields();
+            
             // Show success toast/notification
-            showToast('Payment reported! Waiting for confirmation.');
+            const peopleCount = 1 + additionalNames.length;
+            const message = peopleCount > 1 
+                ? `Payment for ${peopleCount} people reported! Waiting for confirmation.`
+                : 'Payment reported! Waiting for confirmation.';
+            showToast(message);
             
             // Instant full UI update
             await refreshTabData();
@@ -4399,10 +4943,23 @@
                 ? `<span class="footer-report-proof" onclick="showProofModal('${escapeHtml(report.proof_file_path)}', '${escapeHtml(report.reporter_name)}')">📎 Proof</span>` 
                 : '';
             
+            // Parse additional names if present
+            let additionalNamesHtml = '';
+            if (report.additional_names) {
+                try {
+                    const names = JSON.parse(report.additional_names);
+                    if (Array.isArray(names) && names.length > 0) {
+                        const namesStr = names.map(n => escapeHtml(n)).join(', ');
+                        additionalNamesHtml = `<div class="footer-report-additional">+ paying for: ${namesStr}</div>`;
+                    }
+                } catch (e) {}
+            }
+            
             return `
                 <div class="footer-report-item">
                     <div class="footer-report-info">
                         <div class="footer-report-name">${escapeHtml(report.reporter_name)}</div>
+                        ${additionalNamesHtml}
                         <div class="footer-report-details">
                             <span class="footer-report-amount">${formatCurrency2(report.amount_cents)}</span>
                             <span>${methodLabels[report.method] || report.method}</span>
@@ -4860,8 +5417,17 @@
         
         for (let i = 0; i < waitingGuestCount; i++) {
             const participantNum = list.length + i + 1;
+            // For invited users: clicking box opens pay-for-slot flow
+            // For creators: clicking box copies share link
+            const boxClickHandler = isCreator 
+                ? `copyShareLink('${shareUrl}')`
+                : `openPayForSlot(${participantNum})`;
+            const boxTitle = isCreator 
+                ? 'Click to copy share link'
+                : 'Click to pay for this person';
+            
             const waitingHtml = `
-                <div class="p-row waiting-guest" onclick="copyShareLink('${shareUrl}')" title="Click to copy share link">
+                <div class="p-row waiting-guest" onclick="${boxClickHandler}" title="${boxTitle}">
                     <div class="p-avatar waiting">
                         ${participantNum}
                     </div>
@@ -4876,7 +5442,7 @@
                     </div>
 
                     <div class="p-status-col">
-                        <button class="invite-btn" onclick="copyShareLink('${shareUrl}')">
+                        <button class="invite-btn" onclick="event.stopPropagation(); copyShareLink('${shareUrl}')">
                             INVITE
                         </button>
                     </div>
@@ -4952,13 +5518,18 @@
     function renderFooter() {
         const footer = document.getElementById('host-footer');
         const backBtn = document.getElementById('back-btn');
+        const headerShareBtn = document.querySelector('.share-btn-header');
         
         if (isCreator) {
             footer.classList.remove('hide');
             backBtn.style.visibility = 'visible';
+            // Hide share button in top right for creator (they have it in bottom menu)
+            if (headerShareBtn) headerShareBtn.style.display = 'none';
         } else {
             footer.classList.add('hide');
             backBtn.style.visibility = 'hidden';
+            // Show share button for guests
+            if (headerShareBtn) headerShareBtn.style.display = 'inline-flex';
         }
     }
 
