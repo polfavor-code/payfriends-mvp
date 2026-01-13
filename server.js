@@ -6696,6 +6696,64 @@ app.post('/api/grouptabs/:id/close', requireAuth, (req, res) => {
   }
 });
 
+// Delete tab (organizer only)
+app.delete('/api/grouptabs/:id', requireAuth, (req, res) => {
+  const tabId = parseInt(req.params.id);
+
+  try {
+    // Verify user is the tab creator
+    const tab = db.prepare(`
+      SELECT * FROM group_tabs WHERE id = ? AND creator_user_id = ?
+    `).get(tabId, req.user.id);
+
+    if (!tab) {
+      return res.status(403).json({ error: 'Only the organizer can delete this tab' });
+    }
+
+    // Delete all related data in correct order (respecting foreign key constraints)
+    db.prepare(`DELETE FROM group_tab_payments WHERE group_tab_id = ?`).run(tabId);
+    db.prepare(`DELETE FROM group_tab_expenses WHERE group_tab_id = ?`).run(tabId);
+    
+    // Delete payment_reports BEFORE participants (payment_reports references participant_id)
+    const reportsTableExists = db.prepare(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_payment_reports'
+    `).get();
+    if (reportsTableExists) {
+      db.prepare(`DELETE FROM group_tab_payment_reports WHERE group_tab_id = ?`).run(tabId);
+    }
+    
+    db.prepare(`DELETE FROM group_tab_participants WHERE group_tab_id = ?`).run(tabId);
+    
+    // Check if price_groups table exists before deleting
+    const priceGroupsTableExists = db.prepare(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_price_groups'
+    `).get();
+    if (priceGroupsTableExists) {
+      db.prepare(`DELETE FROM group_tab_price_groups WHERE group_tab_id = ?`).run(tabId);
+    }
+
+    // Check if tiers table exists before deleting
+    const tiersTableExists = db.prepare(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'
+    `).get();
+    if (tiersTableExists) {
+      db.prepare(`DELETE FROM group_tab_tiers WHERE group_tab_id = ?`).run(tabId);
+    }
+
+    // Delete messages that reference this tab
+    db.prepare(`DELETE FROM messages WHERE tab_id = ?`).run(tabId);
+
+    // Delete the tab itself
+    db.prepare(`DELETE FROM group_tabs WHERE id = ?`).run(tabId);
+
+    console.log(`[GroupTabs] Tab ${tabId} deleted by user ${req.user.id}`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting tab:', err);
+    res.status(500).json({ error: 'Failed to delete tab' });
+  }
+});
+
 // =============================================
 // UNIFIED TOKEN-BASED TAB ACCESS
 // =============================================

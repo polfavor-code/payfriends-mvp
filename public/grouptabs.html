@@ -183,6 +183,14 @@
       margin-right: 8px;
     }
 
+    .tab-icon-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     /* --- TAB INFO (3-line layout) --- */
     .tab-info {
       flex: 1;
@@ -203,55 +211,22 @@
     }
 
     .tab-line-2 {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 2px;
-    }
-
-    .tab-line-2 .creator-you {
-      color: var(--text);
-    }
-
-    .tab-line-3 {
       font-size: 14px;
     }
 
     .tab-amount {
-      color: var(--accent);
+      color: #f59e0b;
       font-weight: 600;
     }
 
     .tab-amount.settled {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .tab-updated {
       color: var(--muted);
       font-weight: 400;
-    }
-
-    /* --- RECEIPT LINK ICON --- */
-    .receipt-link {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      font-size: 18px;
-      flex-shrink: 0;
-      transition: all 0.2s;
-      text-decoration: none;
-      opacity: 0.6;
-    }
-
-    .receipt-link:hover {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.2);
-      opacity: 1;
-      transform: scale(1.05);
-    }
-
-    .tab-card:hover .receipt-link {
-      opacity: 0.9;
     }
 
     /* --- PROGRESS RING --- */
@@ -300,6 +275,170 @@
 
     .progress-ring-text.settled {
       color: #818cf8;
+    }
+
+    /* --- MORE MENU --- */
+    .tab-more-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      font-size: 18px;
+      position: relative;
+    }
+
+    .tab-more-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .tab-card.menu-open {
+      z-index: 50;
+    }
+
+    .tab-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 4px;
+      background: #1a1d24;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 6px;
+      min-width: 140px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      z-index: 200;
+      display: none;
+    }
+
+    .tab-menu.open {
+      display: block;
+    }
+
+    .tab-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .tab-menu-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .tab-menu-item.danger {
+      color: #f87171;
+    }
+
+    .tab-menu-item.danger:hover {
+      background: rgba(248, 113, 113, 0.12);
+    }
+
+    /* --- DELETE MODAL --- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-box {
+      background: #1a1d24;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+      transform: scale(0.95);
+      transition: transform 0.2s;
+    }
+
+    .modal-overlay.open .modal-box {
+      transform: scale(1);
+    }
+
+    .modal-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .modal-text {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .modal-text strong {
+      color: var(--text);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .modal-btn-cancel {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .modal-btn-cancel:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .modal-btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+
+    .modal-btn-danger:hover {
+      background: #b91c1c;
     }
 
     /* --- EMPTY STATE --- */
@@ -498,6 +637,22 @@
 
   </div>
 
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal-overlay" onclick="if(event.target === this) closeDeleteModal()">
+    <div class="modal-box">
+      <div class="modal-icon">🗑️</div>
+      <div class="modal-title">Delete GroupTab?</div>
+      <div class="modal-text">
+        This will permanently delete "<strong id="delete-tab-name"></strong>".<br>
+        This action cannot be undone.
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+        <button class="modal-btn modal-btn-danger" onclick="confirmDeleteTab()">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let allTabs = [];
     let currentFilter = 'all';
@@ -614,23 +769,12 @@
 
     function renderTabCard(tab) {
       const emoji = getTabEmoji(tab);
-
-      // Creator info - dynamic logic
-      const isCreatedByMe = tab.creator_user_id === currentUserId;
       
+      // Check for uploaded image (gift product image)
+      const uploadedImage = tab.about_image_path || tab.raising_for_image_path;
+
       // Use short invite code for URLs (user-friendly)
       const tabUrl = tab.invite_code ? `/tab/${tab.invite_code}` : `/grouptabs/${tab.id}`;
-      
-      // Receipt URL (still uses numeric ID, requires login)
-      const receiptUrl = `/grouptabs/${tab.id}/receipt`;
-      
-      let creatorDisplay;
-      if (isCreatedByMe) {
-        creatorDisplay = `Created by <span class="creator-you">You</span>`;
-      } else {
-        const creatorFirstName = tab.creator_first_name || tab.creator_name?.split(' ')[0] || 'Someone';
-        creatorDisplay = `Created by ${escapeHtml(creatorFirstName)}`;
-      }
 
       // Financial calculations
       const totalCents = tab.total_amount_cents || 0;
@@ -646,28 +790,32 @@
       const circumference = 2 * Math.PI * radius;
       const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
-      // Amount display: green "€X unpaid" or muted "Settled"
+      // Updated time: use last_payment_at, updated_at, or created_at
+      const updatedDate = new Date(tab.last_payment_at || tab.updated_at || tab.created_at);
+      const updatedText = getTimeAgo(updatedDate);
+
+      // Amount display: green "€X unpaid" or muted "Settled", plus updated time
       const amountDisplay = isSettled 
-        ? '<span class="tab-amount settled">Settled</span>'
-        : `<span class="tab-amount">${formatCurrency2(unpaidCents)} unpaid</span>`;
+        ? `<span class="tab-amount settled">Settled</span> · <span class="tab-updated">Updated ${updatedText}</span>`
+        : `<span class="tab-amount">${formatCurrency2(unpaidCents)} unpaid</span> · <span class="tab-updated">Updated ${updatedText}</span>`;
+
+      // Icon: show uploaded image if available, otherwise emoji
+      const iconContent = uploadedImage 
+        ? `<img src="${uploadedImage}" alt="" class="tab-icon-img">`
+        : emoji;
 
       return `
         <div class="tab-card" onclick="window.location.href='${tabUrl}'">
-          <div class="tab-icon">${emoji}</div>
+          <div class="tab-icon">${iconContent}</div>
           
           <div class="tab-info">
             <div class="tab-line-1">
               <span class="tab-title">${escapeHtml(tab.name)}</span>
             </div>
             <div class="tab-line-2">
-              ${creatorDisplay}
-            </div>
-            <div class="tab-line-3">
               ${amountDisplay}
             </div>
           </div>
-
-          <a href="${receiptUrl}" target="_blank" rel="noopener noreferrer" class="receipt-link" title="View Receipt" onclick="event.stopPropagation();">🧾</a>
 
           <div class="progress-ring-container ${isSettled ? 'glow-settled' : 'glow'}">
             <svg width="64" height="64">
@@ -682,12 +830,25 @@
             </svg>
             <span class="progress-ring-text ${isSettled ? 'settled' : ''}">${progressPercent}%</span>
           </div>
+
+          <button class="tab-more-btn" onclick="event.stopPropagation(); toggleTabMenu(this, ${tab.id}, '${escapeHtml(tab.name).replace(/'/g, "\\'")}')">
+            ⋯
+            <div class="tab-menu">
+              <div class="tab-menu-item" onclick="event.stopPropagation();">✏️ Edit</div>
+              <div class="tab-menu-item danger" onclick="event.stopPropagation(); openDeleteModal(${tab.id}, '${escapeHtml(tab.name).replace(/'/g, "\\'")}')">🗑️ Delete</div>
+            </div>
+          </button>
         </div>
       `;
     }
 
     function getTabEmoji(tab) {
-      // Use category if available, otherwise default based on type
+      // Check template first (gift, restaurant, trip)
+      if (tab.template === 'gift') return '🎁';
+      if (tab.template === 'restaurant') return '🍕';
+      if (tab.template === 'trip') return '✈️';
+      
+      // Use category if available
       const category = tab.category || '';
       const emojiMap = {
         'restaurant': '🍕',
@@ -728,7 +889,9 @@
       const days = Math.floor(hours / 24);
       if (days < 7) return `${days}d ago`;
       if (days < 30) return `${Math.floor(days / 7)}w ago`;
-      return date.toLocaleDateString();
+      // Older than 30 days: show "12 Dec" format
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${date.getDate()} ${monthNames[date.getMonth()]}`;
     }
 
     function escapeHtml(str) {
@@ -739,6 +902,85 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    // --- More Menu Functions ---
+    let activeMenu = null;
+    let activeCard = null;
+
+    function toggleTabMenu(btn, tabId, tabName) {
+      const menu = btn.querySelector('.tab-menu');
+      const card = btn.closest('.tab-card');
+      
+      // Close any other open menu
+      if (activeMenu && activeMenu !== menu) {
+        activeMenu.classList.remove('open');
+        if (activeCard) activeCard.classList.remove('menu-open');
+      }
+      
+      menu.classList.toggle('open');
+      card.classList.toggle('menu-open');
+      
+      if (menu.classList.contains('open')) {
+        activeMenu = menu;
+        activeCard = card;
+      } else {
+        activeMenu = null;
+        activeCard = null;
+      }
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', () => {
+      if (activeMenu) {
+        activeMenu.classList.remove('open');
+        if (activeCard) activeCard.classList.remove('menu-open');
+        activeMenu = null;
+        activeCard = null;
+      }
+    });
+
+    // --- Delete Modal Functions ---
+    let deleteTabId = null;
+
+    function openDeleteModal(tabId, tabName) {
+      deleteTabId = tabId;
+      document.getElementById('delete-tab-name').textContent = tabName;
+      document.getElementById('delete-modal').classList.add('open');
+      
+      // Close the menu
+      if (activeMenu) {
+        activeMenu.classList.remove('open');
+        activeMenu = null;
+      }
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('delete-modal').classList.remove('open');
+      deleteTabId = null;
+    }
+
+    async function confirmDeleteTab() {
+      if (!deleteTabId) return;
+      
+      try {
+        const response = await fetch(`/api/grouptabs/${deleteTabId}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to delete tab');
+        }
+        
+        // Remove from local array and re-render
+        allTabs = allTabs.filter(t => t.id !== deleteTabId);
+        renderTabs();
+        closeDeleteModal();
+      } catch (error) {
+        console.error('Error deleting tab:', error);
+        alert('Failed to delete tab: ' + error.message);
+      }
     }
 
     // Initialize
