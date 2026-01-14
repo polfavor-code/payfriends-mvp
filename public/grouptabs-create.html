@@ -1222,6 +1222,8 @@
         giftPlan: null,           // 'already_bought' | 'planning_to_buy'
         amountTarget: 0,          // For pot modes: target amount in cents
         contributorCount: null,   // Number of contributors
+        organizerContribution: null, // For pre-paid gifts: how much organizer contributes (not collecting back)
+        amountToRaise: null,      // For pre-paid gifts: how much to collect from others
         raisingForText: null,     // Q3_raise: What are you raising money for?
         raisingForImage: null,    // Q3_raise: Optional image
         raisingForLink: null,     // Q3_raise: Optional link
@@ -3546,20 +3548,42 @@
       hideInputContainer();
       
       const cardId = 'fundraiser-contributors-' + Date.now();
+      const initialCount = 4;
+      
+      // Calculate preview based on target amount
+      let preview = '';
+      if (state.data.amountTarget && state.data.amountTarget > 0) {
+        const suggestedAmount = Math.floor(state.data.amountTarget / initialCount);
+        preview = `Suggested contribution: <b>${formatCurrency2(suggestedAmount)}</b> per person`;
+      }
       
       const cardHtml = `
-        <div class="chat-card form-card" id="${cardId}">
-          <div class="form-card-title">Number of Contributors</div>
-          <input type="number" 
-                 id="${cardId}-count" 
-                 class="gift-input" 
-                 placeholder="e.g., 5"
-                 min="1"
-                 max="100">
-          <p style="font-size: 13px; color: var(--muted); margin: 8px 0 16px;">Including yourself</p>
-          <div style="display: flex; gap: 10px;">
-            <button class="form-btn-secondary" onclick="confirmFundraiserContributors('${cardId}', true)" style="flex:1;">Skip</button>
-            <button class="form-btn" onclick="confirmFundraiserContributors('${cardId}', false)" style="flex:1;">Create GroupTab</button>
+        <div id="${cardId}" class="chat-card">
+          <div class="form-card">
+            <div class="people-selector-inline">
+              <div class="people-selector-controls">
+                <button class="counter-btn" onclick="adjustFundraiserContributors('${cardId}', -1)">−</button>
+                <input type="number"
+                       id="${cardId}-value"
+                       class="people-count-value"
+                       value="${initialCount}"
+                       min="1"
+                       max="99"
+                       inputmode="numeric"
+                       onchange="updateFundraiserContributorPreview('${cardId}')">
+                <button class="counter-btn" onclick="adjustFundraiserContributors('${cardId}', 1)">+</button>
+              </div>
+              <span class="people-label">people</span>
+            </div>
+            
+            ${preview ? `<div id="${cardId}-preview" class="gift-contributor-preview">${preview}</div>` : ''}
+            
+            <p style="font-size: 13px; color: var(--muted); margin: 8px 0 0; text-align: center;">Including yourself</p>
+            
+            <div style="display: flex; gap: 10px; margin-top: 16px;">
+              <button class="form-btn-secondary" onclick="confirmFundraiserContributors('${cardId}', true)" style="flex:1;">Skip</button>
+              <button class="card-confirm-btn" onclick="confirmFundraiserContributors('${cardId}', false)" style="flex:1;">Create GroupTab</button>
+            </div>
           </div>
         </div>
       `;
@@ -3570,38 +3594,69 @@
       card.dataset.historyIndex = historyIndex;
       chatHistory.appendChild(card);
       scrollToBottom();
-      
-      document.getElementById(`${cardId}-count`).focus();
     }
     
-    window.confirmFundraiserContributors = function(cardId, isSkip = false) {
-      const countInput = document.getElementById(`${cardId}-count`);
-      const count = parseInt(countInput.value) || 0;
+    window.adjustFundraiserContributors = function(cardId, delta) {
+      const input = document.getElementById(`${cardId}-value`);
+      let val = parseInt(input.value) || 1;
+      val = Math.max(1, Math.min(99, val + delta));
+      input.value = val;
+      updateFundraiserContributorPreview(cardId);
+    };
+    
+    window.updateFundraiserContributorPreview = function(cardId) {
+      const input = document.getElementById(`${cardId}-value`);
+      const count = parseInt(input.value) || 1;
+      const previewEl = document.getElementById(`${cardId}-preview`);
       
+      if (previewEl && state.data.amountTarget && state.data.amountTarget > 0) {
+        const suggestedAmount = Math.floor(state.data.amountTarget / count);
+        previewEl.innerHTML = `Suggested contribution: <b>${formatCurrency2(suggestedAmount)}</b> per person`;
+      }
+    };
+    
+    window.confirmFundraiserContributors = function(cardId, isSkip = false) {
+      const countInput = document.getElementById(`${cardId}-value`);
+      const count = parseInt(countInput.value) || 0;
+
       if (!isSkip && count < 1) {
         countInput.style.borderColor = 'var(--pending)';
         return;
       }
-      
+
       pushHistory();
-      
+
       if (isSkip) {
         state.data.contributorCount = null;
         state.data.people = 1;
         addUserMessage("Skip contributor count");
+        removeActiveCard();
+        showInputContainer();
+        setTimeout(() => {
+          goToPaymentDetails();
+        }, 400);
       } else {
         state.data.contributorCount = count;
         state.data.people = count;
         addUserMessage(`${count} people`);
+        removeActiveCard();
+        showInputContainer();
+
+        // Show summary message like in gift flow
+        if (state.data.amountTarget && state.data.amountTarget > 0) {
+          const shareAmount = Math.floor(state.data.amountTarget / count);
+          setTimeout(() => {
+            addBotMessage(`Ok, that means each person should pay up ${formatCurrency2(shareAmount)}`);
+            setTimeout(() => {
+              goToPaymentDetails();
+            }, 500);
+          }, 400);
+        } else {
+          setTimeout(() => {
+            goToPaymentDetails();
+          }, 400);
+        }
       }
-      
-      removeActiveCard();
-      showInputContainer();
-      
-      // Go to payment details
-      setTimeout(() => {
-        goToPaymentDetails();
-      }, 400);
     };
     
     // =========================================
@@ -4181,9 +4236,12 @@
               ${preview}
             </div>
             
-            <button class="card-confirm-btn" onclick="submitGiftContributors('${cardId}')">
-              Continue
-            </button>
+            <p style="font-size: 13px; color: var(--muted); margin: 8px 0 0; text-align: center;">Including yourself</p>
+            
+            <div style="display: flex; gap: 10px; margin-top: 16px;">
+              <button class="form-btn-secondary" onclick="skipGiftContributors('${cardId}')" style="flex:1;">Skip</button>
+              <button class="card-confirm-btn" onclick="submitGiftContributors('${cardId}')" style="flex:1;">Continue</button>
+            </div>
           </div>
         </div>
       `;
@@ -4222,6 +4280,178 @@
       const valueEl = document.getElementById(`${cardId}-value`);
       const count = parseInt(valueEl.value) || 2;
       handleGiftContributorsConfirm(count);
+    };
+    
+    window.skipGiftContributors = function(cardId) {
+      pushHistory();
+      
+      // Default to 1 person when skipped
+      state.data.contributorCount = null;
+      state.data.people = 1;
+      
+      addUserMessage("Skip contributor count");
+      removeActiveCard();
+      showInputContainer();
+      
+      // Finalize name if not set
+      if (!state.data.name) {
+        state.data.name = state.data.aboutText
+          ? `Group Gift: ${state.data.aboutText.substring(0, 30)}`
+          : 'Group Gift';
+      }
+      
+      // For pre-paid gifts (gift_debt), ask about contribution split
+      if (state.data.giftMode === 'gift_debt') {
+        setTimeout(() => {
+          addBotMessage("How much of the gift cost is your contribution vs how much do you want to raise from others?");
+          addContributionSplitCard();
+          state.step = 'CONTRIBUTION_SPLIT';
+        }, 400);
+      } else {
+        setTimeout(() => {
+          goToPaymentDetails();
+        }, 400);
+      }
+    };
+    
+    // =========================================
+    // CONTRIBUTION SPLIT CARD (for pre-paid gifts)
+    // =========================================
+    function addContributionSplitCard() {
+      hideInputContainer();
+      
+      const cardId = 'contribution-split-card-' + Date.now();
+      const totalCents = state.data.totalCents || 0;
+      
+      // Default: organizer contributes 0, raises full amount
+      const initialContribution = 0;
+      const initialRaise = totalCents;
+      
+      const cardHtml = `
+        <div id="${cardId}" class="chat-card">
+          <div class="form-card">
+            <div class="form-card-header">
+              <span class="form-card-title">Split Your Contribution</span>
+            </div>
+            
+            <p style="font-size: 13px; color: var(--muted); margin: 0 0 16px; text-align: center;">
+              Gift cost: <b>${formatCurrency2(totalCents)}</b>
+            </p>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px;">Your contribution</label>
+                <div class="amount-input-wrapper" style="position: relative;">
+                  <span class="amount-prefix">€</span>
+                  <input type="text" 
+                         id="${cardId}-contribution" 
+                         class="amount-input" 
+                         inputmode="decimal"
+                         value="${(initialContribution / 100).toFixed(2).replace('.', ',')}"
+                         oninput="updateContributionSplit('${cardId}', 'contribution', this.value)"
+                         style="padding-left: 28px;">
+                </div>
+              </div>
+              
+              <div>
+                <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px;">Amount to raise from others</label>
+                <div class="amount-input-wrapper" style="position: relative;">
+                  <span class="amount-prefix">€</span>
+                  <input type="text" 
+                         id="${cardId}-raise" 
+                         class="amount-input" 
+                         inputmode="decimal"
+                         value="${(initialRaise / 100).toFixed(2).replace('.', ',')}"
+                         oninput="updateContributionSplit('${cardId}', 'raise', this.value)"
+                         style="padding-left: 28px;">
+                </div>
+              </div>
+            </div>
+            
+            <p id="${cardId}-summary" style="font-size: 13px; color: var(--muted); margin: 16px 0 0; text-align: center;">
+              You'll collect <b>${formatCurrency2(initialRaise)}</b> from participants
+            </p>
+            
+            <button class="card-confirm-btn" onclick="confirmContributionSplit('${cardId}')" style="margin-top: 16px;">
+              Continue
+            </button>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const cardElement = wrapper.firstElementChild;
+      cardElement.dataset.historyIndex = historyIndex;
+      chatContainer.appendChild(cardElement);
+      scrollToBottom();
+    }
+    
+    window.updateContributionSplit = function(cardId, field, value) {
+      const totalCents = state.data.totalCents || 0;
+      
+      // Parse input value (handle comma as decimal separator)
+      const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.');
+      const parsedValue = parseFloat(cleanValue) || 0;
+      const valueCents = Math.round(parsedValue * 100);
+      
+      // Clamp to valid range
+      const clampedValue = Math.max(0, Math.min(totalCents, valueCents));
+      
+      const contributionInput = document.getElementById(`${cardId}-contribution`);
+      const raiseInput = document.getElementById(`${cardId}-raise`);
+      const summaryEl = document.getElementById(`${cardId}-summary`);
+      
+      let contributionCents, raiseCents;
+      
+      if (field === 'contribution') {
+        contributionCents = clampedValue;
+        raiseCents = totalCents - clampedValue;
+        // Update the other field
+        raiseInput.value = (raiseCents / 100).toFixed(2).replace('.', ',');
+      } else {
+        raiseCents = clampedValue;
+        contributionCents = totalCents - clampedValue;
+        // Update the other field
+        contributionInput.value = (contributionCents / 100).toFixed(2).replace('.', ',');
+      }
+      
+      // Update summary
+      if (raiseCents > 0) {
+        summaryEl.innerHTML = `You'll collect <b>${formatCurrency2(raiseCents)}</b> from participants`;
+      } else {
+        summaryEl.innerHTML = `You're covering the full cost - no collection needed`;
+      }
+    };
+    
+    window.confirmContributionSplit = function(cardId) {
+      const totalCents = state.data.totalCents || 0;
+      
+      const contributionInput = document.getElementById(`${cardId}-contribution`);
+      const cleanValue = contributionInput.value.replace(/[^\d,.-]/g, '').replace(',', '.');
+      const contributionCents = Math.round((parseFloat(cleanValue) || 0) * 100);
+      const raiseCents = totalCents - contributionCents;
+      
+      pushHistory();
+      
+      state.data.organizerContribution = contributionCents;
+      state.data.amountToRaise = raiseCents;
+      
+      // Show user message with summary
+      if (contributionCents > 0 && raiseCents > 0) {
+        addUserMessage(`My contribution: ${formatCurrency2(contributionCents)} · Raising: ${formatCurrency2(raiseCents)}`);
+      } else if (contributionCents === 0) {
+        addUserMessage(`Raising: ${formatCurrency2(raiseCents)}`);
+      } else {
+        addUserMessage(`Full contribution: ${formatCurrency2(contributionCents)}`);
+      }
+      
+      removeActiveCard();
+      showInputContainer();
+      
+      setTimeout(() => {
+        goToPaymentDetails();
+      }, 400);
     };
     
     function addGiftRaisingForCard() {
@@ -4522,6 +4752,10 @@
               formData.append('totalAmountCents', state.data.totalCents);
               formData.append('peopleCount', state.data.contributorCount || state.data.people);
               formData.append('contributorCount', state.data.contributorCount || state.data.people);
+              // For pre-paid gifts with contribution split
+              if (state.data.organizerContribution !== null && state.data.organizerContribution !== undefined) {
+                formData.append('organizerContribution', state.data.organizerContribution);
+              }
             } else if (state.data.giftMode === 'gift_pot_target') {
               // Pot with target
               formData.append('amountTarget', state.data.amountTarget);
@@ -4669,19 +4903,36 @@
       const code = tab.inviteCode || tab.magicToken;
       const shareUrl = tab.tabLink || `${window.location.origin}/tab/${code}`;
       const viewUrl = `${window.location.origin}/tab/${code}`;
-      const totalCents = state.data.totalCents + state.data.tipCents;
-      const perPerson = formatCurrency2(totalCents / state.data.people);
       
-      // Build price groups display if applicable
-      let detailHtml = `${state.data.people} people · ${perPerson} each`;
+      // Determine amount based on mode
+      const isPotMode = state.data.giftMode === 'gift_pot_open' || state.data.giftMode === 'gift_pot_target';
+      const totalCents = isPotMode ? (state.data.amountTarget || 0) : (state.data.totalCents + state.data.tipCents);
+      
+      // Determine title - for pot modes, change "Gift for" to "Raising money for"
+      let displayTitle = state.data.name;
+      if (isPotMode && displayTitle && displayTitle.toLowerCase().startsWith('gift for')) {
+        displayTitle = 'Raising money for' + displayTitle.substring(8);
+      }
+      
+      // Build detail line - hide if contributor count was skipped (explicitly set to null)
+      let detailHtml = '';
       let hasPriceGroups = false;
       
       // Store tab info for group selection
       window.createdTab = tab;
       
-      if (state.data.splitMode === 'price_groups' && state.data.priceGroups.length > 0) {
-        hasPriceGroups = true;
-        detailHtml = `${state.data.people} people · Price Groups`;
+      // Only show people detail if contributor count was NOT skipped
+      // contributorCount === null means skipped, undefined means restaurant flow (show detail)
+      const contributorSkipped = state.data.contributorCount === null;
+      
+      if (!contributorSkipped && state.data.people > 0) {
+        const perPerson = formatCurrency2(totalCents / state.data.people);
+        if (state.data.splitMode === 'price_groups' && state.data.priceGroups.length > 0) {
+          hasPriceGroups = true;
+          detailHtml = `${state.data.people} people · Price Groups`;
+        } else {
+          detailHtml = `${state.data.people} people · ${perPerson} each`;
+        }
       }
       
       // Show success message
@@ -4694,9 +4945,9 @@
         <div class="chat-card">
           <div class="form-card launch-card" style="position: relative;">
             <button class="launch-card-back" onclick="goBackFromLaunchCard()" title="Go back">←</button>
-            <div class="launch-card-title">${escapeHtml(state.data.name)}</div>
+            <div class="launch-card-title">${escapeHtml(displayTitle)}</div>
             <div class="launch-card-amount">${formatCurrency2(totalCents)}</div>
-            <div class="launch-card-detail">${detailHtml}</div>
+            ${detailHtml ? `<div class="launch-card-detail">${detailHtml}</div>` : ''}
             
             <div class="launch-card-qr">
               <img src="${qrCodeUrl}" alt="QR Code" class="qr-code-img">

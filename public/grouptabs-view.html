@@ -2559,6 +2559,30 @@
     .p-row.waiting-guest:hover {
         background: rgba(255,255,255,0.08);
     }
+    
+    /* Invite Participants Card (for open pots) */
+    .p-row.invite-participants-card {
+        border: 2px dashed #444;
+        border-left: 2px dashed #444;
+        background: transparent;
+        cursor: pointer;
+        grid-template-rows: auto;
+    }
+    .p-row.invite-participants-card:hover {
+        background: rgba(255,255,255,0.05);
+        border-color: var(--accent);
+    }
+    .p-row.invite-participants-card:hover .p-name,
+    .p-row.invite-participants-card:hover .invite-avatar {
+        color: var(--accent) !important;
+        border-color: var(--accent) !important;
+    }
+    .invite-avatar {
+        border: 2px dashed #555;
+        color: #666;
+        background: transparent;
+    }
+    
     .p-avatar.waiting {
         border: 1px solid #555;
         color: #666;
@@ -4388,7 +4412,7 @@
         <div class="edit-form-group" id="edit-description-group">
           <label>Item Description</label>
           <textarea id="edit-description" class="edit-input edit-textarea" placeholder="e.g., Marshall Bluetooth Speaker"></textarea>
-          <div class="edit-hint">Shows as "🎁 Item Description" in the header</div>
+          <div class="edit-hint">Shows in the header below the date line</div>
         </div>
 
         <div class="edit-form-group" id="edit-total-amount-group">
@@ -4723,7 +4747,7 @@
         // === ITEM DESCRIPTION (shows under date line for gifts) ===
         const itemNameEl = document.getElementById('header-item-name');
         if (tabData.about_text && tabData.about_text.trim()) {
-            itemNameEl.textContent = '🎁 ' + tabData.about_text.trim();
+            itemNameEl.textContent = '• ' + tabData.about_text.trim();
             itemNameEl.title = tabData.about_text.trim(); // Full text on hover
             itemNameEl.style.display = 'block';
         } else {
@@ -4747,10 +4771,8 @@
                 typeIcon = '✈️';
             } else if (tabData.template === 'gift') {
                 // Check gift mode first
-                if (tabData.gift_mode === 'gift_pot_open' || tabData.is_open_pot === 1) {
-                    typeIcon = '🫙'; // Open pot (jar)
-                } else if (tabData.gift_mode === 'gift_pot_target') {
-                    typeIcon = '🎯'; // Target pot
+                if (tabData.gift_mode === 'gift_pot_open' || tabData.is_open_pot === 1 || tabData.gift_mode === 'gift_pot_target') {
+                    typeIcon = '💰'; // Pot modes (money bag)
                 } else if (tabData.group_gift_mode === 'fundraiser') {
                     typeIcon = '💰'; // Fundraiser
                 } else {
@@ -4800,33 +4822,59 @@
             // Total Bill = the actual bill amount from the tab
             const totalBill = tabData.total_amount_cents || 0;
             
+            // Check if this is a pre-paid gift with contribution split (organizer contributes + collects from others)
+            const hasContributionSplit = isGiftDebtMode && tabData.organizer_contribution !== null && tabData.organizer_contribution !== undefined;
+            const amountToRaise = hasContributionSplit ? (totalBill - tabData.organizer_contribution) : totalBill;
+            
             // Update labels for debt mode
             document.getElementById('total-bill-label').innerText = isGiftDebtMode ? 'Gift Cost' : 'Total Bill';
             document.getElementById('remaining-label').innerText = 'Remaining';
             
             // Calculate what's been "settled" towards the bill
             let totalSettled = 0;
-            if (fairnessData && fairnessData.participants && fairnessData.participants.length > 0) {
-                totalSettled = fairnessData.participants.reduce((sum, p) => {
-                    // Each person has settled up to their fair share
-                    const settled = Math.min(p.actualPaid || 0, p.fairShare || 0);
-                    return sum + settled;
-                }, 0);
-            } else {
-                // Fallback: use database value or assume host's share is settled
-                const numPeople = tabData.people_count || 1;
-                const fairShareCents = Math.floor(totalBill / numPeople);
-                totalSettled = tabData.paid_up_cents || fairShareCents;
-            }
             
-            // Remaining = bill minus what's settled
-            const totalRemaining = Math.max(0, totalBill - totalSettled);
-            const totalCollected = totalSettled;
-            const pct = totalBill > 0 ? Math.min(100, Math.round((totalCollected / totalBill) * 100)) : 100;
-            document.getElementById('total-bill-amount').innerText = formatCurrency2(totalBill);
-            document.getElementById('remaining-amount').innerText = formatCurrency2(totalRemaining);
-            document.getElementById('global-progress-fill').style.width = pct + '%';
-            document.getElementById('progress-percent-text').innerText = pct + '% Collected';
+            if (hasContributionSplit) {
+                // For contribution split: only count payments from OTHER participants (not organizer)
+                // The organizer's payment is their contribution, not collected money
+                if (fairnessData && fairnessData.participants && fairnessData.participants.length > 0) {
+                    totalSettled = fairnessData.participants.reduce((sum, p) => {
+                        // Skip organizer's payment - they're collecting, not contributing to "collected"
+                        if (p.role === 'organizer') return sum;
+                        const settled = Math.min(p.actualPaid || 0, p.fairShare || 0);
+                        return sum + settled;
+                    }, 0);
+                }
+                // Progress is based on amount to raise, not total bill
+                const totalRemaining = Math.max(0, amountToRaise - totalSettled);
+                const pct = amountToRaise > 0 ? Math.min(100, Math.round((totalSettled / amountToRaise) * 100)) : 0;
+                document.getElementById('total-bill-amount').innerText = formatCurrency2(totalBill);
+                document.getElementById('remaining-amount').innerText = formatCurrency2(totalRemaining);
+                document.getElementById('global-progress-fill').style.width = pct + '%';
+                document.getElementById('progress-percent-text').innerText = pct + '% Collected';
+            } else {
+                // Standard calculation (restaurant bills, gifts without contribution split)
+                if (fairnessData && fairnessData.participants && fairnessData.participants.length > 0) {
+                    totalSettled = fairnessData.participants.reduce((sum, p) => {
+                        // Each person has settled up to their fair share
+                        const settled = Math.min(p.actualPaid || 0, p.fairShare || 0);
+                        return sum + settled;
+                    }, 0);
+                } else {
+                    // Fallback: use database value or assume host's share is settled
+                    const numPeople = tabData.people_count || 1;
+                    const fairShareCents = Math.floor(totalBill / numPeople);
+                    totalSettled = tabData.paid_up_cents || fairShareCents;
+                }
+                
+                // Remaining = bill minus what's settled
+                const totalRemaining = Math.max(0, totalBill - totalSettled);
+                const totalCollected = totalSettled;
+                const pct = totalBill > 0 ? Math.min(100, Math.round((totalCollected / totalBill) * 100)) : 100;
+                document.getElementById('total-bill-amount').innerText = formatCurrency2(totalBill);
+                document.getElementById('remaining-amount').innerText = formatCurrency2(totalRemaining);
+                document.getElementById('global-progress-fill').style.width = pct + '%';
+                document.getElementById('progress-percent-text').innerText = pct + '% Collected';
+            }
         }
 
         // Header Action Buttons Row
@@ -6376,6 +6424,29 @@
                 </div>
             `;
             container.innerHTML += waitingHtml;
+        }
+        
+        // For open pots or pre-paid gifts with skipped contributor count, show "Invite participants" card
+        const isOpenPot = tabData.gift_mode === 'gift_pot_open' || tabData.is_open_pot === 1;
+        const isPrepaidGiftWithSplit = tabData.gift_mode === 'gift_debt' && tabData.organizer_contribution !== null && tabData.organizer_contribution !== undefined;
+        const hasNoWaitingSlots = waitingGuestCount === 0;
+        if ((isOpenPot || isPrepaidGiftWithSplit) && hasNoWaitingSlots && isCreator) {
+            const inviteCardHtml = `
+                <div class="p-row invite-participants-card" onclick="copyShareLink('${shareUrl}')" title="Click to copy share link">
+                    <div class="p-avatar invite-avatar">
+                        <span style="font-size: 20px;">+</span>
+                    </div>
+                    <div class="p-info" style="justify-content: center;">
+                        <div class="p-name-row">
+                            <span class="p-name" style="color: var(--muted);">Invite participants</span>
+                        </div>
+                        <div class="p-amt-line">
+                            <span class="p-amt-sub">Share link to collect contributions</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += inviteCardHtml;
         }
         
         // Unbalanced Alert

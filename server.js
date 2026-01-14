@@ -805,6 +805,14 @@ try {
   // Column already exists, ignore
 }
 
+// Add organizer_contribution column to group_tabs table (for pre-paid gifts: how much organizer contributes vs collects)
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN organizer_contribution INTEGER;`);
+  console.log('[Startup] Added organizer_contribution column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // Create payment_reports table for Group Gift payment tracking
 try {
   db.exec(`
@@ -6181,6 +6189,9 @@ function createGroupTab(req, res) {
   const raisingForLink = req.body.raisingForLink || null;
   const isOpenPot = req.body.isOpenPot === 'true' || req.body.isOpenPot === true;
   
+  // Organizer contribution (for pre-paid gifts: how much they're contributing vs collecting)
+  const organizerContribution = req.body.organizerContribution ? parseInt(req.body.organizerContribution) : null;
+  
   // Payment methods for how participants should pay the starter
   const paymentMethodsJson = req.body.paymentMethodsJson || null;
   
@@ -6242,8 +6253,8 @@ function createGroupTab(req, res) {
         magic_token, owner_token, invite_code, manage_code, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at,
         gift_mode, group_gift_mode, recipient_name, about_text, about_link, is_raising_money_only,
         amount_target, contributor_count, raising_for_text, raising_for_link, is_open_pot,
-        about_image_path, raising_for_image_path, payment_methods_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        about_image_path, raising_for_image_path, payment_methods_json, organizer_contribution
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       name,
@@ -6278,7 +6289,8 @@ function createGroupTab(req, res) {
       isOpenPot ? 1 : 0,
       aboutImagePath,
       raisingForImagePath,
-      paymentMethodsJson
+      paymentMethodsJson,
+      organizerContribution
     );
     
     const tabId = result.lastInsertRowid;
@@ -8188,7 +8200,12 @@ app.get('/api/tabs/token/:token/fairness', (req, res) => {
     // Calculate total
     let totalAmount = 0;
     if (tab.tab_type === 'one_bill') {
-      totalAmount = tab.total_amount_cents || 0;
+      // For gift pot modes, use amount_target instead of total_amount_cents
+      if (tab.gift_mode === 'gift_pot_target' || tab.gift_mode === 'gift_pot_open') {
+        totalAmount = tab.amount_target || 0;
+      } else {
+        totalAmount = tab.total_amount_cents || 0;
+      }
     } else {
       const expenseSum = db.prepare(`
         SELECT COALESCE(SUM(amount_cents), 0) as total FROM group_tab_expenses WHERE group_tab_id = ?
@@ -9687,7 +9704,12 @@ app.get('/api/grouptabs/:id/fairness', (req, res) => {
     // Calculate total
     let totalAmount = 0;
     if (tab.tab_type === 'one_bill') {
-      totalAmount = tab.total_amount_cents || 0;
+      // For gift pot modes, use amount_target instead of total_amount_cents
+      if (tab.gift_mode === 'gift_pot_target' || tab.gift_mode === 'gift_pot_open') {
+        totalAmount = tab.amount_target || 0;
+      } else {
+        totalAmount = tab.total_amount_cents || 0;
+      }
     } else {
       const expenseSum = db.prepare(`
         SELECT COALESCE(SUM(amount_cents), 0) as total FROM group_tab_expenses WHERE group_tab_id = ?

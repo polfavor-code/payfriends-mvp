@@ -837,9 +837,26 @@
         // Regular tab / gift debt: use standard calculation
         const totalCents = tab.total_amount_cents || 0;
         const paidCents = tab.paid_up_cents || 0;
-        unpaidCents = totalCents - paidCents;
-        isSettled = tab.status === 'closed' || (totalCents > 0 && unpaidCents <= 0);
-        progressPercent = isSettled ? 100 : (totalCents > 0 ? Math.min(100, Math.round((paidCents / totalCents) * 100)) : 0);
+        
+        // Check for pre-paid gift with contribution split
+        const isGiftDebt = tab.gift_mode === 'gift_debt';
+        const hasContributionSplit = isGiftDebt && tab.organizer_contribution !== null && tab.organizer_contribution !== undefined;
+        
+        if (hasContributionSplit) {
+          // For contribution split: progress is based on amount to raise, not total
+          const amountToRaise = totalCents - tab.organizer_contribution;
+          // The organizer's "payment" is their contribution, not collected from others
+          // So we need to calculate what's actually been collected from participants
+          // For now, assume paidCents includes organizer's contribution which shouldn't count
+          const collectedFromOthers = Math.max(0, paidCents - totalCents); // Only payments beyond organizer's initial payment
+          unpaidCents = amountToRaise - collectedFromOthers;
+          isSettled = tab.status === 'closed' || (amountToRaise > 0 && collectedFromOthers >= amountToRaise);
+          progressPercent = isSettled ? 100 : (amountToRaise > 0 ? Math.min(100, Math.round((collectedFromOthers / amountToRaise) * 100)) : 0);
+        } else {
+          unpaidCents = totalCents - paidCents;
+          isSettled = tab.status === 'closed' || (totalCents > 0 && unpaidCents <= 0);
+          progressPercent = isSettled ? 100 : (totalCents > 0 ? Math.min(100, Math.round((paidCents / totalCents) * 100)) : 0);
+        }
       }
       
       // Ring calculations (circumference = 2 * PI * radius)
@@ -883,7 +900,7 @@
           
           <div class="tab-info">
             <div class="tab-line-1">
-              <span class="tab-title">${escapeHtml(tab.name)}</span>
+              <span class="tab-title">${escapeHtml(getDisplayTitle(tab))}</span>
             </div>
             <div class="tab-line-2">
               ${amountDisplay}
@@ -917,7 +934,11 @@
 
     function getTabEmoji(tab) {
       // Check template first (gift, restaurant, trip)
-      if (tab.template === 'gift') return '🎁';
+      if (tab.template === 'gift') {
+        // For pot modes, use money bag; for regular gift, use gift emoji
+        const isPotMode = tab.gift_mode === 'gift_pot_open' || tab.gift_mode === 'gift_pot_target' || tab.is_open_pot === 1;
+        return isPotMode ? '💰' : '🎁';
+      }
       if (tab.template === 'restaurant') return '🍕';
       if (tab.template === 'trip') return '✈️';
       
@@ -950,6 +971,15 @@
       
       // Default based on tab type
       return tab.tab_type === 'one_bill' ? '🧾' : '✈️';
+    }
+
+    function getDisplayTitle(tab) {
+      let title = tab.name || 'Untitled Tab';
+      const isPotMode = tab.gift_mode === 'gift_pot_open' || tab.gift_mode === 'gift_pot_target' || tab.is_open_pot === 1;
+      if (isPotMode && title.toLowerCase().startsWith('gift for')) {
+        title = 'Raising money for' + title.substring(8);
+      }
+      return title;
     }
 
     function getTimeAgo(date) {
