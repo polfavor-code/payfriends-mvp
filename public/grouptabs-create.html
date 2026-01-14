@@ -1720,15 +1720,15 @@
         state.step = 'NAME';
         
       } else if (id === 'trip' || id === 'trip / holiday' || id.includes('holiday') || id.includes('travel')) {
-        state.data.template = 'trip';
-        state.data.type = 'multi_bill';
-        
-        addBotMessage("What should we call this trip?");
-        setSuggestions([
-          { icon: '🚗', text: 'Road Trip', hint: '' },
-          { icon: '🏔️', text: 'Weekend Away', hint: '' },
-          { icon: '✈️', text: 'Holiday', hint: '' }
-        ]);
+        // Trip feature coming soon
+        addBotMessage("✈️ Trip splitting is coming soon! We're working hard to bring you the best experience for tracking shared travel expenses. Check back later!");
+        state.step = 'INTENT';
+        // Show the intent options again after a delay
+        setTimeout(() => {
+          addBotMessage("In the meantime, what would you like to do?");
+          addIntentBlocks();
+        }, 1000);
+        return;
         state.step = 'NAME';
         
       } else if (id === 'gift' || id === 'group gift' || id.includes('present')) {
