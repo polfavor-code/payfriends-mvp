@@ -6461,6 +6461,30 @@ app.get('/api/grouptabs/:id', (req, res) => {
     const currentParticipant = access.participant;
     const isAuthenticated = access.isAuthenticated;
     
+    // Clean up stale participants: delete non-organizers who haven't paid and joined > 24h ago
+    const STALE_HOURS = 24;
+    const staleThreshold = new Date(Date.now() - STALE_HOURS * 60 * 60 * 1000).toISOString();
+    
+    const staleParticipants = db.prepare(`
+      SELECT id, guest_name, user_id FROM group_tab_participants 
+      WHERE group_tab_id = ? 
+        AND role != 'organizer' 
+        AND (total_paid_cents IS NULL OR total_paid_cents = 0)
+        AND joined_at < ?
+    `).all(tabId, staleThreshold);
+    
+    if (staleParticipants.length > 0) {
+      const deleteStmt = db.prepare(`DELETE FROM group_tab_participants WHERE id = ?`);
+      for (const stale of staleParticipants) {
+        deleteStmt.run(stale.id);
+        console.log(`[Cleanup] Removed stale participant ${stale.id} (${stale.guest_name || 'user:' + stale.user_id}) from tab ${tabId}`);
+      }
+      
+      // Update people_count on the tab
+      const remainingCount = db.prepare(`SELECT COUNT(*) as cnt FROM group_tab_participants WHERE group_tab_id = ?`).get(tabId).cnt;
+      db.prepare(`UPDATE group_tabs SET people_count = ? WHERE id = ?`).run(remainingCount, tabId);
+    }
+    
     // Get all participants - filter sensitive fields for non-authenticated callers
     let participants;
     if (isAuthenticated) {
@@ -6550,69 +6574,280 @@ app.get('/api/grouptabs/:id', (req, res) => {
   }
 });
 
-// Update tab
+// Update tab (supports both JSON and FormData)
 app.patch('/api/grouptabs/:id', requireAuth, (req, res) => {
   const tabId = parseInt(req.params.id);
-  const { name, totalAmountCents, splitMode, expectedPayRate, seatCount, proofRequired, description, peopleCount, tiers, eventDate, status } = req.body;
-  
-  try {
-    const organizer = db.prepare(`
-      SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ? AND role = 'organizer'
-    `).get(tabId, req.user.id);
-    
-    if (!organizer) {
-      return res.status(403).json({ error: 'Only the organizer can update tab settings' });
-    }
-    
-    const updates = [];
-    const params = [];
-    
-    if (name !== undefined) { updates.push('name = ?'); params.push(name); }
-    if (totalAmountCents !== undefined) { updates.push('total_amount_cents = ?'); params.push(totalAmountCents); }
-    if (splitMode !== undefined) { updates.push('split_mode = ?'); params.push(splitMode); }
-    if (expectedPayRate !== undefined) { updates.push('expected_pay_rate = ?'); params.push(expectedPayRate); }
-    if (seatCount !== undefined) { updates.push('seat_count = ?'); params.push(seatCount); }
-    if (proofRequired !== undefined) { updates.push('proof_required = ?'); params.push(proofRequired); }
-    if (description !== undefined) { updates.push('description = ?'); params.push(description); }
-    if (peopleCount !== undefined) { updates.push('people_count = ?'); params.push(peopleCount); }
-    if (eventDate !== undefined) { updates.push('event_date = ?'); params.push(eventDate); }
-    if (status !== undefined && ['open', 'closed'].includes(status)) { updates.push('status = ?'); params.push(status); }
-    
-    if (updates.length > 0) {
-      params.push(tabId);
-      db.prepare(`UPDATE group_tabs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
-    }
-    
-    // Handle tiers update (only if the group_tab_tiers table exists)
-    if (tiers && Array.isArray(tiers) && splitMode === 'tiered') {
-      // Check if group_tab_tiers table exists before operating on it
-      const tiersTableExists = db.prepare(`
-        SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'
-      `).get();
-      
-      if (tiersTableExists) {
-        // Delete existing tiers
-        db.prepare(`DELETE FROM group_tab_tiers WHERE group_tab_id = ?`).run(tabId);
-        
-        // Insert new tiers
-        const insertTier = db.prepare(`
-          INSERT INTO group_tab_tiers (group_tab_id, name, multiplier, sort_order, created_at)
-          VALUES (?, ?, ?, ?, ?)
-        `);
-        
-        const now = new Date().toISOString();
-        tiers.forEach((tier, idx) => {
-          insertTier.run(tabId, tier.name, tier.multiplier, idx, now);
-        });
+
+  // Handle potential file upload for edit modal
+  const uploadFields = uploadGrouptabs.fields([
+    { name: 'about_image', maxCount: 1 },
+    { name: 'receipt', maxCount: 1 }
+  ]);
+
+  uploadFields(req, res, (uploadErr) => {
+    if (uploadErr) {
+      console.error('File upload error:', uploadErr);
+      if (uploadErr instanceof multer.MulterError) {
+        if (uploadErr.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File size too large. Maximum size is 10MB.' });
+        }
       }
-      // If table doesn't exist, silently skip tier operations
+      return res.status(500).json({ error: 'File upload failed' });
     }
-    
-    res.json({ success: true });
-  } catch (err) {
-    console.error('Error updating tab:', err);
-    res.status(500).json({ error: 'Failed to update tab' });
-  }
+
+    try {
+      // Get tab and verify ownership
+      const tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+      if (!tab) {
+        return res.status(404).json({ error: 'Tab not found' });
+      }
+
+      // Check if user is organizer
+      const organizer = db.prepare(`
+        SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ? AND role = 'organizer'
+      `).get(tabId, req.user.id);
+      
+      if (!organizer && tab.creator_user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Only the organizer can update tab settings' });
+      }
+
+      const body = req.body || {};
+      const updates = [];
+      const params = [];
+      
+      // Basic fields (from original endpoint)
+      if (body.name !== undefined) { updates.push('name = ?'); params.push(body.name); }
+      if (body.totalAmountCents !== undefined) { updates.push('total_amount_cents = ?'); params.push(body.totalAmountCents); }
+      if (body.total_amount_cents !== undefined) { updates.push('total_amount_cents = ?'); params.push(parseInt(body.total_amount_cents) || 0); }
+      if (body.splitMode !== undefined) { updates.push('split_mode = ?'); params.push(body.splitMode); }
+      if (body.expectedPayRate !== undefined) { updates.push('expected_pay_rate = ?'); params.push(body.expectedPayRate); }
+      if (body.seatCount !== undefined) { updates.push('seat_count = ?'); params.push(body.seatCount); }
+      if (body.proofRequired !== undefined) { updates.push('proof_required = ?'); params.push(body.proofRequired); }
+      if (body.description !== undefined) { updates.push('description = ?'); params.push(body.description); }
+      if (body.peopleCount !== undefined) { updates.push('people_count = ?'); params.push(body.peopleCount); }
+      if (body.eventDate !== undefined) { updates.push('event_date = ?'); params.push(body.eventDate); }
+      if (body.status !== undefined && ['open', 'closed'].includes(body.status)) { updates.push('status = ?'); params.push(body.status); }
+      
+      // Additional fields for edit modal
+      if (body.about_text !== undefined) { updates.push('about_text = ?'); params.push(body.about_text); }
+      if (body.about_link !== undefined) { updates.push('about_link = ?'); params.push(body.about_link); }
+      if (body.amount_target !== undefined) {
+        const targetVal = body.amount_target === '' ? null : parseInt(body.amount_target);
+        updates.push('amount_target = ?');
+        params.push(targetVal);
+        if (targetVal === null) {
+          updates.push('is_open_pot = 1');
+        }
+      }
+      if (body.payment_methods_json !== undefined) {
+        updates.push('payment_methods_json = ?');
+        params.push(body.payment_methods_json);
+      }
+
+      // Handle image upload
+      if (req.files && req.files.about_image && req.files.about_image[0]) {
+        const imagePath = '/uploads/grouptabs/' + req.files.about_image[0].filename;
+        updates.push('about_image_path = ?');
+        params.push(imagePath);
+      } else if (body.remove_image === 'true') {
+        if (tab.about_image_path) {
+          try {
+            const fullPath = '.' + tab.about_image_path;
+            if (fs.existsSync(fullPath)) {
+              fs.unlinkSync(fullPath);
+            }
+          } catch (e) {
+            console.error('Error removing image file:', e);
+          }
+        }
+        updates.push('about_image_path = NULL');
+      }
+
+      // Handle receipt upload
+      if (req.files && req.files.receipt && req.files.receipt[0]) {
+        const receiptPath = '/uploads/grouptabs/' + req.files.receipt[0].filename;
+        updates.push('receipt_file_path = ?');
+        params.push(receiptPath);
+      } else if (body.deleteReceipt === 'true') {
+        if (tab.receipt_file_path) {
+          try {
+            const fullPath = '.' + tab.receipt_file_path;
+            if (fs.existsSync(fullPath)) {
+              fs.unlinkSync(fullPath);
+            }
+          } catch (e) {
+            console.error('Error removing receipt file:', e);
+          }
+        }
+        updates.push('receipt_file_path = NULL');
+      }
+      
+      if (updates.length > 0) {
+        params.push(tabId);
+        db.prepare(`UPDATE group_tabs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+      }
+
+      // If total_amount_cents changed and it's equal split mode, recalculate fair shares
+      const newTotalCents = body.total_amount_cents !== undefined ? parseInt(body.total_amount_cents) : 
+                           body.totalAmountCents !== undefined ? parseInt(body.totalAmountCents) : null;
+      
+      if (newTotalCents !== null && tab.split_mode === 'equal') {
+        // Get updated tab data
+        const updatedTab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+        const peopleCount = updatedTab.people_count || 1;
+        const newFairShareCents = Math.floor(newTotalCents / peopleCount);
+
+        // Get all participants
+        const allParticipants = db.prepare(`
+          SELECT id, role, total_paid_cents FROM group_tab_participants WHERE group_tab_id = ?
+        `).all(tabId);
+
+        // Update fair shares and remaining cents for all participants
+        const updateParticipantStmt = db.prepare(`
+          UPDATE group_tab_participants 
+          SET fair_share_cents = ?, remaining_cents = ?
+          WHERE id = ?
+        `);
+
+        for (const p of allParticipants) {
+          const paidCents = p.total_paid_cents || 0;
+          let remainingCents = Math.max(0, newFairShareCents - paidCents);
+          
+          // For organizer who paid the full bill upfront, remaining is 0
+          if (p.role === 'organizer' && paidCents >= newTotalCents) {
+            remainingCents = 0;
+          }
+          
+          updateParticipantStmt.run(newFairShareCents, remainingCents, p.id);
+        }
+
+        // Update tab's paid_up_cents and host_overpaid_cents
+        const organizer = allParticipants.find(p => p.role === 'organizer');
+        if (organizer && organizer.total_paid_cents >= newTotalCents) {
+          // Host paid full bill - they overpaid by (total - their_fair_share)
+          const hostOverpaidCents = newTotalCents - newFairShareCents;
+          db.prepare(`
+            UPDATE group_tabs SET host_overpaid_cents = ?, paid_up_cents = ?
+            WHERE id = ?
+          `).run(hostOverpaidCents, newFairShareCents, tabId);
+        }
+
+        console.log(`[Edit] Recalculated fair shares: total=${newTotalCents}, people=${peopleCount}, fairShare=${newFairShareCents}`);
+      }
+      
+      // Handle tiers update (only if the group_tab_tiers table exists)
+      const tiers = body.tiers;
+      if (tiers && Array.isArray(tiers) && body.splitMode === 'tiered') {
+        const tiersTableExists = db.prepare(`
+          SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'
+        `).get();
+        
+        if (tiersTableExists) {
+          db.prepare(`DELETE FROM group_tab_tiers WHERE group_tab_id = ?`).run(tabId);
+          
+          const insertTier = db.prepare(`
+            INSERT INTO group_tab_tiers (group_tab_id, name, multiplier, sort_order, created_at)
+            VALUES (?, ?, ?, ?, ?)
+          `);
+          
+          const now = new Date().toISOString();
+          tiers.forEach((tier, idx) => {
+            insertTier.run(tabId, tier.name, tier.multiplier, idx, now);
+          });
+        }
+      }
+
+      // Handle participant share changes
+      if (body.participant_shares) {
+        try {
+          const shares = JSON.parse(body.participant_shares);
+          const updateShareStmt = db.prepare(`
+            UPDATE group_tab_participants SET fair_share_cents = ? WHERE id = ? AND group_tab_id = ?
+          `);
+          
+          for (const [participantId, shareCents] of Object.entries(shares)) {
+            updateShareStmt.run(parseInt(shareCents), parseInt(participantId), tabId);
+          }
+
+          // After updating shares, check if they're still equal
+          // If not, set split_mode to 'custom'
+          const allShares = db.prepare(`
+            SELECT fair_share_cents FROM group_tab_participants WHERE group_tab_id = ?
+          `).all(tabId);
+          
+          if (allShares.length > 1) {
+            const uniqueShares = new Set(allShares.map(s => s.fair_share_cents));
+            if (uniqueShares.size > 1) {
+              // Shares are no longer equal - set to custom mode
+              db.prepare(`UPDATE group_tabs SET split_mode = 'custom' WHERE id = ?`).run(tabId);
+              console.log(`[Edit] Split mode changed to 'custom' for tab ${tabId} (shares are unequal)`);
+            }
+          }
+        } catch (e) {
+          console.error('Error updating participant shares:', e);
+        }
+      }
+
+      // Handle participant paid changes
+      if (body.participant_paid) {
+        try {
+          const paidChanges = JSON.parse(body.participant_paid);
+
+          for (const [participantId, paidCents] of Object.entries(paidChanges)) {
+            const pid = parseInt(participantId);
+            const newPaidCents = parseInt(paidCents);
+
+            // Get current participant data
+            const participant = db.prepare(`
+              SELECT * FROM group_tab_participants WHERE id = ? AND group_tab_id = ?
+            `).get(pid, tabId);
+
+            if (!participant) continue;
+
+            const fairShareCents = participant.fair_share_cents || 0;
+            const remainingCents = Math.max(0, fairShareCents - newPaidCents);
+            
+            // Update participant's paid amount and remaining
+            db.prepare(`
+              UPDATE group_tab_participants
+              SET total_paid_cents = ?, remaining_cents = ?
+              WHERE id = ?
+            `).run(newPaidCents, remainingCents, pid);
+
+            // If this is the organizer, update tab's host_overpaid_cents and paid_up_cents
+            if (participant.role === 'organizer') {
+              const updatedTab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+              const totalBill = updatedTab.total_amount_cents || 0;
+              
+              // If organizer paid the full bill, calculate overpaid
+              if (newPaidCents >= totalBill) {
+                const hostOverpaidCents = newPaidCents - fairShareCents;
+                db.prepare(`
+                  UPDATE group_tabs SET host_overpaid_cents = ?, paid_up_cents = ?
+                  WHERE id = ?
+                `).run(Math.max(0, hostOverpaidCents), fairShareCents, tabId);
+              } else {
+                // Organizer didn't pay full bill
+                db.prepare(`
+                  UPDATE group_tabs SET host_overpaid_cents = 0, paid_up_cents = ?
+                  WHERE id = ?
+                `).run(newPaidCents, tabId);
+              }
+            }
+
+            console.log(`[Edit] Updated participant ${pid} paid: ${newPaidCents}, remaining: ${remainingCents}`);
+          }
+        } catch (e) {
+          console.error('Error updating participant paid amounts:', e);
+        }
+      }
+      
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Error updating tab:', err);
+      res.status(500).json({ error: 'Failed to update tab' });
+    }
+  });
 });
 
 // Get tab tiers
@@ -6806,13 +7041,17 @@ app.get('/api/grouptabs/code/:code', (req, res) => {
     }
     
     // Get all participants with payment summaries
+    // Use stored total_paid_cents column (allows manual edits), fall back to computed sum for backward compatibility
     const participants = db.prepare(`
       SELECT gtp.id, gtp.user_id, gtp.guest_name, gtp.guest_session_token, gtp.role, gtp.is_member, 
              gtp.seats_claimed, gtp.tier_id, gtp.price_group_id, gtp.joined_at, gtp.hide_name,
-             gtp.fair_share_cents, gtp.remaining_cents, gtp.total_paid_cents as participant_paid_cents,
+             gtp.fair_share_cents, gtp.remaining_cents,
              COALESCE(u.full_name, gtp.guest_name) as display_name,
              u.profile_picture,
-             (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id AND status = 'confirmed') as total_paid_cents,
+             CASE 
+               WHEN gtp.total_paid_cents > 0 THEN gtp.total_paid_cents
+               ELSE (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id AND status = 'confirmed')
+             END as total_paid_cents,
              (SELECT MAX(created_at) FROM group_tab_payments WHERE from_participant_id = gtp.id) as last_payment_at
       FROM group_tab_participants gtp
       LEFT JOIN users u ON gtp.user_id = u.id
@@ -6940,12 +7179,17 @@ app.get('/api/grouptabs/token/:token', (req, res) => {
     }
     
     // Get all participants with payment summaries
+    // Use stored total_paid_cents column (allows manual edits), fall back to computed sum for backward compatibility
     const participants = db.prepare(`
       SELECT gtp.id, gtp.user_id, gtp.guest_name, gtp.guest_session_token, gtp.role, gtp.is_member, 
              gtp.seats_claimed, gtp.tier_id, gtp.price_group_id, gtp.joined_at,
              COALESCE(u.full_name, gtp.guest_name) as display_name,
              u.profile_picture,
-             (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id) as total_paid_cents,
+             gtp.fair_share_cents,
+             CASE 
+               WHEN gtp.total_paid_cents > 0 THEN gtp.total_paid_cents
+               ELSE (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id)
+             END as total_paid_cents,
              (SELECT MAX(created_at) FROM group_tab_payments WHERE from_participant_id = gtp.id) as last_payment_at
       FROM group_tab_participants gtp
       LEFT JOIN users u ON gtp.user_id = u.id
@@ -8163,16 +8407,18 @@ app.delete('/api/grouptabs/:id/participants/:participantId', requireAuth, (req, 
     if (participant.role === 'organizer') {
       return res.status(400).json({ error: 'Cannot remove the organizer' });
     }
-    
-    // Check if participant has any payments
-    const payments = db.prepare(`
-      SELECT COUNT(*) as count FROM group_tab_payments WHERE from_participant_id = ?
-    `).get(participantId);
-    
-    if (payments.count > 0) {
-      return res.status(400).json({ error: 'Cannot remove participant who has made payments' });
+
+    // Delete any payments made by this participant
+    db.prepare(`DELETE FROM group_tab_payments WHERE from_participant_id = ?`).run(participantId);
+
+    // Delete any payment reports by this participant
+    const reportsTableExists = db.prepare(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_payment_reports'
+    `).get();
+    if (reportsTableExists) {
+      db.prepare(`DELETE FROM group_tab_payment_reports WHERE participant_id = ?`).run(participantId);
     }
-    
+
     // Delete the participant
     db.prepare(`DELETE FROM group_tab_participants WHERE id = ?`).run(participantId);
     
@@ -8261,6 +8507,16 @@ app.patch('/api/grouptabs/:id/participants/:participantId', (req, res) => {
     if (customAmountCents !== undefined) { 
       updates.push('custom_amount_cents = ?'); 
       params.push(customAmountCents); 
+    }
+    
+    if (req.body.guest_name !== undefined) {
+      updates.push('guest_name = ?');
+      params.push(req.body.guest_name);
+    }
+    
+    if (req.body.hide_name !== undefined) {
+      updates.push('hide_name = ?');
+      params.push(req.body.hide_name ? 1 : 0);
     }
     
     if (updates.length > 0) {

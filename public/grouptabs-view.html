@@ -520,12 +520,21 @@
         margin: 0 0 4px 0;
         line-height: 1.2;
     }
-    .page-meta { 
-        font-size: 13px; 
-        color: var(--muted); 
-        display: flex; 
-        gap: 8px; 
-        align-items: center; 
+    .page-meta {
+        font-size: 13px;
+        color: var(--muted);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    .page-item-name {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
     }
 
     /* Header Top Section - icon + content side by side */
@@ -594,6 +603,10 @@
         .page-meta {
             font-size: 10px !important;
             margin-top: 2px;
+        }
+        .page-item-name {
+            font-size: 10px !important;
+            margin-top: 3px;
         }
         .bill-summary-stats {
             flex-direction: row !important; /* Keep side-by-side but smaller */
@@ -1369,28 +1382,40 @@
     }
     
     /* Payment Details Modal */
+    #gift-payment-details-modal .modal {
+        max-height: 85vh;
+        max-height: 85dvh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    #gift-payment-details-modal .modal-header {
+        flex-shrink: 0;
+    }
     .payment-methods-list {
         display: flex;
         flex-direction: column;
         gap: 12px;
         overflow-y: auto;
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
-        max-height: calc(60vh - 100px);
-        max-height: calc(60dvh - 100px);
+        flex: 1;
+        min-height: 100px;
         padding-right: 4px;
+        padding-bottom: 8px;
     }
-    
+    .payment-details-footer {
+        flex-shrink: 0;
+    }
+
     @media (max-width: 480px) {
         .payment-methods-list {
-            max-height: calc(85vh - 180px);
-            max-height: calc(85dvh - 180px);
             gap: 8px;
-            padding-bottom: 10px;
         }
         #gift-payment-details-modal .modal {
             padding: 16px 16px !important;
-            max-height: 96vh;
-            max-height: 96dvh;
+            max-height: 90vh;
+            max-height: 90dvh;
         }
         .modal-header {
             margin-bottom: 12px !important;
@@ -2942,6 +2967,746 @@
         font-size: 24px;
       }
     }
+
+    /* =============================================
+       EDIT DETAILS MODAL STYLES
+       ============================================= */
+    .edit-modal {
+      max-width: 520px;
+      padding: 0;
+      overflow: hidden;
+    }
+    .edit-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .edit-modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .edit-modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 28px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    .edit-modal-close:hover {
+      color: var(--text);
+    }
+
+    /* Tab Navigation */
+    .edit-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+    }
+    .edit-tab {
+      flex: 1;
+      padding: 14px 12px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+    }
+    .edit-tab:hover {
+      color: var(--text);
+      background: rgba(255,255,255,0.02);
+    }
+    .edit-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Edit Sections */
+    .edit-section {
+      display: none;
+      padding: 20px 24px;
+      max-height: 45vh;
+      overflow-y: auto;
+    }
+    .edit-section.active {
+      display: block;
+    }
+    .edit-section-desc {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0 0 16px 0;
+    }
+
+    /* Form Groups */
+    .edit-form-group {
+      margin-bottom: 20px;
+    }
+    .edit-form-group label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .edit-input {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+      transition: border-color 0.2s;
+    }
+    .edit-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .edit-input::placeholder {
+      color: rgba(255,255,255,0.3);
+    }
+    .edit-textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    .edit-hint {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 6px;
+    }
+
+    /* Amount Input */
+    .edit-amount-wrapper {
+      display: flex;
+      align-items: center;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0 14px;
+      transition: border-color 0.2s;
+    }
+    .edit-amount-wrapper:focus-within {
+      border-color: var(--accent);
+    }
+    .edit-currency {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .edit-amount-input {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 15px;
+      padding: 12px 0;
+    }
+    .edit-amount-input:focus {
+      outline: none;
+    }
+
+    /* Image Upload */
+    .edit-image-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .edit-image-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .edit-image-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .edit-image-placeholder {
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .edit-image-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .edit-receipt-preview {
+      background: rgba(0,0,0,0.2);
+    }
+    .edit-receipt-file {
+      color: var(--text);
+      font-size: 12px;
+      text-align: center;
+      padding: 8px;
+      word-break: break-all;
+    }
+    .edit-pdf-preview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      height: 100%;
+    }
+    .edit-pdf-preview span {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* Buttons */
+    .edit-btn-primary {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .edit-btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .edit-btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .edit-btn-secondary:hover {
+      background: rgba(255,255,255,0.12);
+    }
+    .edit-btn-danger {
+      background: #dc2626;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .edit-btn-danger:hover {
+      background: #b91c1c;
+    }
+    .edit-btn-remove {
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.3);
+    }
+    .edit-btn-remove:hover {
+      background: rgba(248, 113, 113, 0.1);
+    }
+
+    /* Payment Methods List */
+    .edit-payment-methods-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .edit-payment-method-card {
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .edit-payment-method-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+    }
+    .edit-payment-method-icon {
+      font-size: 20px;
+    }
+    .edit-payment-method-label {
+      flex: 1;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .edit-payment-method-fields {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .edit-payment-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .edit-payment-field label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .edit-payment-field input {
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .edit-payment-field input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .edit-payment-field input::placeholder {
+      color: rgba(255,255,255,0.3);
+    }
+    .edit-payment-remove-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+      opacity: 0.6;
+    }
+    .edit-payment-remove-btn:hover {
+      color: #f87171;
+      opacity: 1;
+    }
+    .edit-payment-type-selector {
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 14px;
+    }
+    .edit-payment-type-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .edit-payment-type-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .edit-payment-type-btn:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: var(--accent);
+    }
+    .edit-payment-type-btn span:first-child {
+      font-size: 18px;
+    }
+    /* Legacy row style (keep for compatibility) */
+    .edit-payment-method-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .edit-payment-method-row select {
+      flex: 0 0 120px;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+    }
+    .edit-payment-method-row input {
+      flex: 1;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+    }
+    .edit-payment-method-row input::placeholder {
+      color: rgba(255,255,255,0.3);
+    }
+    .edit-payment-remove-btn-old {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 8px;
+      line-height: 1;
+    }
+    .edit-payment-remove-btn:hover {
+      color: #f87171;
+    }
+
+    /* Participants Header */
+    .edit-participants-header {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: rgba(61,220,151,0.08);
+      border-radius: 10px;
+      border: 1px solid rgba(61,220,151,0.15);
+    }
+    .edit-participants-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .edit-participants-stat .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .edit-participants-stat .stat-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    /* Participants List */
+    .edit-participants-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .edit-participant-card {
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .edit-participant-card.awaiting {
+      border-style: dashed;
+      opacity: 0.7;
+    }
+    .edit-participant-card.awaiting .edit-participant-avatar {
+      background: rgba(255,255,255,0.1);
+      color: var(--muted);
+    }
+    .edit-participant-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.02);
+    }
+    .edit-participant-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+    }
+    .edit-participant-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .edit-participant-field label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .edit-participant-input-wrap {
+      display: flex;
+      align-items: center;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 10px;
+    }
+    .edit-participant-input-wrap:focus-within {
+      border-color: var(--accent);
+    }
+    .edit-participant-input {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 0 10px 4px;
+      width: 100%;
+    }
+    .edit-participant-input:focus {
+      outline: none;
+    }
+    .edit-participant-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .edit-participant-field-full {
+      grid-column: 1 / -1;
+    }
+    .edit-participant-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: normal;
+    }
+    .edit-participant-checkbox {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    /* Legacy row style */
+    .edit-participant-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .edit-participant-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(61,220,151,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--accent);
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .edit-participant-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .edit-participant-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .edit-participant-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .edit-participant-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .edit-participant-badge.organizer {
+      background: rgba(255,255,255,0.08);
+      color: var(--muted);
+    }
+    .edit-participant-badge.pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+    }
+    .edit-participant-badge.paid {
+      background: rgba(61,220,151,0.15);
+      color: var(--accent);
+    }
+    .edit-participant-status {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .edit-participant-share {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .edit-participant-share .edit-currency {
+      font-size: 13px;
+    }
+    .edit-participant-share-input {
+      width: 80px;
+      padding: 8px 10px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 14px;
+      text-align: right;
+    }
+    .edit-participant-share-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .edit-participant-share-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .edit-participant-remove {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 8px;
+      line-height: 1;
+      opacity: 0.6;
+    }
+    .edit-participant-remove:hover {
+      color: #f87171;
+      opacity: 1;
+    }
+    .edit-participant-remove:disabled {
+      display: none;
+    }
+
+    /* Danger Zone */
+    .edit-danger-zone {
+      margin: 0 24px;
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .danger-zone-header {
+      padding: 10px 14px;
+      background: rgba(220, 38, 38, 0.1);
+      color: #f87171;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .danger-zone-content {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .danger-zone-text strong {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .danger-zone-text p {
+      color: var(--muted);
+      font-size: 12px;
+      margin: 0;
+    }
+    .danger-zone-warning {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      flex: 1;
+    }
+    .danger-zone-warning .warning-icon {
+      font-size: 24px;
+    }
+    .danger-zone-warning p {
+      color: var(--text);
+      font-size: 13px;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .danger-zone-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Modal Footer */
+    .edit-modal-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+    }
+    .edit-footer-spacer {
+      flex: 1;
+    }
+
+    /* Mobile adjustments for edit modal */
+    @media (max-width: 480px) {
+      .edit-modal {
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+      }
+      .edit-section {
+        max-height: 40vh;
+      }
+      .edit-tabs {
+        overflow-x: auto;
+      }
+      .edit-tab {
+        padding: 12px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .edit-participant-row {
+        flex-wrap: wrap;
+      }
+      .edit-participant-fields {
+        grid-template-columns: 1fr;
+      }
+      .edit-participant-share {
+        width: 100%;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+      }
+      .danger-zone-content {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .danger-zone-buttons {
+        justify-content: stretch;
+      }
+      .danger-zone-buttons button {
+        flex: 1;
+      }
+    }
     
     /* Receipt Modal */
     .receipt-modal {
@@ -3142,6 +3907,7 @@
                 <div class="page-meta" id="header-meta">
                     ...
                 </div>
+                <div class="page-item-name" id="header-item-name" style="display: none;"></div>
             </div>
         </div>
 
@@ -3457,19 +4223,19 @@
   <!-- Gift Payment Details Modal -->
   <div id="gift-payment-details-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('gift-payment-details-modal')">
     <div class="modal" style="max-width: 480px;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
         <h3 style="margin: 0; font-size: 18px; font-weight: 700;">Payment Details</h3>
         <button class="receipt-modal-close" onclick="hideModal('gift-payment-details-modal')">&times;</button>
       </div>
-      <p style="color: var(--muted); font-size: 14px; margin-bottom: 4px;">
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 4px; flex-shrink: 0;">
         Here's how you can pay <span id="payment-details-host">the starter</span>:
       </p>
-      <p id="payment-details-amount" style="font-size: 28px; font-weight: 700; color: var(--accent); margin: 0 0 20px 0;"></p>
+      <p id="payment-details-amount" style="font-size: 28px; font-weight: 700; color: var(--accent); margin: 0 0 20px 0; flex-shrink: 0;"></p>
       <div class="payment-methods-list" id="gift-payment-methods-list">
         <!-- Filled dynamically -->
       </div>
       <!-- I've Paid checkbox at bottom -->
-      <div id="payment-details-footer" class="payment-details-footer" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
+      <div id="payment-details-footer" class="payment-details-footer" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); flex-shrink: 0;">
         <div class="gift-paid-checkbox-card modal-version" onclick="switchToReportPaymentModal()">
           <div class="gift-checkbox">
             <span class="gift-checkbox-icon">✓</span>
@@ -3594,6 +4360,124 @@
       <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
       <p id="error-modal-message" style="margin: 0 0 24px 0; color: var(--text); font-size: 15px; line-height: 1.5;"></p>
       <button class="form-btn" onclick="hideModal('error-modal')" style="width: 100%;">Close</button>
+    </div>
+  </div>
+
+  <!-- Edit Details Modal -->
+  <div id="edit-details-modal" class="modal-overlay" onclick="if(event.target === this) hideModal('edit-details-modal')">
+    <div class="modal edit-modal">
+      <div class="edit-modal-header">
+        <h3>Edit Details</h3>
+        <button class="edit-modal-close" onclick="hideModal('edit-details-modal')">&times;</button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="edit-tabs">
+        <button class="edit-tab active" data-tab="basic" onclick="switchEditTab('basic')">Basic Info</button>
+        <button class="edit-tab" data-tab="payment" onclick="switchEditTab('payment')">Payment methods</button>
+        <button class="edit-tab" data-tab="participants" onclick="switchEditTab('participants')" id="edit-tab-participants">Participants</button>
+      </div>
+
+      <!-- Basic Info Section -->
+      <div id="edit-section-basic" class="edit-section active">
+        <div class="edit-form-group">
+          <label>Tab Name</label>
+          <input type="text" id="edit-tab-name" class="edit-input" placeholder="e.g., Gift for Sarah">
+        </div>
+
+        <div class="edit-form-group" id="edit-description-group">
+          <label>Item Description</label>
+          <textarea id="edit-description" class="edit-input edit-textarea" placeholder="e.g., Marshall Bluetooth Speaker"></textarea>
+          <div class="edit-hint">Shows as "🎁 Item Description" in the header</div>
+        </div>
+
+        <div class="edit-form-group" id="edit-total-amount-group">
+          <label>Total Amount</label>
+          <div class="edit-amount-wrapper">
+            <span class="edit-currency">€</span>
+            <input type="text" id="edit-total-amount" class="edit-amount-input" placeholder="0.00" inputmode="decimal">
+          </div>
+        </div>
+
+        <div class="edit-form-group" id="edit-target-amount-group">
+          <label>Target Amount</label>
+          <div class="edit-amount-wrapper">
+            <span class="edit-currency">€</span>
+            <input type="text" id="edit-target-amount" class="edit-amount-input" placeholder="0.00" inputmode="decimal">
+          </div>
+          <div class="edit-hint">Leave empty for open pot (no target)</div>
+        </div>
+
+        <div class="edit-form-group" id="edit-product-link-group">
+          <label>Product Link</label>
+          <input type="url" id="edit-product-link" class="edit-input" placeholder="https://...">
+        </div>
+
+        <div class="edit-form-group" id="edit-product-image-group">
+          <label>Product Image</label>
+          <div class="edit-image-row">
+            <div id="edit-image-preview" class="edit-image-preview">
+              <span class="edit-image-placeholder">No image</span>
+            </div>
+            <div class="edit-image-actions">
+              <button type="button" class="edit-btn-secondary" onclick="triggerEditImageUpload()">Upload Image</button>
+              <button type="button" class="edit-btn-secondary edit-btn-remove" id="edit-remove-image-btn" onclick="removeEditImage()" style="display:none;">Remove</button>
+            </div>
+          </div>
+          <input type="file" id="edit-image-input" accept="image/*" style="display:none;" onchange="handleEditImageUpload(event)">
+        </div>
+
+        <div class="edit-form-group" id="edit-receipt-group">
+          <label>Receipt / Bill</label>
+          <div class="edit-image-row">
+            <div id="edit-receipt-preview" class="edit-image-preview edit-receipt-preview">
+              <span class="edit-image-placeholder">🧾 No receipt</span>
+            </div>
+            <div class="edit-image-actions">
+              <button type="button" class="edit-btn-secondary" id="edit-view-receipt-btn" onclick="viewEditReceipt()" style="display:none;">View</button>
+              <button type="button" class="edit-btn-secondary" onclick="triggerEditReceiptUpload()">Upload Receipt</button>
+              <button type="button" class="edit-btn-secondary edit-btn-remove" id="edit-remove-receipt-btn" onclick="removeEditReceipt()" style="display:none;">Remove</button>
+            </div>
+          </div>
+          <input type="file" id="edit-receipt-input" accept="image/*,.pdf" style="display:none;" onchange="handleEditReceiptUpload(event)">
+          <div class="edit-hint">Upload a photo or PDF of your receipt/bill</div>
+        </div>
+      </div>
+
+      <!-- Payment Section -->
+      <div id="edit-section-payment" class="edit-section">
+        <p class="edit-section-desc">How should contributors pay you?</p>
+        <div id="edit-payment-methods-list" class="edit-payment-methods-list">
+          <!-- Payment methods will be populated here -->
+        </div>
+        <button type="button" class="edit-btn-secondary" onclick="addEditPaymentMethod()">+ Add Payment Method</button>
+      </div>
+
+      <!-- Participants Section -->
+      <div id="edit-section-participants" class="edit-section">
+        <div class="edit-participants-header">
+          <div class="edit-participants-stat">
+            <span class="stat-label">Participants</span>
+            <span class="stat-value" id="edit-participant-count">0</span>
+          </div>
+          <div class="edit-participants-stat">
+            <span class="stat-label">Equal Split</span>
+            <span class="stat-value" id="edit-equal-split">€ 0.00</span>
+          </div>
+        </div>
+        <div id="edit-participants-list" class="edit-participants-list">
+          <!-- Participants will be populated here -->
+        </div>
+        <button type="button" class="edit-btn-secondary" onclick="addParticipantSlot()">+ Add Participant</button>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="edit-modal-footer">
+        <button type="button" class="edit-btn-danger" onclick="confirmDeleteTab()">Delete</button>
+        <div class="edit-footer-spacer"></div>
+        <button type="button" class="edit-btn-secondary" onclick="hideModal('edit-details-modal')">Cancel</button>
+        <button type="button" class="edit-btn-primary" onclick="saveEditDetails()">Save Changes</button>
+      </div>
     </div>
   </div>
 
@@ -3803,28 +4687,16 @@
     }
 
     function renderHeader() {
-        // Title & Meta - show recipient name for gifts
         const giftMode = tabData.gift_mode;
-        const isGiftPotMode = giftMode === 'gift_pot_target' || giftMode === 'gift_pot_open';
-        const isGiftDebtMode = giftMode === 'gift_debt';
-        const productName = tabData.about_text || tabData.raising_for_text;
-        const recipientName = tabData.recipient_name;
+        const isGiftPotMode = giftMode === 'gift_pot_target' || giftMode === 'gift_pot_open' || tabData.is_open_pot === 1;
         
-        let displayTitle = tabData.name;
-        if (tabData.template === 'gift') {
-            if (isGiftPotMode) {
-                // Fundraiser/raising mode
-                displayTitle = recipientName ? `Raising for ${recipientName}` : 'Raising funds';
-            } else if (productName && recipientName) {
-                // Has product name and recipient
-                displayTitle = `Gift: ${productName} for ${recipientName}`;
-            } else if (recipientName) {
-                displayTitle = `Gift for ${recipientName}`;
-            } else if (productName) {
-                displayTitle = `Gift: ${productName}`;
-            }
+        // Title - for pot modes, change "Gift for" to "Raising money for"
+        let displayTitle = tabData.name || 'Untitled Tab';
+        if (isGiftPotMode && displayTitle.toLowerCase().startsWith('gift for')) {
+            displayTitle = 'Raising money for' + displayTitle.substring(8);
         }
         document.getElementById('header-title').innerText = displayTitle;
+        const isGiftDebtMode = giftMode === 'gift_debt';
         const date = new Date(tabData.created_at).toLocaleDateString();
         
         // Determine split label based on gift mode or split mode
@@ -3832,8 +4704,14 @@
         if (isGiftPotMode) {
             splitLabel = tabData.is_open_pot ? 'OPEN POT' : 'TARGET POT';
         } else {
-            // Both gift_debt and normal splits use EQUAL SPLIT or GROUP SPLIT
-            splitLabel = (tabData.split_mode === 'price_groups') ? 'GROUP SPLIT' : 'EQUAL SPLIT';
+            // Both gift_debt and normal splits - check split mode
+            if (tabData.split_mode === 'price_groups') {
+                splitLabel = 'GROUP SPLIT';
+            } else if (tabData.split_mode === 'custom') {
+                splitLabel = 'CUSTOM SPLIT';
+            } else {
+                splitLabel = 'EQUAL SPLIT';
+            }
         }
         
         const peopleCount = tabData.people_count || tabData.peopleCount || participants.length || 1;
@@ -3841,6 +4719,16 @@
             <span>${date}</span> • <span>${peopleCount} ${isGiftPotMode ? 'Contributors' : 'Participants'}</span> • 
             <span class="split-pill">${splitLabel}</span>
         `;
+
+        // === ITEM DESCRIPTION (shows under date line for gifts) ===
+        const itemNameEl = document.getElementById('header-item-name');
+        if (tabData.about_text && tabData.about_text.trim()) {
+            itemNameEl.textContent = '🎁 ' + tabData.about_text.trim();
+            itemNameEl.title = tabData.about_text.trim(); // Full text on hover
+            itemNameEl.style.display = 'block';
+        } else {
+            itemNameEl.style.display = 'none';
+        }
 
         // === HEADER ICON (use product image if available, otherwise emoji) ===
         const iconContainer = document.getElementById('header-icon-container');
@@ -3851,17 +4739,22 @@
             const imagePath = tabData.about_image_path || tabData.raising_for_image_path;
             iconContainer.innerHTML = `<img src="${imagePath}" alt="" style="cursor: pointer;" onclick="showGiftImageModal()">`;
         } else {
-            // Use emoji icon
+            // Use emoji icon based on tab type and mode
             let typeIcon = '📋'; // Default
             if (tabData.template === 'restaurant') {
                 typeIcon = '🍽️';
             } else if (tabData.template === 'trip') {
                 typeIcon = '✈️';
             } else if (tabData.template === 'gift') {
-                if (tabData.group_gift_mode === 'fundraiser') {
-                    typeIcon = '💰';
+                // Check gift mode first
+                if (tabData.gift_mode === 'gift_pot_open' || tabData.is_open_pot === 1) {
+                    typeIcon = '🫙'; // Open pot (jar)
+                } else if (tabData.gift_mode === 'gift_pot_target') {
+                    typeIcon = '🎯'; // Target pot
+                } else if (tabData.group_gift_mode === 'fundraiser') {
+                    typeIcon = '💰'; // Fundraiser
                 } else {
-                    typeIcon = '🎁';
+                    typeIcon = '🎁'; // Regular gift (gift_debt mode)
                 }
             }
             iconContainer.innerHTML = typeIcon;
@@ -4040,6 +4933,8 @@
         if (tabData.split_mode === 'price_groups' && myData.priceGroupId) {
             const g = priceGroups.find(grp => grp.id === myData.priceGroupId);
             if (g) groupName = g.name;
+        } else if (tabData.split_mode === 'custom') {
+            groupName = "Custom Split";
         }
         groupNameEl.innerText = "Group: " + groupName;
 
@@ -4318,7 +5213,7 @@
                     </div>`;
             }
         } else if (method.type === 'revolut') {
-            const revolutValue = details.revolutId || details.username || '';
+            const revolutValue = details.revolutTag || details.revolutId || details.username || '';
             if (revolutValue) {
                 const isLink = revolutValue.includes('revolut.me') || revolutValue.startsWith('http');
                 if (isLink) {
@@ -5143,22 +6038,14 @@
         // Use people_count from tab data for expected total, fallback to participants.length
         const expectedPeopleCount = tabData.people_count || tabData.peopleCount || participants.length || 1;
         
-        // 24-hour pending timeout in milliseconds
+        // 24-hour pending timeout in milliseconds (for UI indicator only - actual cleanup done server-side)
         const PENDING_TIMEOUT_MS = 24 * 60 * 60 * 1000;
         const now = Date.now();
         
-        // Filter participants: show if they have payments OR are organizer OR joined within 24h
-        const visibleParticipants = participants.filter(p => {
-            const paidCents = p.total_paid_cents || 0;
-            const isOrganizer = p.role === 'organizer';
-            const joinedAt = p.joined_at ? new Date(p.joined_at).getTime() : 0;
-            const isWithinPendingWindow = (now - joinedAt) < PENDING_TIMEOUT_MS;
-            
-            // Visible if: has payment, is organizer, or joined within 24h
-            return paidCents > 0 || isOrganizer || isWithinPendingWindow;
-        });
+        // All participants are shown (stale ones are deleted server-side after 24h)
+        const visibleParticipants = participants;
         
-        // Mark pending status for each visible participant
+        // Mark pending status for each participant (for UI display)
         visibleParticipants.forEach(p => {
             const paidCents = p.total_paid_cents || 0;
             const isOrganizer = p.role === 'organizer';
@@ -5302,6 +6189,8 @@
             if (tabData.split_mode === 'price_groups' && priceGroupId) {
                 const g = priceGroups.find(x => x.id === priceGroupId);
                 if(g) fairShareLabel = g.name;
+            } else if (tabData.split_mode === 'custom') {
+                fairShareLabel = isMe ? 'Your share' : 'Custom share';
             }
 
             let overpaidHtml = '';
@@ -6046,11 +6935,689 @@
         showModal('payment-modal'); // Return to payment modal
     }
     
+    // ===========================================
+    // EDIT DETAILS MODAL
+    // ===========================================
+    let editPaymentMethods = [];
+    let editParticipantChanges = {}; // Track share changes: { participantId: newShareCents }
+    let editParticipantPaidChanges = {}; // Track paid changes: { participantId: newPaidCents }
+    let editPeopleCount = 0; // Track total expected participants
+    let editNewImageFile = null;
+    let editRemoveImage = false;
+
     function showEditModal() {
-        // TODO: Full edit modal
-        alert('Edit modal implementation required');
+        populateEditModal();
+        showModal('edit-details-modal');
     }
-    
+
+    function switchEditTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll('.edit-tab').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+        // Update sections
+        document.querySelectorAll('.edit-section').forEach(section => {
+            section.classList.toggle('active', section.id === `edit-section-${tabName}`);
+        });
+    }
+
+    function populateEditModal() {
+        if (!tabData) return;
+
+        // Reset state
+        editParticipantChanges = {};
+        editParticipantPaidChanges = {};
+        editPeopleCount = tabData.people_count || tabData.peopleCount || participants.length || 1;
+        editNewImageFile = null;
+        editRemoveImage = false;
+
+        // Basic Info
+        document.getElementById('edit-tab-name').value = tabData.name || '';
+        document.getElementById('edit-description').value = tabData.about_text || '';
+
+        // Show/hide fields based on tab type
+        const isGift = tabData.template === 'gift';
+        const isGiftPot = tabData.gift_mode === 'gift_pot_target' || tabData.gift_mode === 'gift_pot_open' || tabData.is_open_pot === 1;
+
+        // Description (gifts only)
+        document.getElementById('edit-description-group').style.display = isGift ? 'block' : 'none';
+
+        // Total amount (for non-pot tabs)
+        const totalAmountGroup = document.getElementById('edit-total-amount-group');
+        if (isGiftPot) {
+            totalAmountGroup.style.display = 'none';
+        } else {
+            totalAmountGroup.style.display = 'block';
+            document.getElementById('edit-total-amount').value = tabData.total_amount_cents ? (tabData.total_amount_cents / 100).toFixed(2) : '';
+        }
+
+        // Target amount (for pot modes)
+        const targetAmountGroup = document.getElementById('edit-target-amount-group');
+        if (isGiftPot) {
+            targetAmountGroup.style.display = 'block';
+            document.getElementById('edit-target-amount').value = tabData.amount_target ? (tabData.amount_target / 100).toFixed(2) : '';
+        } else {
+            targetAmountGroup.style.display = 'none';
+        }
+
+        // Product link (gifts only)
+        const productLinkGroup = document.getElementById('edit-product-link-group');
+        productLinkGroup.style.display = isGift ? 'block' : 'none';
+        document.getElementById('edit-product-link').value = tabData.about_link || tabData.raising_for_link || '';
+
+        // Product image (gifts only)
+        const productImageGroup = document.getElementById('edit-product-image-group');
+        productImageGroup.style.display = isGift ? 'block' : 'none';
+        const imagePreview = document.getElementById('edit-image-preview');
+        const imagePath = tabData.about_image_path || tabData.raising_for_image_path;
+        if (imagePath) {
+            imagePreview.innerHTML = `<img src="${imagePath}" alt="Product">`;
+            document.getElementById('edit-remove-image-btn').style.display = 'block';
+        } else {
+            imagePreview.innerHTML = '<span class="edit-image-placeholder">No image</span>';
+            document.getElementById('edit-remove-image-btn').style.display = 'none';
+        }
+
+        // Receipt (available for all tab types)
+        const receiptGroup = document.getElementById('edit-receipt-group');
+        receiptGroup.style.display = 'block';
+        
+        // Reset receipt state
+        editNewReceiptFile = null;
+        editRemoveReceipt = false;
+        
+        const receiptPreview = document.getElementById('edit-receipt-preview');
+        const receiptPath = tabData.receipt_file_path || tabData.receiptFilePath;
+        if (receiptPath) {
+            // Check if it's an image or PDF
+            const isImage = receiptPath.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+            if (isImage) {
+                receiptPreview.innerHTML = `<img src="${receiptPath}" alt="Receipt">`;
+            } else {
+                // PDF or other file - show icon with "click View" hint
+                receiptPreview.innerHTML = `<div class="edit-pdf-preview">📄<span>PDF</span></div>`;
+            }
+            document.getElementById('edit-view-receipt-btn').style.display = 'block';
+            document.getElementById('edit-remove-receipt-btn').style.display = 'block';
+        } else {
+            receiptPreview.innerHTML = '<span class="edit-image-placeholder">🧾 No receipt</span>';
+            document.getElementById('edit-view-receipt-btn').style.display = 'none';
+            document.getElementById('edit-remove-receipt-btn').style.display = 'none';
+        }
+
+        // Payment methods (force reload from tabData on modal open)
+        populateEditPaymentMethods(true);
+
+        // Participants
+        populateEditParticipants();
+
+        // Reset to first tab
+        switchEditTab('basic');
+    }
+
+    // Payment method types (must match wizard in grouptabs-create.html)
+    const EDIT_PAYMENT_METHOD_TYPES = {
+        bank: {
+            label: 'Bank Transfer',
+            icon: '🏦',
+            fields: [
+                { key: 'accountHolder', label: 'Account holder', placeholder: 'Your name', required: true },
+                { key: 'iban', label: 'IBAN', placeholder: 'NL00 BANK 0000 0000 00', required: true },
+                { key: 'bic', label: 'BIC (optional)', placeholder: 'BANKCODE', required: false }
+            ]
+        },
+        paypal: {
+            label: 'PayPal',
+            icon: '💳',
+            fields: [
+                { key: 'paypalId', label: 'PayPal username or link', placeholder: 'paypal.me/yourname or email', required: true }
+            ]
+        },
+        revolut: {
+            label: 'Revolut',
+            icon: '📱',
+            fields: [
+                { key: 'revolutTag', label: 'Revolut tag or phone', placeholder: '@yourname or +31...', required: true }
+            ]
+        },
+        cash: {
+            label: 'Cash',
+            icon: '💵',
+            fields: []
+        }
+    };
+
+    function populateEditPaymentMethods(forceReload = false) {
+        const container = document.getElementById('edit-payment-methods-list');
+
+        // Only parse from tabData on force reload (when modal first opens)
+        if (forceReload) {
+            try {
+                editPaymentMethods = tabData.payment_methods_json ? JSON.parse(tabData.payment_methods_json) : [];
+            } catch (e) {
+                editPaymentMethods = [];
+            }
+        }
+
+        if (editPaymentMethods.length === 0) {
+            container.innerHTML = '<p class="edit-hint">No payment methods configured yet.</p>';
+            return;
+        }
+
+        container.innerHTML = editPaymentMethods.map((method, idx) => renderEditPaymentMethodItem(method, idx)).join('');
+    }
+
+    function renderEditPaymentMethodItem(method, idx) {
+        const typeInfo = EDIT_PAYMENT_METHOD_TYPES[method.type] || { label: method.type, icon: '💳', fields: [] };
+        const details = method.details || {};
+
+        // Build fields HTML
+        let fieldsHtml = '';
+        if (typeInfo.fields.length > 0) {
+            fieldsHtml = typeInfo.fields.map(field => `
+                <div class="edit-payment-field">
+                    <label>${field.label}</label>
+                    <input type="text"
+                           value="${escapeHtml(details[field.key] || '')}"
+                           placeholder="${field.placeholder}"
+                           oninput="updateEditPaymentMethodField(${idx}, '${field.key}', this.value)">
+                </div>
+            `).join('');
+        } else if (method.type === 'cash') {
+            fieldsHtml = '<p class="edit-hint" style="margin:0;">Cash payments - no details needed</p>';
+        }
+
+        return `
+            <div class="edit-payment-method-card" data-idx="${idx}">
+                <div class="edit-payment-method-header">
+                    <span class="edit-payment-method-icon">${typeInfo.icon}</span>
+                    <span class="edit-payment-method-label">${typeInfo.label}</span>
+                    <button type="button" class="edit-payment-remove-btn" onclick="removeEditPaymentMethod(${idx})">×</button>
+                </div>
+                <div class="edit-payment-method-fields">
+                    ${fieldsHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    function updateEditPaymentMethodField(idx, fieldKey, value) {
+        if (editPaymentMethods[idx]) {
+            if (!editPaymentMethods[idx].details) {
+                editPaymentMethods[idx].details = {};
+            }
+            editPaymentMethods[idx].details[fieldKey] = value;
+        }
+    }
+
+    function removeEditPaymentMethod(idx) {
+        editPaymentMethods.splice(idx, 1);
+        populateEditPaymentMethods();
+    }
+
+    let showingPaymentTypeSelector = false;
+
+    function addEditPaymentMethod() {
+        // Show type selector
+        const container = document.getElementById('edit-payment-methods-list');
+        if (showingPaymentTypeSelector) return;
+        
+        showingPaymentTypeSelector = true;
+        const selectorHtml = `
+            <div class="edit-payment-type-selector" id="payment-type-selector">
+                <p class="edit-hint" style="margin: 0 0 12px 0;">Select payment method type:</p>
+                <div class="edit-payment-type-grid">
+                    ${Object.entries(EDIT_PAYMENT_METHOD_TYPES).map(([key, val]) => `
+                        <button type="button" class="edit-payment-type-btn" onclick="selectEditPaymentType('${key}')">
+                            <span>${val.icon}</span>
+                            <span>${val.label}</span>
+                        </button>
+                    `).join('')}
+                </div>
+                <button type="button" class="edit-btn-secondary" style="width:100%; margin-top:12px;" onclick="cancelPaymentTypeSelector()">Cancel</button>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', selectorHtml);
+    }
+
+    function cancelPaymentTypeSelector() {
+        showingPaymentTypeSelector = false;
+        const selector = document.getElementById('payment-type-selector');
+        if (selector) selector.remove();
+    }
+
+    function selectEditPaymentType(type) {
+        showingPaymentTypeSelector = false;
+        const selector = document.getElementById('payment-type-selector');
+        if (selector) selector.remove();
+
+        editPaymentMethods.push({ type: type, details: {} });
+        populateEditPaymentMethods();
+    }
+
+    function populateEditParticipants() {
+        const container = document.getElementById('edit-participants-list');
+        const isGiftPot = tabData.gift_mode === 'gift_pot_target' || tabData.gift_mode === 'gift_pot_open' || tabData.is_open_pot === 1;
+
+        // Build HTML for joined participants
+        let html = '';
+        
+        if (participants && participants.length > 0) {
+            html += participants.map(p => {
+                const isHost = p.is_host === 1 || p.role === 'organizer';
+                const paidCents = p.total_paid_cents || p.paid_amount_cents || 0;
+                const hasPaid = paidCents > 0;
+                const isPending = !hasPaid && !isHost;
+                const fairShare = p.fair_share_cents || 0;
+
+                // Determine badge
+                let badgeHtml = '';
+                if (isHost) {
+                    badgeHtml = '<span class="edit-participant-badge organizer">Organizer</span>';
+                } else if (hasPaid) {
+                    badgeHtml = '<span class="edit-participant-badge paid">Paid</span>';
+                } else {
+                    badgeHtml = '<span class="edit-participant-badge pending">Pending</span>';
+                }
+
+                // Avatar
+                let avatarHtml;
+                if (p.avatar_url) {
+                    avatarHtml = `<img src="${p.avatar_url}" alt="">`;
+                } else {
+                    avatarHtml = getInitials(getDisplayName(p));
+                }
+
+                // Can remove any participant who is not the host/organizer
+                const canRemove = !isHost;
+                // Can edit for non-pot tabs
+                const canEdit = !isGiftPot;
+
+                // Get the actual name (not masked) for editing
+                const actualName = p.full_name || p.guest_name || p.display_name || '';
+                const hideNameChecked = p.hide_name ? 'checked' : '';
+
+                return `
+                    <div class="edit-participant-card" data-participant-id="${p.id}">
+                        <div class="edit-participant-header">
+                            <div class="edit-participant-avatar">${avatarHtml}</div>
+                            <div class="edit-participant-info">
+                                <div class="edit-participant-name">
+                                    ${escapeHtml(getDisplayName(p))}
+                                    ${badgeHtml}
+                                </div>
+                            </div>
+                            <button type="button"
+                                    class="edit-participant-remove"
+                                    onclick="removeParticipant(${p.id}, '${escapeHtml(getDisplayName(p))}')"
+                                    ${!canRemove ? 'disabled' : ''}>×</button>
+                        </div>
+                        <div class="edit-participant-fields">
+                            <div class="edit-participant-field edit-participant-field-full">
+                                <label>Name</label>
+                                <div class="edit-participant-input-wrap">
+                                    <input type="text"
+                                           class="edit-participant-input"
+                                           value="${escapeHtml(actualName)}"
+                                           data-participant-id="${p.id}"
+                                           data-field="name"
+                                           onchange="updateParticipantName(${p.id}, this.value)"
+                                           placeholder="Participant name">
+                                </div>
+                            </div>
+                            <div class="edit-participant-field edit-participant-field-full">
+                                <label class="edit-participant-checkbox-label">
+                                    <input type="checkbox"
+                                           class="edit-participant-checkbox"
+                                           data-participant-id="${p.id}"
+                                           onchange="updateParticipantHideName(${p.id}, this.checked)"
+                                           ${hideNameChecked}>
+                                    <span>Hide name publicly (show as masked)</span>
+                                </label>
+                            </div>
+                            ${!isGiftPot ? `
+                            <div class="edit-participant-field">
+                                <label>Share (owes)</label>
+                                <div class="edit-participant-input-wrap">
+                                    <span class="edit-currency">€</span>
+                                    <input type="text"
+                                           class="edit-participant-input"
+                                           value="${(fairShare / 100).toFixed(2)}"
+                                           data-participant-id="${p.id}"
+                                           data-field="share"
+                                           onchange="updateParticipantShare(${p.id}, this.value)"
+                                           ${!canEdit ? 'disabled' : ''}
+                                           inputmode="decimal">
+                                </div>
+                            </div>
+                            <div class="edit-participant-field">
+                                <label>Paid</label>
+                                <div class="edit-participant-input-wrap">
+                                    <span class="edit-currency">€</span>
+                                    <input type="text"
+                                           class="edit-participant-input"
+                                           value="${(paidCents / 100).toFixed(2)}"
+                                           data-participant-id="${p.id}"
+                                           data-field="paid"
+                                           onchange="updateParticipantPaid(${p.id}, this.value)"
+                                           ${!canEdit ? 'disabled' : ''}
+                                           inputmode="decimal">
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Add awaiting participant slots
+        const awaitingCount = Math.max(0, editPeopleCount - (participants ? participants.length : 0));
+        for (let i = 0; i < awaitingCount; i++) {
+            html += `
+                <div class="edit-participant-card awaiting">
+                    <div class="edit-participant-header">
+                        <div class="edit-participant-avatar">?</div>
+                        <div class="edit-participant-info">
+                            <div class="edit-participant-name">Awaiting</div>
+                        </div>
+                        <button type="button" class="edit-participant-remove" onclick="removeAwaitingSlot()">×</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html || '<p class="edit-hint">No participants yet.</p>';
+        
+        // Update stats
+        updateParticipantStats();
+    }
+
+    function updateParticipantStats() {
+        const totalAmount = tabData.total_amount_cents || 0;
+        const equalSplit = editPeopleCount > 0 ? totalAmount / editPeopleCount : 0;
+        
+        // Update stats header
+        document.getElementById('edit-participant-count').textContent = editPeopleCount;
+        document.getElementById('edit-equal-split').textContent = formatCurrency2(equalSplit);
+        
+        // Update tab label
+        document.getElementById('edit-tab-participants').textContent = `Participants (${editPeopleCount})`;
+    }
+
+    function addParticipantSlot() {
+        editPeopleCount++;
+        populateEditParticipants();
+    }
+
+    function removeAwaitingSlot() {
+        if (editPeopleCount > (participants ? participants.length : 0)) {
+            editPeopleCount--;
+            populateEditParticipants();
+        }
+    }
+
+    function updateParticipantShare(participantId, value) {
+        const cents = Math.round(parseFloat(value.replace(',', '.')) * 100) || 0;
+        editParticipantChanges[participantId] = cents;
+    }
+
+    function updateParticipantPaid(participantId, value) {
+        const cents = Math.round(parseFloat(value.replace(',', '.')) * 100) || 0;
+        editParticipantPaidChanges[participantId] = cents;
+    }
+
+    async function updateParticipantName(participantId, name) {
+        try {
+            const res = await fetch(`/api/grouptabs/${tabId}/participants/${participantId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ guest_name: name })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to update name');
+            }
+
+            // Update local participant data
+            const p = participants.find(p => p.id === participantId);
+            if (p) {
+                p.guest_name = name;
+                p.display_name = name;
+            }
+            showToast('Name updated');
+        } catch (err) {
+            showErrorModal(err.message);
+        }
+    }
+
+    async function updateParticipantHideName(participantId, hidden) {
+        try {
+            const res = await fetch(`/api/grouptabs/${tabId}/participants/${participantId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ hide_name: hidden })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to update hide setting');
+            }
+
+            // Update local participant data and re-render to show masked/unmasked name
+            const p = participants.find(p => p.id === participantId);
+            if (p) {
+                p.hide_name = hidden ? 1 : 0;
+            }
+            populateEditParticipants();
+            showToast(hidden ? 'Name will be hidden publicly' : 'Name will be visible');
+        } catch (err) {
+            showErrorModal(err.message);
+        }
+    }
+
+    async function removeParticipant(participantId, name) {
+        if (!confirm(`Remove ${name} from this tab?`)) return;
+
+        try {
+            const res = await fetch(`/api/grouptabs/${tabId}/participants/${participantId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to remove participant');
+            }
+
+            // Refresh participants and re-populate
+            await loadTabData();
+            populateEditParticipants();
+            showToast('Participant removed');
+        } catch (err) {
+            showErrorModal(err.message);
+        }
+    }
+
+    // Image upload
+    function triggerEditImageUpload() {
+        document.getElementById('edit-image-input').click();
+    }
+
+    function handleEditImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        editNewImageFile = file;
+        editRemoveImage = false;
+
+        // Preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('edit-image-preview').innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            document.getElementById('edit-remove-image-btn').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeEditImage() {
+        editNewImageFile = null;
+        editRemoveImage = true;
+        document.getElementById('edit-image-preview').innerHTML = '<span class="edit-image-placeholder">No image</span>';
+        document.getElementById('edit-remove-image-btn').style.display = 'none';
+        document.getElementById('edit-image-input').value = '';
+    }
+
+    // Receipt upload
+    let editNewReceiptFile = null;
+    let editRemoveReceipt = false;
+
+    function triggerEditReceiptUpload() {
+        document.getElementById('edit-receipt-input').click();
+    }
+
+    function handleEditReceiptUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        editNewReceiptFile = file;
+        editRemoveReceipt = false;
+
+        // Preview
+        const preview = document.getElementById('edit-receipt-preview');
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.innerHTML = `<img src="${e.target.result}" alt="Receipt">`;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // PDF or other file type
+            preview.innerHTML = `<span class="edit-receipt-file">📄 ${file.name}</span>`;
+        }
+        document.getElementById('edit-view-receipt-btn').style.display = 'none';
+        document.getElementById('edit-remove-receipt-btn').style.display = 'block';
+    }
+
+    function removeEditReceipt() {
+        editNewReceiptFile = null;
+        editRemoveReceipt = true;
+        document.getElementById('edit-receipt-preview').innerHTML = '<span class="edit-image-placeholder">🧾 No receipt</span>';
+        document.getElementById('edit-view-receipt-btn').style.display = 'none';
+        document.getElementById('edit-remove-receipt-btn').style.display = 'none';
+        document.getElementById('edit-receipt-input').value = '';
+    }
+
+    function viewEditReceipt() {
+        if (tabData.receipt_file_path) {
+            window.open(tabData.receipt_file_path, '_blank');
+        }
+    }
+
+    // Delete tab
+    async function confirmDeleteTab() {
+        const tabName = tabData.name || 'this tab';
+        if (!confirm(`Delete "${tabName}"?\n\nThis will permanently delete the tab and all its data.`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/grouptabs/${tabId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to delete tab');
+            }
+
+            // Redirect to grouptabs list
+            window.location.href = '/grouptabs';
+        } catch (err) {
+            showErrorModal(err.message);
+        }
+    }
+
+    // Save all changes
+    async function saveEditDetails() {
+        const isGiftPot = tabData.gift_mode === 'gift_pot_target' || tabData.gift_mode === 'gift_pot_open' || tabData.is_open_pot === 1;
+
+        // Gather form data
+        const formData = new FormData();
+        formData.append('name', document.getElementById('edit-tab-name').value.trim());
+
+        if (tabData.template === 'gift') {
+            formData.append('about_text', document.getElementById('edit-description').value.trim());
+            formData.append('about_link', document.getElementById('edit-product-link').value.trim());
+        }
+
+        if (isGiftPot) {
+            const targetVal = document.getElementById('edit-target-amount').value;
+            const targetCents = targetVal ? Math.round(parseFloat(targetVal.replace(',', '.')) * 100) : null;
+            if (targetCents !== null) {
+                formData.append('amount_target', targetCents.toString());
+            }
+        } else {
+            const totalVal = document.getElementById('edit-total-amount').value;
+            const totalCents = totalVal ? Math.round(parseFloat(totalVal.replace(',', '.')) * 100) : 0;
+            formData.append('total_amount_cents', totalCents.toString());
+        }
+
+        // Payment methods
+        formData.append('payment_methods_json', JSON.stringify(editPaymentMethods));
+
+        // People count (for awaiting participants)
+        formData.append('peopleCount', editPeopleCount.toString());
+
+        // Participant share changes
+        if (Object.keys(editParticipantChanges).length > 0) {
+            formData.append('participant_shares', JSON.stringify(editParticipantChanges));
+        }
+
+        // Participant paid changes
+        if (Object.keys(editParticipantPaidChanges).length > 0) {
+            formData.append('participant_paid', JSON.stringify(editParticipantPaidChanges));
+        }
+
+        // Image handling
+        if (editNewImageFile) {
+            formData.append('about_image', editNewImageFile);
+        } else if (editRemoveImage) {
+            formData.append('remove_image', 'true');
+        }
+
+        // Receipt handling
+        if (editNewReceiptFile) {
+            formData.append('receipt', editNewReceiptFile);
+        } else if (editRemoveReceipt) {
+            formData.append('deleteReceipt', 'true');
+        }
+
+        try {
+            const res = await fetch(`/api/grouptabs/${tabId}`, {
+                method: 'PATCH',
+                credentials: 'include',
+                body: formData
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to save changes');
+            }
+
+            hideModal('edit-details-modal');
+            await loadTabData();
+            renderAll();
+            showToast('Changes saved');
+        } catch (err) {
+            showErrorModal(err.message);
+        }
+    }
+
     // ===========================================
     // COLLAPSIBLE PARTICIPANTS
     // ===========================================
