@@ -81,3 +81,7 @@ body {
 .admin-btn-secondary {
   @apply bg-gray-700 text-gray-200 hover:bg-gray-600;
 }
+
+.admin-btn-warning {
+  @apply bg-yellow-600 text-white hover:bg-yellow-700;
+}

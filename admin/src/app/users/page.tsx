@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getUsers } from '@/lib/db-supabase';
-import { formatDate, getStatusBadgeClass } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,7 +74,9 @@ export default async function UsersPage({
                   </td>
                   <td className="text-sm text-gray-400">{formatDate(user.created_at)}</td>
                   <td>
-                    <span className="badge badge-active">Active</span>
+                    <span className={user.is_disabled ? 'badge badge-disabled' : 'badge badge-active'}>
+                      {user.is_disabled ? 'Disabled' : 'Active'}
+                    </span>
                   </td>
                   <td>
                     <Link

@@ -22,6 +22,7 @@ export interface User {
   created_at: string;
   public_id: string | null;
   is_admin: boolean;
+  is_disabled: boolean;
 }
 
 export interface Agreement {
@@ -105,7 +106,7 @@ export async function getUsers(search?: string, limit = 50, offset = 0): Promise
   
   let query = supabase
     .from('users')
-    .select('id, full_name, email, phone_number, created_at, public_id, is_admin')
+    .select('id, full_name, email, phone_number, created_at, public_id, is_admin, is_disabled')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
   
@@ -128,7 +129,7 @@ export async function getUserById(id: string | number): Promise<User | undefined
   
   const { data, error } = await supabase
     .from('users')
-    .select('id, full_name, email, phone_number, created_at, public_id, is_admin')
+    .select('id, full_name, email, phone_number, created_at, public_id, is_admin, is_disabled')
     .eq('id', id)
     .single();
   
@@ -210,12 +211,34 @@ export async function deleteUser(
 }
 
 export async function softDisableUser(userId: string | number, adminId: string): Promise<void> {
-  // Note: The users table doesn't have an is_disabled column
-  // For now, we just log the action
+  const supabase = getSupabaseAdmin();
+  
+  const { error } = await supabase
+    .from('users')
+    .update({ is_disabled: true, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+  
+  if (error) {
+    console.error('[DB] softDisableUser error:', error);
+    throw error;
+  }
+  
   await logAdminAction(adminId, 'soft_disable_user', 'user', String(userId), { action: 'disabled' });
 }
 
 export async function enableUser(userId: string | number, adminId: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  
+  const { error } = await supabase
+    .from('users')
+    .update({ is_disabled: false, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+  
+  if (error) {
+    console.error('[DB] enableUser error:', error);
+    throw error;
+  }
+  
   await logAdminAction(adminId, 'enable_user', 'user', String(userId), { action: 'enabled' });
 }
 

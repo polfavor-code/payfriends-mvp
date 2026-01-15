@@ -6,13 +6,32 @@ import { useRouter } from 'next/navigation';
 interface UserActionsProps {
   userId: string | number;
   hasFinancialHistory: boolean;
+  isDisabled: boolean;
 }
 
-export function UserActions({ userId, hasFinancialHistory }: UserActionsProps) {
+export function UserActions({ userId, hasFinancialHistory, isDisabled }: UserActionsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleToggleDisabled = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const endpoint = isDisabled ? 'enable' : 'disable';
+      const res = await fetch(`/api/users/${userId}/${endpoint}`, { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || `Failed to ${endpoint} user`);
+      }
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDelete = async () => {
     setLoading(true);
@@ -41,6 +60,15 @@ export function UserActions({ userId, hasFinancialHistory }: UserActionsProps) {
       )}
 
       <div className="flex gap-3">
+        {/* Enable/Disable */}
+        <button
+          onClick={handleToggleDisabled}
+          disabled={loading}
+          className={isDisabled ? 'admin-btn admin-btn-primary' : 'admin-btn admin-btn-warning'}
+        >
+          {loading ? '...' : isDisabled ? 'Enable User' : 'Disable User'}
+        </button>
+
         {/* Delete */}
         {!showDeleteConfirm ? (
           <button
