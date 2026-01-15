@@ -1,7 +1,7 @@
 {
   "name": "payfriends-mvp",
   "version": "1.0.0",
-  "description": "",
+  "description": "PayFriends - Loans and GroupTabs app",
   "main": "index.js",
   "scripts": {
     "dev": "node server.js",
@@ -10,17 +10,25 @@
     "seed:demo": "node ./scripts/seed-demo-data.js",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "db:migrate": "node scripts/migrate-sqlite-to-supabase.js",
+    "db:migrate:dry": "node scripts/migrate-sqlite-to-supabase.js --dry-run",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:reset": "supabase db reset",
+    "supabase:types": "supabase gen types typescript --local > lib/supabase/types.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.4.1",
     "body-parser": "^2.2.0",
     "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.0",
     "express": "^5.1.0",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
