@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getGroupTabById, getGroupTabParticipants, getAdminNotes } from '@/lib/db';
+import { getGroupTabById, getGroupTabParticipants, getAdminNotes } from '@/lib/db-supabase';
 import { formatDate, formatDateTime, formatCurrency, getStatusBadgeClass } from '@/lib/utils';
 import { AdminNotesSection } from '@/components/AdminNotes';
 import { Timeline } from '@/components/Timeline';
@@ -17,14 +17,14 @@ export default async function GroupTabDetailPage({
   params: Promise<PageParams>;
 }) {
   const { id } = await params;
-  const grouptab = getGroupTabById(id);
+  const grouptab = await getGroupTabById(id);
 
   if (!grouptab) {
     notFound();
   }
 
-  const participants = getGroupTabParticipants(id);
-  const notes = getAdminNotes('grouptab', id);
+  const participants = await getGroupTabParticipants(id);
+  const notes = await getAdminNotes('grouptab', id);
 
   // Build timeline events
   const timelineEvents = [

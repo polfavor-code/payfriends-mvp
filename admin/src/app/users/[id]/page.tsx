@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getUserById, getUserStats, getAdminNotes } from '@/lib/db';
+import { getUserById, getUserStats, getAdminNotes } from '@/lib/db-supabase';
 import { formatDate, formatDateTime } from '@/lib/utils';
 import { UserActions } from './UserActions';
 import { AdminNotesSection } from '@/components/AdminNotes';
@@ -17,14 +17,14 @@ export default async function UserDetailPage({
   params: Promise<PageParams>;
 }) {
   const { id } = await params;
-  const user = getUserById(id);
+  const user = await getUserById(id);
 
   if (!user) {
     notFound();
   }
 
-  const stats = getUserStats(id);
-  const notes = getAdminNotes('user', id);
+  const stats = await getUserStats(id);
+  const notes = await getAdminNotes('user', id);
 
   return (
     <div className="max-w-4xl">

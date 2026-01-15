@@ -87,4 +87,3 @@ enabled = false
 [experimental]
 orioledb_version = ""
 s3_host = ""
-webhooks = false

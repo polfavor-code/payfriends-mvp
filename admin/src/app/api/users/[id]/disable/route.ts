@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { softDisableUser } from '@/lib/db';
+import { softDisableUser } from '@/lib/db-supabase';
 import { getAdminId } from '@/lib/auth';
 
 export async function POST(
@@ -10,7 +10,7 @@ export async function POST(
     const { id } = await params;
     const adminId = await getAdminId();
     
-    softDisableUser(id, adminId);
+    await softDisableUser(id, adminId);
     
     return NextResponse.json({ success: true });
   } catch (error: any) {

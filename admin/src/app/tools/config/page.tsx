@@ -1,11 +1,11 @@
-import { getRemoteConfigs } from '@/lib/db';
+import { getRemoteConfigs } from '@/lib/db-supabase';
 import { formatDateTime } from '@/lib/utils';
 import { ConfigForm } from './ConfigForm';
 
 export const dynamic = 'force-dynamic';
 
 export default async function RemoteConfigPage() {
-  const configs = getRemoteConfigs();
+  const configs = await getRemoteConfigs();
 
   return (
     <div className="max-w-4xl">

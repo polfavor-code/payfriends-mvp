@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getAgreementById } from '@/lib/db';
+import { getAgreementById } from '@/lib/db-supabase';
 import { runCalculation, compareCalculations, isEngineAvailable, type CalculationInput } from '@/lib/calculator';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
@@ -25,7 +25,7 @@ export default async function CalculationDebuggerPage({
   const engineAvailable = isEngineAvailable();
 
   if (loanId && engineAvailable) {
-    agreement = getAgreementById(loanId);
+    agreement = await getAgreementById(loanId);
     
     if (!agreement) {
       error = `Loan not found: ${loanId}`;

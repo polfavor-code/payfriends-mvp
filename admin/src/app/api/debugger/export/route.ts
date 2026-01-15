@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAgreementById } from '@/lib/db';
+import { getAgreementById } from '@/lib/db-supabase';
 import { runCalculation, type CalculationInput } from '@/lib/calculator';
 
 export async function GET(request: Request) {
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'loan_id required' }, { status: 400 });
   }
 
-  const agreement = getAgreementById(loanId);
+  const agreement = await getAgreementById(loanId);
   if (!agreement) {
     return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
   }

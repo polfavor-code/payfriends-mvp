@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { enableUser } from '@/lib/db';
+import { enableUser } from '@/lib/db-supabase';
 import { getAdminId } from '@/lib/auth';
 
 export async function POST(
@@ -10,7 +10,7 @@ export async function POST(
     const { id } = await params;
     const adminId = await getAdminId();
     
-    enableUser(id, adminId);
+    await enableUser(id, adminId);
     
     return NextResponse.json({ success: true });
   } catch (error: any) {

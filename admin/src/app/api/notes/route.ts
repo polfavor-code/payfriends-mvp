@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { addAdminNote } from '@/lib/db';
+import { addAdminNote } from '@/lib/db-supabase';
 import { getAdminId } from '@/lib/auth';
 
 export async function POST(request: Request) {
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
-    addAdminNote(entityType, entityId, note, adminId);
+    await addAdminNote(entityType, entityId, note, adminId);
     
     return NextResponse.json({ success: true });
   } catch (error: any) {

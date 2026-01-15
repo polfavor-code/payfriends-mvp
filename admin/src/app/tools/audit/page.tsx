@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { getAuditLog } from '@/lib/db';
+import { getAuditLog } from '@/lib/db-supabase';
 import { formatDateTime } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AuditLogPage() {
-  const logs = getAuditLog(200, 0);
+  const logs = await getAuditLog(200, 0);
 
   return (
     <div className="max-w-5xl">
@@ -34,7 +34,8 @@ export default async function AuditLogPage() {
               </tr>
             ) : (
               logs.map((log) => {
-                const metadata = JSON.parse(log.metadata || '{}');
+                // Supabase returns metadata as an object, SQLite returned it as a string
+                const metadata = typeof log.metadata === 'string' ? JSON.parse(log.metadata || '{}') : (log.metadata || {});
                 const targetLink = getTargetLink(log.target_type, log.target_id);
 
                 return (

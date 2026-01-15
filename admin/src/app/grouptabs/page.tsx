@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getGroupTabs } from '@/lib/db';
+import { getGroupTabs } from '@/lib/db-supabase';
 import { formatDate, formatCurrency, getStatusBadgeClass } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,7 @@ export default async function GroupTabsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const grouptabs = getGroupTabs({
+  const grouptabs = await getGroupTabs({
     status: params.status,
     type: params.type,
     creatorId: params.creatorId,

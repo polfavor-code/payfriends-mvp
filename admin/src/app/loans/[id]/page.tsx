@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getAgreementById, getAgreementPayments, getAdminNotes } from '@/lib/db';
+import { getAgreementById, getAgreementPayments, getAdminNotes } from '@/lib/db-supabase';
 import { formatDate, formatDateTime, formatCurrency, getStatusBadgeClass } from '@/lib/utils';
 import { AdminNotesSection } from '@/components/AdminNotes';
 import { Timeline } from '@/components/Timeline';
@@ -17,14 +17,14 @@ export default async function LoanDetailPage({
   params: Promise<PageParams>;
 }) {
   const { id } = await params;
-  const agreement = getAgreementById(id);
+  const agreement = await getAgreementById(id);
 
   if (!agreement) {
     notFound();
   }
 
-  const payments = getAgreementPayments(id);
-  const notes = getAdminNotes('loan', id);
+  const payments = await getAgreementPayments(id);
+  const notes = await getAdminNotes('loan', id);
 
   // Build timeline events
   const timelineEvents = [
