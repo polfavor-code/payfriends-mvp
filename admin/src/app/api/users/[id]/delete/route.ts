@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { deleteUser } from '@/lib/db';
+import { deleteUser } from '@/lib/db-supabase';
 import { getAdminId } from '@/lib/auth';
 
 export async function POST(
@@ -10,7 +10,7 @@ export async function POST(
     const { id } = await params;
     const adminId = await getAdminId();
     
-    const result = deleteUser(id, adminId, true); // Always anonymize if has history
+    const result = await deleteUser(id, adminId, true); // Always anonymize if has history
     
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });

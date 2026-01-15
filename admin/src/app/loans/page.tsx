@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getAgreements } from '@/lib/db';
+import { getAgreements } from '@/lib/db-supabase';
 import { formatDate, formatCurrency, getStatusBadgeClass } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +18,7 @@ export default async function LoansPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const agreements = getAgreements({
+  const agreements = await getAgreements({
     status: params.status,
     lenderId: params.lenderId,
     borrowerId: params.borrowerId,

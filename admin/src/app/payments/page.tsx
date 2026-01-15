@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getPaymentReports } from '@/lib/db';
+import { getPaymentReports } from '@/lib/db-supabase';
 import { formatDateTime, formatCurrency, getStatusBadgeClass } from '@/lib/utils';
 import { MarkReviewedButton } from './MarkReviewedButton';
 
@@ -16,7 +16,7 @@ export default async function PaymentReportsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const reports = getPaymentReports({
+  const reports = await getPaymentReports({
     status: params.status,
     entityType: params.entityType,
   }, 100, 0);

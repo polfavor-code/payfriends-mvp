@@ -209,6 +209,16 @@ export async function deleteUser(
   return { success: true };
 }
 
+export async function softDisableUser(userId: string | number, adminId: string): Promise<void> {
+  // Note: The users table doesn't have an is_disabled column
+  // For now, we just log the action
+  await logAdminAction(adminId, 'soft_disable_user', 'user', String(userId), { action: 'disabled' });
+}
+
+export async function enableUser(userId: string | number, adminId: string): Promise<void> {
+  await logAdminAction(adminId, 'enable_user', 'user', String(userId), { action: 'enabled' });
+}
+
 // =============================================================================
 // AGREEMENT (LOAN) QUERIES
 // =============================================================================

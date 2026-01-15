@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getUsers } from '@/lib/db';
+import { getUsers } from '@/lib/db-supabase';
 import { formatDate, getStatusBadgeClass } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +15,7 @@ export default async function UsersPage({
 }) {
   const params = await searchParams;
   const search = params.search || '';
-  const users = getUsers(search, 100, 0);
+  const users = await getUsers(search, 100, 0);
 
   return (
     <div>

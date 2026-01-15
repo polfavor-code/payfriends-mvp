@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { setRemoteConfig } from '@/lib/db';
+import { setRemoteConfig } from '@/lib/db-supabase';
 import { getAdminId } from '@/lib/auth';
 
 export async function POST(request: Request) {
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Key and value required' }, { status: 400 });
     }
 
-    setRemoteConfig(key, value, type || 'string', description || '', adminId);
+    await setRemoteConfig(key, value, type || 'string', description || '', adminId);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

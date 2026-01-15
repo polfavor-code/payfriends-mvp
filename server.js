@@ -11,6 +11,9 @@ const multer = require('multer');
 const { nanoid } = require('nanoid');
 const { formatCurrency0, formatCurrency2, formatEuro0, formatEuro2 } = require('./lib/formatters');
 
+// Database adapter for Supabase/SQLite
+const { USE_SUPABASE, initSqlite, asyncDb } = require('./lib/db-adapter');
+
 // --- basic setup ---
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,6 +42,10 @@ if (!fs.existsSync('./uploads/grouptabs')) {
 // --- database setup ---
 const db = new Database('./data/payfriends.db');
 db.pragma('journal_mode = WAL');
+
+// Initialize SQLite fallback for the adapter
+initSqlite(db);
+console.log(`[Server] Database mode: ${USE_SUPABASE ? 'Supabase' : 'SQLite'}`);
 
 // Create all tables
 db.exec(`
@@ -1090,7 +1097,7 @@ app.use('/uploads/profiles', express.static(path.join(__dirname, 'uploads', 'pro
 // GroupTab receipts are also served via dedicated API endpoint below (see /api/grouptabs/receipt/:filename)
 
 // Session middleware - loads user from session cookie
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   req.user = null;
 
   const sessionId = req.cookies.session_id;
@@ -1099,22 +1106,41 @@ app.use((req, res, next) => {
   }
 
   try {
-    const session = db.prepare(`
-      SELECT s.*, u.email, u.id as user_id, u.full_name, u.profile_picture, u.phone_number, u.timezone
-      FROM sessions s
-      JOIN users u ON s.user_id = u.id
-      WHERE s.id = ? AND s.expires_at > datetime('now')
-    `).get(sessionId);
+    if (USE_SUPABASE) {
+      // Supabase async path
+      const session = await asyncDb.getSessionById(sessionId);
+      if (session && new Date(session.expires_at) > new Date()) {
+        const user = await asyncDb.getUserById(session.user_id);
+        if (user) {
+          req.user = {
+            id: user.id,
+            email: user.email,
+            full_name: user.full_name,
+            profile_picture: user.profile_picture,
+            phone_number: user.phone_number,
+            timezone: user.timezone
+          };
+        }
+      }
+    } else {
+      // SQLite sync path
+      const session = db.prepare(`
+        SELECT s.*, u.email, u.id as user_id, u.full_name, u.profile_picture, u.phone_number, u.timezone
+        FROM sessions s
+        JOIN users u ON s.user_id = u.id
+        WHERE s.id = ? AND s.expires_at > datetime('now')
+      `).get(sessionId);
 
-    if (session) {
-      req.user = {
-        id: session.user_id,
-        email: session.email,
-        full_name: session.full_name,
-        profile_picture: session.profile_picture,
-        phone_number: session.phone_number,
-        timezone: session.timezone
-      };
+      if (session) {
+        req.user = {
+          id: session.user_id,
+          email: session.email,
+          full_name: session.full_name,
+          profile_picture: session.profile_picture,
+          phone_number: session.phone_number,
+          timezone: session.timezone
+        };
+      }
     }
   } catch (err) {
     console.error('Session lookup error:', err);
@@ -1157,6 +1183,24 @@ function getPaymentTotals(agreementId) {
   return {
     total_paid_cents: result.total_paid_cents
   };
+}
+
+// Async version for Supabase
+async function getPaymentTotalsAsync(agreementId) {
+  const { supabaseAdmin } = require('./lib/supabase/client');
+  const { data, error } = await supabaseAdmin
+    .from('payments')
+    .select('applied_amount_cents')
+    .eq('agreement_id', agreementId)
+    .eq('status', 'approved');
+  
+  if (error) {
+    console.error('Error fetching payment totals:', error);
+    return { total_paid_cents: 0 };
+  }
+  
+  const total_paid_cents = (data || []).reduce((sum, p) => sum + (p.applied_amount_cents || 0), 0);
+  return { total_paid_cents };
 }
 
 /**
@@ -1617,7 +1661,7 @@ function getLoanStartDateDisplay(agreement, acceptedAt = null) {
   return getLoanStartLabel(loanStartMode, loanStartDate);
 }
 
-// create a new session for a user
+// create a new session for a user (SQLite - sync)
 function createSession(userId) {
   const sessionId = crypto.randomBytes(32).toString('hex');
   const createdAt = new Date().toISOString();
@@ -1628,6 +1672,16 @@ function createSession(userId) {
     VALUES (?, ?, ?, ?)
   `).run(sessionId, userId, createdAt, expiresAt);
 
+  return sessionId;
+}
+
+// create a new session for a user (Supabase - async)
+async function createSessionAsync(userId) {
+  const sessionId = crypto.randomBytes(32).toString('hex');
+  const createdAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+  await asyncDb.createSession({ id: sessionId, userId, createdAt, expiresAt });
   return sessionId;
 }
 
@@ -1727,7 +1781,7 @@ app.post('/auth/signup', async (req, res) => {
 
   try {
     // Check if user already exists
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const existing = await asyncDb.getUserByEmail(email);
     if (existing) {
       return res.status(400).json({ error: 'Email already registered' });
     }
@@ -1737,16 +1791,25 @@ app.post('/auth/signup', async (req, res) => {
     const createdAt = new Date().toISOString();
     const publicId = crypto.randomBytes(16).toString('hex');
 
-    // Create user
-    const result = db.prepare(`
-      INSERT INTO users (email, password_hash, created_at, full_name, phone_number, timezone, public_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(email, passwordHash, createdAt, fullName || null, phoneNumber || null, timezone || null, publicId);
-
-    const userId = result.lastInsertRowid;
+    // Create user (use adapter for Supabase support, fallback to SQLite for additional fields)
+    let userId;
+    if (USE_SUPABASE) {
+      const newUser = await asyncDb.createUser({ email, passwordHash, fullName: fullName || null, publicId, createdAt });
+      userId = newUser.id;
+      // Update additional fields if provided
+      if (phoneNumber || timezone) {
+        await asyncDb.updateUser(userId, { phone_number: phoneNumber || null, timezone: timezone || null });
+      }
+    } else {
+      const result = db.prepare(`
+        INSERT INTO users (email, password_hash, created_at, full_name, phone_number, timezone, public_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(email, passwordHash, createdAt, fullName || null, phoneNumber || null, timezone || null, publicId);
+      userId = result.lastInsertRowid;
+    }
 
     // Create session
-    const sessionId = createSession(userId);
+    const sessionId = USE_SUPABASE ? await createSessionAsync(userId) : createSession(userId);
 
     // Set cookie
     res.cookie('session_id', sessionId, {
@@ -1777,8 +1840,8 @@ app.post('/auth/login', async (req, res) => {
   }
 
   try {
-    // Find user
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    // Find user (use adapter for Supabase support)
+    const user = await asyncDb.getUserByEmail(email);
     if (!user) {
       console.log('Login failed: User not found', email);
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -1792,7 +1855,7 @@ app.post('/auth/login', async (req, res) => {
     }
 
     // Create session
-    const sessionId = createSession(user.id);
+    const sessionId = USE_SUPABASE ? await createSessionAsync(user.id) : createSession(user.id);
 
     // Set cookie
     res.cookie('session_id', sessionId, {
@@ -2131,30 +2194,63 @@ app.get('/api/profile/picture/:userId', requireAuth, (req, res) => {
 // --- API ROUTES ---
 
 // List agreements for logged-in user (both as lender and borrower)
-app.get('/api/agreements', requireAuth, (req, res) => {
+app.get('/api/agreements', requireAuth, async (req, res) => {
   // Auto-link any pending agreements for this user
   autoLinkPendingAgreements(req.user.id, req.user.email, req.user.full_name);
 
-  const rows = db.prepare(`
-    SELECT a.*,
-      u_lender.full_name as lender_full_name,
-      u_lender.email as lender_email,
-      u_lender.profile_picture as lender_profile_picture,
-      u_borrower.full_name as borrower_full_name,
-      u_borrower.email as borrower_email,
-      u_borrower.profile_picture as borrower_profile_picture,
-      COALESCE(a.accepted_at, invite.accepted_at) as accepted_at
-    FROM agreements a
-    LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
-    LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
-    LEFT JOIN agreement_invites invite ON a.id = invite.agreement_id
-    WHERE lender_user_id = ? OR borrower_user_id = ?
-    ORDER BY created_at DESC
-  `).all(req.user.id, req.user.id);
+  let rows;
+  if (USE_SUPABASE) {
+    // Supabase query with joins
+    const { supabaseAdmin } = require('./lib/supabase/client');
+    const { data, error } = await supabaseAdmin
+      .from('agreements')
+      .select(`
+        *,
+        lender:users!agreements_lender_user_id_fkey(full_name, email, profile_picture),
+        borrower:users!agreements_borrower_user_id_fkey(full_name, email, profile_picture),
+        invites:agreement_invites(accepted_at)
+      `)
+      .or(`lender_user_id.eq.${req.user.id},borrower_user_id.eq.${req.user.id}`)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching agreements:', error);
+      return res.status(500).json({ error: 'Failed to fetch agreements' });
+    }
+    
+    // Transform to match SQLite format
+    rows = (data || []).map(a => ({
+      ...a,
+      lender_full_name: a.lender?.full_name,
+      lender_email: a.lender?.email,
+      lender_profile_picture: a.lender?.profile_picture,
+      borrower_full_name: a.borrower?.full_name,
+      borrower_email: a.borrower?.email,
+      borrower_profile_picture: a.borrower?.profile_picture,
+      accepted_at: a.accepted_at || (a.invites?.[0]?.accepted_at)
+    }));
+  } else {
+    rows = db.prepare(`
+      SELECT a.*,
+        u_lender.full_name as lender_full_name,
+        u_lender.email as lender_email,
+        u_lender.profile_picture as lender_profile_picture,
+        u_borrower.full_name as borrower_full_name,
+        u_borrower.email as borrower_email,
+        u_borrower.profile_picture as borrower_profile_picture,
+        COALESCE(a.accepted_at, invite.accepted_at) as accepted_at
+      FROM agreements a
+      LEFT JOIN users u_lender ON a.lender_user_id = u_lender.id
+      LEFT JOIN users u_borrower ON a.borrower_user_id = u_borrower.id
+      LEFT JOIN agreement_invites invite ON a.id = invite.agreement_id
+      WHERE lender_user_id = ? OR borrower_user_id = ?
+      ORDER BY created_at DESC
+    `).all(req.user.id, req.user.id);
+  }
 
   // Add payment totals and counterparty info to each agreement
-  const agreementsWithTotals = rows.map(agreement => {
-    const totals = getPaymentTotals(agreement.id);
+  const agreementsWithTotals = await Promise.all(rows.map(async (agreement) => {
+    const totals = USE_SUPABASE ? await getPaymentTotalsAsync(agreement.id) : getPaymentTotals(agreement.id);
     const isLender = agreement.lender_user_id === req.user.id;
 
     // Determine counterparty name and role
@@ -2172,26 +2268,39 @@ app.get('/api/agreements', requireAuth, (req, res) => {
     }
 
     // Check for open hardship requests
-    const hasOpenDifficulty = db.prepare(`
-      SELECT COUNT(*) as count
-      FROM hardship_requests
-      WHERE agreement_id = ?
-    `).get(agreement.id).count > 0;
+    let hasOpenDifficulty = false;
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      const { count } = await supabaseAdmin
+        .from('hardship_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('agreement_id', agreement.id);
+      hasOpenDifficulty = count > 0;
+    } else {
+      hasOpenDifficulty = db.prepare(`
+        SELECT COUNT(*) as count FROM hardship_requests WHERE agreement_id = ?
+      `).get(agreement.id).count > 0;
+    }
 
     // Check for pending payments that need lender confirmation
-    // Only set to true if current user is the lender
-    const hasPendingPaymentToConfirm = isLender && db.prepare(`
-      SELECT COUNT(*) as count
-      FROM payments
-      WHERE agreement_id = ? AND status = 'pending'
-    `).get(agreement.id).count > 0;
+    let hasPendingPaymentToConfirm = false;
+    if (isLender) {
+      if (USE_SUPABASE) {
+        const { supabaseAdmin } = require('./lib/supabase/client');
+        const { count } = await supabaseAdmin
+          .from('payments')
+          .select('*', { count: 'exact', head: true })
+          .eq('agreement_id', agreement.id)
+          .eq('status', 'pending');
+        hasPendingPaymentToConfirm = count > 0;
+      } else {
+        hasPendingPaymentToConfirm = db.prepare(`
+          SELECT COUNT(*) as count FROM payments WHERE agreement_id = ? AND status = 'pending'
+        `).get(agreement.id).count > 0;
+      }
+    }
 
-    // Check for pending initial payment report (lender needs to report)
-    // Only show this task if:
-    // - User is lender
-    // - Agreement is active
-    // - Loan start is "upon acceptance" (money_sent_date is on-acceptance or matches accepted_at)
-    // - No completed report exists (either no row OR is_completed = 0)
+    // Check for pending initial payment report
     let needsInitialPaymentReport = false;
     if (isLender && agreement.status === 'active') {
       const moneySentDate = agreement.money_sent_date;
@@ -2201,12 +2310,20 @@ app.get('/api/agreements', requireAuth, (req, res) => {
         (acceptedDate && moneySentDate === acceptedDate);
 
       if (isUponAcceptance) {
-        // Check if there's a completed report
-        const report = db.prepare(`
-          SELECT is_completed FROM initial_payment_reports WHERE agreement_id = ?
-        `).get(agreement.id);
-
-        // Show task if no report exists OR report exists but not completed
+        let report;
+        if (USE_SUPABASE) {
+          const { supabaseAdmin } = require('./lib/supabase/client');
+          const { data } = await supabaseAdmin
+            .from('initial_payment_reports')
+            .select('is_completed')
+            .eq('agreement_id', agreement.id)
+            .single();
+          report = data;
+        } else {
+          report = db.prepare(`
+            SELECT is_completed FROM initial_payment_reports WHERE agreement_id = ?
+          `).get(agreement.id);
+        }
         needsInitialPaymentReport = !report || report.is_completed === 0;
       }
     }
@@ -2223,7 +2340,6 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       ...agreement,
       total_paid_cents: totals.total_paid_cents,
       outstanding_cents,
-      // For dashboard display: use planned total as the "Total" in "Outstanding / Total"
       planned_total_cents: plannedTotalCents,
       counterparty_name,
       counterparty_role,
@@ -2232,10 +2348,9 @@ app.get('/api/agreements', requireAuth, (req, res) => {
       hasPendingPaymentToConfirm,
       needsInitialPaymentReport,
       isLender,
-      // Include accepted_at to identify agreements cancelled before approval
       accepted_at: agreement.accepted_at
     };
-  });
+  }));
 
   res.json(agreementsWithTotals);
 });
@@ -6148,12 +6263,15 @@ app.post('/api/grouptabs', requireAuth, (req, res) => {
       return res.status(400).json({ error: uploadErr.message || 'File upload failed' });
     }
     
-    // Continue with tab creation
-    createGroupTab(req, res);
+    // Continue with tab creation (async for Supabase support)
+    createGroupTab(req, res).catch(err => {
+      console.error('Error in createGroupTab:', err);
+      res.status(500).json({ error: err.message || 'Failed to create tab' });
+    });
   });
 });
 
-function createGroupTab(req, res) {
+async function createGroupTab(req, res) {
   const { name, tabType, template, splitMode, proofRequired, description, tiers } = req.body;
   // Parse numeric values from FormData (they come as strings)
   const totalAmountCents = req.body.totalAmountCents ? parseInt(req.body.totalAmountCents) : null;
@@ -6246,71 +6364,140 @@ function createGroupTab(req, res) {
       paidUpCents = fairShareCents; // Only host's fair share is considered "settled"
     }
     
-    const result = db.prepare(`
-      INSERT INTO group_tabs (
-        creator_user_id, name, description, tab_type, template, total_amount_cents, 
-        split_mode, expected_pay_rate, seat_count, people_count, proof_required, 
-        magic_token, owner_token, invite_code, manage_code, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at,
-        gift_mode, group_gift_mode, recipient_name, about_text, about_link, is_raising_money_only,
-        amount_target, contributor_count, raising_for_text, raising_for_link, is_open_pot,
-        about_image_path, raising_for_image_path, payment_methods_json, organizer_contribution
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      req.user.id,
-      name,
-      description || null,
-      tabType,
-      template || null,
-      totalAmountCents || null,
-      splitMode || 'equal',
-      expectedPayRate || 100,
-      seatCount || null,
-      peopleCount || 2,
-      proofRequired || 'optional',
-      magicToken,
-      ownerToken,
-      inviteCode,
-      manageCode,
-      receiptFilePath,
-      hostOverpaidCents,
-      paidUpCents,
-      createdAt,
-      // Gift-specific fields
-      giftMode,
-      groupGiftMode, // NEW: 'gift' or 'fundraiser'
-      recipientName,
-      aboutText,
-      aboutLink,
-      isRaisingMoneyOnly ? 1 : 0,
-      amountTarget,
-      contributorCount,
-      raisingForText,
-      raisingForLink,
-      isOpenPot ? 1 : 0,
-      aboutImagePath,
-      raisingForImagePath,
-      paymentMethodsJson,
-      organizerContribution
-    );
+    let tabId;
     
-    const tabId = result.lastInsertRowid;
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      const { data: tabData, error: tabError } = await supabaseAdmin
+        .from('group_tabs')
+        .insert({
+          creator_user_id: req.user.id,
+          name,
+          description: description || null,
+          tab_type: tabType,
+          template: template || null,
+          total_amount_cents: totalAmountCents || null,
+          split_mode: splitMode || 'equal',
+          expected_pay_rate: expectedPayRate || 100,
+          seat_count: seatCount || null,
+          people_count: peopleCount || 2,
+          proof_required: proofRequired || 'optional',
+          magic_token: magicToken,
+          owner_token: ownerToken,
+          invite_code: inviteCode,
+          manage_code: manageCode,
+          receipt_file_path: receiptFilePath,
+          host_overpaid_cents: hostOverpaidCents,
+          paid_up_cents: paidUpCents,
+          created_at: createdAt,
+          gift_mode: giftMode,
+          group_gift_mode: groupGiftMode,
+          recipient_name: recipientName,
+          about_text: aboutText,
+          about_link: aboutLink,
+          is_raising_money_only: isRaisingMoneyOnly,
+          amount_target: amountTarget,
+          contributor_count: contributorCount,
+          raising_for_text: raisingForText,
+          raising_for_link: raisingForLink,
+          is_open_pot: isOpenPot,
+          about_image_path: aboutImagePath,
+          raising_for_image_path: raisingForImagePath,
+          payment_methods_json: paymentMethodsJson,
+          organizer_contribution: organizerContribution
+        })
+        .select()
+        .single();
+      
+      if (tabError) throw tabError;
+      tabId = tabData.id;
+    } else {
+      const result = db.prepare(`
+        INSERT INTO group_tabs (
+          creator_user_id, name, description, tab_type, template, total_amount_cents, 
+          split_mode, expected_pay_rate, seat_count, people_count, proof_required, 
+          magic_token, owner_token, invite_code, manage_code, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at,
+          gift_mode, group_gift_mode, recipient_name, about_text, about_link, is_raising_money_only,
+          amount_target, contributor_count, raising_for_text, raising_for_link, is_open_pot,
+          about_image_path, raising_for_image_path, payment_methods_json, organizer_contribution
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        req.user.id,
+        name,
+        description || null,
+        tabType,
+        template || null,
+        totalAmountCents || null,
+        splitMode || 'equal',
+        expectedPayRate || 100,
+        seatCount || null,
+        peopleCount || 2,
+        proofRequired || 'optional',
+        magicToken,
+        ownerToken,
+        inviteCode,
+        manageCode,
+        receiptFilePath,
+        hostOverpaidCents,
+        paidUpCents,
+        createdAt,
+        giftMode,
+        groupGiftMode,
+        recipientName,
+        aboutText,
+        aboutLink,
+        isRaisingMoneyOnly ? 1 : 0,
+        amountTarget,
+        contributorCount,
+        raisingForText,
+        raisingForLink,
+        isOpenPot ? 1 : 0,
+        aboutImagePath,
+        raisingForImagePath,
+        paymentMethodsJson,
+        organizerContribution
+      );
+      tabId = result.lastInsertRowid;
+    }
     
     // Add creator as organizer with payment logic fields
     // For pot modes, creator has NOT paid yet. For debt modes (restaurant & gift_debt), creator paid upfront.
     const creatorPaidUpfront = !isGiftPotMode && totalAmountCents && totalAmountCents > 0;
-    const participantResult = db.prepare(`
-      INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, fair_share_cents, remaining_cents, total_paid_cents)
-      VALUES (?, ?, 'organizer', 1, ?, ?, ?, ?)
-    `).run(
-      tabId, 
-      req.user.id, 
-      createdAt, 
-      fairShareCents, 
-      isGiftPotMode ? 0 : 0, // For pot modes, no debt; for debt modes, creator owes 0 (already paid)
-      creatorPaidUpfront ? totalAmountCents : 0
-    );
+    let organizerParticipantId;
     
-    const organizerParticipantId = participantResult.lastInsertRowid;
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      const { data: partData, error: partError } = await supabaseAdmin
+        .from('group_tab_participants')
+        .insert({
+          group_tab_id: tabId,
+          user_id: req.user.id,
+          role: 'organizer',
+          is_member: true,
+          joined_at: createdAt,
+          fair_share_cents: fairShareCents,
+          remaining_cents: isGiftPotMode ? 0 : 0,
+          total_paid_cents: creatorPaidUpfront ? totalAmountCents : 0
+        })
+        .select()
+        .single();
+      
+      if (partError) throw partError;
+      organizerParticipantId = partData.id;
+    } else {
+      const participantResult = db.prepare(`
+        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, fair_share_cents, remaining_cents, total_paid_cents)
+        VALUES (?, ?, 'organizer', 1, ?, ?, ?, ?)
+      `).run(
+        tabId, 
+        req.user.id, 
+        createdAt, 
+        fairShareCents, 
+        isGiftPotMode ? 0 : 0,
+        creatorPaidUpfront ? totalAmountCents : 0
+      );
+      organizerParticipantId = participantResult.lastInsertRowid;
+    }
     
     // Record organizer's payment for the full bill (they paid the bill upfront)
     // This applies to: restaurant bills, price_groups, AND gift_debt mode
@@ -6319,10 +6506,27 @@ function createGroupTab(req, res) {
       const paymentNote = isGiftDebtMode ? 'Paid for the gift upfront' : 'Paid the full bill';
       console.log(`Creating initial host payment: tab=${tabId}, org=${organizerParticipantId}, amt=${totalAmountCents}, fairShare=${fairShareCents}, overpaid=${hostOverpaidCents}, giftMode=${giftMode || 'none'}`);
       try {
-        db.prepare(`
-          INSERT INTO group_tab_payments (group_tab_id, from_participant_id, to_participant_id, amount_cents, method, note, status, payment_type, applied_cents, overpay_cents, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(tabId, organizerParticipantId, null, totalAmountCents, 'paid_bill', paymentNote, 'confirmed', 'initial_host', fairShareCents, hostOverpaidCents, createdAt);
+        if (USE_SUPABASE) {
+          const { supabaseAdmin } = require('./lib/supabase/client');
+          await supabaseAdmin.from('group_tab_payments').insert({
+            group_tab_id: tabId,
+            from_participant_id: organizerParticipantId,
+            to_participant_id: null,
+            amount_cents: totalAmountCents,
+            method: 'paid_bill',
+            note: paymentNote,
+            status: 'confirmed',
+            payment_type: 'initial_host',
+            applied_cents: fairShareCents,
+            overpay_cents: hostOverpaidCents,
+            created_at: createdAt
+          });
+        } else {
+          db.prepare(`
+            INSERT INTO group_tab_payments (group_tab_id, from_participant_id, to_participant_id, amount_cents, method, note, status, payment_type, applied_cents, overpay_cents, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(tabId, organizerParticipantId, null, totalAmountCents, 'paid_bill', paymentNote, 'confirmed', 'initial_host', fairShareCents, hostOverpaidCents, createdAt);
+        }
       } catch (payErr) {
         console.error('Failed to create initial payment:', payErr);
         // Don't fail the whole tab creation for this, just log it
@@ -6331,27 +6535,55 @@ function createGroupTab(req, res) {
     
     // Create tiers if tiered split mode
     if (splitMode === 'tiered' && tiers && Array.isArray(tiers)) {
-      tiers.forEach((tier, index) => {
-        db.prepare(`
-          INSERT INTO group_tab_tiers (group_tab_id, name, multiplier, sort_order, created_at)
-          VALUES (?, ?, ?, ?, ?)
-        `).run(tabId, tier.name, tier.multiplier, index, createdAt);
-      });
+      for (let index = 0; index < tiers.length; index++) {
+        const tier = tiers[index];
+        if (USE_SUPABASE) {
+          const { supabaseAdmin } = require('./lib/supabase/client');
+          await supabaseAdmin.from('group_tab_tiers').insert({
+            group_tab_id: tabId,
+            name: tier.name,
+            multiplier: tier.multiplier,
+            sort_order: index,
+            created_at: createdAt
+          });
+        } else {
+          db.prepare(`
+            INSERT INTO group_tab_tiers (group_tab_id, name, multiplier, sort_order, created_at)
+            VALUES (?, ?, ?, ?, ?)
+          `).run(tabId, tier.name, tier.multiplier, index, createdAt);
+        }
+      }
     }
     
     // Create price groups if price_groups split mode
     // Map wizard group IDs to database IDs
     const wizardToDbIdMap = {};
     if (splitMode === 'price_groups' && priceGroups && Array.isArray(priceGroups)) {
-      priceGroups.forEach((group) => {
-        const result = db.prepare(`
-          INSERT INTO group_tab_price_groups (group_tab_id, name, emoji, amount_cents, created_at)
-          VALUES (?, ?, ?, ?, ?)
-        `).run(tabId, group.name, group.emoji || '🏷️', group.amountCents, createdAt);
-        
-        // Map wizard ID to database ID
-        wizardToDbIdMap[group.id] = result.lastInsertRowid;
-      });
+      for (const group of priceGroups) {
+        if (USE_SUPABASE) {
+          const { supabaseAdmin } = require('./lib/supabase/client');
+          const { data: pgData, error: pgError } = await supabaseAdmin
+            .from('group_tab_price_groups')
+            .insert({
+              group_tab_id: tabId,
+              name: group.name,
+              emoji: group.emoji || '🏷️',
+              amount_cents: group.amountCents,
+              created_at: createdAt
+            })
+            .select()
+            .single();
+          
+          if (pgError) throw pgError;
+          wizardToDbIdMap[group.id] = pgData.id;
+        } else {
+          const result = db.prepare(`
+            INSERT INTO group_tab_price_groups (group_tab_id, name, emoji, amount_cents, created_at)
+            VALUES (?, ?, ?, ?, ?)
+          `).run(tabId, group.name, group.emoji || '🏷️', group.amountCents, createdAt);
+          wizardToDbIdMap[group.id] = result.lastInsertRowid;
+        }
+      }
       
       // Assign host to their selected price group (from wizard)
       if (hostGroupId && wizardToDbIdMap[hostGroupId]) {
@@ -6359,32 +6591,62 @@ function createGroupTab(req, res) {
         const selectedGroup = priceGroups.find(g => g.id === hostGroupId);
         const hostFairShare = selectedGroup ? selectedGroup.amountCents : fairShareCents;
         
-        // Update organizer's price_group_id and fair_share_cents
-        db.prepare(`
-          UPDATE group_tab_participants SET price_group_id = ?, fair_share_cents = ? WHERE id = ?
-        `).run(dbGroupId, hostFairShare, organizerParticipantId);
+        if (USE_SUPABASE) {
+          const { supabaseAdmin } = require('./lib/supabase/client');
+          await supabaseAdmin
+            .from('group_tab_participants')
+            .update({ price_group_id: dbGroupId, fair_share_cents: hostFairShare })
+            .eq('id', organizerParticipantId);
+        } else {
+          db.prepare(`
+            UPDATE group_tab_participants SET price_group_id = ?, fair_share_cents = ? WHERE id = ?
+          `).run(dbGroupId, hostFairShare, organizerParticipantId);
+        }
         
         console.log(`Assigned host to price group: dbId=${dbGroupId}, wizardId=${hostGroupId}, fairShare=${hostFairShare}`);
       }
     }
     
     // Create activity message for creator
-    db.prepare(`
-      INSERT INTO messages (user_id, tab_id, subject, body, created_at, event_type)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
-      req.user.id,
-      tabId,
-      'GroupTab Created',
-      `You created a new ${tabType === 'one_bill' ? 'One-Bill' : 'Multi-Bill'} tab: "${name}"`,
-      createdAt,
-      'GROUPTAB_CREATED'
-    );
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      await supabaseAdmin.from('messages').insert({
+        user_id: req.user.id,
+        tab_id: tabId,
+        subject: 'GroupTab Created',
+        body: `You created a new ${tabType === 'one_bill' ? 'One-Bill' : 'Multi-Bill'} tab: "${name}"`,
+        created_at: createdAt,
+        event_type: 'GROUPTAB_CREATED'
+      });
+    } else {
+      db.prepare(`
+        INSERT INTO messages (user_id, tab_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        req.user.id,
+        tabId,
+        'GroupTab Created',
+        `You created a new ${tabType === 'one_bill' ? 'One-Bill' : 'Multi-Bill'} tab: "${name}"`,
+        createdAt,
+        'GROUPTAB_CREATED'
+      );
+    }
     
     // Fetch created price groups with their IDs
-    const createdPriceGroups = db.prepare(`
-      SELECT id, name, emoji, amount_cents FROM group_tab_price_groups WHERE group_tab_id = ? ORDER BY id
-    `).all(tabId);
+    let createdPriceGroups = [];
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      const { data } = await supabaseAdmin
+        .from('group_tab_price_groups')
+        .select('id, name, emoji, amount_cents')
+        .eq('group_tab_id', tabId)
+        .order('id');
+      createdPriceGroups = data || [];
+    } else {
+      createdPriceGroups = db.prepare(`
+        SELECT id, name, emoji, amount_cents FROM group_tab_price_groups WHERE group_tab_id = ? ORDER BY id
+      `).all(tabId);
+    }
     
     res.status(201).json({
       success: true,
@@ -6420,21 +6682,71 @@ function createGroupTab(req, res) {
 }
 
 // List user's tabs
-app.get('/api/grouptabs', requireAuth, (req, res) => {
+app.get('/api/grouptabs', requireAuth, async (req, res) => {
   try {
-    const tabs = db.prepare(`
-      SELECT gt.*, 
-        u.full_name as creator_name,
-        (SELECT COUNT(*) FROM group_tab_participants WHERE group_tab_id = gt.id) as participant_count,
-        (SELECT COUNT(*) FROM group_tab_expenses WHERE group_tab_id = gt.id) as expense_count,
-        (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_expenses WHERE group_tab_id = gt.id) as total_expenses_cents,
-        (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE group_tab_id = gt.id) as total_payments_cents,
-        (SELECT MAX(created_at) FROM group_tab_payments WHERE group_tab_id = gt.id) as last_payment_at
-      FROM group_tabs gt
-      JOIN users u ON gt.creator_user_id = u.id
-      WHERE gt.id IN (SELECT group_tab_id FROM group_tab_participants WHERE user_id = ?)
-      ORDER BY gt.created_at DESC
-    `).all(req.user.id);
+    let tabs;
+    
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      
+      // Get tabs where user is a participant
+      const { data: participantTabs } = await supabaseAdmin
+        .from('group_tab_participants')
+        .select('group_tab_id')
+        .eq('user_id', req.user.id);
+      
+      const tabIds = (participantTabs || []).map(p => p.group_tab_id);
+      
+      if (tabIds.length === 0) {
+        return res.json({ success: true, tabs: [] });
+      }
+      
+      const { data, error } = await supabaseAdmin
+        .from('group_tabs')
+        .select(`
+          *,
+          creator:users!group_tabs_creator_user_id_fkey(full_name),
+          participants:group_tab_participants(id),
+          expenses:group_tab_expenses(amount_cents),
+          payments:group_tab_payments(amount_cents, created_at)
+        `)
+        .in('id', tabIds)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Transform to match SQLite format
+      tabs = (data || []).map(t => ({
+        ...t,
+        creator_name: t.creator?.full_name,
+        participant_count: t.participants?.length || 0,
+        expense_count: t.expenses?.length || 0,
+        total_expenses_cents: (t.expenses || []).reduce((sum, e) => sum + (e.amount_cents || 0), 0),
+        total_payments_cents: (t.payments || []).reduce((sum, p) => sum + (p.amount_cents || 0), 0),
+        last_payment_at: t.payments?.length > 0 
+          ? t.payments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0].created_at 
+          : null,
+        // Remove nested objects from response
+        creator: undefined,
+        participants: undefined,
+        expenses: undefined,
+        payments: undefined
+      }));
+    } else {
+      tabs = db.prepare(`
+        SELECT gt.*, 
+          u.full_name as creator_name,
+          (SELECT COUNT(*) FROM group_tab_participants WHERE group_tab_id = gt.id) as participant_count,
+          (SELECT COUNT(*) FROM group_tab_expenses WHERE group_tab_id = gt.id) as expense_count,
+          (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_expenses WHERE group_tab_id = gt.id) as total_expenses_cents,
+          (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE group_tab_id = gt.id) as total_payments_cents,
+          (SELECT MAX(created_at) FROM group_tab_payments WHERE group_tab_id = gt.id) as last_payment_at
+        FROM group_tabs gt
+        JOIN users u ON gt.creator_user_id = u.id
+        WHERE gt.id IN (SELECT group_tab_id FROM group_tab_participants WHERE user_id = ?)
+        ORDER BY gt.created_at DESC
+      `).all(req.user.id);
+    }
     
     res.json({ success: true, tabs });
   } catch (err) {
@@ -6444,16 +6756,36 @@ app.get('/api/grouptabs', requireAuth, (req, res) => {
 });
 
 // Get tab details (public read access for open tabs)
-app.get('/api/grouptabs/:id', (req, res) => {
+app.get('/api/grouptabs/:id', async (req, res) => {
   const tabId = parseInt(req.params.id);
   
   try {
-    const tab = db.prepare(`
-      SELECT gt.*, u.full_name as creator_name, u.profile_picture as creator_avatar_url
-      FROM group_tabs gt
-      JOIN users u ON gt.creator_user_id = u.id
-      WHERE gt.id = ?
-    `).get(tabId);
+    let tab;
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      const { data, error } = await supabaseAdmin
+        .from('group_tabs')
+        .select(`*, creator:users!group_tabs_creator_user_id_fkey(full_name, profile_picture)`)
+        .eq('id', tabId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      if (data) {
+        tab = {
+          ...data,
+          creator_name: data.creator?.full_name,
+          creator_avatar_url: data.creator?.profile_picture,
+          creator: undefined
+        };
+      }
+    } else {
+      tab = db.prepare(`
+        SELECT gt.*, u.full_name as creator_name, u.profile_picture as creator_avatar_url
+        FROM group_tabs gt
+        JOIN users u ON gt.creator_user_id = u.id
+        WHERE gt.id = ?
+      `).get(tabId);
+    }
     
     if (!tab) {
       return res.status(404).json({ error: 'Tab not found' });
@@ -6499,69 +6831,143 @@ app.get('/api/grouptabs/:id', (req, res) => {
     
     // Get all participants - filter sensitive fields for non-authenticated callers
     let participants;
-    if (isAuthenticated) {
-      participants = db.prepare(`
-        SELECT gtp.*, u.full_name, u.email, u.profile_picture
-        FROM group_tab_participants gtp
-        LEFT JOIN users u ON gtp.user_id = u.id
-        WHERE gtp.group_tab_id = ?
-        ORDER BY gtp.role DESC, gtp.joined_at ASC
-      `).all(tabId);
-    } else {
-      // Guest callers: exclude email and profile_picture
-      participants = db.prepare(`
-        SELECT gtp.*, u.full_name
-        FROM group_tab_participants gtp
-        LEFT JOIN users u ON gtp.user_id = u.id
-        WHERE gtp.group_tab_id = ?
-        ORDER BY gtp.role DESC, gtp.joined_at ASC
-      `).all(tabId);
-    }
-    
-    // Get expenses (for multi_bill tabs)
-    const expenses = db.prepare(`
-      SELECT gte.*, gtp.guest_name, u.full_name as payer_name
-      FROM group_tab_expenses gte
-      JOIN group_tab_participants gtp ON gte.payer_participant_id = gtp.id
-      LEFT JOIN users u ON gtp.user_id = u.id
-      WHERE gte.group_tab_id = ?
-      ORDER BY gte.expense_date DESC
-    `).all(tabId);
-    
-    // Get payments
-    const payments = db.prepare(`
-      SELECT gtp.*,
-        fp.guest_name as from_guest_name, fu.full_name as from_name,
-        tp.guest_name as to_guest_name, tu.full_name as to_name
-      FROM group_tab_payments gtp
-      JOIN group_tab_participants fp ON gtp.from_participant_id = fp.id
-      LEFT JOIN users fu ON fp.user_id = fu.id
-      LEFT JOIN group_tab_participants tp ON gtp.to_participant_id = tp.id
-      LEFT JOIN users tu ON tp.user_id = tu.id
-      WHERE gtp.group_tab_id = ?
-      ORDER BY gtp.created_at DESC
-    `).all(tabId);
-
-    // Get tiers (if applicable)
+    let expenses;
+    let payments;
     let tiers = [];
-    try {
-      const tiersTableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'`).get();
-      if (tiersTableExists) {
-        tiers = db.prepare(`SELECT * FROM group_tab_tiers WHERE group_tab_id = ? ORDER BY sort_order`).all(tabId);
-      }
-    } catch (e) {
-      console.warn('Error fetching tiers:', e);
-    }
-    
-    // Get price groups (if applicable)
     let priceGroups = [];
-    try {
-      const pgTableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_price_groups'`).get();
-      if (pgTableExists) {
-        priceGroups = db.prepare(`SELECT * FROM group_tab_price_groups WHERE group_tab_id = ?`).all(tabId);
+    
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      
+      // Get participants
+      const selectFields = isAuthenticated 
+        ? '*, user:users(full_name, email, profile_picture)'
+        : '*, user:users(full_name)';
+      
+      const { data: participantsData } = await supabaseAdmin
+        .from('group_tab_participants')
+        .select(selectFields)
+        .eq('group_tab_id', tabId)
+        .order('role', { ascending: false })
+        .order('joined_at', { ascending: true });
+      
+      participants = (participantsData || []).map(p => ({
+        ...p,
+        full_name: p.user?.full_name,
+        email: p.user?.email,
+        profile_picture: p.user?.profile_picture,
+        user: undefined
+      }));
+      
+      // Get expenses
+      const { data: expensesData } = await supabaseAdmin
+        .from('group_tab_expenses')
+        .select('*, payer:group_tab_participants!group_tab_expenses_payer_participant_id_fkey(guest_name, user:users(full_name))')
+        .eq('group_tab_id', tabId)
+        .order('expense_date', { ascending: false });
+      
+      expenses = (expensesData || []).map(e => ({
+        ...e,
+        guest_name: e.payer?.guest_name,
+        payer_name: e.payer?.user?.full_name,
+        payer: undefined
+      }));
+      
+      // Get payments
+      const { data: paymentsData } = await supabaseAdmin
+        .from('group_tab_payments')
+        .select(`
+          *,
+          from_participant:group_tab_participants!group_tab_payments_from_participant_id_fkey(guest_name, user:users(full_name)),
+          to_participant:group_tab_participants!group_tab_payments_to_participant_id_fkey(guest_name, user:users(full_name))
+        `)
+        .eq('group_tab_id', tabId)
+        .order('created_at', { ascending: false });
+      
+      payments = (paymentsData || []).map(p => ({
+        ...p,
+        from_guest_name: p.from_participant?.guest_name,
+        from_name: p.from_participant?.user?.full_name,
+        to_guest_name: p.to_participant?.guest_name,
+        to_name: p.to_participant?.user?.full_name,
+        from_participant: undefined,
+        to_participant: undefined
+      }));
+      
+      // Get tiers
+      const { data: tiersData } = await supabaseAdmin
+        .from('group_tab_tiers')
+        .select('*')
+        .eq('group_tab_id', tabId)
+        .order('sort_order');
+      tiers = tiersData || [];
+      
+      // Get price groups
+      const { data: priceGroupsData } = await supabaseAdmin
+        .from('group_tab_price_groups')
+        .select('*')
+        .eq('group_tab_id', tabId);
+      priceGroups = priceGroupsData || [];
+      
+    } else {
+      // SQLite path
+      if (isAuthenticated) {
+        participants = db.prepare(`
+          SELECT gtp.*, u.full_name, u.email, u.profile_picture
+          FROM group_tab_participants gtp
+          LEFT JOIN users u ON gtp.user_id = u.id
+          WHERE gtp.group_tab_id = ?
+          ORDER BY gtp.role DESC, gtp.joined_at ASC
+        `).all(tabId);
+      } else {
+        participants = db.prepare(`
+          SELECT gtp.*, u.full_name
+          FROM group_tab_participants gtp
+          LEFT JOIN users u ON gtp.user_id = u.id
+          WHERE gtp.group_tab_id = ?
+          ORDER BY gtp.role DESC, gtp.joined_at ASC
+        `).all(tabId);
       }
-    } catch (e) {
-      console.warn('Error fetching price groups:', e);
+      
+      expenses = db.prepare(`
+        SELECT gte.*, gtp.guest_name, u.full_name as payer_name
+        FROM group_tab_expenses gte
+        JOIN group_tab_participants gtp ON gte.payer_participant_id = gtp.id
+        LEFT JOIN users u ON gtp.user_id = u.id
+        WHERE gte.group_tab_id = ?
+        ORDER BY gte.expense_date DESC
+      `).all(tabId);
+      
+      payments = db.prepare(`
+        SELECT gtp.*,
+          fp.guest_name as from_guest_name, fu.full_name as from_name,
+          tp.guest_name as to_guest_name, tu.full_name as to_name
+        FROM group_tab_payments gtp
+        JOIN group_tab_participants fp ON gtp.from_participant_id = fp.id
+        LEFT JOIN users fu ON fp.user_id = fu.id
+        LEFT JOIN group_tab_participants tp ON gtp.to_participant_id = tp.id
+        LEFT JOIN users tu ON tp.user_id = tu.id
+        WHERE gtp.group_tab_id = ?
+        ORDER BY gtp.created_at DESC
+      `).all(tabId);
+
+      try {
+        const tiersTableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'`).get();
+        if (tiersTableExists) {
+          tiers = db.prepare(`SELECT * FROM group_tab_tiers WHERE group_tab_id = ? ORDER BY sort_order`).all(tabId);
+        }
+      } catch (e) {
+        console.warn('Error fetching tiers:', e);
+      }
+      
+      try {
+        const pgTableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_price_groups'`).get();
+        if (pgTableExists) {
+          priceGroups = db.prepare(`SELECT * FROM group_tab_price_groups WHERE group_tab_id = ?`).all(tabId);
+        }
+      } catch (e) {
+        console.warn('Error fetching price groups:', e);
+      }
     }
     
     // Determine if current user is the creator
@@ -6596,7 +7002,7 @@ app.patch('/api/grouptabs/:id', requireAuth, (req, res) => {
     { name: 'receipt', maxCount: 1 }
   ]);
 
-  uploadFields(req, res, (uploadErr) => {
+  uploadFields(req, res, async (uploadErr) => {
     if (uploadErr) {
       console.error('File upload error:', uploadErr);
       if (uploadErr instanceof multer.MulterError) {
@@ -6608,16 +7014,44 @@ app.patch('/api/grouptabs/:id', requireAuth, (req, res) => {
     }
 
     try {
-      // Get tab and verify ownership
-      const tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
-      if (!tab) {
-        return res.status(404).json({ error: 'Tab not found' });
+      let tab = null;
+      let organizer = null;
+      
+      if (USE_SUPABASE) {
+        const { supabaseAdmin } = require('./lib/supabase/client');
+        
+        // Get tab and verify ownership
+        const { data: tabData } = await supabaseAdmin
+          .from('group_tabs')
+          .select('*')
+          .eq('id', tabId)
+          .single();
+        tab = tabData;
+        
+        if (!tab) {
+          return res.status(404).json({ error: 'Tab not found' });
+        }
+        
+        // Check if user is organizer
+        const { data: orgData } = await supabaseAdmin
+          .from('group_tab_participants')
+          .select('*')
+          .eq('group_tab_id', tabId)
+          .eq('user_id', req.user.id)
+          .eq('role', 'organizer')
+          .single();
+        organizer = orgData;
+      } else {
+        // SQLite path
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+        if (!tab) {
+          return res.status(404).json({ error: 'Tab not found' });
+        }
+        
+        organizer = db.prepare(`
+          SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ? AND role = 'organizer'
+        `).get(tabId, req.user.id);
       }
-
-      // Check if user is organizer
-      const organizer = db.prepare(`
-        SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ? AND role = 'organizer'
-      `).get(tabId, req.user.id);
       
       if (!organizer && tab.creator_user_id !== req.user.id) {
         return res.status(403).json({ error: 'Only the organizer can update tab settings' });
@@ -6695,8 +7129,24 @@ app.patch('/api/grouptabs/:id', requireAuth, (req, res) => {
       }
       
       if (updates.length > 0) {
-        params.push(tabId);
-        db.prepare(`UPDATE group_tabs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+        if (USE_SUPABASE) {
+          const { supabaseAdmin } = require('./lib/supabase/client');
+          // Convert SQL-style updates to Supabase object
+          const updateObj = {};
+          let paramIdx = 0;
+          for (const update of updates) {
+            const match = update.match(/^(\w+)\s*=\s*(\?|NULL)$/);
+            if (match) {
+              const field = match[1];
+              const value = match[2] === 'NULL' ? null : params[paramIdx++];
+              updateObj[field] = value;
+            }
+          }
+          await supabaseAdmin.from('group_tabs').update(updateObj).eq('id', tabId);
+        } else {
+          params.push(tabId);
+          db.prepare(`UPDATE group_tabs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+        }
       }
 
       // If total_amount_cents changed and it's equal split mode, recalculate fair shares
@@ -6704,44 +7154,49 @@ app.patch('/api/grouptabs/:id', requireAuth, (req, res) => {
                            body.totalAmountCents !== undefined ? parseInt(body.totalAmountCents) : null;
       
       if (newTotalCents !== null && tab.split_mode === 'equal') {
-        // Get updated tab data
-        const updatedTab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+        let updatedTab, allParticipants;
+        
+        if (USE_SUPABASE) {
+          const { supabaseAdmin } = require('./lib/supabase/client');
+          const { data: tabData } = await supabaseAdmin.from('group_tabs').select('*').eq('id', tabId).single();
+          updatedTab = tabData;
+          const { data: partData } = await supabaseAdmin.from('group_tab_participants').select('id, role, total_paid_cents').eq('group_tab_id', tabId);
+          allParticipants = partData || [];
+        } else {
+          updatedTab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+          allParticipants = db.prepare(`SELECT id, role, total_paid_cents FROM group_tab_participants WHERE group_tab_id = ?`).all(tabId);
+        }
+        
         const peopleCount = updatedTab.people_count || 1;
         const newFairShareCents = Math.floor(newTotalCents / peopleCount);
 
-        // Get all participants
-        const allParticipants = db.prepare(`
-          SELECT id, role, total_paid_cents FROM group_tab_participants WHERE group_tab_id = ?
-        `).all(tabId);
-
         // Update fair shares and remaining cents for all participants
-        const updateParticipantStmt = db.prepare(`
-          UPDATE group_tab_participants 
-          SET fair_share_cents = ?, remaining_cents = ?
-          WHERE id = ?
-        `);
-
         for (const p of allParticipants) {
           const paidCents = p.total_paid_cents || 0;
           let remainingCents = Math.max(0, newFairShareCents - paidCents);
           
-          // For organizer who paid the full bill upfront, remaining is 0
           if (p.role === 'organizer' && paidCents >= newTotalCents) {
             remainingCents = 0;
           }
           
-          updateParticipantStmt.run(newFairShareCents, remainingCents, p.id);
+          if (USE_SUPABASE) {
+            const { supabaseAdmin } = require('./lib/supabase/client');
+            await supabaseAdmin.from('group_tab_participants').update({ fair_share_cents: newFairShareCents, remaining_cents: remainingCents }).eq('id', p.id);
+          } else {
+            db.prepare(`UPDATE group_tab_participants SET fair_share_cents = ?, remaining_cents = ? WHERE id = ?`).run(newFairShareCents, remainingCents, p.id);
+          }
         }
 
         // Update tab's paid_up_cents and host_overpaid_cents
-        const organizer = allParticipants.find(p => p.role === 'organizer');
-        if (organizer && organizer.total_paid_cents >= newTotalCents) {
-          // Host paid full bill - they overpaid by (total - their_fair_share)
+        const orgPart = allParticipants.find(p => p.role === 'organizer');
+        if (orgPart && orgPart.total_paid_cents >= newTotalCents) {
           const hostOverpaidCents = newTotalCents - newFairShareCents;
-          db.prepare(`
-            UPDATE group_tabs SET host_overpaid_cents = ?, paid_up_cents = ?
-            WHERE id = ?
-          `).run(hostOverpaidCents, newFairShareCents, tabId);
+          if (USE_SUPABASE) {
+            const { supabaseAdmin } = require('./lib/supabase/client');
+            await supabaseAdmin.from('group_tabs').update({ host_overpaid_cents: hostOverpaidCents, paid_up_cents: newFairShareCents }).eq('id', tabId);
+          } else {
+            db.prepare(`UPDATE group_tabs SET host_overpaid_cents = ?, paid_up_cents = ? WHERE id = ?`).run(hostOverpaidCents, newFairShareCents, tabId);
+          }
         }
 
         console.log(`[Edit] Recalculated fair shares: total=${newTotalCents}, people=${peopleCount}, fairShare=${newFairShareCents}`);
@@ -7007,42 +7462,205 @@ app.delete('/api/grouptabs/:id', requireAuth, (req, res) => {
 
 // Get tab by short code (invite_code), manage_code, or legacy magic_token
 // PRIMARY API for /tab/:code URLs
-app.get('/api/grouptabs/code/:code', (req, res) => {
+app.get('/api/grouptabs/code/:code', async (req, res) => {
   const { code } = req.params;
   
   try {
-    // First check if it's a manage_code (creator access)
-    let tab = db.prepare(`
-      SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
-      FROM group_tabs gt
-      JOIN users u ON gt.creator_user_id = u.id
-      WHERE gt.manage_code = ?
-    `).get(code);
+    let tab = null;
+    let accessedViaManageCode = false;
+    let participants = [];
+    let payments = [];
+    let priceGroups = [];
     
-    let accessedViaManageCode = !!tab;
-    
-    // If not manage_code, try invite_code (viewer access)
-    if (!tab) {
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      
+      // First check if it's a manage_code (creator access)
+      let { data: manageTab } = await supabaseAdmin
+        .from('group_tabs')
+        .select('*, users!group_tabs_creator_user_id_fkey(full_name, id, profile_picture)')
+        .eq('manage_code', code)
+        .single();
+      
+      if (manageTab) {
+        tab = {
+          ...manageTab,
+          creator_name: manageTab.users?.full_name,
+          creator_avatar_url: manageTab.users?.profile_picture
+          // creator_user_id is already in manageTab from the spread
+        };
+        delete tab.users;
+        accessedViaManageCode = true;
+      }
+      
+      // If not manage_code, try invite_code (viewer access)
+      if (!tab) {
+        const { data: inviteTab } = await supabaseAdmin
+          .from('group_tabs')
+          .select('*, users!group_tabs_creator_user_id_fkey(full_name, id, profile_picture)')
+          .eq('invite_code', code)
+          .single();
+        
+        if (inviteTab) {
+          tab = {
+            ...inviteTab,
+            creator_name: inviteTab.users?.full_name,
+            creator_avatar_url: inviteTab.users?.profile_picture
+            // creator_user_id is already in inviteTab from the spread
+          };
+          delete tab.users;
+        }
+      }
+      
+      // If still not found, try legacy magic_token (for old URLs)
+      if (!tab) {
+        const { data: legacyTab } = await supabaseAdmin
+          .from('group_tabs')
+          .select('*, users!group_tabs_creator_user_id_fkey(full_name, id, profile_picture)')
+          .eq('magic_token', code)
+          .single();
+        
+        if (legacyTab) {
+          tab = {
+            ...legacyTab,
+            creator_name: legacyTab.users?.full_name,
+            creator_avatar_url: legacyTab.users?.profile_picture
+            // creator_user_id is already in legacyTab from the spread
+          };
+          delete tab.users;
+        }
+      }
+      
+      if (!tab) {
+        return res.status(404).json({ error: 'Tab not found' });
+      }
+      
+      // Get participants
+      const { data: partData } = await supabaseAdmin
+        .from('group_tab_participants')
+        .select('*, users(full_name, profile_picture)')
+        .eq('group_tab_id', tab.id)
+        .order('role', { ascending: false })
+        .order('joined_at', { ascending: true });
+      
+      participants = (partData || []).map(p => ({
+        id: p.id,
+        user_id: p.user_id,
+        guest_name: p.guest_name,
+        guest_session_token: p.guest_session_token,
+        role: p.role,
+        is_member: p.is_member,
+        seats_claimed: p.seats_claimed,
+        tier_id: p.tier_id,
+        price_group_id: p.price_group_id,
+        joined_at: p.joined_at,
+        hide_name: p.hide_name,
+        fair_share_cents: p.fair_share_cents,
+        remaining_cents: p.remaining_cents,
+        display_name: p.users?.full_name || p.guest_name,
+        profile_picture: p.users?.profile_picture,
+        total_paid_cents: p.total_paid_cents || 0,
+        last_payment_at: null // Would need separate query
+      }));
+      
+      // Get payments
+      const { data: payData } = await supabaseAdmin
+        .from('group_tab_payments')
+        .select('*, from_participant:group_tab_participants!group_tab_payments_from_participant_id_fkey(guest_name, users(full_name)), to_participant:group_tab_participants!group_tab_payments_to_participant_id_fkey(guest_name, users(full_name))')
+        .eq('group_tab_id', tab.id)
+        .order('created_at', { ascending: false });
+      
+      payments = (payData || []).map(p => ({
+        ...p,
+        from_name: p.from_participant?.users?.full_name || p.from_participant?.guest_name,
+        to_name: p.to_participant?.users?.full_name || p.to_participant?.guest_name,
+        from_participant: undefined,
+        to_participant: undefined
+      }));
+      
+      // Get price groups if applicable
+      if (tab.split_mode === 'price_groups') {
+        const { data: pgData } = await supabaseAdmin
+          .from('group_tab_price_groups')
+          .select('*')
+          .eq('group_tab_id', tab.id)
+          .order('id');
+        priceGroups = pgData || [];
+      }
+    } else {
+      // SQLite path
+      // First check if it's a manage_code (creator access)
       tab = db.prepare(`
         SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
         FROM group_tabs gt
         JOIN users u ON gt.creator_user_id = u.id
-        WHERE gt.invite_code = ?
+        WHERE gt.manage_code = ?
       `).get(code);
-    }
-    
-    // If still not found, try legacy magic_token (for old URLs)
-    if (!tab) {
-      tab = db.prepare(`
-        SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
-        FROM group_tabs gt
-        JOIN users u ON gt.creator_user_id = u.id
-        WHERE gt.magic_token = ?
-      `).get(code);
-    }
-    
-    if (!tab) {
-      return res.status(404).json({ error: 'Tab not found' });
+      
+      accessedViaManageCode = !!tab;
+      
+      // If not manage_code, try invite_code (viewer access)
+      if (!tab) {
+        tab = db.prepare(`
+          SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
+          FROM group_tabs gt
+          JOIN users u ON gt.creator_user_id = u.id
+          WHERE gt.invite_code = ?
+        `).get(code);
+      }
+      
+      // If still not found, try legacy magic_token (for old URLs)
+      if (!tab) {
+        tab = db.prepare(`
+          SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
+          FROM group_tabs gt
+          JOIN users u ON gt.creator_user_id = u.id
+          WHERE gt.magic_token = ?
+        `).get(code);
+      }
+      
+      if (!tab) {
+        return res.status(404).json({ error: 'Tab not found' });
+      }
+      
+      // Get all participants with payment summaries
+      participants = db.prepare(`
+        SELECT gtp.id, gtp.user_id, gtp.guest_name, gtp.guest_session_token, gtp.role, gtp.is_member, 
+               gtp.seats_claimed, gtp.tier_id, gtp.price_group_id, gtp.joined_at, gtp.hide_name,
+               gtp.fair_share_cents, gtp.remaining_cents,
+               COALESCE(u.full_name, gtp.guest_name) as display_name,
+               u.profile_picture,
+               CASE 
+                 WHEN gtp.total_paid_cents > 0 THEN gtp.total_paid_cents
+                 ELSE (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id AND status = 'confirmed')
+               END as total_paid_cents,
+               (SELECT MAX(created_at) FROM group_tab_payments WHERE from_participant_id = gtp.id) as last_payment_at
+        FROM group_tab_participants gtp
+        LEFT JOIN users u ON gtp.user_id = u.id
+        WHERE gtp.group_tab_id = ?
+        ORDER BY gtp.role DESC, gtp.joined_at ASC
+      `).all(tab.id);
+      
+      // Get all payments
+      payments = db.prepare(`
+        SELECT p.*, 
+               COALESCE(fp.guest_name, fu.full_name) as from_name,
+               COALESCE(tp.guest_name, tu.full_name) as to_name
+        FROM group_tab_payments p
+        LEFT JOIN group_tab_participants fp ON p.from_participant_id = fp.id
+        LEFT JOIN users fu ON fp.user_id = fu.id
+        LEFT JOIN group_tab_participants tp ON p.to_participant_id = tp.id
+        LEFT JOIN users tu ON tp.user_id = tu.id
+        WHERE p.group_tab_id = ?
+        ORDER BY p.created_at DESC
+      `).all(tab.id);
+      
+      // Get price groups if applicable
+      if (tab.split_mode === 'price_groups') {
+        priceGroups = db.prepare(`
+          SELECT * FROM group_tab_price_groups WHERE group_tab_id = ? ORDER BY id
+        `).all(tab.id);
+      }
     }
     
     // Determine if user is the creator (either via manage_code OR logged in as creator)
@@ -7050,47 +7668,6 @@ app.get('/api/grouptabs/code/:code', (req, res) => {
     
     if (tab.status === 'closed' && !isCreator) {
       return res.status(403).json({ error: 'This tab has been closed', closed: true });
-    }
-    
-    // Get all participants with payment summaries
-    // Use stored total_paid_cents column (allows manual edits), fall back to computed sum for backward compatibility
-    const participants = db.prepare(`
-      SELECT gtp.id, gtp.user_id, gtp.guest_name, gtp.guest_session_token, gtp.role, gtp.is_member, 
-             gtp.seats_claimed, gtp.tier_id, gtp.price_group_id, gtp.joined_at, gtp.hide_name,
-             gtp.fair_share_cents, gtp.remaining_cents,
-             COALESCE(u.full_name, gtp.guest_name) as display_name,
-             u.profile_picture,
-             CASE 
-               WHEN gtp.total_paid_cents > 0 THEN gtp.total_paid_cents
-               ELSE (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id AND status = 'confirmed')
-             END as total_paid_cents,
-             (SELECT MAX(created_at) FROM group_tab_payments WHERE from_participant_id = gtp.id) as last_payment_at
-      FROM group_tab_participants gtp
-      LEFT JOIN users u ON gtp.user_id = u.id
-      WHERE gtp.group_tab_id = ?
-      ORDER BY gtp.role DESC, gtp.joined_at ASC
-    `).all(tab.id);
-    
-    // Get all payments
-    const payments = db.prepare(`
-      SELECT p.*, 
-             COALESCE(fp.guest_name, fu.full_name) as from_name,
-             COALESCE(tp.guest_name, tu.full_name) as to_name
-      FROM group_tab_payments p
-      LEFT JOIN group_tab_participants fp ON p.from_participant_id = fp.id
-      LEFT JOIN users fu ON fp.user_id = fu.id
-      LEFT JOIN group_tab_participants tp ON p.to_participant_id = tp.id
-      LEFT JOIN users tu ON tp.user_id = tu.id
-      WHERE p.group_tab_id = ?
-      ORDER BY p.created_at DESC
-    `).all(tab.id);
-    
-    // Get price groups if applicable
-    let priceGroups = [];
-    if (tab.split_mode === 'price_groups') {
-      priceGroups = db.prepare(`
-        SELECT * FROM group_tab_price_groups WHERE group_tab_id = ? ORDER BY id
-      `).all(tab.id);
     }
     
     // Determine current participant (from session or cookie)
@@ -7128,6 +7705,7 @@ app.get('/api/grouptabs/code/:code', (req, res) => {
       success: true,
       isCreator,
       hasJoined, // Important: tells the page whether to show join screen
+      ownerToken: isCreator ? tab.owner_token : null, // For receipt uploads
       // Return raw tab object with snake_case fields (frontend expects this format)
       tab: {
         ...tab,
@@ -7609,79 +8187,140 @@ app.post('/api/grouptabs/:id/add-guest', (req, res) => {
 });
 
 // Update tab via owner_token (creator only)
-app.patch('/api/grouptabs/token/:ownerToken', uploadGrouptabs.single('receipt'), (req, res) => {
+app.patch('/api/grouptabs/token/:ownerToken', uploadGrouptabs.single('receipt'), async (req, res) => {
   const { ownerToken } = req.params;
   const { name, totalAmountCents, description, peopleCount, status } = req.body;
   
   try {
-    // Only owner_token grants edit access
-    const tab = db.prepare(`SELECT * FROM group_tabs WHERE owner_token = ?`).get(ownerToken);
+    let tab = null;
     
-    if (!tab) {
-      return res.status(404).json({ error: 'Tab not found or invalid token' });
-    }
-    
-    const updates = [];
-    const params = [];
-    
-    if (name !== undefined) { updates.push('name = ?'); params.push(name); }
-    if (totalAmountCents !== undefined) { updates.push('total_amount_cents = ?'); params.push(parseInt(totalAmountCents)); }
-    if (description !== undefined) { updates.push('description = ?'); params.push(description); }
-    if (peopleCount !== undefined) { updates.push('people_count = ?'); params.push(parseInt(peopleCount)); }
-    if (status !== undefined && ['open', 'closed'].includes(status)) { 
-      updates.push('status = ?'); 
-      params.push(status);
-      if (status === 'closed') {
-        updates.push('closed_at = ?');
-        params.push(new Date().toISOString());
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      
+      const { data } = await supabaseAdmin
+        .from('group_tabs')
+        .select('*')
+        .eq('owner_token', ownerToken)
+        .single();
+      tab = data;
+      
+      if (!tab) {
+        return res.status(404).json({ error: 'Tab not found or invalid token' });
       }
-    }
-    
-    // Handle receipt upload
-    if (req.file) {
-      const receiptFilePath = `/uploads/grouptabs/${req.file.filename}`;
-      updates.push('receipt_file_path = ?');
-      params.push(receiptFilePath);
-    }
-    
-    // Handle receipt deletion
-    if (req.body.deleteReceipt === 'true') {
-      // Optionally delete the file from disk
-      if (tab.receipt_file_path) {
-        const oldFilePath = path.join(__dirname, tab.receipt_file_path);
-        if (fs.existsSync(oldFilePath)) {
-          try {
-            fs.unlinkSync(oldFilePath);
-          } catch (e) {
-            console.warn('Could not delete old receipt file:', e);
-          }
+      
+      const updateData = {};
+      
+      if (name !== undefined) updateData.name = name;
+      if (totalAmountCents !== undefined) updateData.total_amount_cents = parseInt(totalAmountCents);
+      if (description !== undefined) updateData.description = description;
+      if (peopleCount !== undefined) updateData.people_count = parseInt(peopleCount);
+      if (status !== undefined && ['open', 'closed'].includes(status)) {
+        updateData.status = status;
+        if (status === 'closed') {
+          updateData.closed_at = new Date().toISOString();
         }
       }
-      updates.push('receipt_file_path = ?');
-      params.push(null);
-    }
-    
-    if (updates.length > 0) {
-      params.push(tab.id);
-      db.prepare(`UPDATE group_tabs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
-    }
-    
-    // Get updated tab data
-    const updatedTab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tab.id);
-    
-    res.json({ 
-      success: true,
-      tab: {
-        id: updatedTab.id,
-        name: updatedTab.name,
-        totalAmountCents: updatedTab.total_amount_cents,
-        peopleCount: updatedTab.people_count,
-        description: updatedTab.description,
-        receiptFilePath: updatedTab.receipt_file_path,
-        status: updatedTab.status
+      
+      if (req.file) {
+        updateData.receipt_file_path = `/uploads/grouptabs/${req.file.filename}`;
       }
-    });
-    
+      
+      if (req.body.deleteReceipt === 'true') {
+        if (tab.receipt_file_path) {
+          const oldFilePath = path.join(__dirname, tab.receipt_file_path);
+          if (fs.existsSync(oldFilePath)) {
+            try { fs.unlinkSync(oldFilePath); } catch (e) { console.warn('Could not delete old receipt file:', e); }
+          }
+        }
+        updateData.receipt_file_path = null;
+      }
+      
+      if (Object.keys(updateData).length > 0) {
+        await supabaseAdmin
+          .from('group_tabs')
+          .update(updateData)
+          .eq('id', tab.id);
+      }
+      
+      const { data: updatedTab } = await supabaseAdmin
+        .from('group_tabs')
+        .select('*')
+        .eq('id', tab.id)
+        .single();
+      
+      res.json({ 
+        success: true,
+        tab: {
+          id: updatedTab.id,
+          name: updatedTab.name,
+          totalAmountCents: updatedTab.total_amount_cents,
+          peopleCount: updatedTab.people_count,
+          description: updatedTab.description,
+          receiptFilePath: updatedTab.receipt_file_path,
+          status: updatedTab.status
+        }
+      });
+    } else {
+      // SQLite path
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE owner_token = ?`).get(ownerToken);
+      
+      if (!tab) {
+        return res.status(404).json({ error: 'Tab not found or invalid token' });
+      }
+      
+      const updates = [];
+      const params = [];
+      
+      if (name !== undefined) { updates.push('name = ?'); params.push(name); }
+      if (totalAmountCents !== undefined) { updates.push('total_amount_cents = ?'); params.push(parseInt(totalAmountCents)); }
+      if (description !== undefined) { updates.push('description = ?'); params.push(description); }
+      if (peopleCount !== undefined) { updates.push('people_count = ?'); params.push(parseInt(peopleCount)); }
+      if (status !== undefined && ['open', 'closed'].includes(status)) { 
+        updates.push('status = ?'); 
+        params.push(status);
+        if (status === 'closed') {
+          updates.push('closed_at = ?');
+          params.push(new Date().toISOString());
+        }
+      }
+      
+      if (req.file) {
+        const receiptFilePath = `/uploads/grouptabs/${req.file.filename}`;
+        updates.push('receipt_file_path = ?');
+        params.push(receiptFilePath);
+      }
+      
+      if (req.body.deleteReceipt === 'true') {
+        if (tab.receipt_file_path) {
+          const oldFilePath = path.join(__dirname, tab.receipt_file_path);
+          if (fs.existsSync(oldFilePath)) {
+            try { fs.unlinkSync(oldFilePath); } catch (e) { console.warn('Could not delete old receipt file:', e); }
+          }
+        }
+        updates.push('receipt_file_path = ?');
+        params.push(null);
+      }
+      
+      if (updates.length > 0) {
+        params.push(tab.id);
+        db.prepare(`UPDATE group_tabs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+      }
+      
+      const updatedTab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tab.id);
+      
+      res.json({ 
+        success: true,
+        tab: {
+          id: updatedTab.id,
+          name: updatedTab.name,
+          totalAmountCents: updatedTab.total_amount_cents,
+          peopleCount: updatedTab.people_count,
+          description: updatedTab.description,
+          receiptFilePath: updatedTab.receipt_file_path,
+          status: updatedTab.status
+        }
+      });
+    }
   } catch (err) {
     console.error('Error updating tab:', err);
     res.status(500).json({ error: 'Failed to update tab' });
@@ -8054,112 +8693,259 @@ app.get('/api/tabs/token/:token', (req, res) => {
 });
 
 // Join tab - supports both invite_code (short) and magic_token (legacy)
-app.post('/api/tabs/token/:token/join', (req, res) => {
+app.post('/api/tabs/token/:token/join', async (req, res) => {
   const { token } = req.params;
   const { guestName, priceGroupId, hideName } = req.body;
   
   try {
-    // Try invite_code first (short codes), then magic_token (legacy)
-    let tab = db.prepare(`SELECT * FROM group_tabs WHERE invite_code = ?`).get(token);
-    if (!tab) {
-      tab = db.prepare(`SELECT * FROM group_tabs WHERE magic_token = ?`).get(token);
-    }
-
-    if (!tab) {
-      return res.status(404).json({ error: 'Tab not found' });
-    }
+    let tab = null;
     
-    if (tab.status === 'closed') {
-      return res.status(403).json({ error: 'This tab has been closed' });
-    }
-    
-    const joinedAt = new Date().toISOString();
-    
-    // Calculate fair share - use price group amount if provided, otherwise equal split
-    let fairShareCents = (tab.total_amount_cents && tab.people_count > 0)
-      ? Math.floor(tab.total_amount_cents / tab.people_count)
-      : 0;
-    
-    if (priceGroupId) {
-      const priceGroup = db.prepare(`SELECT * FROM group_tab_price_groups WHERE id = ? AND group_tab_id = ?`).get(priceGroupId, tab.id);
-      if (priceGroup) {
-        fairShareCents = priceGroup.amount_cents;
-      }
-    }
-    
-    if (req.user) {
-      // Check if already a participant
-      const existing = db.prepare(`
-        SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
-      `).get(tab.id, req.user.id);
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
       
-      if (existing) {
-        // Update hide_name if provided
-        if (hideName !== undefined) {
-          db.prepare(`UPDATE group_tab_participants SET hide_name = ? WHERE id = ?`)
-            .run(hideName ? 1 : 0, existing.id);
-          existing.hide_name = hideName ? 1 : 0;
+      // Try invite_code first (short codes), then magic_token (legacy)
+      let { data } = await supabaseAdmin
+        .from('group_tabs')
+        .select('*')
+        .eq('invite_code', token)
+        .single();
+      tab = data;
+      
+      if (!tab) {
+        const { data: legacyData } = await supabaseAdmin
+          .from('group_tabs')
+          .select('*')
+          .eq('magic_token', token)
+          .single();
+        tab = legacyData;
+      }
+      
+      if (!tab) {
+        return res.status(404).json({ error: 'Tab not found' });
+      }
+      
+      if (tab.status === 'closed') {
+        return res.status(403).json({ error: 'This tab has been closed' });
+      }
+      
+      const joinedAt = new Date().toISOString();
+      
+      // Calculate fair share
+      let fairShareCents = (tab.total_amount_cents && tab.people_count > 0)
+        ? Math.floor(tab.total_amount_cents / tab.people_count)
+        : 0;
+      
+      if (priceGroupId) {
+        const { data: priceGroup } = await supabaseAdmin
+          .from('group_tab_price_groups')
+          .select('*')
+          .eq('id', priceGroupId)
+          .eq('group_tab_id', tab.id)
+          .single();
+        if (priceGroup) {
+          fairShareCents = priceGroup.amount_cents;
         }
-        return res.json({ success: true, participant: existing, alreadyJoined: true });
       }
       
-      const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
-        VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0, ?)
-      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
-      
-      // Notify the organizer that a member joined
-      db.prepare(`
-        INSERT INTO messages (user_id, tab_id, subject, body, created_at, event_type)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        tab.creator_user_id,
-        tab.id,
-        'New Participant Joined',
-        `${req.user.full_name || 'A member'} joined your tab "${tab.name}"`,
-        joinedAt,
-        'GROUPTAB_PARTICIPANT_JOINED'
-      );
-      
-      res.json({
-        success: true,
-        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', fairShareCents, remainingCents: fairShareCents, priceGroupId: priceGroupId || null, hideName: hideName ? 1 : 0 }
-      });
+      if (req.user) {
+        // Check if already a participant
+        const { data: existing } = await supabaseAdmin
+          .from('group_tab_participants')
+          .select('*')
+          .eq('group_tab_id', tab.id)
+          .eq('user_id', req.user.id)
+          .single();
+        
+        if (existing) {
+          if (hideName !== undefined) {
+            await supabaseAdmin
+              .from('group_tab_participants')
+              .update({ hide_name: !!hideName })
+              .eq('id', existing.id);
+            existing.hide_name = !!hideName;
+          }
+          return res.json({ success: true, participant: existing, alreadyJoined: true });
+        }
+        
+        const { data: newPart, error: partErr } = await supabaseAdmin
+          .from('group_tab_participants')
+          .insert({
+            group_tab_id: tab.id,
+            user_id: req.user.id,
+            role: 'participant',
+            is_member: true,
+            joined_at: joinedAt,
+            price_group_id: priceGroupId || null,
+            fair_share_cents: fairShareCents,
+            remaining_cents: fairShareCents,
+            total_paid_cents: 0,
+            hide_name: !!hideName
+          })
+          .select()
+          .single();
+        
+        if (partErr) throw partErr;
+        
+        // Notify organizer
+        await supabaseAdmin.from('messages').insert({
+          user_id: tab.creator_user_id,
+          tab_id: tab.id,
+          subject: 'New Participant Joined',
+          body: `${req.user.full_name || 'A member'} joined your tab "${tab.name}"`,
+          created_at: joinedAt,
+          event_type: 'GROUPTAB_PARTICIPANT_JOINED'
+        });
+        
+        res.json({
+          success: true,
+          participant: { id: newPart.id, isMember: true, role: 'participant', fairShareCents, remainingCents: fairShareCents, priceGroupId: priceGroupId || null, hideName: !!hideName }
+        });
+      } else {
+        if (!guestName || !guestName.trim()) {
+          return res.status(400).json({ error: 'Guest name is required' });
+        }
+        
+        const guestSessionToken = crypto.randomBytes(32).toString('hex');
+        
+        const { data: newGuest, error: guestErr } = await supabaseAdmin
+          .from('group_tab_participants')
+          .insert({
+            group_tab_id: tab.id,
+            guest_name: guestName.trim(),
+            guest_session_token: guestSessionToken,
+            role: 'participant',
+            is_member: false,
+            joined_at: joinedAt,
+            price_group_id: priceGroupId || null,
+            fair_share_cents: fairShareCents,
+            remaining_cents: fairShareCents,
+            total_paid_cents: 0,
+            hide_name: !!hideName
+          })
+          .select()
+          .single();
+        
+        if (guestErr) throw guestErr;
+        
+        // Notify organizer
+        await supabaseAdmin.from('messages').insert({
+          user_id: tab.creator_user_id,
+          tab_id: tab.id,
+          subject: 'Guest Joined',
+          body: `${guestName.trim()} joined your tab "${tab.name}" as a guest`,
+          created_at: joinedAt,
+          event_type: 'GROUPTAB_GUEST_JOINED'
+        });
+        
+        res.cookie('grouptab_guest_session', guestSessionToken, {
+          httpOnly: true,
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+          sameSite: 'lax'
+        });
+        
+        res.json({
+          success: true,
+          participant: { id: newGuest.id, isMember: false, guestName: guestName.trim(), role: 'participant' }
+        });
+      }
     } else {
-      if (!guestName || !guestName.trim()) {
-        return res.status(400).json({ error: 'Guest name is required' });
+      // SQLite path
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE invite_code = ?`).get(token);
+      if (!tab) {
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE magic_token = ?`).get(token);
+      }
+
+      if (!tab) {
+        return res.status(404).json({ error: 'Tab not found' });
       }
       
-      const guestSessionToken = crypto.randomBytes(32).toString('hex');
+      if (tab.status === 'closed') {
+        return res.status(403).json({ error: 'This tab has been closed' });
+      }
       
-      const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
-        VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0, ?)
-      `).run(tab.id, guestName.trim(), guestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
+      const joinedAt = new Date().toISOString();
       
-      // Notify the organizer that a guest joined
-      db.prepare(`
-        INSERT INTO messages (user_id, tab_id, subject, body, created_at, event_type)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        tab.creator_user_id,
-        tab.id,
-        'Guest Joined',
-        `${guestName.trim()} joined your tab "${tab.name}" as a guest`,
-        joinedAt,
-        'GROUPTAB_GUEST_JOINED'
-      );
+      let fairShareCents = (tab.total_amount_cents && tab.people_count > 0)
+        ? Math.floor(tab.total_amount_cents / tab.people_count)
+        : 0;
       
-      res.cookie('grouptab_guest_session', guestSessionToken, {
-        httpOnly: true,
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        sameSite: 'lax'
-      });
+      if (priceGroupId) {
+        const priceGroup = db.prepare(`SELECT * FROM group_tab_price_groups WHERE id = ? AND group_tab_id = ?`).get(priceGroupId, tab.id);
+        if (priceGroup) {
+          fairShareCents = priceGroup.amount_cents;
+        }
+      }
       
-      res.json({
-        success: true,
-        participant: { id: result.lastInsertRowid, isMember: false, guestName: guestName.trim(), role: 'participant' }
-      });
+      if (req.user) {
+        const existing = db.prepare(`
+          SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
+        `).get(tab.id, req.user.id);
+        
+        if (existing) {
+          if (hideName !== undefined) {
+            db.prepare(`UPDATE group_tab_participants SET hide_name = ? WHERE id = ?`)
+              .run(hideName ? 1 : 0, existing.id);
+            existing.hide_name = hideName ? 1 : 0;
+          }
+          return res.json({ success: true, participant: existing, alreadyJoined: true });
+        }
+        
+        const result = db.prepare(`
+          INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
+          VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0, ?)
+        `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
+        
+        db.prepare(`
+          INSERT INTO messages (user_id, tab_id, subject, body, created_at, event_type)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          tab.creator_user_id,
+          tab.id,
+          'New Participant Joined',
+          `${req.user.full_name || 'A member'} joined your tab "${tab.name}"`,
+          joinedAt,
+          'GROUPTAB_PARTICIPANT_JOINED'
+        );
+        
+        res.json({
+          success: true,
+          participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', fairShareCents, remainingCents: fairShareCents, priceGroupId: priceGroupId || null, hideName: hideName ? 1 : 0 }
+        });
+      } else {
+        if (!guestName || !guestName.trim()) {
+          return res.status(400).json({ error: 'Guest name is required' });
+        }
+        
+        const guestSessionToken = crypto.randomBytes(32).toString('hex');
+        
+        const result = db.prepare(`
+          INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
+          VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0, ?)
+        `).run(tab.id, guestName.trim(), guestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
+        
+        db.prepare(`
+          INSERT INTO messages (user_id, tab_id, subject, body, created_at, event_type)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          tab.creator_user_id,
+          tab.id,
+          'Guest Joined',
+          `${guestName.trim()} joined your tab "${tab.name}" as a guest`,
+          joinedAt,
+          'GROUPTAB_GUEST_JOINED'
+        );
+        
+        res.cookie('grouptab_guest_session', guestSessionToken, {
+          httpOnly: true,
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+          sameSite: 'lax'
+        });
+        
+        res.json({
+          success: true,
+          participant: { id: result.lastInsertRowid, isMember: false, guestName: guestName.trim(), role: 'participant' }
+        });
+      }
     }
   } catch (err) {
     console.error('Error joining tab:', err);
@@ -8396,48 +9182,94 @@ app.post('/api/grouptabs/:id/participants', requireAuth, (req, res) => {
 
 // Remove pending participant (organizer only)
 // Only allows removing participants who have no payments
-app.delete('/api/grouptabs/:id/participants/:participantId', requireAuth, (req, res) => {
+app.delete('/api/grouptabs/:id/participants/:participantId', requireAuth, async (req, res) => {
   const tabId = parseInt(req.params.id);
   const participantId = parseInt(req.params.participantId);
   
   try {
-    // Check if user is the tab creator
-    const tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
-    if (!tab) {
-      return res.status(404).json({ error: 'Tab not found' });
-    }
+    let tab = null;
+    let participant = null;
     
-    if (tab.creator_user_id !== req.user.id) {
-      return res.status(403).json({ error: 'Only the tab creator can remove participants' });
-    }
-    
-    // Get the participant
-    const participant = db.prepare(`
-      SELECT * FROM group_tab_participants WHERE id = ? AND group_tab_id = ?
-    `).get(participantId, tabId);
-    
-    if (!participant) {
-      return res.status(404).json({ error: 'Participant not found' });
-    }
-    
-    // Don't allow removing the organizer
-    if (participant.role === 'organizer') {
-      return res.status(400).json({ error: 'Cannot remove the organizer' });
-    }
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      
+      // Check if user is the tab creator
+      const { data: tabData } = await supabaseAdmin
+        .from('group_tabs')
+        .select('*')
+        .eq('id', tabId)
+        .single();
+      tab = tabData;
+      
+      if (!tab) {
+        return res.status(404).json({ error: 'Tab not found' });
+      }
+      
+      if (tab.creator_user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Only the tab creator can remove participants' });
+      }
+      
+      // Get the participant
+      const { data: partData } = await supabaseAdmin
+        .from('group_tab_participants')
+        .select('*')
+        .eq('id', participantId)
+        .eq('group_tab_id', tabId)
+        .single();
+      participant = partData;
+      
+      if (!participant) {
+        return res.status(404).json({ error: 'Participant not found' });
+      }
+      
+      // Don't allow removing the organizer
+      if (participant.role === 'organizer') {
+        return res.status(400).json({ error: 'Cannot remove the organizer' });
+      }
+      
+      // Delete any payments made by this participant
+      await supabaseAdmin.from('group_tab_payments').delete().eq('from_participant_id', participantId);
+      
+      // Delete any payment reports by this participant
+      await supabaseAdmin.from('group_tab_payment_reports').delete().eq('participant_id', participantId);
+      
+      // Delete the participant
+      await supabaseAdmin.from('group_tab_participants').delete().eq('id', participantId);
+      
+    } else {
+      // SQLite path
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+      if (!tab) {
+        return res.status(404).json({ error: 'Tab not found' });
+      }
+      
+      if (tab.creator_user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Only the tab creator can remove participants' });
+      }
+      
+      participant = db.prepare(`
+        SELECT * FROM group_tab_participants WHERE id = ? AND group_tab_id = ?
+      `).get(participantId, tabId);
+      
+      if (!participant) {
+        return res.status(404).json({ error: 'Participant not found' });
+      }
+      
+      if (participant.role === 'organizer') {
+        return res.status(400).json({ error: 'Cannot remove the organizer' });
+      }
 
-    // Delete any payments made by this participant
-    db.prepare(`DELETE FROM group_tab_payments WHERE from_participant_id = ?`).run(participantId);
+      db.prepare(`DELETE FROM group_tab_payments WHERE from_participant_id = ?`).run(participantId);
 
-    // Delete any payment reports by this participant
-    const reportsTableExists = db.prepare(`
-      SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_payment_reports'
-    `).get();
-    if (reportsTableExists) {
-      db.prepare(`DELETE FROM group_tab_payment_reports WHERE participant_id = ?`).run(participantId);
+      const reportsTableExists = db.prepare(`
+        SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_payment_reports'
+      `).get();
+      if (reportsTableExists) {
+        db.prepare(`DELETE FROM group_tab_payment_reports WHERE participant_id = ?`).run(participantId);
+      }
+
+      db.prepare(`DELETE FROM group_tab_participants WHERE id = ?`).run(participantId);
     }
-
-    // Delete the participant
-    db.prepare(`DELETE FROM group_tab_participants WHERE id = ?`).run(participantId);
     
     res.json({ success: true, message: 'Participant removed' });
     
@@ -8903,150 +9735,287 @@ app.post('/api/grouptabs/:id/simple-payment', (req, res) => {
 // =============================================
 
 // Report a payment (for participants in Group Gift tabs)
-app.post('/api/grouptabs/:id/payment-reports', uploadGrouptabs.single('proof'), (req, res) => {
+app.post('/api/grouptabs/:id/payment-reports', uploadGrouptabs.single('proof'), async (req, res) => {
   const tabId = parseInt(req.params.id);
   const { reporterName, amountCents, method, paidAt, note, token, additionalNames } = req.body;
   
   try {
-    // Validate tab access via magic token OR invite_code (for invited guests)
-    let tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
-    if (!tab) {
-      // Also try invite_code for invited guests
-      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND invite_code = ?`).get(tabId, token);
-    }
-    if (!tab) {
-      return res.status(403).json({ error: 'Access denied or tab not found' });
-    }
+    let tab = null;
     
-    // Validate required fields
-    if (!reporterName || !reporterName.trim()) {
-      return res.status(400).json({ error: 'Your name is required' });
-    }
-    if (!amountCents || parseInt(amountCents) <= 0) {
-      return res.status(400).json({ error: 'Valid amount is required' });
-    }
-    if (!method) {
-      return res.status(400).json({ error: 'Payment method is required' });
-    }
-    if (!paidAt) {
-      return res.status(400).json({ error: 'Payment date is required' });
-    }
-    
-    // Find or create participant
-    let participantId = null;
-    let participant = null;
-    
-    if (req.user) {
-      participant = db.prepare(`
-        SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
-      `).get(tabId, req.user.id);
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      
+      // Validate tab access via magic token OR invite_code
+      let { data } = await supabaseAdmin
+        .from('group_tabs')
+        .select('*')
+        .eq('id', tabId)
+        .eq('magic_token', token)
+        .single();
+      tab = data;
+      
+      if (!tab) {
+        const { data: inviteData } = await supabaseAdmin
+          .from('group_tabs')
+          .select('*')
+          .eq('id', tabId)
+          .eq('invite_code', token)
+          .single();
+        tab = inviteData;
+      }
+      
+      if (!tab) {
+        return res.status(403).json({ error: 'Access denied or tab not found' });
+      }
+      
+      // Validate required fields
+      if (!reporterName || !reporterName.trim()) {
+        return res.status(400).json({ error: 'Your name is required' });
+      }
+      if (!amountCents || parseInt(amountCents) <= 0) {
+        return res.status(400).json({ error: 'Valid amount is required' });
+      }
+      if (!method) {
+        return res.status(400).json({ error: 'Payment method is required' });
+      }
+      if (!paidAt) {
+        return res.status(400).json({ error: 'Payment date is required' });
+      }
+      
+      // Find participant
+      let participantId = null;
+      
+      if (req.user) {
+        const { data: part } = await supabaseAdmin
+          .from('group_tab_participants')
+          .select('*')
+          .eq('group_tab_id', tabId)
+          .eq('user_id', req.user.id)
+          .single();
+        if (part) participantId = part.id;
+      } else {
+        const guestToken = req.cookies?.grouptab_guest_session;
+        if (guestToken) {
+          const { data: guestPart } = await supabaseAdmin
+            .from('group_tab_participants')
+            .select('*')
+            .eq('group_tab_id', tabId)
+            .eq('guest_session_token', guestToken)
+            .single();
+          if (guestPart) participantId = guestPart.id;
+        }
+      }
+      
+      const createdAt = new Date().toISOString();
+      const proofPath = req.file ? '/' + req.file.path.replace(/\\/g, '/') : null;
+      
+      // Parse additional names
+      let parsedAdditionalNames = null;
+      if (additionalNames) {
+        try {
+          parsedAdditionalNames = JSON.parse(additionalNames);
+          if (!Array.isArray(parsedAdditionalNames)) parsedAdditionalNames = null;
+        } catch (e) {}
+      }
+      
+      const peopleCount = tab.people_count || 1;
+      const totalAmount = tab.total_amount_cents || 0;
+      const fairShareCents = Math.floor(totalAmount / peopleCount);
+      
+      // Create pending participant entries for additional names
+      if (parsedAdditionalNames && parsedAdditionalNames.length > 0) {
+        for (const name of parsedAdditionalNames) {
+          if (name && name.trim()) {
+            await supabaseAdmin.from('group_tab_participants').insert({
+              group_tab_id: tabId,
+              guest_name: name.trim(),
+              role: 'contributor',
+              fair_share_cents: fairShareCents,
+              total_paid_cents: 0,
+              remaining_cents: fairShareCents,
+              joined_at: createdAt
+            });
+          }
+        }
+      }
+      
+      const { data: report, error: reportErr } = await supabaseAdmin
+        .from('group_tab_payment_reports')
+        .insert({
+          group_tab_id: tabId,
+          participant_id: participantId,
+          reporter_name: reporterName.trim(),
+          amount_cents: parseInt(amountCents),
+          method,
+          paid_at: paidAt,
+          proof_file_path: proofPath,
+          note: note || null,
+          status: 'pending',
+          created_at: createdAt,
+          additional_names: parsedAdditionalNames ? JSON.stringify(parsedAdditionalNames) : null
+        })
+        .select()
+        .single();
+      
+      if (reportErr) throw reportErr;
+      
+      // Notify the organizer
+      const { data: organizer } = await supabaseAdmin
+        .from('group_tab_participants')
+        .select('user_id')
+        .eq('group_tab_id', tabId)
+        .eq('role', 'organizer')
+        .single();
+      
+      if (organizer && organizer.user_id) {
+        const formattedAmount = (parseInt(amountCents) / 100).toFixed(2);
+        const additionalInfo = parsedAdditionalNames && parsedAdditionalNames.length > 0 
+          ? ` (also paying for: ${parsedAdditionalNames.join(', ')})` 
+          : '';
+        await supabaseAdmin.from('messages').insert({
+          user_id: organizer.user_id,
+          tab_id: tabId,
+          subject: 'Payment Reported',
+          body: `${reporterName.trim()} reported a payment of €${formattedAmount}${additionalInfo} for "${tab.name}" - awaiting your confirmation`,
+          created_at: createdAt,
+          event_type: 'GROUPTAB_PAYMENT_REPORTED'
+        });
+      }
+      
+      res.json({ 
+        success: true, 
+        report: { 
+          id: report.id,
+          status: 'pending',
+          reporterName: reporterName.trim(),
+          amountCents: parseInt(amountCents),
+          method,
+          paidAt,
+          createdAt
+        }
+      });
     } else {
-      participant = getGuestParticipant(req, tabId);
-    }
-    
-    if (participant) {
-      participantId = participant.id;
-    }
-    
-    const createdAt = new Date().toISOString();
-    // Store path with leading slash for web access
-    const proofPath = req.file ? '/' + req.file.path.replace(/\\/g, '/') : null;
-    
-    // Parse additional names (JSON string from frontend)
-    let parsedAdditionalNames = null;
-    if (additionalNames) {
-      try {
-        parsedAdditionalNames = JSON.parse(additionalNames);
-        if (!Array.isArray(parsedAdditionalNames)) {
-          parsedAdditionalNames = null;
-        }
-      } catch (e) {
-        // Invalid JSON, ignore
+      // SQLite path
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+      if (!tab) {
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND invite_code = ?`).get(tabId, token);
       }
-    }
-    
-    // Calculate fair share for new participants
-    const peopleCount = tab.people_count || 1;
-    const totalAmount = tab.total_amount_cents || 0;
-    const fairShareCents = Math.floor(totalAmount / peopleCount);
-    
-    // Create pending participant entries for additional names IMMEDIATELY
-    // They appear as pending until payment is confirmed
-    const additionalParticipantIds = [];
-    if (parsedAdditionalNames && parsedAdditionalNames.length > 0) {
-      for (const name of parsedAdditionalNames) {
-        if (name && name.trim()) {
-          // Create a new pending participant entry (total_paid_cents = 0, remaining = fairShare)
-          const insertResult = db.prepare(`
-            INSERT INTO group_tab_participants (
-              group_tab_id, guest_name, role, fair_share_cents, total_paid_cents, remaining_cents, joined_at
-            ) VALUES (?, ?, 'contributor', ?, 0, ?, ?)
-          `).run(
-            tabId,
-            name.trim(),
-            fairShareCents,
-            fairShareCents, // They still owe their share until payment is confirmed
-            createdAt
-          );
-          additionalParticipantIds.push(insertResult.lastInsertRowid);
+      if (!tab) {
+        return res.status(403).json({ error: 'Access denied or tab not found' });
+      }
+      
+      if (!reporterName || !reporterName.trim()) {
+        return res.status(400).json({ error: 'Your name is required' });
+      }
+      if (!amountCents || parseInt(amountCents) <= 0) {
+        return res.status(400).json({ error: 'Valid amount is required' });
+      }
+      if (!method) {
+        return res.status(400).json({ error: 'Payment method is required' });
+      }
+      if (!paidAt) {
+        return res.status(400).json({ error: 'Payment date is required' });
+      }
+      
+      let participantId = null;
+      let participant = null;
+      
+      if (req.user) {
+        participant = db.prepare(`
+          SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
+        `).get(tabId, req.user.id);
+      } else {
+        participant = getGuestParticipant(req, tabId);
+      }
+      
+      if (participant) {
+        participantId = participant.id;
+      }
+      
+      const createdAt = new Date().toISOString();
+      const proofPath = req.file ? '/' + req.file.path.replace(/\\/g, '/') : null;
+      
+      let parsedAdditionalNames = null;
+      if (additionalNames) {
+        try {
+          parsedAdditionalNames = JSON.parse(additionalNames);
+          if (!Array.isArray(parsedAdditionalNames)) {
+            parsedAdditionalNames = null;
+          }
+        } catch (e) {}
+      }
+      
+      const peopleCount = tab.people_count || 1;
+      const totalAmount = tab.total_amount_cents || 0;
+      const fairShareCents = Math.floor(totalAmount / peopleCount);
+      
+      const additionalParticipantIds = [];
+      if (parsedAdditionalNames && parsedAdditionalNames.length > 0) {
+        for (const name of parsedAdditionalNames) {
+          if (name && name.trim()) {
+            const insertResult = db.prepare(`
+              INSERT INTO group_tab_participants (
+                group_tab_id, guest_name, role, fair_share_cents, total_paid_cents, remaining_cents, joined_at
+              ) VALUES (?, ?, 'contributor', ?, 0, ?, ?)
+            `).run(tabId, name.trim(), fairShareCents, fairShareCents, createdAt);
+            additionalParticipantIds.push(insertResult.lastInsertRowid);
+          }
         }
       }
-    }
-    
-    const result = db.prepare(`
-      INSERT INTO group_tab_payment_reports (
-        group_tab_id, participant_id, reporter_name, amount_cents, method, paid_at, proof_file_path, note, status, created_at, additional_names
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-    `).run(
-      tabId,
-      participantId,
-      reporterName.trim(),
-      parseInt(amountCents),
-      method,
-      paidAt,
-      proofPath,
-      note || null,
-      createdAt,
-      parsedAdditionalNames ? JSON.stringify(parsedAdditionalNames) : null
-    );
-    
-    // Notify the organizer
-    const organizer = db.prepare(`
-      SELECT user_id FROM group_tab_participants 
-      WHERE group_tab_id = ? AND role = 'organizer'
-    `).get(tabId);
-    
-    if (organizer && organizer.user_id) {
-      const formattedAmount = (parseInt(amountCents) / 100).toFixed(2);
-      const additionalInfo = parsedAdditionalNames && parsedAdditionalNames.length > 0 
-        ? ` (also paying for: ${parsedAdditionalNames.join(', ')})` 
-        : '';
-      db.prepare(`
-        INSERT INTO messages (user_id, tab_id, subject, body, created_at, event_type)
-        VALUES (?, ?, ?, ?, ?, ?)
+      
+      const result = db.prepare(`
+        INSERT INTO group_tab_payment_reports (
+          group_tab_id, participant_id, reporter_name, amount_cents, method, paid_at, proof_file_path, note, status, created_at, additional_names
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
       `).run(
-        organizer.user_id,
         tabId,
-        'Payment Reported',
-        `${reporterName.trim()} reported a payment of €${formattedAmount}${additionalInfo} for "${tab.name}" - awaiting your confirmation`,
-        createdAt,
-        'GROUPTAB_PAYMENT_REPORTED'
-      );
-    }
-    
-    res.json({ 
-      success: true, 
-      report: { 
-        id: result.lastInsertRowid,
-        status: 'pending',
-        reporterName: reporterName.trim(),
-        amountCents: parseInt(amountCents),
+        participantId,
+        reporterName.trim(),
+        parseInt(amountCents),
         method,
         paidAt,
-        createdAt
+        proofPath,
+        note || null,
+        createdAt,
+        parsedAdditionalNames ? JSON.stringify(parsedAdditionalNames) : null
+      );
+      
+      const organizer = db.prepare(`
+        SELECT user_id FROM group_tab_participants 
+        WHERE group_tab_id = ? AND role = 'organizer'
+      `).get(tabId);
+      
+      if (organizer && organizer.user_id) {
+        const formattedAmount = (parseInt(amountCents) / 100).toFixed(2);
+        const additionalInfo = parsedAdditionalNames && parsedAdditionalNames.length > 0 
+          ? ` (also paying for: ${parsedAdditionalNames.join(', ')})` 
+          : '';
+        db.prepare(`
+          INSERT INTO messages (user_id, tab_id, subject, body, created_at, event_type)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          organizer.user_id,
+          tabId,
+          'Payment Reported',
+          `${reporterName.trim()} reported a payment of €${formattedAmount}${additionalInfo} for "${tab.name}" - awaiting your confirmation`,
+          createdAt,
+          'GROUPTAB_PAYMENT_REPORTED'
+        );
       }
-    });
-    
+      
+      res.json({ 
+        success: true, 
+        report: { 
+          id: result.lastInsertRowid,
+          status: 'pending',
+          reporterName: reporterName.trim(),
+          amountCents: parseInt(amountCents),
+          method,
+          paidAt,
+          createdAt
+        }
+      });
+    }
   } catch (err) {
     console.error('Error reporting payment:', err);
     res.status(500).json({ error: 'Failed to report payment' });
@@ -9054,79 +10023,180 @@ app.post('/api/grouptabs/:id/payment-reports', uploadGrouptabs.single('proof'), 
 });
 
 // Get payment reports for a tab
-app.get('/api/grouptabs/:id/payment-reports', (req, res) => {
+app.get('/api/grouptabs/:id/payment-reports', async (req, res) => {
   const tabId = parseInt(req.params.id);
   const { token } = req.query;
   
   try {
-    // Validate access - creator can see all, participants can see their own
     let tab = null;
     let isCreator = false;
+    let reports = [];
     
-    if (token) {
-      // Check owner_token first (creator access)
-      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
-      if (tab) isCreator = true;
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
       
-      // Also check manage_code (short creator token)
-      if (!tab) {
-        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND manage_code = ?`).get(tabId, token);
-        if (tab) isCreator = true;
+      if (token) {
+        // Check owner_token first (creator access)
+        let { data } = await supabaseAdmin
+          .from('group_tabs')
+          .select('*')
+          .eq('id', tabId)
+          .eq('owner_token', token)
+          .single();
+        if (data) { tab = data; isCreator = true; }
+        
+        // Also check manage_code
+        if (!tab) {
+          const { data: manageData } = await supabaseAdmin
+            .from('group_tabs')
+            .select('*')
+            .eq('id', tabId)
+            .eq('manage_code', token)
+            .single();
+          if (manageData) { tab = manageData; isCreator = true; }
+        }
+        
+        // Check magic_token
+        if (!tab) {
+          const { data: magicData } = await supabaseAdmin
+            .from('group_tabs')
+            .select('*')
+            .eq('id', tabId)
+            .eq('magic_token', token)
+            .single();
+          if (magicData) tab = magicData;
+        }
+        
+        // Check invite_code
+        if (!tab) {
+          const { data: inviteData } = await supabaseAdmin
+            .from('group_tabs')
+            .select('*')
+            .eq('id', tabId)
+            .eq('invite_code', token)
+            .single();
+          if (inviteData) tab = inviteData;
+        }
       }
       
-      // Check magic_token (viewer access)
-      if (!tab) {
-        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+      if (!tab && req.user) {
+        const { data: userData } = await supabaseAdmin
+          .from('group_tabs')
+          .select('*')
+          .eq('id', tabId)
+          .single();
+        if (userData) {
+          tab = userData;
+          if (tab.creator_user_id === req.user.id) isCreator = true;
+        }
       }
       
-      // Also try invite_code for invited guests
       if (!tab) {
-        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND invite_code = ?`).get(tabId, token);
+        return res.status(404).json({ error: 'Tab not found' });
       }
-    }
-    
-    if (!tab && req.user) {
-      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
-      if (tab && tab.creator_user_id === req.user.id) {
-        isCreator = true;
+      
+      if (isCreator) {
+        const { data: reportsData } = await supabaseAdmin
+          .from('group_tab_payment_reports')
+          .select('*, users(full_name)')
+          .eq('group_tab_id', tabId)
+          .order('created_at', { ascending: false });
+        reports = (reportsData || []).map(r => ({
+          ...r,
+          reviewer_name: r.users?.full_name,
+          users: undefined
+        }));
+      } else {
+        let participantId = null;
+        if (req.user) {
+          const { data: part } = await supabaseAdmin
+            .from('group_tab_participants')
+            .select('id')
+            .eq('group_tab_id', tabId)
+            .eq('user_id', req.user.id)
+            .single();
+          if (part) participantId = part.id;
+        } else {
+          const guestToken = req.cookies?.grouptab_guest_session;
+          if (guestToken) {
+            const { data: guestPart } = await supabaseAdmin
+              .from('group_tab_participants')
+              .select('id')
+              .eq('group_tab_id', tabId)
+              .eq('guest_session_token', guestToken)
+              .single();
+            if (guestPart) participantId = guestPart.id;
+          }
+        }
+        
+        if (participantId) {
+          const { data: partReports } = await supabaseAdmin
+            .from('group_tab_payment_reports')
+            .select('*')
+            .eq('group_tab_id', tabId)
+            .eq('participant_id', participantId)
+            .order('created_at', { ascending: false });
+          reports = partReports || [];
+        }
       }
-    }
-    
-    if (!tab) {
-      return res.status(404).json({ error: 'Tab not found' });
-    }
-    
-    let reports;
-    if (isCreator) {
-      // Creator sees all reports
-      reports = db.prepare(`
-        SELECT pr.*, u.full_name as reviewer_name
-        FROM group_tab_payment_reports pr
-        LEFT JOIN users u ON pr.reviewed_by = u.id
-        WHERE pr.group_tab_id = ?
-        ORDER BY pr.created_at DESC
-      `).all(tabId);
     } else {
-      // Participant sees only their reports
-      let participantId = null;
-      if (req.user) {
-        const participant = db.prepare(`
-          SELECT id FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
-        `).get(tabId, req.user.id);
-        if (participant) participantId = participant.id;
-      } else {
-        const guest = getGuestParticipant(req, tabId);
-        if (guest) participantId = guest.id;
+      // SQLite path
+      if (token) {
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
+        if (tab) isCreator = true;
+        
+        if (!tab) {
+          tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND manage_code = ?`).get(tabId, token);
+          if (tab) isCreator = true;
+        }
+        
+        if (!tab) {
+          tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+        }
+        
+        if (!tab) {
+          tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND invite_code = ?`).get(tabId, token);
+        }
       }
       
-      if (participantId) {
+      if (!tab && req.user) {
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+        if (tab && tab.creator_user_id === req.user.id) {
+          isCreator = true;
+        }
+      }
+      
+      if (!tab) {
+        return res.status(404).json({ error: 'Tab not found' });
+      }
+      
+      if (isCreator) {
         reports = db.prepare(`
-          SELECT * FROM group_tab_payment_reports
-          WHERE group_tab_id = ? AND participant_id = ?
-          ORDER BY created_at DESC
-        `).all(tabId, participantId);
+          SELECT pr.*, u.full_name as reviewer_name
+          FROM group_tab_payment_reports pr
+          LEFT JOIN users u ON pr.reviewed_by = u.id
+          WHERE pr.group_tab_id = ?
+          ORDER BY pr.created_at DESC
+        `).all(tabId);
       } else {
-        reports = [];
+        let participantId = null;
+        if (req.user) {
+          const participant = db.prepare(`
+            SELECT id FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
+          `).get(tabId, req.user.id);
+          if (participant) participantId = participant.id;
+        } else {
+          const guest = getGuestParticipant(req, tabId);
+          if (guest) participantId = guest.id;
+        }
+        
+        if (participantId) {
+          reports = db.prepare(`
+            SELECT * FROM group_tab_payment_reports
+            WHERE group_tab_id = ? AND participant_id = ?
+            ORDER BY created_at DESC
+          `).all(tabId, participantId);
+        }
       }
     }
     
@@ -9139,115 +10209,248 @@ app.get('/api/grouptabs/:id/payment-reports', (req, res) => {
 });
 
 // Confirm a payment report (creator only)
-app.patch('/api/grouptabs/:id/payment-reports/:reportId/confirm', (req, res) => {
+app.patch('/api/grouptabs/:id/payment-reports/:reportId/confirm', async (req, res) => {
   const tabId = parseInt(req.params.id);
   const reportId = parseInt(req.params.reportId);
   const { token } = req.body;
   
   try {
-    // Validate creator access
-    let tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
-    let isCreator = !!tab;
+    let tab = null;
+    let isCreator = false;
+    let report = null;
     
-    if (!tab && req.user) {
-      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND creator_user_id = ?`).get(tabId, req.user.id);
-      isCreator = !!tab;
-    }
-    
-    if (!tab || !isCreator) {
-      return res.status(403).json({ error: 'Only the tab creator can confirm payments' });
-    }
-    
-    const report = db.prepare(`
-      SELECT * FROM group_tab_payment_reports WHERE id = ? AND group_tab_id = ?
-    `).get(reportId, tabId);
-    
-    if (!report) {
-      return res.status(404).json({ error: 'Report not found' });
-    }
-    
-    if (report.status !== 'pending') {
-      return res.status(400).json({ error: 'Report has already been processed' });
-    }
-    
-    const reviewedAt = new Date().toISOString();
-    const reviewerId = req.user ? req.user.id : null;
-    
-    // Update report status
-    db.prepare(`
-      UPDATE group_tab_payment_reports 
-      SET status = 'confirmed', reviewed_at = ?, reviewed_by = ?
-      WHERE id = ?
-    `).run(reviewedAt, reviewerId, reportId);
-    
-    // Calculate fair share for new participants
-    const peopleCount = tab.people_count || 1;
-    const totalAmount = tab.total_amount_cents || 0;
-    const fairShareCents = Math.floor(totalAmount / peopleCount);
-    
-    // Update participant's payment totals if participant exists
-    if (report.participant_id) {
-      const participant = db.prepare(`SELECT * FROM group_tab_participants WHERE id = ?`).get(report.participant_id);
-      if (participant) {
-        const newTotalPaid = (participant.total_paid_cents || 0) + report.amount_cents;
-        const fairShare = participant.fair_share_cents || 0;
-        const newRemaining = Math.max(0, fairShare - newTotalPaid);
+    if (USE_SUPABASE) {
+      const { supabaseAdmin } = require('./lib/supabase/client');
+      
+      // Validate creator access - check owner_token first
+      if (token) {
+        const { data: tokenTab } = await supabaseAdmin
+          .from('group_tabs')
+          .select('*')
+          .eq('id', tabId)
+          .eq('owner_token', token)
+          .single();
+        if (tokenTab) { tab = tokenTab; isCreator = true; }
         
-        db.prepare(`
-          UPDATE group_tab_participants 
-          SET total_paid_cents = ?, remaining_cents = ?
-          WHERE id = ?
-        `).run(newTotalPaid, newRemaining, report.participant_id);
+        // Also try manage_code
+        if (!tab) {
+          const { data: manageTab } = await supabaseAdmin
+            .from('group_tabs')
+            .select('*')
+            .eq('id', tabId)
+            .eq('manage_code', token)
+            .single();
+          if (manageTab) { tab = manageTab; isCreator = true; }
+        }
       }
-    }
-    
-    // Update additional participants to mark them as fully paid (they were created as pending when report was submitted)
-    if (report.additional_names) {
-      try {
-        const additionalNames = JSON.parse(report.additional_names);
-        if (Array.isArray(additionalNames) && additionalNames.length > 0) {
-          for (const name of additionalNames) {
-            if (name && name.trim()) {
-              // Find the pending participant by name and update to fully paid
-              db.prepare(`
-                UPDATE group_tab_participants 
-                SET total_paid_cents = fair_share_cents, remaining_cents = 0
-                WHERE group_tab_id = ? AND guest_name = ? AND total_paid_cents = 0
-              `).run(tabId, name.trim());
+      
+      // Check if logged-in user is creator
+      if (!tab && req.user) {
+        const { data: userTab } = await supabaseAdmin
+          .from('group_tabs')
+          .select('*')
+          .eq('id', tabId)
+          .eq('creator_user_id', req.user.id)
+          .single();
+        if (userTab) { tab = userTab; isCreator = true; }
+      }
+      
+      if (!tab || !isCreator) {
+        return res.status(403).json({ error: 'Only the tab creator can confirm payments' });
+      }
+      
+      // Get report
+      const { data: reportData } = await supabaseAdmin
+        .from('group_tab_payment_reports')
+        .select('*')
+        .eq('id', reportId)
+        .eq('group_tab_id', tabId)
+        .single();
+      report = reportData;
+      
+      if (!report) {
+        return res.status(404).json({ error: 'Report not found' });
+      }
+      
+      if (report.status !== 'pending') {
+        return res.status(400).json({ error: 'Report has already been processed' });
+      }
+      
+      const reviewedAt = new Date().toISOString();
+      const reviewerId = req.user ? req.user.id : null;
+      
+      // Update report status
+      await supabaseAdmin
+        .from('group_tab_payment_reports')
+        .update({ status: 'confirmed', reviewed_at: reviewedAt, reviewed_by: reviewerId })
+        .eq('id', reportId);
+      
+      // Update participant's payment totals
+      if (report.participant_id) {
+        const { data: participant } = await supabaseAdmin
+          .from('group_tab_participants')
+          .select('*')
+          .eq('id', report.participant_id)
+          .single();
+        
+        if (participant) {
+          const newTotalPaid = (participant.total_paid_cents || 0) + report.amount_cents;
+          const fairShare = participant.fair_share_cents || 0;
+          const newRemaining = Math.max(0, fairShare - newTotalPaid);
+          
+          await supabaseAdmin
+            .from('group_tab_participants')
+            .update({ total_paid_cents: newTotalPaid, remaining_cents: newRemaining })
+            .eq('id', report.participant_id);
+        }
+      }
+      
+      // Update additional participants
+      if (report.additional_names) {
+        try {
+          const additionalNames = JSON.parse(report.additional_names);
+          if (Array.isArray(additionalNames) && additionalNames.length > 0) {
+            for (const name of additionalNames) {
+              if (name && name.trim()) {
+                const { data: pendingPart } = await supabaseAdmin
+                  .from('group_tab_participants')
+                  .select('id, fair_share_cents')
+                  .eq('group_tab_id', tabId)
+                  .eq('guest_name', name.trim())
+                  .eq('total_paid_cents', 0)
+                  .single();
+                
+                if (pendingPart) {
+                  await supabaseAdmin
+                    .from('group_tab_participants')
+                    .update({ total_paid_cents: pendingPart.fair_share_cents, remaining_cents: 0 })
+                    .eq('id', pendingPart.id);
+                }
+              }
             }
           }
+        } catch (e) {
+          console.error('[Payment Confirm] Error processing additional names:', e);
         }
-      } catch (e) {
-        console.error('[Payment Confirm] Error processing additional names:', e);
-        // Don't fail the confirmation, just log the error
       }
-    }
-    
-    // Update tab's paid_up_cents and total_raised_cents for pot modes
-    if (tab.gift_mode === 'gift_pot_target' || tab.gift_mode === 'gift_pot_open') {
-      db.prepare(`
-        UPDATE group_tabs 
-        SET total_raised_cents = COALESCE(total_raised_cents, 0) + ?
-        WHERE id = ?
-      `).run(report.amount_cents, tabId);
+      
+      // Update tab totals
+      if (tab.gift_mode === 'gift_pot_target' || tab.gift_mode === 'gift_pot_open') {
+        await supabaseAdmin
+          .from('group_tabs')
+          .update({ total_raised_cents: (tab.total_raised_cents || 0) + report.amount_cents })
+          .eq('id', tabId);
+      } else {
+        await supabaseAdmin
+          .from('group_tabs')
+          .update({ paid_up_cents: (tab.paid_up_cents || 0) + report.amount_cents })
+          .eq('id', tabId);
+      }
+      
+      // Record as a proper payment
+      await supabaseAdmin.from('group_tab_payments').insert({
+        group_tab_id: tabId,
+        from_participant_id: report.participant_id,
+        amount_cents: report.amount_cents,
+        method: report.method,
+        status: 'confirmed',
+        created_at: reviewedAt,
+        payment_type: 'reported',
+        note: `Confirmed from report #${reportId}`
+      });
+      
+      res.json({ success: true, message: 'Payment confirmed' });
     } else {
-      // Debt mode - update paid_up_cents
+      // SQLite path
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
+      isCreator = !!tab;
+      
+      if (!tab && req.user) {
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND creator_user_id = ?`).get(tabId, req.user.id);
+        isCreator = !!tab;
+      }
+      
+      if (!tab || !isCreator) {
+        return res.status(403).json({ error: 'Only the tab creator can confirm payments' });
+      }
+      
+      report = db.prepare(`
+        SELECT * FROM group_tab_payment_reports WHERE id = ? AND group_tab_id = ?
+      `).get(reportId, tabId);
+      
+      if (!report) {
+        return res.status(404).json({ error: 'Report not found' });
+      }
+      
+      if (report.status !== 'pending') {
+        return res.status(400).json({ error: 'Report has already been processed' });
+      }
+      
+      const reviewedAt = new Date().toISOString();
+      const reviewerId = req.user ? req.user.id : null;
+      
       db.prepare(`
-        UPDATE group_tabs 
-        SET paid_up_cents = COALESCE(paid_up_cents, 0) + ?
+        UPDATE group_tab_payment_reports 
+        SET status = 'confirmed', reviewed_at = ?, reviewed_by = ?
         WHERE id = ?
-      `).run(report.amount_cents, tabId);
+      `).run(reviewedAt, reviewerId, reportId);
+      
+      if (report.participant_id) {
+        const participant = db.prepare(`SELECT * FROM group_tab_participants WHERE id = ?`).get(report.participant_id);
+        if (participant) {
+          const newTotalPaid = (participant.total_paid_cents || 0) + report.amount_cents;
+          const fairShare = participant.fair_share_cents || 0;
+          const newRemaining = Math.max(0, fairShare - newTotalPaid);
+          
+          db.prepare(`
+            UPDATE group_tab_participants 
+            SET total_paid_cents = ?, remaining_cents = ?
+            WHERE id = ?
+          `).run(newTotalPaid, newRemaining, report.participant_id);
+        }
+      }
+      
+      if (report.additional_names) {
+        try {
+          const additionalNames = JSON.parse(report.additional_names);
+          if (Array.isArray(additionalNames) && additionalNames.length > 0) {
+            for (const name of additionalNames) {
+              if (name && name.trim()) {
+                db.prepare(`
+                  UPDATE group_tab_participants 
+                  SET total_paid_cents = fair_share_cents, remaining_cents = 0
+                  WHERE group_tab_id = ? AND guest_name = ? AND total_paid_cents = 0
+                `).run(tabId, name.trim());
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[Payment Confirm] Error processing additional names:', e);
+        }
+      }
+      
+      if (tab.gift_mode === 'gift_pot_target' || tab.gift_mode === 'gift_pot_open') {
+        db.prepare(`
+          UPDATE group_tabs 
+          SET total_raised_cents = COALESCE(total_raised_cents, 0) + ?
+          WHERE id = ?
+        `).run(report.amount_cents, tabId);
+      } else {
+        db.prepare(`
+          UPDATE group_tabs 
+          SET paid_up_cents = COALESCE(paid_up_cents, 0) + ?
+          WHERE id = ?
+        `).run(report.amount_cents, tabId);
+      }
+      
+      db.prepare(`
+        INSERT INTO group_tab_payments (
+          group_tab_id, from_participant_id, amount_cents, method, status, created_at, payment_type, note
+        ) VALUES (?, ?, ?, ?, 'confirmed', ?, 'reported', ?)
+      `).run(tabId, report.participant_id, report.amount_cents, report.method, reviewedAt, `Confirmed from report #${reportId}`);
+      
+      res.json({ success: true, message: 'Payment confirmed' });
     }
-    
-    // Also record as a proper payment for tracking
-    db.prepare(`
-      INSERT INTO group_tab_payments (
-        group_tab_id, from_participant_id, amount_cents, method, status, created_at, payment_type, note
-      ) VALUES (?, ?, ?, ?, 'confirmed', ?, 'reported', ?)
-    `).run(tabId, report.participant_id, report.amount_cents, report.method, reviewedAt, `Confirmed from report #${reportId}`);
-    
-    res.json({ success: true, message: 'Payment confirmed' });
-    
   } catch (err) {
     console.error('Error confirming payment:', err);
     res.status(500).json({ error: 'Failed to confirm payment' });
@@ -9905,35 +11108,86 @@ app.get('/grouptabs/:id/receipt', (req, res, next) => {
 
 // Tab page - handles both short codes (12 chars) and legacy long tokens (64 chars)
 // /tab/:code is the PRIMARY sharing URL
-app.get('/tab/:code', (req, res) => {
+app.get('/tab/:code', async (req, res) => {
   const { code } = req.params;
   
-  // Try short invite_code first (primary), then fall back to legacy magic_token
-  let tab = db.prepare(`SELECT id, status, magic_token, invite_code FROM group_tabs WHERE invite_code = ?`).get(code);
+  let tab = null;
   
-  if (!tab) {
-    // Try legacy long magic_token
-    tab = db.prepare(`SELECT id, status, magic_token, invite_code FROM group_tabs WHERE magic_token = ?`).get(code);
+  if (USE_SUPABASE) {
+    const { supabaseAdmin } = require('./lib/supabase/client');
     
-    // If found with long token but has short code, redirect to short URL
-    if (tab && tab.invite_code) {
-      return res.redirect(`/tab/${tab.invite_code}`);
+    // Try short invite_code first (primary)
+    let { data } = await supabaseAdmin
+      .from('group_tabs')
+      .select('id, status, magic_token, invite_code')
+      .eq('invite_code', code)
+      .single();
+    
+    tab = data;
+    
+    if (!tab) {
+      // Try legacy long magic_token
+      const { data: legacyData } = await supabaseAdmin
+        .from('group_tabs')
+        .select('id, status, magic_token, invite_code')
+        .eq('magic_token', code)
+        .single();
+      
+      tab = legacyData;
+      
+      // If found with long token but has short code, redirect to short URL
+      if (tab && tab.invite_code) {
+        return res.redirect(`/tab/${tab.invite_code}`);
+      }
     }
-  }
-  
-  if (!tab) {
-    return res.status(404).send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>Tab not found</h1><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
-  }
-  
-  if (tab.status === 'closed') {
-    // For closed tabs, still allow viewing if the user is logged in or has a guest session
-    const guestToken = req.cookies.grouptab_guest_session;
-    const hasAccess = req.user || (guestToken && db.prepare(`
-      SELECT 1 FROM group_tab_participants WHERE group_tab_id = ? AND guest_session_token = ?
-    `).get(tab.id, guestToken));
     
-    if (!hasAccess) {
-      return res.send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>This tab has been closed</h1><p style="color:#a7b0bd">Only members can view closed tabs.</p><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
+    if (!tab) {
+      return res.status(404).send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>Tab not found</h1><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
+    }
+    
+    if (tab.status === 'closed') {
+      const guestToken = req.cookies.grouptab_guest_session;
+      let hasAccess = !!req.user;
+      
+      if (!hasAccess && guestToken) {
+        const { data: participant } = await supabaseAdmin
+          .from('group_tab_participants')
+          .select('id')
+          .eq('group_tab_id', tab.id)
+          .eq('guest_session_token', guestToken)
+          .single();
+        hasAccess = !!participant;
+      }
+      
+      if (!hasAccess) {
+        return res.send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>This tab has been closed</h1><p style="color:#a7b0bd">Only members can view closed tabs.</p><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
+      }
+    }
+  } else {
+    // SQLite path
+    tab = db.prepare(`SELECT id, status, magic_token, invite_code FROM group_tabs WHERE invite_code = ?`).get(code);
+    
+    if (!tab) {
+      tab = db.prepare(`SELECT id, status, magic_token, invite_code FROM group_tabs WHERE magic_token = ?`).get(code);
+      
+      if (tab && tab.invite_code) {
+        return res.redirect(`/tab/${tab.invite_code}`);
+      }
+    }
+    
+    if (!tab) {
+      return res.status(404).send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>Tab not found</h1><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
+    }
+    
+    if (tab.status === 'closed') {
+      const guestToken = req.cookies.grouptab_guest_session;
+      const hasAccess = req.user || (guestToken && db.prepare(`
+        SELECT 1 FROM group_tab_participants WHERE group_tab_id = ? AND guest_session_token = ?
+      `).get(tab.id, guestToken));
+      
+      if (!hasAccess) {
+        return res.send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>This tab has been closed</h1><p style="color:#a7b0bd">Only members can view closed tabs.</p><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
+      }
     }
   }
   
