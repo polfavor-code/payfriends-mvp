@@ -1,0 +1,22 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/debugger/export/route": "app/api/debugger/export/route.js",
+  "/api/config/route": "app/api/config/route.js",
+  "/api/users/[id]/disable/route": "app/api/users/[id]/disable/route.js",
+  "/api/payments/[id]/review/route": "app/api/payments/[id]/review/route.js",
+  "/api/users/[id]/delete/route": "app/api/users/[id]/delete/route.js",
+  "/page": "app/page.js",
+  "/tools/calculator/page": "app/tools/calculator/page.js",
+  "/api/users/[id]/enable/route": "app/api/users/[id]/enable/route.js",
+  "/api/notes/route": "app/api/notes/route.js",
+  "/loans/page": "app/loans/page.js",
+  "/loans/[id]/page": "app/loans/[id]/page.js",
+  "/grouptabs/[id]/page": "app/grouptabs/[id]/page.js",
+  "/grouptabs/page": "app/grouptabs/page.js",
+  "/tools/config/page": "app/tools/config/page.js",
+  "/payments/page": "app/payments/page.js",
+  "/users/page": "app/users/page.js",
+  "/users/[id]/page": "app/users/[id]/page.js",
+  "/tools/audit/page": "app/tools/audit/page.js",
+  "/tools/debugger/page": "app/tools/debugger/page.js"
+}

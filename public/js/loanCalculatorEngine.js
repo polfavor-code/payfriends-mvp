@@ -1,14 +1,28 @@
 /**
  * PayFriends Loan Calculator Engine
  *
- * This module contains all pure calculation logic for loan repayment schedules.
- * It can be reused across the standalone calculator, wizard, and other pages.
+ * This module provides UI-focused loan calculation utilities for the wizard and calculator pages.
+ * It delegates core mathematical calculations to schedule.js (the true source of truth).
  *
- * SINGLE SOURCE OF TRUTH for all loan calculations.
+ * DEPENDENCY: Requires schedule.js to be loaded first for buildRepaymentSchedule and generatePaymentDates.
+ *
+ * Architecture:
+ * - schedule.js: Core mathematical engine (buildRepaymentSchedule)
+ * - lib/repayments/repaymentSchedule.js: Server-side wrapper
+ * - loanCalculatorEngine.js (this file): Browser UI wrapper
  */
 
 (function(window) {
   'use strict';
+
+  // ============================================================================
+  // DEPENDENCY CHECK - schedule.js must be loaded first
+  // ============================================================================
+  const hasScheduleJS = typeof window.buildRepaymentSchedule === 'function' &&
+                        typeof window.generatePaymentDates === 'function';
+  if (!hasScheduleJS) {
+    console.warn('[loanCalculatorEngine] schedule.js not loaded. Falling back to internal calculations.');
+  }
 
   // ============================================================================
   // DATE UTILITIES
@@ -412,194 +426,226 @@
     debugMessages.push(`Effective mode: ${effectiveMode === 'actual' ? 'Actual (real dates)' : 'Preview (relative labels)'}`);
 
     // STEP 5: Generate schedule rows
-    const rows = [];
-    const principalPerPayment = loanAmount / numberOfInstallments;
-    let remainingBalance = loanAmount;
-    let totalInterest = 0;
+    let rows = [];
+    let totals = {};
 
-    for (let i = 0; i < numberOfInstallments; i++) {
-      const paymentIndex = i + 1;
-
-      // Calculate interest for this period
-      let daysForThisPeriod;
-      if (i === 0) {
-        // First payment: use firstPaymentDays
-        daysForThisPeriod = firstPaymentDays;
+    // =========================================================================
+    // CONSOLIDATED: Use schedule.js buildRepaymentSchedule for actual mode
+    // =========================================================================
+    if (effectiveMode === 'actual' && loanStartDate && hasScheduleJS) {
+      // Calculate first due date
+      let firstDueDate;
+      if (firstPaymentExactDate) {
+        firstDueDate = new Date(firstPaymentExactDate);
+        firstDueDate.setHours(0, 0, 0, 0);
+      } else if (firstPaymentIsYearBased) {
+        firstDueDate = addYears(loanStartDate, firstPaymentYears);
+      } else if (firstPaymentIsMonthBased) {
+        firstDueDate = addMonths(loanStartDate, firstPaymentMonths);
       } else {
-        // Subsequent payments: use period length
-        daysForThisPeriod = periodDays;
+        firstDueDate = addDays(loanStartDate, firstPaymentDays);
       }
 
-      const interestForPeriod = remainingBalance * dailyRate * daysForThisPeriod;
-      const principalPayment = principalPerPayment;
-      const totalPayment = principalPayment + interestForPeriod;
+      // Map periodType to schedule.js frequency format
+      let scheduleFrequency;
+      switch (paymentFrequency) {
+        case 'every-week':
+        case 'every-7-days':
+          scheduleFrequency = 'weekly';
+          break;
+        case 'every-2-weeks':
+        case 'every-14-days':
+          scheduleFrequency = 'biweekly';
+          break;
+        case 'every-4-weeks':
+          scheduleFrequency = 'every_4_weeks';
+          break;
+        case 'every-month':
+        case 'every-30-days':
+          scheduleFrequency = 'monthly';
+          break;
+        case 'every-3-months':
+          scheduleFrequency = 'quarterly';
+          break;
+        case 'every-year':
+          scheduleFrequency = 'yearly';
+          break;
+        default:
+          scheduleFrequency = 'monthly';
+      }
 
-      totalInterest += interestForPeriod;
-      remainingBalance -= principalPayment;
-      if (remainingBalance < 0.01) remainingBalance = 0;
+      // Generate payment dates using schedule.js
+      const dateResult = window.generatePaymentDates({
+        transferDate: loanStartDate,
+        firstDueDate: firstDueDate,
+        frequency: scheduleFrequency,
+        count: numberOfInstallments
+      });
 
-      // Generate due date label
-      let dueDateLabel;
-      let dueDate = null;
+      // Use buildRepaymentSchedule from schedule.js (the SINGLE SOURCE OF TRUTH)
+      const coreSchedule = window.buildRepaymentSchedule({
+        principalCents: Math.round(loanAmount * 100),
+        aprPercent: annualInterestRate,
+        count: numberOfInstallments,
+        paymentDates: dateResult.paymentDates,
+        startDate: loanStartDate
+      });
 
-      if (effectiveMode === 'preview') {
-        // PREVIEW MODE: Use relative labels, no real dates
+      debugMessages.push('[CONSOLIDATED] Using schedule.js buildRepaymentSchedule');
 
-        // EXCEPTION: If user explicitly picked a first payment date, we know the real calendar dates
-        // Show them even in preview mode
-        if (firstPaymentExactDate) {
-          if (i === 0) {
-            // First payment: use the exact picked date
-            dueDate = new Date(firstPaymentExactDate);
-            dueDate.setHours(0, 0, 0, 0);
-          } else {
-            // Subsequent payments: calculate from first payment date
-            const baseDate = new Date(firstPaymentExactDate);
-            baseDate.setHours(0, 0, 0, 0);
+      // Transform to our output format
+      rows = coreSchedule.rows.map((row, index) => {
+        const dueDate = new Date(row.dateISO);
+        return {
+          index: index + 1,
+          label: formatDueDateWithWeekday(dueDate, periodType === 'weeks'),
+          dueDate: dueDate,
+          principal: row.principalCents,
+          interest: row.interestCents,
+          totalPayment: row.paymentCents,
+          balance: row.remainingCents
+        };
+      });
 
-            if (periodType === 'years') {
-              dueDate = addYears(baseDate, i * periodMultiplier);
-            } else if (periodType === 'months') {
-              dueDate = addMonths(baseDate, i * periodMultiplier);
-            } else if (periodType === 'weeks') {
-              dueDate = addDays(baseDate, i * periodDays);
+      totals = {
+        principal: Math.round(loanAmount * 100),
+        interest: coreSchedule.totalInterestCents,
+        totalRepayment: coreSchedule.totalToRepayCents
+      };
+    } else {
+      // =========================================================================
+      // FALLBACK: Preview mode or schedule.js not loaded - use internal calculation
+      // =========================================================================
+      const principalPerPayment = loanAmount / numberOfInstallments;
+      let remainingBalance = loanAmount;
+      let totalInterest = 0;
+
+      for (let i = 0; i < numberOfInstallments; i++) {
+        const paymentIndex = i + 1;
+
+        // Calculate interest for this period
+        let daysForThisPeriod;
+        if (i === 0) {
+          daysForThisPeriod = firstPaymentDays;
+        } else {
+          daysForThisPeriod = periodDays;
+        }
+
+        const interestForPeriod = remainingBalance * dailyRate * daysForThisPeriod;
+        const principalPayment = principalPerPayment;
+        const totalPayment = principalPayment + interestForPeriod;
+
+        totalInterest += interestForPeriod;
+        remainingBalance -= principalPayment;
+        if (remainingBalance < 0.01) remainingBalance = 0;
+
+        // Generate due date label
+        let dueDateLabel;
+        let dueDate = null;
+
+        if (effectiveMode === 'preview') {
+          // PREVIEW MODE: Use relative labels, no real dates
+          if (firstPaymentExactDate) {
+            if (i === 0) {
+              dueDate = new Date(firstPaymentExactDate);
+              dueDate.setHours(0, 0, 0, 0);
             } else {
-              // Day-based
-              dueDate = addDays(baseDate, i * periodDays);
+              const baseDate = new Date(firstPaymentExactDate);
+              baseDate.setHours(0, 0, 0, 0);
+              if (periodType === 'years') {
+                dueDate = addYears(baseDate, i * periodMultiplier);
+              } else if (periodType === 'months') {
+                dueDate = addMonths(baseDate, i * periodMultiplier);
+              } else {
+                dueDate = addDays(baseDate, i * periodDays);
+              }
             }
-          }
-          dueDateLabel = formatDueDateWithWeekday(dueDate, periodType === 'weeks');
-        } else if (i === 0) {
-          // FIRST PAYMENT in preview mode: use first payment timing properties
-          if (firstPaymentIsYearBased) {
-            // Year-based (e.g., "In 1 year", "In 2 years")
-            if (firstPaymentYears === 1) {
-              dueDateLabel = '1 year after loan start';
+            dueDateLabel = formatDueDateWithWeekday(dueDate, periodType === 'weeks');
+          } else if (i === 0) {
+            if (firstPaymentIsYearBased) {
+              dueDateLabel = firstPaymentYears === 1 ? '1 year after loan start' : `${firstPaymentYears} years after loan start`;
+            } else if (firstPaymentIsMonthBased) {
+              if (firstPaymentMonths === 0) {
+                dueDateLabel = 'On loan start';
+              } else {
+                dueDateLabel = firstPaymentMonths === 1 ? '1 month after loan start' : `${firstPaymentMonths} months after loan start`;
+              }
             } else {
-              dueDateLabel = `${firstPaymentYears} years after loan start`;
+              if (firstPaymentDays === 0) {
+                dueDateLabel = 'On loan start';
+              } else if (firstPaymentDays === 7) {
+                dueDateLabel = '1 week after loan start';
+              } else {
+                dueDateLabel = `${firstPaymentDays} days after loan start`;
+              }
             }
-          } else if (firstPaymentIsMonthBased) {
-            // Month-based (e.g., "In 1 month", "In 6 months")
-            if (firstPaymentMonths === 0) {
+          } else if (periodType === 'years') {
+            const totalYears = firstPaymentYears + (i * periodMultiplier);
+            dueDateLabel = totalYears === 1 ? '1 year after loan start' : `${totalYears} years after loan start`;
+          } else if (periodType === 'months') {
+            const totalMonths = firstPaymentMonths + (i * periodMultiplier);
+            if (totalMonths === 0) {
               dueDateLabel = 'On loan start';
-            } else if (firstPaymentMonths === 1) {
-              dueDateLabel = '1 month after loan start';
             } else {
-              dueDateLabel = `${firstPaymentMonths} months after loan start`;
+              dueDateLabel = totalMonths === 1 ? '1 month after loan start' : `${totalMonths} months after loan start`;
             }
           } else {
-            // Day-based (e.g., "In 1 week" = 7 days)
-            if (firstPaymentDays === 0) {
+            const totalDays = firstPaymentDays + (i * periodDays);
+            if (totalDays === 0) {
               dueDateLabel = 'On loan start';
-            } else if (firstPaymentDays === 7) {
+            } else if (totalDays === 7) {
               dueDateLabel = '1 week after loan start';
             } else {
-              dueDateLabel = `${firstPaymentDays} days after loan start`;
+              dueDateLabel = `${totalDays} days after loan start`;
             }
           }
-        } else if (periodType === 'years') {
-          // SUBSEQUENT PAYMENTS with yearly frequency
-          // Calculate offset from first payment
-          const totalYears = firstPaymentYears + (i * periodMultiplier);
-          if (totalYears === 1) {
-            dueDateLabel = '1 year after loan start';
-          } else {
-            dueDateLabel = `${totalYears} years after loan start`;
-          }
-        } else if (periodType === 'months') {
-          // SUBSEQUENT PAYMENTS with monthly frequency
-          // Calculate offset from first payment
-          const totalMonths = firstPaymentMonths + (i * periodMultiplier);
-          if (totalMonths === 0) {
-            dueDateLabel = 'On loan start';
-          } else if (totalMonths === 1) {
-            dueDateLabel = '1 month after loan start';
-          } else {
-            dueDateLabel = `${totalMonths} months after loan start`;
-          }
-        } else if (periodType === 'weeks') {
-          // SUBSEQUENT PAYMENTS with week-based frequency
-          // Calculate offset from first payment in days
-          const totalDays = firstPaymentDays + (i * periodDays);
-          if (totalDays === 0) {
-            dueDateLabel = 'On loan start';
-          } else if (totalDays === 7) {
-            dueDateLabel = '1 week after loan start';
-          } else {
-            dueDateLabel = `${totalDays} days after loan start`;
-          }
         } else {
-          // SUBSEQUENT PAYMENTS with day-based frequency
-          // Calculate offset from first payment in days
-          const totalDays = firstPaymentDays + (i * periodDays);
-          if (totalDays === 0) {
-            dueDateLabel = 'On loan start';
-          } else if (totalDays === 7) {
-            dueDateLabel = '1 week after loan start';
-          } else {
-            dueDateLabel = `${totalDays} days after loan start`;
-          }
-        }
-      } else {
-        // ACTUAL MODE: Calculate real calendar dates
-        if (loanStartDate) {
-          // Calculate first payment date (will be used as base for all subsequent payments)
-          let firstDueDate;
-          if (firstPaymentExactDate) {
-            // User explicitly picked a date - use it directly
-            firstDueDate = new Date(firstPaymentExactDate);
-            firstDueDate.setHours(0, 0, 0, 0);
-          } else if (firstPaymentIsYearBased) {
-            // First payment is year-based (e.g., "In 1 year", "In 2 years")
-            firstDueDate = addYears(loanStartDate, firstPaymentYears);
-          } else if (firstPaymentIsMonthBased) {
-            // First payment is month-based (e.g., "In 1 month", "In 6 months")
-            firstDueDate = addMonths(loanStartDate, firstPaymentMonths);
-          } else {
-            // First payment is day-based (e.g., "In 1 week" = 7 days)
-            firstDueDate = addDays(loanStartDate, firstPaymentDays);
-          }
+          // ACTUAL MODE fallback (schedule.js not loaded)
+          if (loanStartDate) {
+            let firstDueDate;
+            if (firstPaymentExactDate) {
+              firstDueDate = new Date(firstPaymentExactDate);
+              firstDueDate.setHours(0, 0, 0, 0);
+            } else if (firstPaymentIsYearBased) {
+              firstDueDate = addYears(loanStartDate, firstPaymentYears);
+            } else if (firstPaymentIsMonthBased) {
+              firstDueDate = addMonths(loanStartDate, firstPaymentMonths);
+            } else {
+              firstDueDate = addDays(loanStartDate, firstPaymentDays);
+            }
 
-          // Now calculate the due date for this payment
-          if (i === 0) {
-            // First payment: use the calculated first due date
-            dueDate = firstDueDate;
-          } else if (periodType === 'years') {
-            // Yearly: calculate from first payment date
-            dueDate = addYears(firstDueDate, i * periodMultiplier);
-          } else if (periodType === 'months') {
-            // Monthly: calculate from first payment date
-            dueDate = addMonths(firstDueDate, i * periodMultiplier);
-          } else if (periodType === 'weeks') {
-            // Week-based: calculate from first payment date (preserves weekday)
-            dueDate = addDays(firstDueDate, i * periodDays);
+            if (i === 0) {
+              dueDate = firstDueDate;
+            } else if (periodType === 'years') {
+              dueDate = addYears(firstDueDate, i * periodMultiplier);
+            } else if (periodType === 'months') {
+              dueDate = addMonths(firstDueDate, i * periodMultiplier);
+            } else {
+              dueDate = addDays(firstDueDate, i * periodDays);
+            }
+            dueDateLabel = formatDueDateWithWeekday(dueDate, periodType === 'weeks');
           } else {
-            // Day-based: calculate from first payment date
-            dueDate = addDays(firstDueDate, i * periodDays);
+            dueDateLabel = 'Date not available';
           }
-          dueDateLabel = formatDueDateWithWeekday(dueDate, periodType === 'weeks');
-        } else {
-          dueDateLabel = 'Date not available';
         }
+
+        rows.push({
+          index: paymentIndex,
+          label: dueDateLabel,
+          dueDate: dueDate,
+          principal: Math.round(principalPayment * 100),
+          interest: Math.round(interestForPeriod * 100),
+          totalPayment: Math.round(totalPayment * 100),
+          balance: Math.round(remainingBalance * 100)
+        });
       }
 
-      rows.push({
-        index: paymentIndex,
-        label: dueDateLabel,
-        dueDate: dueDate,
-        principal: Math.round(principalPayment * 100), // cents
-        interest: Math.round(interestForPeriod * 100), // cents
-        totalPayment: Math.round(totalPayment * 100), // cents
-        balance: Math.round(remainingBalance * 100) // cents
-      });
+      totals = {
+        principal: Math.round(loanAmount * 100),
+        interest: Math.round(totalInterest * 100),
+        totalRepayment: Math.round((loanAmount + totalInterest) * 100)
+      };
     }
-
-    // STEP 6: Calculate totals
-    const totals = {
-      principal: Math.round(loanAmount * 100), // should equal sum of all principal
-      interest: Math.round(totalInterest * 100),
-      totalRepayment: Math.round((loanAmount + totalInterest) * 100)
-    };
 
     debugMessages.push(`Generated ${rows.length} payment(s)`);
 
