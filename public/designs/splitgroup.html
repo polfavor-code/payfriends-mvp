@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Split Redesign Concepts</title>
+    <style>
+        :root {
+            --bg: #0e1116;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #3ddc97;
+            --danger: #f85149;
+            --pending: #f59e0b;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 80px;
+        }
+
+        .design-container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .design-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* Common Elements */
+        .f-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 700;
+            background: rgba(248, 81, 73, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            width: fit-content;
+        }
+
+        .p-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .btn-p {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn-s {
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* Design 1: The Progressive (Focus on the Goal) */
+        .d1-progress-block {
+            text-align: center;
+            padding: 10px 0;
+        }
+        .d1-track {
+            height: 8px;
+            background: #222;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+            display: flex;
+        }
+        .d1-fill { background: var(--accent); height: 100%; }
+        .d1-stat { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-weight: 600; }
+
+        /* Design 2: The Ticket (Distinct "You" area) */
+        .d2-ticket {
+            border: 2px dashed var(--pending);
+            background: rgba(245, 158, 11, 0.03);
+            padding: 24px;
+            border-radius: 24px;
+            position: relative;
+        }
+
+        /* Design 3: The Social List (Focus on missing people) */
+        .d3-slot {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px dashed var(--border);
+            border-radius: 16px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+        .d3-avatar { width: 36px; height: 36px; border-radius: 50%; border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+        /* Design 4: The Impact (Guilt trip / social proof) */
+        .d4-impact {
+            background: rgba(248, 81, 73, 0.05);
+            border: 1px solid var(--danger);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        /* Design 5: Dashboard Tiles */
+        .d5-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .d5-tile { background: var(--card); border: 1px solid var(--border); padding: 12px; border-radius: 16px; }
+        .d5-val { font-size: 18px; font-weight: 800; display: block; margin-top: 4px; }
+        .d5-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+
+        /* Helpers */
+        .price { font-size: 32px; font-weight: 800; color: var(--pending); }
+        .sub { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+        .flex-row { display: flex; gap: 10px; }
+        .mt-20 { margin-top: 20px; }
+        .orange { color: var(--pending); }
+        .green { color: var(--accent); }
+        .red { color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <!-- DESIGN 1: THE TARGET -->
+    <div class="design-container">
+        <div class="design-label">1. The Target-Focused</div>
+        <div class="f-badge">❤️ Paul is covering €195 extra</div>
+        <div class="p-card">
+            <div class="d1-progress-block">
+                <div class="sub">Progress to €234 Total Bill</div>
+                <div class="price green">€39,00 collected</div>
+                <div class="d1-track"><div class="d1-fill" style="width: 16%"></div></div>
+                <div class="d1-stat"><span>1 of 6 paid</span><span>€195 remaining</span></div>
+            </div>
+            <div class="mt-20">
+                <div class="sub">Your part:</div>
+                <div class="price orange">€39,00</div>
+                <button class="btn-p mt-20">I'VE PAID MY PART</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DESIGN 2: THE DETACHABLE TICKET -->
+    <div class="design-container">
+        <div class="design-label">2. The "My Ticket"</div>
+        <div class="d2-ticket">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div class="sub orange">GROUP: EQUAL SPLIT</div>
+                    <div style="font-size: 20px; font-weight: 800;">Pino's Fair Share</div>
+                </div>
+                <div style="font-size: 24px;">🔔</div>
+            </div>
+            <div class="price orange" style="font-size: 48px; margin: 15px 0;">€39,00</div>
+            <div style="font-size: 12px; color: var(--muted); margin-bottom: 20px;">(Equal split : €234,00 ÷ 6 participants)</div>
+            <div class="flex-row">
+                <button class="btn-s" style="border-color: var(--pending); color: var(--pending);">DETAILS</button>
+                <button class="btn-p">I'VE PAID</button>
+            </div>
+        </div>
+        <div class="p-card">
+            <div class="sub">WHO ELSE IS IN?</div>
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #000; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800;">PS</div>
+                <div style="width: 32px; height: 32px; border-radius: 50%; border: 1px dashed #444; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #444;">+5</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DESIGN 3: THE SOCIAL GRID -->
+    <div class="design-container">
+        <div class="design-label">3. The Social Grid</div>
+        <div class="p-card">
+            <div class="sub">YOUR PART</div>
+            <div class="price orange">€39,00</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px;">
+                <div class="d3-slot" style="border-color: var(--accent); color: var(--accent); flex-direction: column;">
+                    <div style="width:30px; height:30px; border-radius:50%; background: var(--accent); color:#000; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:10px;">PS</div>
+                    <span>Paul</span>
+                </div>
+                <div class="d3-slot" style="border-color: var(--pending); color: var(--pending); flex-direction: column; background: rgba(245,158,11,0.05);">
+                    <div class="d3-avatar" style="border-color: var(--pending);">You</div>
+                    <span>€39</span>
+                </div>
+                <div class="d3-slot" style="flex-direction: column; text-align: center;">
+                    <div class="d3-avatar">3</div>
+                    <span style="font-size: 10px;">Share link</span>
+                </div>
+                <div class="d3-slot" style="flex-direction: column; text-align: center;">
+                    <div class="d3-avatar">4</div>
+                    <span style="font-size: 10px;">Share link</span>
+                </div>
+                <div class="d3-slot" style="flex-direction: column; text-align: center;">
+                    <div class="d3-avatar">5</div>
+                    <span style="font-size: 10px;">Share link</span>
+                </div>
+                <div class="d3-slot" style="flex-direction: column; text-align: center;">
+                    <div class="d3-avatar">6</div>
+                    <span style="font-size: 10px;">Share link</span>
+                </div>
+            </div>
+            <button class="btn-p mt-20">REPORT PAYMENT</button>
+        </div>
+    </div>
+
+    <!-- DESIGN 4: THE HOST IMPACT -->
+    <div class="design-container">
+        <div class="design-label">4. The Guilt-Free (Host Impact)</div>
+        <div class="d4-impact">
+            <div style="font-size: 30px; margin-bottom: 10px;">💔</div>
+            <div style="font-weight: 800; font-size: 16px; color: #fff;">Paul is €195 out of pocket</div>
+            <div class="sub" style="margin-top: 4px;">5 people still need to pay their share.</div>
+        </div>
+        <div class="p-card">
+            <div style="text-align: center;">
+                <div class="sub">PLEASE SETTLE YOUR SHARE</div>
+                <div class="price orange" style="font-size: 50px;">€39,00</div>
+                <button class="btn-p mt-20">I'VE PAID PAUL</button>
+                <div class="mt-20" style="font-size: 13px; color: var(--muted);">
+                    Done? <span class="orange">Help Paul out</span> by sharing the link with others.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DESIGN 5: THE TILED DASHBOARD -->
+    <div class="design-container">
+        <div class="design-label">5. The Dashboard</div>
+        <div class="d5-grid">
+            <div class="d5-tile">
+                <span class="d5-lbl">Total Bill</span>
+                <span class="d5-val">€234,00</span>
+            </div>
+            <div class="d5-tile">
+                <span class="d5-lbl">Remaining</span>
+                <span class="d5-val red">€195,00</span>
+            </div>
+            <div class="d5-tile" style="grid-column: span 2; border-color: var(--pending);">
+                <span class="d5-lbl orange">Your Share (1/6)</span>
+                <span class="d5-val orange" style="font-size: 28px;">€39,00</span>
+            </div>
+        </div>
+        <div class="flex-row">
+            <button class="btn-p">PAY NOW</button>
+            <button class="btn-s">INVITE OTHERS</button>
+        </div>
+    </div>
+
+    <!-- DESIGN 6: GLASSMORPHISM / MODERN -->
+    <div class="design-container">
+        <div class="design-label">6. The Glass Modern</div>
+        <div style="background: linear-gradient(135deg, rgba(61, 220, 151, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%); padding: 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+            <div style="text-align: center;">
+                <div class="f-badge" style="margin: 0 auto 20px auto; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); color: #fff;">
+                    🤝 Paul + 5 others
+                </div>
+                <div class="sub">PINO, YOUR PART IS</div>
+                <div class="price orange" style="font-size: 60px; text-shadow: 0 0 20px rgba(245, 158, 11, 0.3);">€39</div>
+                <div class="sub">€234 total · Equal split</div>
+                <button class="btn-p mt-20" style="box-shadow: 0 10px 20px rgba(61, 220, 151, 0.2);">CONFIRM PAYMENT</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DESIGN 7: THE MINIMALIST LIST -->
+    <div class="design-container">
+        <div class="design-label">7. The Minimalist</div>
+        <div style="border-left: 4px solid var(--pending); padding-left: 20px;">
+            <div style="font-size: 24px; font-weight: 800;">Hey Pino!</div>
+            <div style="color: var(--muted); margin-top: 5px;">Your share for the <span style="color: #fff; font-weight: 600;">Speaker</span> is <span class="orange">€39,00</span>.</div>
+        </div>
+        <div class="p-card mt-20">
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent);"></div>
+                        <span style="font-size: 14px;">Paul paid full bill</span>
+                    </div>
+                    <span style="font-size: 14px; font-weight: 700;">€234,00</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--pending);"></div>
+                        <span style="font-size: 14px; font-weight: 700;">Your Share</span>
+                    </div>
+                    <span class="orange" style="font-size: 14px; font-weight: 800;">€39,00</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; opacity: 0.5;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: #444;"></div>
+                        <span style="font-size: 14px;">4 Others pending</span>
+                    </div>
+                    <span style="font-size: 14px; font-weight: 700;">€156,00</span>
+                </div>
+            </div>
+            <button class="btn-p mt-20">PAY NOW</button>
+        </div>
+    </div>
+
+    <!-- DESIGN 8: THE CARD STACK -->
+    <div class="design-container">
+        <div class="design-label">8. The Stacked Status</div>
+        <div class="p-card" style="border-bottom: none; border-radius: 20px 20px 0 0; background: #1c2128;">
+            <div class="sub">OVERVIEW</div>
+            <div style="display: flex; align-items: baseline; gap: 10px;">
+                <span style="font-size: 24px; font-weight: 800;">€195</span>
+                <span class="red" style="font-size: 12px; font-weight: 700;">UNBALANCED</span>
+            </div>
+            <div class="sub">Still needed to settle the bill</div>
+        </div>
+        <div class="p-card" style="margin-top: -1px; border-radius: 0; border-color: var(--pending); z-index: 2; box-shadow: 0 0 30px rgba(0,0,0,0.5);">
+            <div class="sub orange">YOUR PART</div>
+            <div class="price orange">€39,00</div>
+            <button class="btn-p mt-20">I'VE PAID</button>
+        </div>
+        <div class="p-card" style="margin-top: -1px; border-radius: 0 0 20px 20px; opacity: 0.7;">
+            <div class="sub">NEXT STEPS</div>
+            <div style="font-size: 13px;">Invite participants 3, 4, 5, 6</div>
+            <button class="btn-s mt-20" style="padding: 8px; font-size: 12px;">COPY INVITE LINK</button>
+        </div>
+    </div>
+
+    <!-- DESIGN 9: THE FOCUS STRIP -->
+    <div class="design-container">
+        <div class="design-label">9. The Focus Strip</div>
+        <div style="text-align: center;">
+            <div class="price orange" style="font-size: 72px;">€39</div>
+            <div style="font-weight: 800; font-size: 18px; margin-top: -10px;">Pino, this is your share</div>
+            <div class="sub mt-20">Help Paul cover the €234 bill</div>
+            
+            <div style="height: 4px; background: #222; margin: 30px 0; position: relative;">
+                <div style="position: absolute; left: 0; width: 16%; height: 100%; background: var(--accent);"></div>
+                <div style="position: absolute; left: 16%; width: 16%; height: 100%; background: var(--pending);"></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-p">REPORT MY PAYMENT</button>
+                <button class="btn-s">WHO ELSE IS PAYING?</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+

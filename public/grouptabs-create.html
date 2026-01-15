@@ -698,6 +698,381 @@
       background: rgba(61, 220, 151, 0.1) !important;
     }
     
+    /* =============================================
+       GROUP GIFT SPECIFIC STYLES
+       ============================================= */
+    
+    .gift-about-section {
+      margin-bottom: 16px;
+    }
+    
+    .gift-form-label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    .gift-about-textarea,
+    .gift-about-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px 16px;
+      background: #1a1f2a;
+      border: 2px solid #2a303c;
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.5;
+      resize: none;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    .gift-about-textarea {
+      min-height: 70px;
+    }
+    
+    .gift-about-textarea:focus,
+    .gift-about-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 214, 143, 0.1);
+    }
+    
+    .gift-about-textarea::placeholder,
+    .gift-about-input::placeholder {
+      color: #6b7280;
+    }
+    
+    .gift-media-section {
+      margin-bottom: 16px;
+    }
+    
+    .gift-media-options {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .gift-media-btn {
+      flex: 1;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    
+    .gift-media-btn:hover {
+      border-color: var(--accent);
+      background: rgba(61, 220, 151, 0.1);
+    }
+    
+    .gift-image-preview {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    
+    .gift-image-preview img {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    
+    .gift-media-remove {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(248, 113, 113, 0.2);
+      border: none;
+      border-radius: 50%;
+      color: #f87171;
+      font-size: 16px;
+      cursor: pointer;
+      margin-left: auto;
+    }
+    
+    .gift-media-remove:hover {
+      background: rgba(248, 113, 113, 0.4);
+    }
+    
+    .gift-link-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .gift-link-input {
+      flex: 1;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    
+    .gift-link-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    
+    .gift-link-clear {
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+    }
+    
+    .gift-link-clear:hover {
+      background: rgba(248, 113, 113, 0.2);
+      color: #f87171;
+    }
+    
+    /* ===== FUNDRAISER TARGET CARD ===== */
+    .fundraiser-target-card {
+      background: var(--card-bg, #1e2329);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 24px;
+    }
+    
+    .fundraiser-target-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .fundraiser-target-icon {
+      font-size: 20px;
+    }
+    
+    .fundraiser-target-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .fundraiser-target-optional {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    
+    .fundraiser-amount-wrapper {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 16px 20px;
+      transition: all 0.2s ease;
+    }
+    
+    .fundraiser-amount-wrapper:focus-within {
+      border-color: var(--accent);
+      background: rgba(61, 220, 151, 0.03);
+    }
+    
+    .fundraiser-currency {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-right: 8px;
+    }
+    
+    .fundraiser-amount-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text);
+      outline: none;
+      min-width: 0;
+    }
+    
+    .fundraiser-amount-input::placeholder {
+      color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .fundraiser-hint {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 12px 0 20px;
+      text-align: center;
+    }
+    
+    .fundraiser-actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .fundraiser-btn-skip {
+      flex: 1;
+      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .fundraiser-btn-skip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: var(--text);
+    }
+    
+    .fundraiser-btn-continue {
+      flex: 1;
+      padding: 14px 20px;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      color: #000;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .fundraiser-btn-continue:hover {
+      background: #4ade80;
+      transform: translateY(-1px);
+    }
+    
+    .gift-toggle-section {
+      margin-bottom: 20px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 10px;
+    }
+    
+    .gift-toggle-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+    
+    .gift-toggle-checkbox {
+      display: none;
+    }
+    
+    .gift-toggle-switch {
+      width: 44px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      position: relative;
+      transition: background 0.2s ease;
+      flex-shrink: 0;
+    }
+    
+    .gift-toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: var(--text);
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s ease;
+    }
+    
+    .gift-toggle-checkbox:checked + .gift-toggle-switch {
+      background: var(--accent);
+    }
+    
+    .gift-toggle-checkbox:checked + .gift-toggle-switch::after {
+      transform: translateX(20px);
+    }
+    
+    .gift-toggle-label {
+      font-size: 14px;
+      color: var(--text);
+    }
+    
+    .gift-card-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    
+    .card-skip-btn {
+      flex: 1;
+      padding: 14px;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .card-skip-btn:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      color: var(--text);
+    }
+    
+    .gift-contributor-preview {
+      text-align: center;
+      font-size: 15px;
+      color: var(--muted);
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 10px;
+      margin: 16px 0;
+    }
+    
+    .gift-contributor-preview b {
+      color: var(--accent);
+    }
+    
+    .gift-open-pot-section {
+      margin: 16px 0 20px 0;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 10px;
+    }
+    
+    .people-label {
+      font-size: 16px;
+      color: var(--muted);
+      margin-left: 10px;
+    }
+    
     /* Go Dutch Coming Soon Card */
     .coming-soon-card {
       background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 165, 0, 0.08) 100%);
@@ -834,7 +1209,31 @@
         receiptFile: null, // Optional receipt image file
         // Price Groups configuration (for price_groups split mode)
         priceGroups: [],   // Array of { id, name, emoji, amountCents }
-        hostGroupId: null  // The price group ID that the host belongs to
+        hostGroupId: null, // The price group ID that the host belongs to
+        
+        // ===== GROUP GIFT SPECIFIC FIELDS =====
+        giftMode: null,           // 'gift_debt' | 'gift_pot_target' | 'gift_pot_open'
+        recipientName: null,      // Q1_gift: Who is this gift for?
+        groupGiftMode: null,      // NEW: 'gift' | 'fundraiser' - Step 2 choice
+        aboutText: null,          // Gift description (for 'gift' mode)
+        aboutImage: null,         // Optional gift image file
+        aboutLink: null,          // Optional link
+        isRaisingMoneyOnly: false,// Legacy flag - now derived from groupGiftMode
+        giftPlan: null,           // 'already_bought' | 'planning_to_buy'
+        amountTarget: 0,          // For pot modes: target amount in cents
+        contributorCount: null,   // Number of contributors
+        organizerContribution: null, // For pre-paid gifts: how much organizer contributes (not collecting back)
+        amountToRaise: null,      // For pre-paid gifts: how much to collect from others
+        raisingForText: null,     // Q3_raise: What are you raising money for?
+        raisingForImage: null,    // Q3_raise: Optional image
+        raisingForLink: null,     // Q3_raise: Optional link
+        isOpenPot: false,         // No target (open pot)
+        
+        // ===== PAYMENT METHODS =====
+        paymentMethods: [],       // Array of { type, label, details }
+        
+        // ===== CREATED TAB (to prevent duplicates) =====
+        createdTab: null          // Stores the created tab to prevent duplicate creation
       }
     };
     
@@ -964,6 +1363,62 @@
       // 3. Restore UI for the current step
       restoreUIForStep();
     }
+    
+    // Undo to a specific history index (for clicking on user messages)
+    // This restores the state to show the question that was asked at that step
+    function undoToIndex(targetIndex) {
+      if (historyStack.length === 0 || targetIndex < 0) return;
+      
+      // Find the state in history that matches this index
+      let targetStateIndex = -1;
+      for (let i = historyStack.length - 1; i >= 0; i--) {
+        if (historyStack[i].index === targetIndex) {
+          targetStateIndex = i;
+          break;
+        }
+      }
+      
+      // If exact match not found, find the closest state at or before target
+      if (targetStateIndex === -1) {
+        for (let i = historyStack.length - 1; i >= 0; i--) {
+          if (historyStack[i].index <= targetIndex) {
+            targetStateIndex = i;
+            targetIndex = historyStack[i].index;
+            break;
+          }
+        }
+      }
+      
+      if (targetStateIndex === -1) return;
+      
+      // Get the target state and remove all states after it
+      const targetState = historyStack[targetStateIndex];
+      historyStack = historyStack.slice(0, targetStateIndex);
+      
+      // 1. Restore Data State
+      Object.assign(state, targetState.state);
+      
+      // 2. Cleanup DOM - Remove elements after target index AND user messages at target index
+      // Keep bot messages at targetIndex (the question), remove user answers and later steps
+      const elements = document.querySelectorAll(`[data-history-index]`);
+      elements.forEach(el => {
+        const elIndex = parseInt(el.dataset.historyIndex);
+        if (elIndex > targetIndex) {
+          // Remove all elements after target index
+          el.remove();
+        } else if (elIndex === targetIndex && el.classList.contains('msg-user')) {
+          // Also remove user messages at target index (the answer we want to re-enter)
+          el.remove();
+        }
+      });
+      
+      // Restore index
+      historyIndex = targetIndex;
+      updateUndoButton();
+      
+      // 3. Restore UI for the current step
+      restoreUIForStep();
+    }
 
     // Re-render interactive elements for the restored step
     function restoreUIForStep() {
@@ -1000,6 +1455,58 @@
         case 'PRICE_GROUPS':
           // Restore Price Groups Configuration Card
           addPriceGroupsCard();
+          break;
+          
+        // Group Gift flow steps
+        case 'GIFT_RECIPIENT':
+          inputField.focus();
+          break;
+        
+        case 'GIFT_TYPE_CHOICE':
+          addGiftTypeChoiceBlocks();
+          break;
+          
+        case 'GIFT_ABOUT':
+          // Pass the correct mode based on groupGiftMode
+          const aboutMode = state.data.groupGiftMode === 'fundraiser' ? 'fundraiser' : 'gift';
+          addGiftAboutCard(aboutMode);
+          break;
+          
+        case 'GIFT_PLAN':
+          addGiftPlanBlocks();
+          break;
+          
+        case 'GIFT_AMOUNT':
+          addGiftAmountCard(state.data.giftPlan === 'already_bought' ? 'price' : 'target');
+          break;
+          
+        case 'GIFT_CONTRIBUTORS':
+          addGiftContributorsCard();
+          break;
+          
+        case 'GIFT_RAISING_FOR':
+          addGiftRaisingForCard();
+          break;
+          
+        case 'GIFT_RAISE_TARGET':
+          addGiftRaiseTargetCard();
+          break;
+        
+        // Fundraiser minimal flow steps
+        case 'FUNDRAISER_NAME':
+          addFundraiserNameCard();
+          break;
+          
+        case 'FUNDRAISER_TARGET':
+          addFundraiserTargetCard();
+          break;
+          
+        case 'FUNDRAISER_CONTRIBUTORS':
+          addFundraiserContributorsCard();
+          break;
+          
+        case 'PAYMENT_DETAILS':
+          addPaymentDetailsCard();
           break;
       }
     }
@@ -1124,6 +1631,68 @@
         case 'SPLIT':
           handleSplit(input);
           break;
+          
+        // =========================================
+        // GROUP GIFT FLOW STEPS
+        // =========================================
+        
+        case 'GIFT_RECIPIENT':
+          handleGiftRecipient(input);
+          break;
+        
+        case 'GIFT_TYPE_CHOICE':
+          handleGiftTypeChoice(input);
+          break;
+        
+        // Gift type selection from blocks
+        case 'gift_type_gift':
+          selectGiftTypeOption('gift');
+          break;
+          
+        case 'gift_type_fundraiser':
+          selectGiftTypeOption('fundraiser');
+          break;
+          
+        case 'GIFT_ABOUT':
+          // Handled by card confirm
+          break;
+          
+        case 'GIFT_PLAN':
+          handleGiftPlan(input);
+          break;
+          
+        case 'GIFT_AMOUNT':
+          // Handled by card confirm
+          break;
+          
+        case 'GIFT_CONTRIBUTORS':
+          // Handled by card confirm
+          break;
+          
+        case 'GIFT_RAISING_FOR':
+          // Handled by card confirm
+          break;
+          
+        case 'GIFT_RAISE_TARGET':
+          // Handled by card confirm
+          break;
+        
+        // Fundraiser minimal flow steps
+        case 'FUNDRAISER_NAME':
+          // Handled by card confirm
+          break;
+          
+        case 'FUNDRAISER_TARGET':
+          // Handled by card confirm
+          break;
+          
+        case 'FUNDRAISER_CONTRIBUTORS':
+          // Handled by card confirm
+          break;
+          
+        case 'PAYMENT_METHODS':
+          // Handled by card confirm
+          break;
       }
     }
 
@@ -1151,23 +1720,30 @@
         state.step = 'NAME';
         
       } else if (id === 'trip' || id === 'trip / holiday' || id.includes('holiday') || id.includes('travel')) {
-        state.data.template = 'trip';
-        state.data.type = 'multi_bill';
-        
-        addBotMessage("What should we call this trip?");
-        setSuggestions([
-          { icon: '🚗', text: 'Road Trip', hint: '' },
-          { icon: '🏔️', text: 'Weekend Away', hint: '' },
-          { icon: '✈️', text: 'Holiday', hint: '' }
-        ]);
+        // Trip feature coming soon
+        addBotMessage("✈️ Trip splitting is coming soon! We're working hard to bring you the best experience for tracking shared travel expenses. Check back later!");
+        state.step = 'INTENT';
+        // Show the intent options again after a delay
+        setTimeout(() => {
+          addBotMessage("In the meantime, what would you like to do?");
+          addIntentBlocks();
+        }, 1000);
+        return;
         state.step = 'NAME';
         
       } else if (id === 'gift' || id === 'group gift' || id.includes('present')) {
         state.data.template = 'gift';
         state.data.type = 'one_bill';
         
-        addBotMessage("Who is the gift for?");
-        state.step = 'NAME';
+        // === NEW GROUP GIFT FLOW ===
+        addBotMessage("Who is this gift for?");
+        // Show Skip as a subtle secondary option - user types name directly in input
+        setSuggestions([
+          { icon: '→', text: 'Skip', isSkip: true }
+        ]);
+        // Set placeholder for the input field
+        inputField.placeholder = "Enter name...";
+        state.step = 'GIFT_RECIPIENT';
         
       } else {
         addBotMessage("Please select one of the options above.");
@@ -1201,9 +1777,9 @@
           state.step = 'AMOUNT';
         }, 500);
           } else {
-        // For trips, skip directly to creation (no upfront amount)
+        // For trips, go to payment details
             setTimeout(() => {
-          createTab();
+          goToPaymentDetails();
         }, 500);
       }
     }
@@ -1281,15 +1857,308 @@
             state.step = 'GO_DUTCH_SOON';
           }, 400);
         } else {
-          // Create the tab directly for equal
+          // Go to payment details for equal split
           setTimeout(() => {
-            createTab();
+            goToPaymentDetails();
           }, 400);
         }
         
           } else {
         addBotMessage("Please select one of the split options.");
       }
+    }
+    
+    // =========================================
+    // GROUP GIFT FLOW HANDLERS
+    // =========================================
+    
+    function handleGiftRecipient(input) {
+      pushHistory();
+      
+      const trimmed = input.trim();
+      
+      // Handle skip
+      if (trimmed.toLowerCase() === 'skip' || trimmed.toLowerCase().includes('skip')) {
+        state.data.recipientName = null;
+        addBotMessage("No problem! Let's continue.");
+      } else {
+        state.data.recipientName = trimmed;
+        state.data.name = `Gift for ${trimmed}`;
+        addBotMessage(`Lucky ${trimmed}! 🎁`);
+      }
+      
+      clearQuickReplies();
+      
+      // NEW Step 2: Ask what type of group gift
+      setTimeout(() => {
+        addBotMessage("So what is the plan?");
+        addGiftTypeChoiceBlocks();
+        state.step = 'GIFT_TYPE_CHOICE';
+      }, 500);
+    }
+    
+    function handleGiftTypeChoice(input) {
+      // First check for exact block IDs (from selection blocks)
+      if (input === 'gift_type_gift') {
+        selectGiftTypeOption('gift');
+      } else if (input === 'gift_type_fundraiser') {
+        selectGiftTypeOption('fundraiser');
+      }
+      // Fallback: check for text input (typed by user)
+      else if (input.toLowerCase().includes('buying') || (input.toLowerCase().includes('gift') && !input.toLowerCase().includes('fundraiser'))) {
+        selectGiftTypeOption('gift');
+      } else if (input.toLowerCase().includes('raising') || input.toLowerCase().includes('money') || input.toLowerCase().includes('fund')) {
+        selectGiftTypeOption('fundraiser');
+      }
+    }
+    
+    function selectGiftTypeOption(type) {
+      pushHistory();
+      state.data.groupGiftMode = type;
+      
+      // Also set legacy flag for compatibility
+      state.data.isRaisingMoneyOnly = (type === 'fundraiser');
+      
+      // Remove selection blocks if they exist
+      // Note: When coming from handleBlockClick, blocks are already removed.
+      // When coming from text input via handleGiftTypeChoice, blocks still exist.
+      // The user message is already added by handleUserInput (for text) or handleBlockClick (for clicks),
+      // so we don't add it here.
+      const blocks = document.getElementById('active-selection-blocks');
+      if (blocks) {
+        blocks.remove();
+      }
+      
+      if (type === 'gift') {
+        // Gift flow - ask for gift description
+        addBotMessage("Add some details about the gift.");
+        addGiftAboutCard('gift');
+        state.step = 'GIFT_ABOUT';
+      } else {
+        // Fundraiser mode - use same detailed form but with fundraiser text
+        addBotMessage("What are you raising money for?");
+        addGiftAboutCard('fundraiser');
+        state.step = 'GIFT_ABOUT';
+      }
+    }
+    
+    function handleGiftAboutConfirm(aboutText, aboutImage, aboutLink, isRaisingMoneyOnly) {
+      pushHistory();
+      
+      state.data.aboutText = aboutText || null;
+      state.data.aboutImage = aboutImage || null;
+      state.data.aboutLink = aboutLink || null;
+      // isRaisingMoneyOnly is now determined by groupGiftMode, but keep for backward compat
+      state.data.isRaisingMoneyOnly = isRaisingMoneyOnly;
+      
+      // Build display message with optional image thumbnail
+      let displayMsg = '';
+      if (aboutText) {
+        displayMsg = aboutText.substring(0, 50) + (aboutText.length > 50 ? '...' : '');
+      } else {
+        displayMsg = '(Skipped)';
+      }
+      
+      // Create custom user message with image if present
+      if (aboutImage) {
+        const div = document.createElement('div');
+        div.className = 'msg msg-user msg-with-image msg-clickable';
+        div.dataset.historyIndex = historyIndex;
+        div.title = 'Click to edit';
+        div.onclick = function() {
+          const idx = parseInt(this.dataset.historyIndex);
+          // Go back to the step where this answer was given (user message and bot question share same historyIndex)
+          undoToIndex(idx);
+        };
+        
+        // Create image preview from file
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          div.innerHTML = `
+            <img src="${e.target.result}" alt="${isRaisingMoneyOnly ? 'Fund' : 'Gift'}" class="msg-user-image">
+            <span>${displayMsg}</span>
+          `;
+        };
+        reader.readAsDataURL(aboutImage);
+        
+        // Add placeholder text while image loads
+        div.innerHTML = `<span>${displayMsg}</span>`;
+        chatHistory.appendChild(div);
+        scrollToBottom();
+      } else {
+        addUserMessage(displayMsg);
+      }
+      
+      removeActiveCard();
+      showInputContainer();
+      
+      // Check if this is fundraiser mode - skip the "already bought" question
+      const isFundraiser = state.data.groupGiftMode === 'fundraiser' || isRaisingMoneyOnly;
+      
+      if (isFundraiser) {
+        // Fundraiser mode: Skip "already bought" question, go straight to target amount
+        // Store the aboutText as the name if not already set
+        if (!state.data.name && aboutText) {
+          state.data.name = aboutText;
+        }
+        setTimeout(() => {
+          addBotMessage("Do you have a target amount in mind?");
+          addFundraiserTargetCard();
+          state.step = 'FUNDRAISER_TARGET';
+        }, 400);
+      } else {
+        // Gift mode: Ask if already bought
+        setTimeout(() => {
+          addBotMessage("Has the gift already been bought?");
+          addGiftPlanBlocks();
+          state.step = 'GIFT_PLAN';
+        }, 400);
+      }
+    }
+    
+    function handleGiftPlan(input) {
+      const id = input.toLowerCase();
+      
+      let plan = null;
+      if (id === 'already_bought' || id.includes('already bought')) {
+        plan = 'already_bought';
+      } else if (id === 'planning_to_buy' || id.includes('planning to buy') || id.includes('planning')) {
+        plan = 'planning_to_buy';
+      }
+      
+      if (plan) {
+        pushHistory();
+        state.data.giftPlan = plan;
+        
+        setTimeout(() => {
+          if (plan === 'already_bought') {
+            // Scenario 1: Already bought - ask for price
+            state.data.giftMode = 'gift_debt';
+            addBotMessage("What was the price?");
+            addGiftAmountCard('price');
+            state.step = 'GIFT_AMOUNT';
+          } else {
+            // Scenario 2: Planning to buy - ask for target
+            state.data.giftMode = 'gift_pot_target';
+            addBotMessage("How much are we aiming to collect?");
+            addGiftAmountCard('target');
+            state.step = 'GIFT_AMOUNT';
+          }
+        }, 400);
+      } else {
+        addBotMessage("Please select one of the options.");
+      }
+    }
+    
+    function handleGiftAmountConfirm(amountCents, receiptFile, amountType) {
+      pushHistory();
+      
+      if (amountType === 'price') {
+        state.data.totalCents = amountCents;
+        state.data.receiptFile = receiptFile;
+      } else {
+        state.data.amountTarget = amountCents;
+      }
+      
+      addUserMessage(formatCurrency2(amountCents));
+      removeActiveCard();
+      showInputContainer();
+      
+      setTimeout(() => {
+        addBotMessage("How many people are contributing?");
+        addGiftContributorsCard();
+        state.step = 'GIFT_CONTRIBUTORS';
+      }, 400);
+    }
+    
+    function handleGiftContributorsConfirm(count) {
+      pushHistory();
+      
+      state.data.contributorCount = count;
+      state.data.people = count;
+      
+      addUserMessage(`${count} people`);
+      removeActiveCard();
+      showInputContainer();
+      
+      // Calculate and show summary
+      let summary = '';
+      if (state.data.giftMode === 'gift_debt') {
+        const shareAmount = Math.floor(state.data.totalCents / count);
+        summary = `Ok, that means each person should pay up ${formatCurrency2(shareAmount)}`;
+        state.data.splitMode = 'equal'; // Use equal split for debt mode
+      } else {
+        const suggestedAmount = Math.floor(state.data.amountTarget / count);
+        summary = `Suggested contribution: ${formatCurrency2(suggestedAmount)} per person`;
+      }
+      
+      setTimeout(() => {
+        addBotMessage(summary);
+        // Finalize name if not set
+        if (!state.data.name) {
+          state.data.name = state.data.aboutText 
+            ? `Group Gift: ${state.data.aboutText.substring(0, 30)}` 
+            : 'Group Gift';
+        }
+        
+        setTimeout(() => {
+          goToPaymentDetails();
+        }, 500);
+      }, 400);
+    }
+    
+    function handleGiftRaisingForConfirm(raisingForText, raisingForImage, raisingForLink) {
+      pushHistory();
+      
+      state.data.raisingForText = raisingForText || null;
+      state.data.raisingForImage = raisingForImage || null;
+      state.data.raisingForLink = raisingForLink || null;
+      
+      // Build display
+      let displayMsg = raisingForText 
+        ? raisingForText.substring(0, 50) + (raisingForText.length > 50 ? '...' : '')
+        : '(Skipped)';
+      
+      addUserMessage(displayMsg);
+      removeActiveCard();
+      showInputContainer();
+      
+      setTimeout(() => {
+        addBotMessage("How much do you want to raise?");
+        addGiftRaiseTargetCard();
+        state.step = 'GIFT_RAISE_TARGET';
+      }, 400);
+    }
+    
+    function handleGiftRaiseTargetConfirm(amountCents, isOpenPot) {
+      pushHistory();
+      
+      state.data.isOpenPot = isOpenPot;
+      
+      if (isOpenPot) {
+        state.data.giftMode = 'gift_pot_open';
+        state.data.amountTarget = null;
+        addUserMessage('Open pot (no target)');
+      } else {
+        state.data.giftMode = 'gift_pot_target';
+        state.data.amountTarget = amountCents;
+        addUserMessage(formatCurrency2(amountCents));
+      }
+      
+      removeActiveCard();
+      showInputContainer();
+      
+      // Finalize name if not set
+      if (!state.data.name) {
+        state.data.name = state.data.raisingForText 
+          ? `Fundraiser: ${state.data.raisingForText.substring(0, 30)}` 
+          : (state.data.recipientName ? `Gift for ${state.data.recipientName}` : 'Group Fundraiser');
+      }
+      
+      setTimeout(() => {
+        // Go to payment details (required for raising money)
+        goToPaymentDetails();
+      }, 400);
     }
 
     // ===========================================
@@ -1365,7 +2234,8 @@
       
       items.forEach(item => {
         const chip = document.createElement('div');
-        chip.className = 'reply-chip';
+        // Add special styling for skip buttons
+        chip.className = item.isSkip ? 'reply-chip skip-chip' : 'reply-chip';
         // Show "..." suffix for prefix suggestions
         const displayText = item.isPrefix ? `${item.icon} ${item.text}...` : `${item.icon} ${item.text}`;
         chip.innerHTML = displayText;
@@ -1438,7 +2308,7 @@
             <input type="file" 
                    id="${cardId}-receipt-input" 
                    style="display: none" 
-                   accept="image/*"
+                   accept="image/*,.pdf,application/pdf"
                    onchange="handleReceiptSelect('${cardId}', this)">
 
             <!-- Direct Upload Button (Visible initially) -->
@@ -1577,6 +2447,14 @@
       const file = input.files[0];
       if (!file) return;
       
+      // Check file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('File is over 10MB. Please choose a smaller file.');
+        input.value = '';
+        return;
+      }
+      
       state.data.receiptFile = file;
       
       // Hide upload button, show preview
@@ -1586,11 +2464,19 @@
       
       document.getElementById(`${cardId}-receipt-filename`).textContent = file.name;
       
+      const thumb = document.getElementById(`${cardId}-receipt-thumb`);
+      
+      // Handle PDF files differently - show PDF icon instead of preview
+      if (file.type === 'application/pdf') {
+        thumb.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300D68F"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8.5 13H10v4H8.5v-4zm3.5 0h1.5v4H12v-4zm3.5 0H17v4h-1.5v-4z"/></svg>');
+        thumb.alt = 'PDF';
+      } else {
       const reader = new FileReader();
       reader.onload = function(e) {
-        document.getElementById(`${cardId}-receipt-thumb`).src = e.target.result;
+          thumb.src = e.target.result;
       };
       reader.readAsDataURL(file);
+      }
     };
 
     window.removeReceipt = function(cardId) {
@@ -2325,10 +3211,1475 @@
       removeActiveCard();
       showInputContainer();
       
-      // Create the tab
+      // Go to payment details
+      setTimeout(() => {
+        goToPaymentDetails();
+      }, 400);
+    };
+
+    // =========================================
+    // GROUP GIFT UI CARDS
+    // =========================================
+    
+    function addGiftAboutCard(mode = 'gift') {
+      // Ensure selection blocks are removed (for text input flow)
+      const blocks = document.getElementById('active-selection-blocks');
+      if (blocks) blocks.remove();
+      
+      hideInputContainer();
+      
+      const cardId = 'gift-about-card-' + Date.now();
+      
+      // Different text based on mode (gift vs fundraiser)
+      const isFundraiser = mode === 'fundraiser';
+      const labelText = isFundraiser ? 'What are you raising money for?' : 'Gift name / description';
+      const placeholderText = isFundraiser 
+        ? 'e.g., Birthday collection, Medical fund, Team outing...'
+        : 'e.g., Marshall speaker, AirPods Pro, etc.';
+      
+      const cardHtml = `
+        <div id="${cardId}" class="chat-card" data-mode="${mode}">
+          <div class="form-card">
+            <div class="gift-about-section">
+              <label class="gift-form-label">${labelText}</label>
+              <input type="text" id="${cardId}-text" 
+                     class="gift-about-input" 
+                     placeholder="${placeholderText}"
+                     maxlength="200">
+            </div>
+            
+            <div class="gift-media-section">
+              <div class="gift-media-options">
+                <!-- Hidden File Input -->
+                <input type="file" 
+                       id="${cardId}-image-input" 
+                       style="display: none" 
+                       accept="image/*"
+                       onchange="handleGiftImageSelect('${cardId}', this)">
+                
+                <button id="${cardId}-image-btn" class="gift-media-btn" onclick="document.getElementById('${cardId}-image-input').click()">
+                  📷 Add Image
+                </button>
+                
+                <button id="${cardId}-link-btn" class="gift-media-btn" onclick="toggleGiftLinkInput('${cardId}')">
+                  🔗 Add Link
+                </button>
+              </div>
+              
+              <!-- Image Preview (hidden initially) -->
+              <div id="${cardId}-image-preview" class="gift-image-preview" style="display: none;">
+                <img id="${cardId}-image-thumb" src="" alt="${isFundraiser ? 'Fund' : 'Gift'} image">
+                <button class="gift-media-remove" onclick="removeGiftImage('${cardId}')">×</button>
+              </div>
+              
+              <!-- Link Input (hidden initially) -->
+              <div id="${cardId}-link-row" class="gift-link-row" style="display: none;">
+                <input type="url" 
+                       id="${cardId}-link-input" 
+                       class="gift-link-input" 
+                       placeholder="https://..."
+                       autocomplete="off">
+                <button class="gift-link-clear" onclick="clearGiftLink('${cardId}')">×</button>
+              </div>
+            </div>
+            
+            <!-- Hidden raising-only checkbox for compatibility (always false in gift mode) -->
+            <input type="checkbox" id="${cardId}-raising-only" style="display:none;" ${isFundraiser ? 'checked' : ''}>
+            
+            <div class="gift-card-actions">
+              <button class="card-skip-btn" onclick="submitGiftAbout('${cardId}', true)">
+                Skip
+              </button>
+              <button class="card-confirm-btn" onclick="submitGiftAbout('${cardId}', false)">
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const cardElement = wrapper.firstElementChild;
+      cardElement.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(cardElement);
+      scrollToBottom();
+      
+      setTimeout(() => {
+        document.getElementById(`${cardId}-text`).focus();
+      }, 100);
+    }
+    
+    window.handleGiftImageSelect = function(cardId, input) {
+      const file = input.files[0];
+      if (!file) return;
+      
+      // Check file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('File is over 10MB. Please choose a smaller file.');
+        input.value = '';
+        return;
+      }
+      
+      // Store temporarily
+      window.giftImageFile = file;
+      
+      // Hide button, show preview
+      document.getElementById(`${cardId}-image-btn`).style.display = 'none';
+      const preview = document.getElementById(`${cardId}-image-preview`);
+      preview.style.display = 'flex';
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById(`${cardId}-image-thumb`).src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    
+    window.removeGiftImage = function(cardId) {
+      window.giftImageFile = null;
+      document.getElementById(`${cardId}-image-input`).value = '';
+      document.getElementById(`${cardId}-image-preview`).style.display = 'none';
+      document.getElementById(`${cardId}-image-btn`).style.display = 'flex';
+    };
+    
+    window.toggleGiftLinkInput = function(cardId) {
+      const row = document.getElementById(`${cardId}-link-row`);
+      const btn = document.getElementById(`${cardId}-link-btn`);
+      
+      if (row.style.display === 'none') {
+        row.style.display = 'flex';
+        btn.style.display = 'none';
+        document.getElementById(`${cardId}-link-input`).focus();
+      }
+    };
+    
+    window.clearGiftLink = function(cardId) {
+      document.getElementById(`${cardId}-link-input`).value = '';
+      document.getElementById(`${cardId}-link-row`).style.display = 'none';
+      document.getElementById(`${cardId}-link-btn`).style.display = 'flex';
+    };
+    
+    window.toggleRaisingMoneyOnly = function(cardId) {
+      const checkbox = document.getElementById(`${cardId}-raising-only`);
+      // Toggle is handled by the checkbox itself
+    };
+    
+    window.submitGiftAbout = function(cardId, isSkip) {
+      const textEl = document.getElementById(`${cardId}-text`);
+      const linkEl = document.getElementById(`${cardId}-link-input`);
+      const raisingOnlyEl = document.getElementById(`${cardId}-raising-only`);
+      
+      const aboutText = isSkip ? '' : (textEl.value.trim() || '');
+      const aboutLink = isSkip ? '' : (linkEl.value.trim() || '');
+      const aboutImage = isSkip ? null : (window.giftImageFile || null);
+      const isRaisingMoneyOnly = raisingOnlyEl.checked;
+      
+      // Clear temp storage
+      window.giftImageFile = null;
+      
+      handleGiftAboutConfirm(aboutText, aboutImage, aboutLink, isRaisingMoneyOnly);
+    };
+    
+    // NEW Step 2: Gift Type Choice (Buying a gift vs Raising money)
+    function addGiftTypeChoiceBlocks() {
+      addSelectionBlocks([
+        {
+          id: 'gift_type_gift',
+          icon: '🎁',
+          title: 'Buying a gift',
+          desc: 'Collecting money to buy something specific'
+        },
+        {
+          id: 'gift_type_fundraiser',
+          icon: '💰',
+          title: 'Raising money',
+          desc: 'General collection, no specific item'
+        }
+      ]);
+    }
+    
+    // Fundraiser minimal flow cards
+    function addFundraiserNameCard() {
+      // Ensure selection blocks are removed (for text input flow)
+      const blocks = document.getElementById('active-selection-blocks');
+      if (blocks) blocks.remove();
+      
+      hideInputContainer();
+      
+      const cardId = 'fundraiser-name-' + Date.now();
+      const recipientName = state.data.recipientName;
+      const placeholder = recipientName 
+        ? `e.g., ${recipientName}'s birthday fund`
+        : 'e.g., Birthday collection, Farewell fund';
+      
+      const cardHtml = `
+        <div class="chat-card form-card" id="${cardId}">
+          <div class="form-card-title">Collection Name</div>
+          <input type="text" 
+                 id="${cardId}-input" 
+                 class="gift-input" 
+                 placeholder="${placeholder}"
+                 maxlength="100">
+          <button class="form-btn" onclick="confirmFundraiserName('${cardId}')">Continue</button>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const card = wrapper.firstElementChild;
+      card.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(card);
+      scrollToBottom();
+      
+      document.getElementById(`${cardId}-input`).focus();
+    }
+    
+    window.confirmFundraiserName = function(cardId) {
+      const input = document.getElementById(`${cardId}-input`);
+      const name = input.value.trim();
+      
+      if (!name) {
+        input.style.borderColor = 'var(--pending)';
+        return;
+      }
+      
+      pushHistory();
+      state.data.name = name;
+      state.data.aboutText = name; // Use same field for consistency
+      
+      addUserMessage(name);
+      removeActiveCard();
+      showInputContainer();
+      
+      setTimeout(() => {
+        addBotMessage("Do you have a target amount in mind?");
+        addFundraiserTargetCard();
+        state.step = 'FUNDRAISER_TARGET';
+      }, 400);
+    };
+    
+    function addFundraiserTargetCard() {
+      hideInputContainer();
+      
+      const cardId = 'fundraiser-target-' + Date.now();
+      
+      const cardHtml = `
+        <div class="chat-card" id="${cardId}">
+          <div class="form-card fundraiser-target-card">
+            <div class="fundraiser-target-header">
+              <span class="fundraiser-target-icon">🎯</span>
+              <span class="fundraiser-target-title">Target Amount</span>
+              <span class="fundraiser-target-optional">(optional)</span>
+            </div>
+            
+            <div class="fundraiser-amount-wrapper">
+              <span class="fundraiser-currency">€</span>
+              <input type="text" 
+                     id="${cardId}-amount" 
+                     class="fundraiser-amount-input" 
+                     placeholder="0.00"
+                     inputmode="decimal"
+                     autocomplete="off">
+            </div>
+            
+            <p class="fundraiser-hint">Leave empty for an open-ended collection</p>
+            
+            <div class="fundraiser-actions">
+              <button class="fundraiser-btn-skip" onclick="confirmFundraiserTarget('${cardId}', true)">
+                No target
+              </button>
+              <button class="fundraiser-btn-continue" onclick="confirmFundraiserTarget('${cardId}', false)">
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const card = wrapper.firstElementChild;
+      card.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(card);
+      scrollToBottom();
+      
+      document.getElementById(`${cardId}-amount`).focus();
+    }
+    
+    window.confirmFundraiserTarget = function(cardId, noTarget) {
+      pushHistory();
+      
+      const amountInput = document.getElementById(`${cardId}-amount`);
+      const amountValue = parseFloat(amountInput.value) || 0;
+      const amountCents = Math.round(amountValue * 100);
+      
+      if (noTarget || amountCents === 0) {
+        state.data.amountTarget = 0;
+        state.data.isOpenPot = true;
+        state.data.giftMode = 'gift_pot_open';
+        addUserMessage("No target (open collection)");
+      } else {
+        state.data.amountTarget = amountCents;
+        state.data.isOpenPot = false;
+        state.data.giftMode = 'gift_pot_target';
+        addUserMessage(formatCurrency2(amountCents));
+      }
+      
+      removeActiveCard();
+      showInputContainer();
+      
+      // If no target, skip contributors question
+      if (noTarget || amountCents === 0) {
+        setTimeout(() => {
+          goToPaymentDetails();
+        }, 400);
+      } else {
+        setTimeout(() => {
+          addBotMessage("How many people will contribute?");
+          addFundraiserContributorsCard();
+          state.step = 'FUNDRAISER_CONTRIBUTORS';
+        }, 400);
+      }
+    };
+    
+    function addFundraiserContributorsCard() {
+      hideInputContainer();
+      
+      const cardId = 'fundraiser-contributors-' + Date.now();
+      const initialCount = 4;
+      
+      // Calculate preview based on target amount
+      let preview = '';
+      if (state.data.amountTarget && state.data.amountTarget > 0) {
+        const suggestedAmount = Math.floor(state.data.amountTarget / initialCount);
+        preview = `Suggested contribution: <b>${formatCurrency2(suggestedAmount)}</b> per person`;
+      }
+      
+      const cardHtml = `
+        <div id="${cardId}" class="chat-card">
+          <div class="form-card">
+            <div class="people-selector-inline">
+              <div class="people-selector-controls">
+                <button class="counter-btn" onclick="adjustFundraiserContributors('${cardId}', -1)">−</button>
+                <input type="number"
+                       id="${cardId}-value"
+                       class="people-count-value"
+                       value="${initialCount}"
+                       min="1"
+                       max="99"
+                       inputmode="numeric"
+                       onchange="updateFundraiserContributorPreview('${cardId}')">
+                <button class="counter-btn" onclick="adjustFundraiserContributors('${cardId}', 1)">+</button>
+              </div>
+              <span class="people-label">people</span>
+            </div>
+            
+            ${preview ? `<div id="${cardId}-preview" class="gift-contributor-preview">${preview}</div>` : ''}
+            
+            <p style="font-size: 13px; color: var(--muted); margin: 8px 0 0; text-align: center;">Including yourself</p>
+            
+            <div style="display: flex; gap: 10px; margin-top: 16px;">
+              <button class="form-btn-secondary" onclick="confirmFundraiserContributors('${cardId}', true)" style="flex:1;">Skip</button>
+              <button class="card-confirm-btn" onclick="confirmFundraiserContributors('${cardId}', false)" style="flex:1;">Create GroupTab</button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const card = wrapper.firstElementChild;
+      card.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(card);
+      scrollToBottom();
+    }
+    
+    window.adjustFundraiserContributors = function(cardId, delta) {
+      const input = document.getElementById(`${cardId}-value`);
+      let val = parseInt(input.value) || 1;
+      val = Math.max(1, Math.min(99, val + delta));
+      input.value = val;
+      updateFundraiserContributorPreview(cardId);
+    };
+    
+    window.updateFundraiserContributorPreview = function(cardId) {
+      const input = document.getElementById(`${cardId}-value`);
+      const count = parseInt(input.value) || 1;
+      const previewEl = document.getElementById(`${cardId}-preview`);
+      
+      if (previewEl && state.data.amountTarget && state.data.amountTarget > 0) {
+        const suggestedAmount = Math.floor(state.data.amountTarget / count);
+        previewEl.innerHTML = `Suggested contribution: <b>${formatCurrency2(suggestedAmount)}</b> per person`;
+      }
+    };
+    
+    window.confirmFundraiserContributors = function(cardId, isSkip = false) {
+      const countInput = document.getElementById(`${cardId}-value`);
+      const count = parseInt(countInput.value) || 0;
+
+      if (!isSkip && count < 1) {
+        countInput.style.borderColor = 'var(--pending)';
+        return;
+      }
+
+      pushHistory();
+
+      if (isSkip) {
+        state.data.contributorCount = null;
+        state.data.people = 1;
+        addUserMessage("Skip contributor count");
+        removeActiveCard();
+        showInputContainer();
+        setTimeout(() => {
+          goToPaymentDetails();
+        }, 400);
+      } else {
+        state.data.contributorCount = count;
+        state.data.people = count;
+        addUserMessage(`${count} people`);
+        removeActiveCard();
+        showInputContainer();
+
+        // Show summary message like in gift flow
+        if (state.data.amountTarget && state.data.amountTarget > 0) {
+          const shareAmount = Math.floor(state.data.amountTarget / count);
+          setTimeout(() => {
+            addBotMessage(`Ok, that means each person should pay up ${formatCurrency2(shareAmount)}`);
+            setTimeout(() => {
+              goToPaymentDetails();
+            }, 500);
+          }, 400);
+        } else {
+          setTimeout(() => {
+            goToPaymentDetails();
+          }, 400);
+        }
+      }
+    };
+    
+    // =========================================
+    // PAYMENT DETAILS STEP (Multi-method)
+    // =========================================
+    
+    const PAYMENT_METHOD_TYPES = {
+      bank: {
+        label: 'Bank Transfer',
+        icon: '🏦',
+        fields: [
+          { key: 'accountHolder', label: 'Account holder', placeholder: 'Your name', required: true },
+          { key: 'iban', label: 'IBAN', placeholder: 'NL00 BANK 0000 0000 00', required: true },
+          { key: 'bic', label: 'BIC (optional)', placeholder: 'BANKCODE', required: false },
+          { key: 'reference', label: 'Reference', placeholder: 'Payment for...', required: false, prefill: true }
+        ]
+      },
+      paypal: {
+        label: 'PayPal',
+        icon: '💳',
+        fields: [
+          { key: 'paypalId', label: 'PayPal username or link', placeholder: 'paypal.me/yourname or email', required: true }
+        ]
+      },
+      revolut: {
+        label: 'Revolut',
+        icon: '📱',
+        fields: [
+          { key: 'revolutId', label: 'Revolut username, phone, or link', placeholder: '@username or +31...', required: true }
+        ]
+      },
+      cash: {
+        label: 'Cash',
+        icon: '💵',
+        fields: [] // No form needed - added directly
+      },
+      other: {
+        label: 'Other',
+        icon: '📝',
+        fields: [
+          { key: 'instructions', label: 'Instructions', placeholder: 'How to pay...', required: true },
+          { key: 'link', label: 'Link (optional)', placeholder: 'https://...', required: false }
+        ]
+      }
+    };
+    
+    function isPaymentDetailsRequired() {
+      // Fundraiser/Raising money = always required
+      if (state.data.groupGiftMode === 'fundraiser' || state.data.isRaisingMoneyOnly) {
+        return true;
+      }
+      // Restaurant bill = required (they already paid, now collecting)
+      if (state.data.template === 'restaurant') {
+        return true;
+      }
+      // Gift debt mode (already bought) = required
+      if (state.data.giftMode === 'gift_debt') {
+        return true;
+      }
+      // Trip, gift pot modes = optional
+      return false;
+    }
+    
+    function goToPaymentDetails() {
+      pushHistory();
+      
+      const isRequired = isPaymentDetailsRequired();
+      
+      addBotMessage(isRequired 
+        ? "How should people pay you?" 
+        : "How should people pay you? (optional)");
+      
+      setTimeout(() => {
+        addPaymentDetailsCard();
+        state.step = 'PAYMENT_DETAILS';
+      }, 400);
+    }
+    
+    function addPaymentDetailsCard() {
+      hideInputContainer();
+      
+      const cardId = 'payment-details-' + Date.now();
+      const isRequired = isPaymentDetailsRequired();
+      const methods = state.data.paymentMethods || [];
+      
+      const cardHtml = `
+        <div class="chat-card payment-details-card" id="${cardId}">
+          <div class="payment-methods-list" id="${cardId}-list">
+            ${methods.length === 0 ? `
+              <div class="payment-methods-empty">
+                <span style="font-size: 32px; display: block; margin-bottom: 8px;">💳</span>
+                <span style="color: var(--muted);">No payment methods added yet</span>
+              </div>
+            ` : methods.map((m, idx) => renderPaymentMethodItem(m, idx, cardId)).join('')}
+          </div>
+          
+          <button class="payment-add-btn" onclick="showAddPaymentMethodModal('${cardId}')">
+            <span style="font-size: 18px;">+</span> Add payment method
+          </button>
+          
+          <div style="display: flex; gap: 10px; margin-top: 16px;">
+            ${!isRequired ? `
+              <button class="form-btn-secondary" onclick="skipPaymentDetails('${cardId}')" style="flex:1;">Skip</button>
+            ` : ''}
+            <button class="form-btn" id="${cardId}-create-btn" onclick="confirmPaymentDetails('${cardId}')" style="flex:1;" ${isRequired && methods.length === 0 ? 'disabled' : ''}>
+              Create GroupTab
+            </button>
+          </div>
+        </div>
+        
+        <!-- Add Payment Method Modal -->
+        <div class="payment-method-modal" id="${cardId}-modal" style="display: none;">
+          <div class="payment-method-modal-content">
+            <div class="payment-modal-header">
+              <span id="${cardId}-modal-title">Add Payment Method</span>
+              <button class="payment-modal-close" onclick="closePaymentMethodModal('${cardId}')">&times;</button>
+            </div>
+            
+            <div id="${cardId}-modal-body">
+              <!-- Step 1: Type selection -->
+              <div id="${cardId}-type-select" class="payment-type-select">
+                ${Object.entries(PAYMENT_METHOD_TYPES).map(([key, val]) => `
+                  <button class="payment-type-btn" onclick="selectPaymentType('${cardId}', '${key}')">
+                    <span class="payment-type-icon">${val.icon}</span>
+                    <span class="payment-type-label">${val.label}</span>
+                  </button>
+                `).join('')}
+              </div>
+              
+              <!-- Step 2: Fields (hidden initially) -->
+              <div id="${cardId}-fields" style="display: none;">
+                <div id="${cardId}-fields-content"></div>
+                <button class="form-btn" onclick="savePaymentMethod('${cardId}')" style="width: 100%; margin-top: 16px;">
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const card = wrapper.firstElementChild;
+      const modal = wrapper.children[1];
+      card.dataset.historyIndex = historyIndex;
+      modal.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(card);
+      chatHistory.appendChild(modal);
+      scrollToBottom();
+    }
+    
+    function renderPaymentMethodItem(method, index, cardId) {
+      const typeInfo = PAYMENT_METHOD_TYPES[method.type];
+      const summary = getPaymentMethodSummary(method);
+      
+      return `
+        <div class="payment-method-item">
+          <div class="payment-method-item-icon">${typeInfo.icon}</div>
+          <div class="payment-method-item-info">
+            <div class="payment-method-item-type">${typeInfo.label}</div>
+            <div class="payment-method-item-summary">${escapeHtml(summary)}</div>
+          </div>
+          <button class="payment-method-remove-btn" onclick="removePaymentMethod('${cardId}', ${index})">×</button>
+        </div>
+      `;
+    }
+    
+    function getPaymentMethodSummary(method) {
+      const d = method.details || {};
+      switch (method.type) {
+        case 'bank':
+          return d.iban || 'Bank transfer';
+        case 'paypal':
+          return d.paypalId || 'PayPal';
+        case 'revolut':
+          return d.revolutId || 'Revolut';
+        case 'cash':
+          return 'Pay in cash';
+        case 'other':
+          return d.instructions?.substring(0, 30) || 'Other method';
+        default:
+          return method.type;
+      }
+    }
+    
+    // Track current modal editing state
+    let currentPaymentMethodType = null;
+    let editingPaymentMethodIndex = null;
+    
+    window.showAddPaymentMethodModal = function(cardId) {
+      currentPaymentMethodType = null;
+      editingPaymentMethodIndex = null;
+      
+      const modal = document.getElementById(`${cardId}-modal`);
+      const typeSelect = document.getElementById(`${cardId}-type-select`);
+      const fields = document.getElementById(`${cardId}-fields`);
+      const title = document.getElementById(`${cardId}-modal-title`);
+      
+      title.textContent = 'Add Payment Method';
+      typeSelect.style.display = 'grid';
+      fields.style.display = 'none';
+      modal.style.display = 'flex';
+    };
+    
+    window.closePaymentMethodModal = function(cardId) {
+      const modal = document.getElementById(`${cardId}-modal`);
+      modal.style.display = 'none';
+    };
+    
+    window.selectPaymentType = function(cardId, type) {
+      currentPaymentMethodType = type;
+      const typeInfo = PAYMENT_METHOD_TYPES[type];
+      
+      // Cash is simple - no form needed, add directly
+      if (type === 'cash') {
+        if (!state.data.paymentMethods) {
+          state.data.paymentMethods = [];
+        }
+        state.data.paymentMethods.push({
+          type: 'cash',
+          details: {}
+        });
+        closePaymentMethodModal(cardId);
+        refreshPaymentMethodsList(cardId);
+        return;
+      }
+      
+      const typeSelect = document.getElementById(`${cardId}-type-select`);
+      const fields = document.getElementById(`${cardId}-fields`);
+      const fieldsContent = document.getElementById(`${cardId}-fields-content`);
+      const title = document.getElementById(`${cardId}-modal-title`);
+      
+      title.textContent = `${typeInfo.icon} ${typeInfo.label}`;
+      typeSelect.style.display = 'none';
+      fields.style.display = 'block';
+      
+      // Generate field inputs
+      fieldsContent.innerHTML = typeInfo.fields.map(field => {
+        // Pre-fill reference with GroupTab name
+        let defaultValue = '';
+        if (field.prefill && field.key === 'reference') {
+          defaultValue = state.data.name || '';
+        }
+        
+        return `
+          <div class="payment-field-group">
+            <label class="payment-field-label">${field.label}</label>
+            <input type="text" 
+                   id="${cardId}-field-${field.key}" 
+                   class="payment-field-input" 
+                   placeholder="${field.placeholder}"
+                   value="${escapeHtml(defaultValue)}"
+                   ${field.required ? 'required' : ''}>
+          </div>
+        `;
+      }).join('');
+      
+      // Focus first field
+      const firstInput = fieldsContent.querySelector('input');
+      if (firstInput) firstInput.focus();
+    };
+    
+    window.savePaymentMethod = function(cardId) {
+      if (!currentPaymentMethodType) return;
+      
+      const typeInfo = PAYMENT_METHOD_TYPES[currentPaymentMethodType];
+      const details = {};
+      let isValid = true;
+      
+      // Collect field values
+      typeInfo.fields.forEach(field => {
+        const input = document.getElementById(`${cardId}-field-${field.key}`);
+        const value = input ? input.value.trim() : '';
+        details[field.key] = value;
+        
+        if (field.required && !value) {
+          input.style.borderColor = 'var(--pending)';
+          isValid = false;
+        } else if (input) {
+          input.style.borderColor = '';
+        }
+      });
+      
+      if (!isValid) return;
+      
+      // Add to state
+      if (!state.data.paymentMethods) {
+        state.data.paymentMethods = [];
+      }
+      
+      if (editingPaymentMethodIndex !== null) {
+        state.data.paymentMethods[editingPaymentMethodIndex] = {
+          type: currentPaymentMethodType,
+          details: details
+        };
+      } else {
+        state.data.paymentMethods.push({
+          type: currentPaymentMethodType,
+          details: details
+        });
+      }
+      
+      // Close modal and refresh list
+      closePaymentMethodModal(cardId);
+      refreshPaymentMethodsList(cardId);
+    };
+    
+    window.removePaymentMethod = function(cardId, index) {
+      if (state.data.paymentMethods && state.data.paymentMethods[index]) {
+        state.data.paymentMethods.splice(index, 1);
+        refreshPaymentMethodsList(cardId);
+      }
+    };
+    
+    function refreshPaymentMethodsList(cardId) {
+      const listEl = document.getElementById(`${cardId}-list`);
+      const createBtn = document.getElementById(`${cardId}-create-btn`);
+      const methods = state.data.paymentMethods || [];
+      const isRequired = isPaymentDetailsRequired();
+      
+      if (methods.length === 0) {
+        listEl.innerHTML = `
+          <div class="payment-methods-empty">
+            <span style="font-size: 32px; display: block; margin-bottom: 8px;">💳</span>
+            <span style="color: var(--muted);">No payment methods added yet</span>
+          </div>
+        `;
+        if (isRequired) {
+          createBtn.disabled = true;
+        }
+      } else {
+        listEl.innerHTML = methods.map((m, idx) => renderPaymentMethodItem(m, idx, cardId)).join('');
+        createBtn.disabled = false;
+      }
+    }
+    
+    window.skipPaymentDetails = function(cardId) {
+      pushHistory();
+      state.data.paymentMethods = [];
+      addUserMessage("Skipped");
+      removeActiveCard();
+      
+      // Also remove modal
+      const modal = document.getElementById(`${cardId}-modal`);
+      if (modal) modal.remove();
+      
+      showInputContainer();
+      
       setTimeout(() => {
         createTab();
       }, 400);
+    };
+    
+    window.confirmPaymentDetails = function(cardId) {
+      const methods = state.data.paymentMethods || [];
+      const isRequired = isPaymentDetailsRequired();
+      
+      if (isRequired && methods.length === 0) {
+        return; // Button should be disabled anyway
+      }
+      
+      pushHistory();
+      
+      // Summarize for user message
+      if (methods.length > 0) {
+        const summary = methods.map(m => PAYMENT_METHOD_TYPES[m.type].label).join(', ');
+        addUserMessage(summary);
+      } else {
+        addUserMessage("No payment methods");
+      }
+      
+      removeActiveCard();
+      
+      // Also remove modal
+      const modal = document.getElementById(`${cardId}-modal`);
+      if (modal) modal.remove();
+      
+      showInputContainer();
+      
+      setTimeout(() => {
+        createTab();
+      }, 400);
+    };
+    
+    function addGiftPlanBlocks() {
+      addSelectionBlocks([
+        {
+          id: 'already_bought',
+          icon: '✅',
+          title: 'Yes, already bought',
+          desc: 'I already paid, now collecting from others',
+          subtext: 'Debt mode'
+        },
+        {
+          id: 'planning_to_buy',
+          icon: '🛒',
+          title: 'No, not yet',
+          desc: 'We\'re collecting first, buying later',
+          subtext: 'Target mode'
+        }
+      ]);
+    }
+    
+    function addGiftAmountCard(amountType) {
+      hideInputContainer();
+      
+      const cardId = 'gift-amount-card-' + Date.now();
+      const isPrice = amountType === 'price';
+      const title = isPrice ? 'Gift Price' : 'Target Amount';
+      const placeholder = isPrice ? 'What did it cost?' : 'How much to collect?';
+      
+      const receiptSection = isPrice ? `
+        <!-- Hidden Receipt Input -->
+        <input type="file" 
+               id="${cardId}-receipt-input" 
+               style="display: none" 
+               accept="image/*,.pdf,application/pdf"
+               onchange="handleGiftReceiptSelect('${cardId}', this)">
+        
+        <button id="${cardId}-receipt-btn" class="receipt-simple-btn" onclick="document.getElementById('${cardId}-receipt-input').click()">
+          <span>🧾</span> Add Receipt (Optional)
+        </button>
+        
+        <div id="${cardId}-receipt-preview" class="receipt-preview-mini" style="display: none;">
+          <img id="${cardId}-receipt-thumb" src="" alt="Receipt">
+          <span id="${cardId}-receipt-filename" class="receipt-preview-mini-text"></span>
+          <button class="receipt-remove-x" onclick="removeGiftReceipt('${cardId}')">×</button>
+        </div>
+      ` : '';
+      
+      const cardHtml = `
+        <div id="${cardId}" class="chat-card">
+          <div class="form-card">
+            <div class="amount-input-wrapper">
+              <span class="amount-currency">€</span>
+              <input type="text" 
+                     id="${cardId}-input" 
+                     class="amount-input" 
+                     placeholder="0.00" 
+                     inputmode="decimal"
+                     autocomplete="off"
+                     autofocus>
+            </div>
+            
+            ${receiptSection}
+            
+            <button class="card-confirm-btn" onclick="submitGiftAmount('${cardId}', '${amountType}')">
+              Continue
+            </button>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const cardElement = wrapper.firstElementChild;
+      cardElement.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(cardElement);
+      scrollToBottom();
+      
+      // Setup input formatting
+      setTimeout(() => {
+        const input = document.getElementById(`${cardId}-input`);
+        input.focus();
+        
+        input.addEventListener('input', () => {
+          formatAmountInput(input);
+        });
+        
+        input.addEventListener('blur', () => {
+          formatAmountOnBlur(input);
+        });
+      }, 100);
+    }
+    
+    window.handleGiftReceiptSelect = function(cardId, input) {
+      const file = input.files[0];
+      if (!file) return;
+      
+      // Check file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('File is over 10MB. Please choose a smaller file.');
+        input.value = '';
+        return;
+      }
+      
+      window.giftReceiptFile = file;
+      
+      document.getElementById(`${cardId}-receipt-btn`).style.display = 'none';
+      const preview = document.getElementById(`${cardId}-receipt-preview`);
+      preview.style.display = 'flex';
+      
+      document.getElementById(`${cardId}-receipt-filename`).textContent = file.name;
+      
+      const thumb = document.getElementById(`${cardId}-receipt-thumb`);
+      
+      // Handle PDF files differently - show PDF icon instead of preview
+      if (file.type === 'application/pdf') {
+        thumb.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300D68F"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8.5 13H10v4H8.5v-4zm3.5 0h1.5v4H12v-4zm3.5 0H17v4h-1.5v-4z"/></svg>');
+        thumb.alt = 'PDF';
+      } else {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          thumb.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    
+    window.removeGiftReceipt = function(cardId) {
+      window.giftReceiptFile = null;
+      document.getElementById(`${cardId}-receipt-input`).value = '';
+      document.getElementById(`${cardId}-receipt-preview`).style.display = 'none';
+      document.getElementById(`${cardId}-receipt-btn`).style.display = 'flex';
+    };
+    
+    window.submitGiftAmount = function(cardId, amountType) {
+      const input = document.getElementById(`${cardId}-input`);
+      const amount = parseAmountValue(input.value);
+      
+      if (amount <= 0) {
+        const wrapper = input.closest('.amount-input-wrapper');
+        wrapper.style.borderColor = '#f87171';
+        input.focus();
+        setTimeout(() => {
+          wrapper.style.borderColor = '';
+        }, 2000);
+        return;
+      }
+      
+      const amountCents = Math.round(amount * 100);
+      const receiptFile = amountType === 'price' ? (window.giftReceiptFile || null) : null;
+      
+      window.giftReceiptFile = null;
+      
+      handleGiftAmountConfirm(amountCents, receiptFile, amountType);
+    };
+    
+    function addGiftContributorsCard() {
+      hideInputContainer();
+      
+      const cardId = 'gift-contributors-card-' + Date.now();
+      const initialCount = 4;
+      
+      // Calculate preview based on mode
+      let preview = '';
+      if (state.data.giftMode === 'gift_debt') {
+        const shareAmount = Math.floor(state.data.totalCents / initialCount);
+        preview = `Ok, that means each person should pay up <b>${formatCurrency2(shareAmount)}</b>`;
+      } else {
+        const suggestedAmount = Math.floor(state.data.amountTarget / initialCount);
+        preview = `Suggested contribution: <b>${formatCurrency2(suggestedAmount)}</b> per person`;
+      }
+      
+      const cardHtml = `
+        <div id="${cardId}" class="chat-card">
+          <div class="form-card">
+            <div class="people-selector-inline">
+              <div class="people-selector-controls">
+                <button class="counter-btn" onclick="adjustGiftContributors('${cardId}', -1)">−</button>
+                <input type="number" 
+                       id="${cardId}-value" 
+                       class="people-count-value" 
+                       value="${initialCount}" 
+                       min="2" 
+                       max="99"
+                       inputmode="numeric"
+                       onchange="updateGiftContributorPreview('${cardId}')">
+                <button class="counter-btn" onclick="adjustGiftContributors('${cardId}', 1)">+</button>
+              </div>
+              <span class="people-label">people</span>
+            </div>
+            
+            <div id="${cardId}-preview" class="gift-contributor-preview">
+              ${preview}
+            </div>
+            
+            <p style="font-size: 13px; color: var(--muted); margin: 8px 0 0; text-align: center;">Including yourself</p>
+            
+            <div style="display: flex; gap: 10px; margin-top: 16px;">
+              <button class="form-btn-secondary" onclick="skipGiftContributors('${cardId}')" style="flex:1;">Skip</button>
+              <button class="card-confirm-btn" onclick="submitGiftContributors('${cardId}')" style="flex:1;">Continue</button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const cardElement = wrapper.firstElementChild;
+      cardElement.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(cardElement);
+      scrollToBottom();
+    }
+    
+    window.adjustGiftContributors = function(cardId, delta) {
+      const valueEl = document.getElementById(`${cardId}-value`);
+      let current = parseInt(valueEl.value) || 2;
+      current = Math.max(2, Math.min(99, current + delta));
+      valueEl.value = current;
+      updateGiftContributorPreview(cardId);
+    };
+    
+    window.updateGiftContributorPreview = function(cardId) {
+      const valueEl = document.getElementById(`${cardId}-value`);
+      const previewEl = document.getElementById(`${cardId}-preview`);
+      const count = parseInt(valueEl.value) || 2;
+      
+      if (state.data.giftMode === 'gift_debt') {
+        const shareAmount = Math.floor(state.data.totalCents / count);
+        previewEl.innerHTML = `Ok, that means each person should pay up <b>${formatCurrency2(shareAmount)}</b>`;
+      } else {
+        const suggestedAmount = Math.floor(state.data.amountTarget / count);
+        previewEl.innerHTML = `Suggested contribution: <b>${formatCurrency2(suggestedAmount)}</b> per person`;
+      }
+    };
+    
+    window.submitGiftContributors = function(cardId) {
+      const valueEl = document.getElementById(`${cardId}-value`);
+      const count = parseInt(valueEl.value) || 2;
+      handleGiftContributorsConfirm(count);
+    };
+    
+    window.skipGiftContributors = function(cardId) {
+      pushHistory();
+      
+      // Default to 1 person when skipped
+      state.data.contributorCount = null;
+      state.data.people = 1;
+      
+      addUserMessage("Skip contributor count");
+      removeActiveCard();
+      showInputContainer();
+      
+      // Finalize name if not set
+      if (!state.data.name) {
+        state.data.name = state.data.aboutText
+          ? `Group Gift: ${state.data.aboutText.substring(0, 30)}`
+          : 'Group Gift';
+      }
+      
+      // For pre-paid gifts (gift_debt), ask about contribution split
+      if (state.data.giftMode === 'gift_debt') {
+        setTimeout(() => {
+          addBotMessage("How much of the gift cost is your contribution vs how much do you want to raise from others?");
+          addContributionSplitCard();
+          state.step = 'CONTRIBUTION_SPLIT';
+        }, 400);
+      } else {
+        setTimeout(() => {
+          goToPaymentDetails();
+        }, 400);
+      }
+    };
+    
+    // =========================================
+    // CONTRIBUTION SPLIT CARD (for pre-paid gifts)
+    // =========================================
+    function addContributionSplitCard() {
+      hideInputContainer();
+      
+      const cardId = 'contribution-split-card-' + Date.now();
+      const totalCents = state.data.totalCents || 0;
+      
+      // Default: organizer contributes 0, raises full amount
+      const initialContribution = 0;
+      const initialRaise = totalCents;
+      
+      const cardHtml = `
+        <div id="${cardId}" class="chat-card">
+          <div class="form-card">
+            <div class="form-card-header">
+              <span class="form-card-title">Split Your Contribution</span>
+            </div>
+            
+            <p style="font-size: 13px; color: var(--muted); margin: 0 0 16px; text-align: center;">
+              Gift cost: <b>${formatCurrency2(totalCents)}</b>
+            </p>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px;">Your contribution</label>
+                <div class="amount-input-wrapper" style="position: relative;">
+                  <span class="amount-prefix">€</span>
+                  <input type="text" 
+                         id="${cardId}-contribution" 
+                         class="amount-input" 
+                         inputmode="decimal"
+                         value="${(initialContribution / 100).toFixed(2).replace('.', ',')}"
+                         oninput="updateContributionSplit('${cardId}', 'contribution', this.value)"
+                         style="padding-left: 28px;">
+                </div>
+              </div>
+              
+              <div>
+                <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px;">Amount to raise from others</label>
+                <div class="amount-input-wrapper" style="position: relative;">
+                  <span class="amount-prefix">€</span>
+                  <input type="text" 
+                         id="${cardId}-raise" 
+                         class="amount-input" 
+                         inputmode="decimal"
+                         value="${(initialRaise / 100).toFixed(2).replace('.', ',')}"
+                         oninput="updateContributionSplit('${cardId}', 'raise', this.value)"
+                         style="padding-left: 28px;">
+                </div>
+              </div>
+            </div>
+            
+            <p id="${cardId}-summary" style="font-size: 13px; color: var(--muted); margin: 16px 0 0; text-align: center;">
+              You'll collect <b>${formatCurrency2(initialRaise)}</b> from participants
+            </p>
+            
+            <button class="card-confirm-btn" onclick="confirmContributionSplit('${cardId}')" style="margin-top: 16px;">
+              Continue
+            </button>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const cardElement = wrapper.firstElementChild;
+      cardElement.dataset.historyIndex = historyIndex;
+      chatContainer.appendChild(cardElement);
+      scrollToBottom();
+    }
+    
+    window.updateContributionSplit = function(cardId, field, value) {
+      const totalCents = state.data.totalCents || 0;
+      
+      // Parse input value (handle comma as decimal separator)
+      const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.');
+      const parsedValue = parseFloat(cleanValue) || 0;
+      const valueCents = Math.round(parsedValue * 100);
+      
+      // Clamp to valid range
+      const clampedValue = Math.max(0, Math.min(totalCents, valueCents));
+      
+      const contributionInput = document.getElementById(`${cardId}-contribution`);
+      const raiseInput = document.getElementById(`${cardId}-raise`);
+      const summaryEl = document.getElementById(`${cardId}-summary`);
+      
+      let contributionCents, raiseCents;
+      
+      if (field === 'contribution') {
+        contributionCents = clampedValue;
+        raiseCents = totalCents - clampedValue;
+        // Update the other field
+        raiseInput.value = (raiseCents / 100).toFixed(2).replace('.', ',');
+      } else {
+        raiseCents = clampedValue;
+        contributionCents = totalCents - clampedValue;
+        // Update the other field
+        contributionInput.value = (contributionCents / 100).toFixed(2).replace('.', ',');
+      }
+      
+      // Update summary
+      if (raiseCents > 0) {
+        summaryEl.innerHTML = `You'll collect <b>${formatCurrency2(raiseCents)}</b> from participants`;
+      } else {
+        summaryEl.innerHTML = `You're covering the full cost - no collection needed`;
+      }
+    };
+    
+    window.confirmContributionSplit = function(cardId) {
+      const totalCents = state.data.totalCents || 0;
+      
+      const contributionInput = document.getElementById(`${cardId}-contribution`);
+      const cleanValue = contributionInput.value.replace(/[^\d,.-]/g, '').replace(',', '.');
+      const contributionCents = Math.round((parseFloat(cleanValue) || 0) * 100);
+      const raiseCents = totalCents - contributionCents;
+      
+      pushHistory();
+      
+      state.data.organizerContribution = contributionCents;
+      state.data.amountToRaise = raiseCents;
+      
+      // Show user message with summary
+      if (contributionCents > 0 && raiseCents > 0) {
+        addUserMessage(`My contribution: ${formatCurrency2(contributionCents)} · Raising: ${formatCurrency2(raiseCents)}`);
+      } else if (contributionCents === 0) {
+        addUserMessage(`Raising: ${formatCurrency2(raiseCents)}`);
+      } else {
+        addUserMessage(`Full contribution: ${formatCurrency2(contributionCents)}`);
+      }
+      
+      removeActiveCard();
+      showInputContainer();
+      
+      setTimeout(() => {
+        goToPaymentDetails();
+      }, 400);
+    };
+    
+    function addGiftRaisingForCard() {
+      hideInputContainer();
+      
+      const cardId = 'gift-raising-for-card-' + Date.now();
+      
+      const cardHtml = `
+        <div id="${cardId}" class="chat-card">
+          <div class="form-card">
+            <div class="gift-about-section">
+              <label class="gift-form-label">What are you raising money for?</label>
+              <input type="text" id="${cardId}-text" 
+                     class="gift-about-input" 
+                     placeholder="e.g., Medical expenses, charity, travel fund..."
+                     maxlength="200">
+            </div>
+            
+            <div class="gift-media-section">
+              <div class="gift-media-options">
+                <input type="file" 
+                       id="${cardId}-image-input" 
+                       style="display: none" 
+                       accept="image/*"
+                       onchange="handleRaisingForImageSelect('${cardId}', this)">
+                
+                <button id="${cardId}-image-btn" class="gift-media-btn" onclick="document.getElementById('${cardId}-image-input').click()">
+                  📷 Add Image
+                </button>
+                
+                <button id="${cardId}-link-btn" class="gift-media-btn" onclick="toggleRaisingForLinkInput('${cardId}')">
+                  🔗 Add Link
+                </button>
+              </div>
+              
+              <div id="${cardId}-image-preview" class="gift-image-preview" style="display: none;">
+                <img id="${cardId}-image-thumb" src="" alt="Image">
+                <button class="gift-media-remove" onclick="removeRaisingForImage('${cardId}')">×</button>
+              </div>
+              
+              <div id="${cardId}-link-row" class="gift-link-row" style="display: none;">
+                <input type="url" 
+                       id="${cardId}-link-input" 
+                       class="gift-link-input" 
+                       placeholder="https://..."
+                       autocomplete="off">
+                <button class="gift-link-clear" onclick="clearRaisingForLink('${cardId}')">×</button>
+              </div>
+            </div>
+            
+            <div class="gift-card-actions">
+              <button class="card-skip-btn" onclick="submitRaisingFor('${cardId}', true)">
+                Skip
+              </button>
+              <button class="card-confirm-btn" onclick="submitRaisingFor('${cardId}', false)">
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const cardElement = wrapper.firstElementChild;
+      cardElement.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(cardElement);
+      scrollToBottom();
+      
+      setTimeout(() => {
+        document.getElementById(`${cardId}-text`).focus();
+      }, 100);
+    }
+    
+    window.handleRaisingForImageSelect = function(cardId, input) {
+      const file = input.files[0];
+      if (!file) return;
+      
+      // Check file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('File is over 10MB. Please choose a smaller file.');
+        input.value = '';
+        return;
+      }
+      
+      window.raisingForImageFile = file;
+      
+      document.getElementById(`${cardId}-image-btn`).style.display = 'none';
+      const preview = document.getElementById(`${cardId}-image-preview`);
+      preview.style.display = 'flex';
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById(`${cardId}-image-thumb`).src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    
+    window.removeRaisingForImage = function(cardId) {
+      window.raisingForImageFile = null;
+      document.getElementById(`${cardId}-image-input`).value = '';
+      document.getElementById(`${cardId}-image-preview`).style.display = 'none';
+      document.getElementById(`${cardId}-image-btn`).style.display = 'flex';
+    };
+    
+    window.toggleRaisingForLinkInput = function(cardId) {
+      const row = document.getElementById(`${cardId}-link-row`);
+      const btn = document.getElementById(`${cardId}-link-btn`);
+      
+      if (row.style.display === 'none') {
+        row.style.display = 'flex';
+        btn.style.display = 'none';
+        document.getElementById(`${cardId}-link-input`).focus();
+      }
+    };
+    
+    window.clearRaisingForLink = function(cardId) {
+      document.getElementById(`${cardId}-link-input`).value = '';
+      document.getElementById(`${cardId}-link-row`).style.display = 'none';
+      document.getElementById(`${cardId}-link-btn`).style.display = 'flex';
+    };
+    
+    window.submitRaisingFor = function(cardId, isSkip) {
+      const textEl = document.getElementById(`${cardId}-text`);
+      const linkEl = document.getElementById(`${cardId}-link-input`);
+      
+      const raisingForText = isSkip ? '' : (textEl.value.trim() || '');
+      const raisingForLink = isSkip ? '' : (linkEl.value.trim() || '');
+      const raisingForImage = isSkip ? null : (window.raisingForImageFile || null);
+      
+      window.raisingForImageFile = null;
+      
+      handleGiftRaisingForConfirm(raisingForText, raisingForImage, raisingForLink);
+    };
+    
+    function addGiftRaiseTargetCard() {
+      hideInputContainer();
+      
+      const cardId = 'gift-raise-target-card-' + Date.now();
+      
+      const cardHtml = `
+        <div id="${cardId}" class="chat-card">
+          <div class="form-card">
+            <div class="amount-input-wrapper">
+              <span class="amount-currency">€</span>
+              <input type="text" 
+                     id="${cardId}-input" 
+                     class="amount-input" 
+                     placeholder="0.00" 
+                     inputmode="decimal"
+                     autocomplete="off"
+                     autofocus>
+            </div>
+            
+            <div class="gift-open-pot-section">
+              <label class="gift-toggle-option" onclick="toggleOpenPot('${cardId}')">
+                <input type="checkbox" id="${cardId}-open-pot" class="gift-toggle-checkbox">
+                <span class="gift-toggle-switch"></span>
+                <span class="gift-toggle-label">No target (open pot)</span>
+              </label>
+            </div>
+            
+            <button class="card-confirm-btn" onclick="submitRaiseTarget('${cardId}')">
+              Continue
+            </button>
+          </div>
+        </div>
+      `;
+      
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = cardHtml;
+      const cardElement = wrapper.firstElementChild;
+      cardElement.dataset.historyIndex = historyIndex;
+      chatHistory.appendChild(cardElement);
+      scrollToBottom();
+      
+      setTimeout(() => {
+        const input = document.getElementById(`${cardId}-input`);
+        input.focus();
+        
+        input.addEventListener('input', () => {
+          formatAmountInput(input);
+        });
+        
+        input.addEventListener('blur', () => {
+          formatAmountOnBlur(input);
+        });
+      }, 100);
+    }
+    
+    window.toggleOpenPot = function(cardId) {
+      const checkbox = document.getElementById(`${cardId}-open-pot`);
+      const input = document.getElementById(`${cardId}-input`);
+      
+      if (checkbox.checked) {
+        input.disabled = true;
+        input.value = '';
+        input.placeholder = 'No target';
+      } else {
+        input.disabled = false;
+        input.placeholder = '0.00';
+        input.focus();
+      }
+    };
+    
+    window.submitRaiseTarget = function(cardId) {
+      const input = document.getElementById(`${cardId}-input`);
+      const openPotCheckbox = document.getElementById(`${cardId}-open-pot`);
+      const isOpenPot = openPotCheckbox.checked;
+      
+      if (!isOpenPot) {
+        const amount = parseAmountValue(input.value);
+        if (amount <= 0) {
+          const wrapper = input.closest('.amount-input-wrapper');
+          wrapper.style.borderColor = '#f87171';
+          input.focus();
+          setTimeout(() => {
+            wrapper.style.borderColor = '';
+          }, 2000);
+          return;
+        }
+        
+        const amountCents = Math.round(amount * 100);
+        handleGiftRaiseTargetConfirm(amountCents, false);
+      } else {
+        handleGiftRaiseTargetConfirm(0, true);
+      }
     };
 
     // ===========================================
@@ -2351,6 +4702,13 @@
     // CREATE TAB (API Call)
     // ===========================================
     async function createTab() {
+      // Check if we already created a tab in this session
+      // (user went back and came forward again)
+      if (state.data.createdTab) {
+        showLaunchCard(state.data.createdTab);
+        return;
+      }
+      
       state.step = 'CREATING';
       addBotMessage("Creating your tab...");
       
@@ -2363,6 +4721,68 @@
         formData.append('proofRequired', 'optional');
         
         if (state.data.type === 'one_bill') {
+          // For gift modes, handle amounts differently
+          if (state.data.template === 'gift' && state.data.giftMode) {
+            formData.append('giftMode', state.data.giftMode);
+            formData.append('groupGiftMode', state.data.groupGiftMode || 'gift'); // 'gift' or 'fundraiser'
+            formData.append('splitMode', 'equal'); // Gifts use equal split
+            formData.append('expectedPayRate', 100);
+            
+            // Gift-specific fields
+            if (state.data.recipientName) {
+              formData.append('recipientName', state.data.recipientName);
+            }
+            if (state.data.aboutText) {
+              formData.append('aboutText', state.data.aboutText);
+            }
+            if (state.data.aboutLink) {
+              formData.append('aboutLink', state.data.aboutLink);
+            }
+            if (state.data.raisingForText) {
+              formData.append('raisingForText', state.data.raisingForText);
+            }
+            if (state.data.raisingForLink) {
+              formData.append('raisingForLink', state.data.raisingForLink);
+            }
+            formData.append('isRaisingMoneyOnly', state.data.isRaisingMoneyOnly);
+            formData.append('isOpenPot', state.data.isOpenPot);
+            
+            if (state.data.giftMode === 'gift_debt') {
+              // Already bought: use totalCents as the debt amount
+              formData.append('totalAmountCents', state.data.totalCents);
+              formData.append('peopleCount', state.data.contributorCount || state.data.people);
+              formData.append('contributorCount', state.data.contributorCount || state.data.people);
+              // For pre-paid gifts with contribution split
+              if (state.data.organizerContribution !== null && state.data.organizerContribution !== undefined) {
+                formData.append('organizerContribution', state.data.organizerContribution);
+              }
+            } else if (state.data.giftMode === 'gift_pot_target') {
+              // Pot with target
+              formData.append('amountTarget', state.data.amountTarget);
+              formData.append('totalAmountCents', 0); // No debt
+              if (state.data.contributorCount) {
+                formData.append('peopleCount', state.data.contributorCount);
+                formData.append('contributorCount', state.data.contributorCount);
+              } else {
+                formData.append('peopleCount', 1); // Will be updated as people join
+              }
+            } else if (state.data.giftMode === 'gift_pot_open') {
+              // Open pot (no target)
+              formData.append('amountTarget', 0);
+              formData.append('totalAmountCents', 0); // No debt
+              formData.append('peopleCount', 1); // Will be updated as people join
+            }
+            
+            // Add about image if present
+            if (state.data.aboutImage) {
+              formData.append('aboutImage', state.data.aboutImage);
+            }
+            // Add raising for image if present
+            if (state.data.raisingForImage) {
+              formData.append('raisingForImage', state.data.raisingForImage);
+            }
+          } else {
+            // Regular restaurant bill flow
           formData.append('totalAmountCents', state.data.totalCents + state.data.tipCents);
           formData.append('splitMode', state.data.splitMode);
           formData.append('expectedPayRate', 100);
@@ -2374,6 +4794,7 @@
             // Include which group the host belongs to
             if (state.data.hostGroupId) {
               formData.append('hostGroupId', state.data.hostGroupId);
+              }
             }
           }
         }
@@ -2381,6 +4802,11 @@
         // Add receipt file if present
         if (state.data.receiptFile) {
           formData.append('receipt', state.data.receiptFile);
+        }
+        
+        // Add payment methods if present
+        if (state.data.paymentMethods && state.data.paymentMethods.length > 0) {
+          formData.append('paymentMethodsJson', JSON.stringify(state.data.paymentMethods));
         }
         
         const response = await fetch('/api/grouptabs', {
@@ -2403,6 +4829,9 @@
         if (!response.ok) {
           throw new Error(data.error || 'Failed to create tab');
         }
+        
+        // Store the created tab so we don't create duplicates if user goes back
+        state.data.createdTab = data.tab;
         
         // Show success with share card
         showLaunchCard(data.tab);
@@ -2446,48 +4875,83 @@
       undoStep();
     }
     
+    function goBackFromLaunchCard() {
+      // Remove the launch card and any "Creating your tab..." messages
+      const cards = document.querySelectorAll('.chat-card');
+      cards.forEach(card => {
+        if (card.querySelector('.launch-card')) {
+          card.remove();
+        }
+      });
+      
+      // Remove "Creating your tab..." bot message
+      const messages = document.querySelectorAll('.msg-bot');
+      messages.forEach(msg => {
+        if (msg.textContent.includes('Creating your tab')) {
+          msg.remove();
+        }
+      });
+      
+      // Go back to the previous step using undo
+      undoStep();
+    }
+    
     function showLaunchCard(tab) {
       hideInputContainer();
       
-      // Use magic link for sharing (public token), view link for creator view
-      const shareUrl = tab.magicLink || `${window.location.origin}/tab/${tab.magicToken}`;
-      const viewUrl = `${window.location.origin}/grouptabs/${tab.id}`;
-      const totalCents = state.data.totalCents + state.data.tipCents;
-      const perPerson = formatCurrency2(totalCents / state.data.people);
+      // Use short tab link for sharing (user-friendly)
+      const code = tab.inviteCode || tab.magicToken;
+      const shareUrl = tab.tabLink || `${window.location.origin}/tab/${code}`;
+      const viewUrl = `${window.location.origin}/tab/${code}`;
       
-      // Build receipt preview if uploaded
-      let receiptHtml = '';
-      if (tab.receipt_file_path) {
-        receiptHtml = `
-          <div class="launch-card-receipt">
-            <img src="${tab.receipt_file_path}" alt="Receipt" onclick="showReceiptModal('${tab.receipt_file_path}')">
-            <span class="launch-card-receipt-label">📄 Receipt attached</span>
-          </div>
-        `;
+      // Determine amount based on mode
+      const isPotMode = state.data.giftMode === 'gift_pot_open' || state.data.giftMode === 'gift_pot_target';
+      const totalCents = isPotMode ? (state.data.amountTarget || 0) : (state.data.totalCents + state.data.tipCents);
+      
+      // Determine title - for pot modes, change "Gift for" to "Raising money for"
+      let displayTitle = state.data.name;
+      if (isPotMode && displayTitle && displayTitle.toLowerCase().startsWith('gift for')) {
+        displayTitle = 'Raising money for' + displayTitle.substring(8);
       }
       
-      // Build price groups display if applicable
-      let detailHtml = `${state.data.people} people · ${perPerson} each`;
+      // Build detail line - hide if contributor count was skipped (explicitly set to null)
+      let detailHtml = '';
       let hasPriceGroups = false;
       
       // Store tab info for group selection
       window.createdTab = tab;
       
-      if (state.data.splitMode === 'price_groups' && state.data.priceGroups.length > 0) {
-        hasPriceGroups = true;
-        detailHtml = `${state.data.people} people · Price Groups`;
+      // Only show people detail if contributor count was NOT skipped
+      // contributorCount === null means skipped, undefined means restaurant flow (show detail)
+      const contributorSkipped = state.data.contributorCount === null;
+      
+      if (!contributorSkipped && state.data.people > 0) {
+        const perPerson = formatCurrency2(totalCents / state.data.people);
+        if (state.data.splitMode === 'price_groups' && state.data.priceGroups.length > 0) {
+          hasPriceGroups = true;
+          detailHtml = `${state.data.people} people · Price Groups`;
+        } else {
+          detailHtml = `${state.data.people} people · ${perPerson} each`;
+        }
       }
       
       // Show success message
       addBotMessage("Tab created! 🚀");
       
+      // Generate QR code URL
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&bgcolor=0e1116&color=00D68F&data=${encodeURIComponent(shareUrl)}`;
+      
       const cardHtml = `
         <div class="chat-card">
-          <div class="form-card launch-card">
-            ${receiptHtml}
-            <div class="launch-card-title">${escapeHtml(state.data.name)}</div>
+          <div class="form-card launch-card" style="position: relative;">
+            <button class="launch-card-back" onclick="goBackFromLaunchCard()" title="Go back">←</button>
+            <div class="launch-card-title">${escapeHtml(displayTitle)}</div>
             <div class="launch-card-amount">${formatCurrency2(totalCents)}</div>
-            <div class="launch-card-detail">${detailHtml}</div>
+            ${detailHtml ? `<div class="launch-card-detail">${detailHtml}</div>` : ''}
+            
+            <div class="launch-card-qr">
+              <img src="${qrCodeUrl}" alt="QR Code" class="qr-code-img">
+            </div>
             
             <div class="launch-card-actions">
               <button class="share-btn share-btn-primary" onclick="copyShareLink('${shareUrl}')">
@@ -2551,9 +5015,15 @@
 
     function addUserMessage(text) {
       const div = document.createElement('div');
-      div.className = 'msg msg-user';
+      div.className = 'msg msg-user msg-clickable';
       div.textContent = text;
       div.dataset.historyIndex = historyIndex; // Tag with history index
+      div.title = 'Click to edit';
+      div.onclick = function() {
+        const idx = parseInt(this.dataset.historyIndex);
+        // Go back to the step where this answer was given (user message and bot question share same historyIndex)
+        undoToIndex(idx);
+      };
       chatHistory.appendChild(div);
       scrollToBottom();
     }

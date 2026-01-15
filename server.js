@@ -8,6 +8,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const fs = require('fs');
 const multer = require('multer');
+const { nanoid } = require('nanoid');
 const { formatCurrency0, formatCurrency2, formatEuro0, formatEuro2 } = require('./lib/formatters');
 
 // --- basic setup ---
@@ -557,6 +558,54 @@ try {
 }
 
 // =============================================
+// SHORT URL CODES (user-friendly tokens)
+// =============================================
+
+// Add invite_code column (12 char nanoid) for short invite URLs
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN invite_code TEXT;`);
+  console.log('[Startup] Added invite_code column to group_tabs');
+} catch (e) {
+  // Column already exists - check if it's there
+  if (e.message && e.message.includes('duplicate column')) {
+    // Column exists, good
+  } else {
+    console.log('[Startup] invite_code column check:', e.message);
+  }
+}
+
+// Add manage_code column (12 char nanoid) for short manage URLs  
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN manage_code TEXT;`);
+  console.log('[Startup] Added manage_code column to group_tabs');
+} catch (e) {
+  // Column already exists
+  if (e.message && e.message.includes('duplicate column')) {
+    // Column exists, good
+  } else {
+    console.log('[Startup] manage_code column check:', e.message);
+  }
+}
+
+// Migrate existing group_tabs: generate short codes for tabs that don't have them
+try {
+  const tabsWithoutInviteCode = db.prepare(`
+    SELECT id FROM group_tabs WHERE invite_code IS NULL
+  `).all();
+  if (tabsWithoutInviteCode.length > 0) {
+    console.log(`[Startup] Generating invite_codes for ${tabsWithoutInviteCode.length} group tabs`);
+    const updateStmt = db.prepare('UPDATE group_tabs SET invite_code = ?, manage_code = ? WHERE id = ?');
+    for (const tab of tabsWithoutInviteCode) {
+      const inviteCode = nanoid(12);
+      const manageCode = nanoid(12);
+      updateStmt.run(inviteCode, manageCode, tab.id);
+    }
+  }
+} catch (e) {
+  console.error('[Startup] Error generating invite_codes:', e.message);
+}
+
+// =============================================
 // GROUPTAB PAYMENT LOGIC SCHEMA MIGRATIONS
 // =============================================
 
@@ -592,6 +641,14 @@ try {
   // Column already exists, ignore
 }
 
+// Add hide_name column to group_tab_participants table (privacy option)
+try {
+  db.exec(`ALTER TABLE group_tab_participants ADD COLUMN hide_name INTEGER DEFAULT 0;`);
+  console.log('[Startup] Added hide_name column to group_tab_participants');
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // Add payment_type column to group_tab_payments table
 try {
   db.exec(`ALTER TABLE group_tab_payments ADD COLUMN payment_type TEXT DEFAULT 'normal';`);
@@ -620,6 +677,174 @@ try {
 try {
   db.exec(`ALTER TABLE group_tab_payments ADD COLUMN beneficiary_ids TEXT;`);
   console.log('[Startup] Added beneficiary_ids column to group_tab_payments');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// =============================================
+// GROUP GIFT SPECIFIC COLUMNS
+// =============================================
+
+// Add gift_mode column to group_tabs table (gift_debt, gift_pot_target, gift_pot_open)
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN gift_mode TEXT;`);
+  console.log('[Startup] Added gift_mode column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add group_gift_mode column to group_tabs table ('gift' or 'fundraiser')
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN group_gift_mode TEXT DEFAULT 'gift';`);
+  console.log('[Startup] Added group_gift_mode column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add recipient_name column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN recipient_name TEXT;`);
+  console.log('[Startup] Added recipient_name column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add about_text column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN about_text TEXT;`);
+  console.log('[Startup] Added about_text column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add about_image_path column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN about_image_path TEXT;`);
+  console.log('[Startup] Added about_image_path column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add about_link column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN about_link TEXT;`);
+  console.log('[Startup] Added about_link column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add is_raising_money_only column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN is_raising_money_only INTEGER DEFAULT 0;`);
+  console.log('[Startup] Added is_raising_money_only column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add amount_target column to group_tabs table (for pot modes)
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN amount_target INTEGER;`);
+  console.log('[Startup] Added amount_target column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add contributor_count column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN contributor_count INTEGER;`);
+  console.log('[Startup] Added contributor_count column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add raising_for_text column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN raising_for_text TEXT;`);
+  console.log('[Startup] Added raising_for_text column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add raising_for_image_path column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN raising_for_image_path TEXT;`);
+  console.log('[Startup] Added raising_for_image_path column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add raising_for_link column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN raising_for_link TEXT;`);
+  console.log('[Startup] Added raising_for_link column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add is_open_pot column to group_tabs table
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN is_open_pot INTEGER DEFAULT 0;`);
+  console.log('[Startup] Added is_open_pot column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add total_raised_cents column to group_tabs table (track contributions for pot modes)
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN total_raised_cents INTEGER DEFAULT 0;`);
+  console.log('[Startup] Added total_raised_cents column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add payment_methods_json column to group_tabs table (how people should pay the starter)
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN payment_methods_json TEXT;`);
+  console.log('[Startup] Added payment_methods_json column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Add organizer_contribution column to group_tabs table (for pre-paid gifts: how much organizer contributes vs collects)
+try {
+  db.exec(`ALTER TABLE group_tabs ADD COLUMN organizer_contribution INTEGER;`);
+  console.log('[Startup] Added organizer_contribution column to group_tabs');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Create payment_reports table for Group Gift payment tracking
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS group_tab_payment_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_tab_id INTEGER NOT NULL,
+      participant_id INTEGER,
+      reporter_name TEXT NOT NULL,
+      amount_cents INTEGER NOT NULL,
+      method TEXT NOT NULL,
+      paid_at TEXT NOT NULL,
+      proof_file_path TEXT,
+      note TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      reviewed_at TEXT,
+      reviewed_by INTEGER,
+      additional_names TEXT,
+      FOREIGN KEY (group_tab_id) REFERENCES group_tabs(id),
+      FOREIGN KEY (participant_id) REFERENCES group_tab_participants(id),
+      FOREIGN KEY (reviewed_by) REFERENCES users(id)
+    )
+  `);
+  console.log('[Startup] Created group_tab_payment_reports table');
+} catch (e) {
+  // Table already exists, ignore
+}
+
+// Add additional_names column to payment_reports for multi-person payments
+try {
+  db.exec(`ALTER TABLE group_tab_payment_reports ADD COLUMN additional_names TEXT;`);
+  console.log('[Migration] Added additional_names column to group_tab_payment_reports');
 } catch (e) {
   // Column already exists, ignore
 }
@@ -856,7 +1081,13 @@ app.use(cookieParser());
 // which requires authentication and authorization (lender or borrower only)
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// GroupTab receipts are served via dedicated API endpoint below (see /api/grouptabs/receipt/:filename)
+// Serve GroupTab uploads (receipts, gift images) - these are public files for tab participants
+app.use('/uploads/grouptabs', express.static(path.join(__dirname, 'uploads', 'grouptabs')));
+
+// Serve profile pictures - needed for public pages like GroupTab invite links
+app.use('/uploads/profiles', express.static(path.join(__dirname, 'uploads', 'profiles')));
+
+// GroupTab receipts are also served via dedicated API endpoint below (see /api/grouptabs/receipt/:filename)
 
 // Session middleware - loads user from session cookie
 app.use((req, res, next) => {
@@ -5895,10 +6126,17 @@ function checkTabAccess(req, tabId) {
   return { hasAccess: false, participant: null, isAuthenticated: false };
 }
 
-// Create new tab (with optional receipt upload)
+// Create new tab (with optional receipt/image uploads)
 app.post('/api/grouptabs', requireAuth, (req, res) => {
-  // Handle multer upload with proper error handling
-  uploadGrouptabs.single('receipt')(req, res, (uploadErr) => {
+  
+  // Handle multer upload with proper error handling - accept multiple file fields for gift flow
+  const uploadFields = uploadGrouptabs.fields([
+    { name: 'receipt', maxCount: 1 },
+    { name: 'aboutImage', maxCount: 1 },
+    { name: 'raisingForImage', maxCount: 1 }
+  ]);
+  
+  uploadFields(req, res, (uploadErr) => {
     if (uploadErr) {
       console.error('File upload error:', uploadErr);
       if (uploadErr instanceof multer.MulterError) {
@@ -5938,6 +6176,25 @@ function createGroupTab(req, res) {
   // Parse hostGroupId (the price group the host selected for themselves in the wizard)
   const hostGroupId = req.body.hostGroupId ? parseInt(req.body.hostGroupId) : null;
   
+  // ===== GROUP GIFT SPECIFIC FIELDS =====
+  const giftMode = req.body.giftMode || null; // 'gift_debt', 'gift_pot_target', 'gift_pot_open'
+  const groupGiftMode = req.body.groupGiftMode || null; // NEW: 'gift' or 'fundraiser'
+  const recipientName = req.body.recipientName || null;
+  const aboutText = req.body.aboutText || null;
+  const aboutLink = req.body.aboutLink || null;
+  const isRaisingMoneyOnly = req.body.isRaisingMoneyOnly === 'true' || req.body.isRaisingMoneyOnly === true;
+  const amountTarget = req.body.amountTarget ? parseInt(req.body.amountTarget) : null;
+  const contributorCount = req.body.contributorCount ? parseInt(req.body.contributorCount) : null;
+  const raisingForText = req.body.raisingForText || null;
+  const raisingForLink = req.body.raisingForLink || null;
+  const isOpenPot = req.body.isOpenPot === 'true' || req.body.isOpenPot === true;
+  
+  // Organizer contribution (for pre-paid gifts: how much they're contributing vs collecting)
+  const organizerContribution = req.body.organizerContribution ? parseInt(req.body.organizerContribution) : null;
+  
+  // Payment methods for how participants should pay the starter
+  const paymentMethodsJson = req.body.paymentMethodsJson || null;
+  
   if (!name || !tabType) {
     return res.status(400).json({ error: 'Name and tab type are required' });
   }
@@ -5949,15 +6206,41 @@ function createGroupTab(req, res) {
   try {
     const magicToken = crypto.randomBytes(32).toString('hex');
     const ownerToken = crypto.randomBytes(32).toString('hex');
+    // Short, user-friendly codes (12 chars) for sharing
+    const inviteCode = nanoid(12);
+    const manageCode = nanoid(12);
     const createdAt = new Date().toISOString();
-    const receiptFilePath = req.file ? `/uploads/grouptabs/${req.file.filename}` : null;
     
+    // Handle file paths from req.files (using .fields() for multiple file support)
+    const receiptFile = req.files?.receipt?.[0];
+    const aboutImageFile = req.files?.aboutImage?.[0];
+    const raisingForImageFile = req.files?.raisingForImage?.[0];
+    
+    const receiptFilePath = receiptFile ? `/uploads/grouptabs/${receiptFile.filename}` : null;
+    const aboutImagePath = aboutImageFile ? `/uploads/grouptabs/${aboutImageFile.filename}` : null;
+    const raisingForImagePath = raisingForImageFile ? `/uploads/grouptabs/${raisingForImageFile.filename}` : null;
+
     // Calculate payment logic values for host's initial payment
     let hostOverpaidCents = 0;
     let paidUpCents = 0;
     let fairShareCents = 0;
     
-    if (totalAmountCents && totalAmountCents > 0 && peopleCount > 0) {
+    // Gift modes have different payment logic
+    const isGiftDebtMode = giftMode === 'gift_debt';
+    const isGiftPotMode = giftMode === 'gift_pot_target' || giftMode === 'gift_pot_open';
+    
+    if (isGiftDebtMode && totalAmountCents && totalAmountCents > 0 && peopleCount > 0) {
+      // Gift debt mode: creator paid upfront, others owe their share
+      fairShareCents = Math.floor(totalAmountCents / peopleCount);
+      hostOverpaidCents = totalAmountCents - fairShareCents;
+      paidUpCents = fairShareCents; // Only host's fair share is considered "settled"
+    } else if (isGiftPotMode) {
+      // Pot modes: no debt, just collecting contributions
+      fairShareCents = 0;
+      hostOverpaidCents = 0;
+      paidUpCents = 0;
+    } else if (totalAmountCents && totalAmountCents > 0 && peopleCount > 0) {
+      // Regular restaurant bill flow
       fairShareCents = Math.floor(totalAmountCents / peopleCount);
       hostOverpaidCents = totalAmountCents - fairShareCents;
       paidUpCents = fairShareCents; // Only host's fair share is considered "settled"
@@ -5967,8 +6250,11 @@ function createGroupTab(req, res) {
       INSERT INTO group_tabs (
         creator_user_id, name, description, tab_type, template, total_amount_cents, 
         split_mode, expected_pay_rate, seat_count, people_count, proof_required, 
-        magic_token, owner_token, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        magic_token, owner_token, invite_code, manage_code, receipt_file_path, host_overpaid_cents, paid_up_cents, created_at,
+        gift_mode, group_gift_mode, recipient_name, about_text, about_link, is_raising_money_only,
+        amount_target, contributor_count, raising_for_text, raising_for_link, is_open_pot,
+        about_image_path, raising_for_image_path, payment_methods_json, organizer_contribution
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       req.user.id,
       name,
@@ -5983,32 +6269,60 @@ function createGroupTab(req, res) {
       proofRequired || 'optional',
       magicToken,
       ownerToken,
+      inviteCode,
+      manageCode,
       receiptFilePath,
       hostOverpaidCents,
       paidUpCents,
-      createdAt
+      createdAt,
+      // Gift-specific fields
+      giftMode,
+      groupGiftMode, // NEW: 'gift' or 'fundraiser'
+      recipientName,
+      aboutText,
+      aboutLink,
+      isRaisingMoneyOnly ? 1 : 0,
+      amountTarget,
+      contributorCount,
+      raisingForText,
+      raisingForLink,
+      isOpenPot ? 1 : 0,
+      aboutImagePath,
+      raisingForImagePath,
+      paymentMethodsJson,
+      organizerContribution
     );
     
     const tabId = result.lastInsertRowid;
     
     // Add creator as organizer with payment logic fields
-    // Host has remaining_cents = 0 (they paid the bill)
+    // For pot modes, creator has NOT paid yet. For debt modes (restaurant & gift_debt), creator paid upfront.
+    const creatorPaidUpfront = !isGiftPotMode && totalAmountCents && totalAmountCents > 0;
     const participantResult = db.prepare(`
       INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, fair_share_cents, remaining_cents, total_paid_cents)
       VALUES (?, ?, 'organizer', 1, ?, ?, ?, ?)
-    `).run(tabId, req.user.id, createdAt, fairShareCents, 0, totalAmountCents || 0);
+    `).run(
+      tabId, 
+      req.user.id, 
+      createdAt, 
+      fairShareCents, 
+      isGiftPotMode ? 0 : 0, // For pot modes, no debt; for debt modes, creator owes 0 (already paid)
+      creatorPaidUpfront ? totalAmountCents : 0
+    );
     
     const organizerParticipantId = participantResult.lastInsertRowid;
     
     // Record organizer's payment for the full bill (they paid the bill upfront)
-    // Works for both 'equal' and 'price_groups' split modes
-    if ((splitMode === 'equal' || splitMode === 'price_groups') && totalAmountCents && totalAmountCents > 0) {
-      console.log(`Creating initial host payment: tab=${tabId}, org=${organizerParticipantId}, amt=${totalAmountCents}, fairShare=${fairShareCents}, overpaid=${hostOverpaidCents}`);
+    // This applies to: restaurant bills, price_groups, AND gift_debt mode
+    // It does NOT apply to: gift_pot_target, gift_pot_open (pot modes where creator is just collecting)
+    if (!isGiftPotMode && (splitMode === 'equal' || splitMode === 'price_groups') && totalAmountCents && totalAmountCents > 0) {
+      const paymentNote = isGiftDebtMode ? 'Paid for the gift upfront' : 'Paid the full bill';
+      console.log(`Creating initial host payment: tab=${tabId}, org=${organizerParticipantId}, amt=${totalAmountCents}, fairShare=${fairShareCents}, overpaid=${hostOverpaidCents}, giftMode=${giftMode || 'none'}`);
       try {
         db.prepare(`
           INSERT INTO group_tab_payments (group_tab_id, from_participant_id, to_participant_id, amount_cents, method, note, status, payment_type, applied_cents, overpay_cents, created_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(tabId, organizerParticipantId, null, totalAmountCents, 'paid_bill', 'Paid the full bill', 'confirmed', 'initial_host', fairShareCents, hostOverpaidCents, createdAt);
+        `).run(tabId, organizerParticipantId, null, totalAmountCents, 'paid_bill', paymentNote, 'confirmed', 'initial_host', fairShareCents, hostOverpaidCents, createdAt);
       } catch (payErr) {
         console.error('Failed to create initial payment:', payErr);
         // Don't fail the whole tab creation for this, just log it
@@ -6078,12 +6392,24 @@ function createGroupTab(req, res) {
         id: tabId,
         name,
         tabType,
+        template,
         magicToken,
         ownerToken,
+        inviteCode,
+        manageCode,
+        // Short, user-friendly tab link (primary sharing URL)
+        tabLink: `${req.protocol}://${req.get('host')}/tab/${inviteCode}`,
+        // Legacy long-form links (still supported but redirect to short)
         magicLink: `${req.protocol}://${req.get('host')}/tab/${magicToken}`,
         ownerLink: `${req.protocol}://${req.get('host')}/grouptabs/manage/${ownerToken}`,
         organizerParticipantId: organizerParticipantId,
-        priceGroups: createdPriceGroups
+        priceGroups: createdPriceGroups,
+        // Gift-specific fields
+        giftMode: giftMode || null,
+        recipientName: recipientName || null,
+        amountTarget: amountTarget || null,
+        isOpenPot: isOpenPot || false,
+        receipt_file_path: receiptFilePath
       }
     });
   } catch (err) {
@@ -6123,7 +6449,7 @@ app.get('/api/grouptabs/:id', (req, res) => {
   
   try {
     const tab = db.prepare(`
-      SELECT gt.*, u.full_name as creator_name
+      SELECT gt.*, u.full_name as creator_name, u.profile_picture as creator_avatar_url
       FROM group_tabs gt
       JOIN users u ON gt.creator_user_id = u.id
       WHERE gt.id = ?
@@ -6146,6 +6472,30 @@ app.get('/api/grouptabs/:id', (req, res) => {
     
     const currentParticipant = access.participant;
     const isAuthenticated = access.isAuthenticated;
+    
+    // Clean up stale participants: delete non-organizers who haven't paid and joined > 24h ago
+    const STALE_HOURS = 24;
+    const staleThreshold = new Date(Date.now() - STALE_HOURS * 60 * 60 * 1000).toISOString();
+    
+    const staleParticipants = db.prepare(`
+      SELECT id, guest_name, user_id FROM group_tab_participants 
+      WHERE group_tab_id = ? 
+        AND role != 'organizer' 
+        AND (total_paid_cents IS NULL OR total_paid_cents = 0)
+        AND joined_at < ?
+    `).all(tabId, staleThreshold);
+    
+    if (staleParticipants.length > 0) {
+      const deleteStmt = db.prepare(`DELETE FROM group_tab_participants WHERE id = ?`);
+      for (const stale of staleParticipants) {
+        deleteStmt.run(stale.id);
+        console.log(`[Cleanup] Removed stale participant ${stale.id} (${stale.guest_name || 'user:' + stale.user_id}) from tab ${tabId}`);
+      }
+      
+      // Update people_count on the tab
+      const remainingCount = db.prepare(`SELECT COUNT(*) as cnt FROM group_tab_participants WHERE group_tab_id = ?`).get(tabId).cnt;
+      db.prepare(`UPDATE group_tabs SET people_count = ? WHERE id = ?`).run(remainingCount, tabId);
+    }
     
     // Get all participants - filter sensitive fields for non-authenticated callers
     let participants;
@@ -6236,69 +6586,280 @@ app.get('/api/grouptabs/:id', (req, res) => {
   }
 });
 
-// Update tab
+// Update tab (supports both JSON and FormData)
 app.patch('/api/grouptabs/:id', requireAuth, (req, res) => {
   const tabId = parseInt(req.params.id);
-  const { name, totalAmountCents, splitMode, expectedPayRate, seatCount, proofRequired, description, peopleCount, tiers, eventDate, status } = req.body;
-  
-  try {
-    const organizer = db.prepare(`
-      SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ? AND role = 'organizer'
-    `).get(tabId, req.user.id);
-    
-    if (!organizer) {
-      return res.status(403).json({ error: 'Only the organizer can update tab settings' });
-    }
-    
-    const updates = [];
-    const params = [];
-    
-    if (name !== undefined) { updates.push('name = ?'); params.push(name); }
-    if (totalAmountCents !== undefined) { updates.push('total_amount_cents = ?'); params.push(totalAmountCents); }
-    if (splitMode !== undefined) { updates.push('split_mode = ?'); params.push(splitMode); }
-    if (expectedPayRate !== undefined) { updates.push('expected_pay_rate = ?'); params.push(expectedPayRate); }
-    if (seatCount !== undefined) { updates.push('seat_count = ?'); params.push(seatCount); }
-    if (proofRequired !== undefined) { updates.push('proof_required = ?'); params.push(proofRequired); }
-    if (description !== undefined) { updates.push('description = ?'); params.push(description); }
-    if (peopleCount !== undefined) { updates.push('people_count = ?'); params.push(peopleCount); }
-    if (eventDate !== undefined) { updates.push('event_date = ?'); params.push(eventDate); }
-    if (status !== undefined && ['open', 'closed'].includes(status)) { updates.push('status = ?'); params.push(status); }
-    
-    if (updates.length > 0) {
-      params.push(tabId);
-      db.prepare(`UPDATE group_tabs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
-    }
-    
-    // Handle tiers update (only if the group_tab_tiers table exists)
-    if (tiers && Array.isArray(tiers) && splitMode === 'tiered') {
-      // Check if group_tab_tiers table exists before operating on it
-      const tiersTableExists = db.prepare(`
-        SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'
-      `).get();
-      
-      if (tiersTableExists) {
-        // Delete existing tiers
-        db.prepare(`DELETE FROM group_tab_tiers WHERE group_tab_id = ?`).run(tabId);
-        
-        // Insert new tiers
-        const insertTier = db.prepare(`
-          INSERT INTO group_tab_tiers (group_tab_id, name, multiplier, sort_order, created_at)
-          VALUES (?, ?, ?, ?, ?)
-        `);
-        
-        const now = new Date().toISOString();
-        tiers.forEach((tier, idx) => {
-          insertTier.run(tabId, tier.name, tier.multiplier, idx, now);
-        });
+
+  // Handle potential file upload for edit modal
+  const uploadFields = uploadGrouptabs.fields([
+    { name: 'about_image', maxCount: 1 },
+    { name: 'receipt', maxCount: 1 }
+  ]);
+
+  uploadFields(req, res, (uploadErr) => {
+    if (uploadErr) {
+      console.error('File upload error:', uploadErr);
+      if (uploadErr instanceof multer.MulterError) {
+        if (uploadErr.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File size too large. Maximum size is 10MB.' });
+        }
       }
-      // If table doesn't exist, silently skip tier operations
+      return res.status(500).json({ error: 'File upload failed' });
     }
-    
-    res.json({ success: true });
-  } catch (err) {
-    console.error('Error updating tab:', err);
-    res.status(500).json({ error: 'Failed to update tab' });
-  }
+
+    try {
+      // Get tab and verify ownership
+      const tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+      if (!tab) {
+        return res.status(404).json({ error: 'Tab not found' });
+      }
+
+      // Check if user is organizer
+      const organizer = db.prepare(`
+        SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ? AND role = 'organizer'
+      `).get(tabId, req.user.id);
+      
+      if (!organizer && tab.creator_user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Only the organizer can update tab settings' });
+      }
+
+      const body = req.body || {};
+      const updates = [];
+      const params = [];
+      
+      // Basic fields (from original endpoint)
+      if (body.name !== undefined) { updates.push('name = ?'); params.push(body.name); }
+      if (body.totalAmountCents !== undefined) { updates.push('total_amount_cents = ?'); params.push(body.totalAmountCents); }
+      if (body.total_amount_cents !== undefined) { updates.push('total_amount_cents = ?'); params.push(parseInt(body.total_amount_cents) || 0); }
+      if (body.splitMode !== undefined) { updates.push('split_mode = ?'); params.push(body.splitMode); }
+      if (body.expectedPayRate !== undefined) { updates.push('expected_pay_rate = ?'); params.push(body.expectedPayRate); }
+      if (body.seatCount !== undefined) { updates.push('seat_count = ?'); params.push(body.seatCount); }
+      if (body.proofRequired !== undefined) { updates.push('proof_required = ?'); params.push(body.proofRequired); }
+      if (body.description !== undefined) { updates.push('description = ?'); params.push(body.description); }
+      if (body.peopleCount !== undefined) { updates.push('people_count = ?'); params.push(body.peopleCount); }
+      if (body.eventDate !== undefined) { updates.push('event_date = ?'); params.push(body.eventDate); }
+      if (body.status !== undefined && ['open', 'closed'].includes(body.status)) { updates.push('status = ?'); params.push(body.status); }
+      
+      // Additional fields for edit modal
+      if (body.about_text !== undefined) { updates.push('about_text = ?'); params.push(body.about_text); }
+      if (body.about_link !== undefined) { updates.push('about_link = ?'); params.push(body.about_link); }
+      if (body.amount_target !== undefined) {
+        const targetVal = body.amount_target === '' ? null : parseInt(body.amount_target);
+        updates.push('amount_target = ?');
+        params.push(targetVal);
+        if (targetVal === null) {
+          updates.push('is_open_pot = 1');
+        }
+      }
+      if (body.payment_methods_json !== undefined) {
+        updates.push('payment_methods_json = ?');
+        params.push(body.payment_methods_json);
+      }
+
+      // Handle image upload
+      if (req.files && req.files.about_image && req.files.about_image[0]) {
+        const imagePath = '/uploads/grouptabs/' + req.files.about_image[0].filename;
+        updates.push('about_image_path = ?');
+        params.push(imagePath);
+      } else if (body.remove_image === 'true') {
+        if (tab.about_image_path) {
+          try {
+            const fullPath = '.' + tab.about_image_path;
+            if (fs.existsSync(fullPath)) {
+              fs.unlinkSync(fullPath);
+            }
+          } catch (e) {
+            console.error('Error removing image file:', e);
+          }
+        }
+        updates.push('about_image_path = NULL');
+      }
+
+      // Handle receipt upload
+      if (req.files && req.files.receipt && req.files.receipt[0]) {
+        const receiptPath = '/uploads/grouptabs/' + req.files.receipt[0].filename;
+        updates.push('receipt_file_path = ?');
+        params.push(receiptPath);
+      } else if (body.deleteReceipt === 'true') {
+        if (tab.receipt_file_path) {
+          try {
+            const fullPath = '.' + tab.receipt_file_path;
+            if (fs.existsSync(fullPath)) {
+              fs.unlinkSync(fullPath);
+            }
+          } catch (e) {
+            console.error('Error removing receipt file:', e);
+          }
+        }
+        updates.push('receipt_file_path = NULL');
+      }
+      
+      if (updates.length > 0) {
+        params.push(tabId);
+        db.prepare(`UPDATE group_tabs SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+      }
+
+      // If total_amount_cents changed and it's equal split mode, recalculate fair shares
+      const newTotalCents = body.total_amount_cents !== undefined ? parseInt(body.total_amount_cents) : 
+                           body.totalAmountCents !== undefined ? parseInt(body.totalAmountCents) : null;
+      
+      if (newTotalCents !== null && tab.split_mode === 'equal') {
+        // Get updated tab data
+        const updatedTab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+        const peopleCount = updatedTab.people_count || 1;
+        const newFairShareCents = Math.floor(newTotalCents / peopleCount);
+
+        // Get all participants
+        const allParticipants = db.prepare(`
+          SELECT id, role, total_paid_cents FROM group_tab_participants WHERE group_tab_id = ?
+        `).all(tabId);
+
+        // Update fair shares and remaining cents for all participants
+        const updateParticipantStmt = db.prepare(`
+          UPDATE group_tab_participants 
+          SET fair_share_cents = ?, remaining_cents = ?
+          WHERE id = ?
+        `);
+
+        for (const p of allParticipants) {
+          const paidCents = p.total_paid_cents || 0;
+          let remainingCents = Math.max(0, newFairShareCents - paidCents);
+          
+          // For organizer who paid the full bill upfront, remaining is 0
+          if (p.role === 'organizer' && paidCents >= newTotalCents) {
+            remainingCents = 0;
+          }
+          
+          updateParticipantStmt.run(newFairShareCents, remainingCents, p.id);
+        }
+
+        // Update tab's paid_up_cents and host_overpaid_cents
+        const organizer = allParticipants.find(p => p.role === 'organizer');
+        if (organizer && organizer.total_paid_cents >= newTotalCents) {
+          // Host paid full bill - they overpaid by (total - their_fair_share)
+          const hostOverpaidCents = newTotalCents - newFairShareCents;
+          db.prepare(`
+            UPDATE group_tabs SET host_overpaid_cents = ?, paid_up_cents = ?
+            WHERE id = ?
+          `).run(hostOverpaidCents, newFairShareCents, tabId);
+        }
+
+        console.log(`[Edit] Recalculated fair shares: total=${newTotalCents}, people=${peopleCount}, fairShare=${newFairShareCents}`);
+      }
+      
+      // Handle tiers update (only if the group_tab_tiers table exists)
+      const tiers = body.tiers;
+      if (tiers && Array.isArray(tiers) && body.splitMode === 'tiered') {
+        const tiersTableExists = db.prepare(`
+          SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'
+        `).get();
+        
+        if (tiersTableExists) {
+          db.prepare(`DELETE FROM group_tab_tiers WHERE group_tab_id = ?`).run(tabId);
+          
+          const insertTier = db.prepare(`
+            INSERT INTO group_tab_tiers (group_tab_id, name, multiplier, sort_order, created_at)
+            VALUES (?, ?, ?, ?, ?)
+          `);
+          
+          const now = new Date().toISOString();
+          tiers.forEach((tier, idx) => {
+            insertTier.run(tabId, tier.name, tier.multiplier, idx, now);
+          });
+        }
+      }
+
+      // Handle participant share changes
+      if (body.participant_shares) {
+        try {
+          const shares = JSON.parse(body.participant_shares);
+          const updateShareStmt = db.prepare(`
+            UPDATE group_tab_participants SET fair_share_cents = ? WHERE id = ? AND group_tab_id = ?
+          `);
+          
+          for (const [participantId, shareCents] of Object.entries(shares)) {
+            updateShareStmt.run(parseInt(shareCents), parseInt(participantId), tabId);
+          }
+
+          // After updating shares, check if they're still equal
+          // If not, set split_mode to 'custom'
+          const allShares = db.prepare(`
+            SELECT fair_share_cents FROM group_tab_participants WHERE group_tab_id = ?
+          `).all(tabId);
+          
+          if (allShares.length > 1) {
+            const uniqueShares = new Set(allShares.map(s => s.fair_share_cents));
+            if (uniqueShares.size > 1) {
+              // Shares are no longer equal - set to custom mode
+              db.prepare(`UPDATE group_tabs SET split_mode = 'custom' WHERE id = ?`).run(tabId);
+              console.log(`[Edit] Split mode changed to 'custom' for tab ${tabId} (shares are unequal)`);
+            }
+          }
+        } catch (e) {
+          console.error('Error updating participant shares:', e);
+        }
+      }
+
+      // Handle participant paid changes
+      if (body.participant_paid) {
+        try {
+          const paidChanges = JSON.parse(body.participant_paid);
+
+          for (const [participantId, paidCents] of Object.entries(paidChanges)) {
+            const pid = parseInt(participantId);
+            const newPaidCents = parseInt(paidCents);
+
+            // Get current participant data
+            const participant = db.prepare(`
+              SELECT * FROM group_tab_participants WHERE id = ? AND group_tab_id = ?
+            `).get(pid, tabId);
+
+            if (!participant) continue;
+
+            const fairShareCents = participant.fair_share_cents || 0;
+            const remainingCents = Math.max(0, fairShareCents - newPaidCents);
+            
+            // Update participant's paid amount and remaining
+            db.prepare(`
+              UPDATE group_tab_participants
+              SET total_paid_cents = ?, remaining_cents = ?
+              WHERE id = ?
+            `).run(newPaidCents, remainingCents, pid);
+
+            // If this is the organizer, update tab's host_overpaid_cents and paid_up_cents
+            if (participant.role === 'organizer') {
+              const updatedTab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+              const totalBill = updatedTab.total_amount_cents || 0;
+              
+              // If organizer paid the full bill, calculate overpaid
+              if (newPaidCents >= totalBill) {
+                const hostOverpaidCents = newPaidCents - fairShareCents;
+                db.prepare(`
+                  UPDATE group_tabs SET host_overpaid_cents = ?, paid_up_cents = ?
+                  WHERE id = ?
+                `).run(Math.max(0, hostOverpaidCents), fairShareCents, tabId);
+              } else {
+                // Organizer didn't pay full bill
+                db.prepare(`
+                  UPDATE group_tabs SET host_overpaid_cents = 0, paid_up_cents = ?
+                  WHERE id = ?
+                `).run(newPaidCents, tabId);
+              }
+            }
+
+            console.log(`[Edit] Updated participant ${pid} paid: ${newPaidCents}, remaining: ${remainingCents}`);
+          }
+        } catch (e) {
+          console.error('Error updating participant paid amounts:', e);
+        }
+      }
+      
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Error updating tab:', err);
+      res.status(500).json({ error: 'Failed to update tab' });
+    }
+  });
 });
 
 // Get tab tiers
@@ -6382,11 +6943,220 @@ app.post('/api/grouptabs/:id/close', requireAuth, (req, res) => {
   }
 });
 
+// Delete tab (organizer only)
+app.delete('/api/grouptabs/:id', requireAuth, (req, res) => {
+  const tabId = parseInt(req.params.id);
+
+  try {
+    // Verify user is the tab creator
+    const tab = db.prepare(`
+      SELECT * FROM group_tabs WHERE id = ? AND creator_user_id = ?
+    `).get(tabId, req.user.id);
+
+    if (!tab) {
+      return res.status(403).json({ error: 'Only the organizer can delete this tab' });
+    }
+
+    // Delete all related data in correct order (respecting foreign key constraints)
+    db.prepare(`DELETE FROM group_tab_payments WHERE group_tab_id = ?`).run(tabId);
+    db.prepare(`DELETE FROM group_tab_expenses WHERE group_tab_id = ?`).run(tabId);
+    
+    // Delete payment_reports BEFORE participants (payment_reports references participant_id)
+    const reportsTableExists = db.prepare(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_payment_reports'
+    `).get();
+    if (reportsTableExists) {
+      db.prepare(`DELETE FROM group_tab_payment_reports WHERE group_tab_id = ?`).run(tabId);
+    }
+    
+    db.prepare(`DELETE FROM group_tab_participants WHERE group_tab_id = ?`).run(tabId);
+    
+    // Check if price_groups table exists before deleting
+    const priceGroupsTableExists = db.prepare(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_price_groups'
+    `).get();
+    if (priceGroupsTableExists) {
+      db.prepare(`DELETE FROM group_tab_price_groups WHERE group_tab_id = ?`).run(tabId);
+    }
+
+    // Check if tiers table exists before deleting
+    const tiersTableExists = db.prepare(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_tiers'
+    `).get();
+    if (tiersTableExists) {
+      db.prepare(`DELETE FROM group_tab_tiers WHERE group_tab_id = ?`).run(tabId);
+    }
+
+    // Delete messages that reference this tab
+    db.prepare(`DELETE FROM messages WHERE tab_id = ?`).run(tabId);
+
+    // Delete the tab itself
+    db.prepare(`DELETE FROM group_tabs WHERE id = ?`).run(tabId);
+
+    console.log(`[GroupTabs] Tab ${tabId} deleted by user ${req.user.id}`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting tab:', err);
+    res.status(500).json({ error: 'Failed to delete tab' });
+  }
+});
+
 // =============================================
 // UNIFIED TOKEN-BASED TAB ACCESS
 // =============================================
 
-// Get tab by either owner_token or magic_token (public)
+// Get tab by short code (invite_code), manage_code, or legacy magic_token
+// PRIMARY API for /tab/:code URLs
+app.get('/api/grouptabs/code/:code', (req, res) => {
+  const { code } = req.params;
+  
+  try {
+    // First check if it's a manage_code (creator access)
+    let tab = db.prepare(`
+      SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
+      FROM group_tabs gt
+      JOIN users u ON gt.creator_user_id = u.id
+      WHERE gt.manage_code = ?
+    `).get(code);
+    
+    let accessedViaManageCode = !!tab;
+    
+    // If not manage_code, try invite_code (viewer access)
+    if (!tab) {
+      tab = db.prepare(`
+        SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
+        FROM group_tabs gt
+        JOIN users u ON gt.creator_user_id = u.id
+        WHERE gt.invite_code = ?
+      `).get(code);
+    }
+    
+    // If still not found, try legacy magic_token (for old URLs)
+    if (!tab) {
+      tab = db.prepare(`
+        SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
+        FROM group_tabs gt
+        JOIN users u ON gt.creator_user_id = u.id
+        WHERE gt.magic_token = ?
+      `).get(code);
+    }
+    
+    if (!tab) {
+      return res.status(404).json({ error: 'Tab not found' });
+    }
+    
+    // Determine if user is the creator (either via manage_code OR logged in as creator)
+    const isCreator = accessedViaManageCode || (req.user && req.user.id === tab.creator_user_id);
+    
+    if (tab.status === 'closed' && !isCreator) {
+      return res.status(403).json({ error: 'This tab has been closed', closed: true });
+    }
+    
+    // Get all participants with payment summaries
+    // Use stored total_paid_cents column (allows manual edits), fall back to computed sum for backward compatibility
+    const participants = db.prepare(`
+      SELECT gtp.id, gtp.user_id, gtp.guest_name, gtp.guest_session_token, gtp.role, gtp.is_member, 
+             gtp.seats_claimed, gtp.tier_id, gtp.price_group_id, gtp.joined_at, gtp.hide_name,
+             gtp.fair_share_cents, gtp.remaining_cents,
+             COALESCE(u.full_name, gtp.guest_name) as display_name,
+             u.profile_picture,
+             CASE 
+               WHEN gtp.total_paid_cents > 0 THEN gtp.total_paid_cents
+               ELSE (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id AND status = 'confirmed')
+             END as total_paid_cents,
+             (SELECT MAX(created_at) FROM group_tab_payments WHERE from_participant_id = gtp.id) as last_payment_at
+      FROM group_tab_participants gtp
+      LEFT JOIN users u ON gtp.user_id = u.id
+      WHERE gtp.group_tab_id = ?
+      ORDER BY gtp.role DESC, gtp.joined_at ASC
+    `).all(tab.id);
+    
+    // Get all payments
+    const payments = db.prepare(`
+      SELECT p.*, 
+             COALESCE(fp.guest_name, fu.full_name) as from_name,
+             COALESCE(tp.guest_name, tu.full_name) as to_name
+      FROM group_tab_payments p
+      LEFT JOIN group_tab_participants fp ON p.from_participant_id = fp.id
+      LEFT JOIN users fu ON fp.user_id = fu.id
+      LEFT JOIN group_tab_participants tp ON p.to_participant_id = tp.id
+      LEFT JOIN users tu ON tp.user_id = tu.id
+      WHERE p.group_tab_id = ?
+      ORDER BY p.created_at DESC
+    `).all(tab.id);
+    
+    // Get price groups if applicable
+    let priceGroups = [];
+    if (tab.split_mode === 'price_groups') {
+      priceGroups = db.prepare(`
+        SELECT * FROM group_tab_price_groups WHERE group_tab_id = ? ORDER BY id
+      `).all(tab.id);
+    }
+    
+    // Determine current participant (from session or cookie)
+    let currentParticipant = null;
+    const guestSessionToken = req.cookies?.grouptab_guest_session;
+    
+    if (isCreator) {
+      currentParticipant = participants.find(p => p.role === 'organizer') || null;
+    } else if (req.user) {
+      currentParticipant = participants.find(p => p.user_id === req.user.id) || null;
+    } else if (guestSessionToken) {
+      currentParticipant = participants.find(p => p.guest_session_token === guestSessionToken) || null;
+    }
+    
+    // Calculate per-person share for equal split
+    const peopleCount = tab.people_count || participants.length || 1;
+    const totalAmountCents = tab.total_amount_cents || 0;
+    const perPersonCents = Math.round(totalAmountCents / peopleCount);
+    
+    // Calculate collected totals
+    const collectedTotal = payments
+      .filter(p => p.status === 'confirmed')
+      .reduce((sum, p) => sum + (p.amount_cents || 0), 0);
+    
+    // Determine if user has joined this tab
+    let hasJoined = false;
+    if (req.user) {
+      hasJoined = !!currentParticipant || tab.creator_user_id === req.user.id;
+    } else if (guestSessionToken) {
+      hasJoined = !!currentParticipant;
+    }
+    
+    // Return response in same format as /api/grouptabs/:id for compatibility
+    res.json({
+      success: true,
+      isCreator,
+      hasJoined, // Important: tells the page whether to show join screen
+      // Return raw tab object with snake_case fields (frontend expects this format)
+      tab: {
+        ...tab,
+        // Hide tokens from non-creators
+        magic_token: isCreator ? tab.magic_token : undefined,
+        owner_token: isCreator ? tab.owner_token : undefined,
+        manage_code: isCreator ? tab.manage_code : undefined
+      },
+      // Return raw participants (frontend expects snake_case)
+      participants: participants.map(p => ({
+        ...p,
+        display_name: p.hide_name ? 'Anonymous' : p.display_name
+      })),
+      // Return raw payments
+      payments,
+      priceGroups,
+      currentParticipant: currentParticipant ? {
+        id: currentParticipant.id,
+        displayName: currentParticipant.display_name,
+        role: currentParticipant.role
+      } : null
+    });
+  } catch (err) {
+    console.error('Error fetching tab by invite code:', err);
+    res.status(500).json({ error: 'Failed to fetch tab' });
+  }
+});
+
+// Get tab by either owner_token or magic_token (public) - LEGACY, still supported
 // Returns isCreator: true if accessed via owner_token
 app.get('/api/grouptabs/token/:token', (req, res) => {
   const { token } = req.params;
@@ -6394,7 +7164,7 @@ app.get('/api/grouptabs/token/:token', (req, res) => {
   try {
     // First check if it's an owner_token (creator access)
     let tab = db.prepare(`
-      SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id
+      SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
       FROM group_tabs gt
       JOIN users u ON gt.creator_user_id = u.id
       WHERE gt.owner_token = ?
@@ -6405,7 +7175,7 @@ app.get('/api/grouptabs/token/:token', (req, res) => {
     // If not owner_token, try magic_token (viewer access)
     if (!tab) {
       tab = db.prepare(`
-        SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id
+        SELECT gt.*, u.full_name as creator_name, u.id as creator_user_id, u.profile_picture as creator_avatar_url
         FROM group_tabs gt
         JOIN users u ON gt.creator_user_id = u.id
         WHERE gt.magic_token = ?
@@ -6421,12 +7191,17 @@ app.get('/api/grouptabs/token/:token', (req, res) => {
     }
     
     // Get all participants with payment summaries
+    // Use stored total_paid_cents column (allows manual edits), fall back to computed sum for backward compatibility
     const participants = db.prepare(`
       SELECT gtp.id, gtp.user_id, gtp.guest_name, gtp.guest_session_token, gtp.role, gtp.is_member, 
              gtp.seats_claimed, gtp.tier_id, gtp.price_group_id, gtp.joined_at,
              COALESCE(u.full_name, gtp.guest_name) as display_name,
              u.profile_picture,
-             (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id) as total_paid_cents,
+             gtp.fair_share_cents,
+             CASE 
+               WHEN gtp.total_paid_cents > 0 THEN gtp.total_paid_cents
+               ELSE (SELECT COALESCE(SUM(amount_cents), 0) FROM group_tab_payments WHERE from_participant_id = gtp.id)
+             END as total_paid_cents,
              (SELECT MAX(created_at) FROM group_tab_payments WHERE from_participant_id = gtp.id) as last_payment_at
       FROM group_tab_participants gtp
       LEFT JOIN users u ON gtp.user_id = u.id
@@ -6916,7 +7691,7 @@ app.patch('/api/grouptabs/token/:ownerToken', uploadGrouptabs.single('receipt'),
 // Join tab via token (for name capture flow)
 app.post('/api/grouptabs/token/:token/join', (req, res) => {
   const { token } = req.params;
-  const { guestName, priceGroupId } = req.body;
+  const { guestName, priceGroupId, hideName } = req.body;
   
   try {
     // Only allow joining via magic_token (not owner_token)
@@ -6946,6 +7721,12 @@ app.post('/api/grouptabs/token/:token/join', (req, res) => {
           db.prepare(`UPDATE group_tab_participants SET price_group_id = ? WHERE id = ?`)
             .run(priceGroupId, existing.id);
         }
+        // Update hide_name if provided
+        if (hideName !== undefined) {
+          db.prepare(`UPDATE group_tab_participants SET hide_name = ? WHERE id = ?`)
+            .run(hideName ? 1 : 0, existing.id);
+          existing.hide_name = hideName ? 1 : 0;
+        }
         return res.json({ success: true, participant: existing, alreadyJoined: true });
       }
       
@@ -6955,13 +7736,13 @@ app.post('/api/grouptabs/token/:token/join', (req, res) => {
         : 0;
       
       const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
-        VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0)
-      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
+        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
+        VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0, ?)
+      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
       
       return res.json({
         success: true,
-        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', priceGroupId: priceGroupId || null, fairShareCents, remainingCents: fairShareCents }
+        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', priceGroupId: priceGroupId || null, fairShareCents, remainingCents: fairShareCents, hideName: hideName ? 1 : 0 }
       });
     }
     
@@ -6979,6 +7760,12 @@ app.post('/api/grouptabs/token/:token/join', (req, res) => {
       `).get(tab.id, guestSessionToken);
       
       if (existing) {
+        // Update hide_name if provided
+        if (hideName !== undefined) {
+          db.prepare(`UPDATE group_tab_participants SET hide_name = ? WHERE id = ?`)
+            .run(hideName ? 1 : 0, existing.id);
+          existing.hide_name = hideName ? 1 : 0;
+        }
         return res.json({ success: true, participant: existing, alreadyJoined: true });
       }
     }
@@ -7022,9 +7809,9 @@ app.post('/api/grouptabs/token/:token/join', (req, res) => {
       : 0;
     
     const result = db.prepare(`
-      INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
-      VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0)
-    `).run(tab.id, trimmedName, newGuestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
+      INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
+      VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0, ?)
+    `).run(tab.id, trimmedName, newGuestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
     
     // Notify the organizer
     db.prepare(`
@@ -7181,7 +7968,7 @@ app.get('/api/tabs/token/:token', (req, res) => {
   
   try {
     const tab = db.prepare(`
-      SELECT gt.*, u.full_name as creator_name
+      SELECT gt.*, u.full_name as creator_name, u.profile_picture as creator_avatar_url
       FROM group_tabs gt
       JOIN users u ON gt.creator_user_id = u.id
       WHERE gt.magic_token = ?
@@ -7266,14 +8053,18 @@ app.get('/api/tabs/token/:token', (req, res) => {
   }
 });
 
-// Join tab
+// Join tab - supports both invite_code (short) and magic_token (legacy)
 app.post('/api/tabs/token/:token/join', (req, res) => {
   const { token } = req.params;
-  const { guestName, priceGroupId } = req.body;
+  const { guestName, priceGroupId, hideName } = req.body;
   
   try {
-    const tab = db.prepare(`SELECT * FROM group_tabs WHERE magic_token = ?`).get(token);
-    
+    // Try invite_code first (short codes), then magic_token (legacy)
+    let tab = db.prepare(`SELECT * FROM group_tabs WHERE invite_code = ?`).get(token);
+    if (!tab) {
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE magic_token = ?`).get(token);
+    }
+
     if (!tab) {
       return res.status(404).json({ error: 'Tab not found' });
     }
@@ -7303,13 +8094,19 @@ app.post('/api/tabs/token/:token/join', (req, res) => {
       `).get(tab.id, req.user.id);
       
       if (existing) {
+        // Update hide_name if provided
+        if (hideName !== undefined) {
+          db.prepare(`UPDATE group_tab_participants SET hide_name = ? WHERE id = ?`)
+            .run(hideName ? 1 : 0, existing.id);
+          existing.hide_name = hideName ? 1 : 0;
+        }
         return res.json({ success: true, participant: existing, alreadyJoined: true });
       }
       
       const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
-        VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0)
-      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
+        INSERT INTO group_tab_participants (group_tab_id, user_id, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
+        VALUES (?, ?, 'participant', 1, ?, ?, ?, ?, 0, ?)
+      `).run(tab.id, req.user.id, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
       
       // Notify the organizer that a member joined
       db.prepare(`
@@ -7326,7 +8123,7 @@ app.post('/api/tabs/token/:token/join', (req, res) => {
       
       res.json({
         success: true,
-        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', fairShareCents, remainingCents: fairShareCents, priceGroupId: priceGroupId || null }
+        participant: { id: result.lastInsertRowid, isMember: true, role: 'participant', fairShareCents, remainingCents: fairShareCents, priceGroupId: priceGroupId || null, hideName: hideName ? 1 : 0 }
       });
     } else {
       if (!guestName || !guestName.trim()) {
@@ -7336,9 +8133,9 @@ app.post('/api/tabs/token/:token/join', (req, res) => {
       const guestSessionToken = crypto.randomBytes(32).toString('hex');
       
       const result = db.prepare(`
-        INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents)
-        VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0)
-      `).run(tab.id, guestName.trim(), guestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents);
+        INSERT INTO group_tab_participants (group_tab_id, guest_name, guest_session_token, role, is_member, joined_at, price_group_id, fair_share_cents, remaining_cents, total_paid_cents, hide_name)
+        VALUES (?, ?, ?, 'participant', 0, ?, ?, ?, ?, 0, ?)
+      `).run(tab.id, guestName.trim(), guestSessionToken, joinedAt, priceGroupId || null, fairShareCents, fairShareCents, hideName ? 1 : 0);
       
       // Notify the organizer that a guest joined
       db.prepare(`
@@ -7403,7 +8200,12 @@ app.get('/api/tabs/token/:token/fairness', (req, res) => {
     // Calculate total
     let totalAmount = 0;
     if (tab.tab_type === 'one_bill') {
-      totalAmount = tab.total_amount_cents || 0;
+      // For gift pot modes, use amount_target instead of total_amount_cents
+      if (tab.gift_mode === 'gift_pot_target' || tab.gift_mode === 'gift_pot_open') {
+        totalAmount = tab.amount_target || 0;
+      } else {
+        totalAmount = tab.total_amount_cents || 0;
+      }
     } else {
       const expenseSum = db.prepare(`
         SELECT COALESCE(SUM(amount_cents), 0) as total FROM group_tab_expenses WHERE group_tab_id = ?
@@ -7592,6 +8394,59 @@ app.post('/api/grouptabs/:id/participants', requireAuth, (req, res) => {
   }
 });
 
+// Remove pending participant (organizer only)
+// Only allows removing participants who have no payments
+app.delete('/api/grouptabs/:id/participants/:participantId', requireAuth, (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const participantId = parseInt(req.params.participantId);
+  
+  try {
+    // Check if user is the tab creator
+    const tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+    if (!tab) {
+      return res.status(404).json({ error: 'Tab not found' });
+    }
+    
+    if (tab.creator_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only the tab creator can remove participants' });
+    }
+    
+    // Get the participant
+    const participant = db.prepare(`
+      SELECT * FROM group_tab_participants WHERE id = ? AND group_tab_id = ?
+    `).get(participantId, tabId);
+    
+    if (!participant) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+    
+    // Don't allow removing the organizer
+    if (participant.role === 'organizer') {
+      return res.status(400).json({ error: 'Cannot remove the organizer' });
+    }
+
+    // Delete any payments made by this participant
+    db.prepare(`DELETE FROM group_tab_payments WHERE from_participant_id = ?`).run(participantId);
+
+    // Delete any payment reports by this participant
+    const reportsTableExists = db.prepare(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='group_tab_payment_reports'
+    `).get();
+    if (reportsTableExists) {
+      db.prepare(`DELETE FROM group_tab_payment_reports WHERE participant_id = ?`).run(participantId);
+    }
+
+    // Delete the participant
+    db.prepare(`DELETE FROM group_tab_participants WHERE id = ?`).run(participantId);
+    
+    res.json({ success: true, message: 'Participant removed' });
+    
+  } catch (err) {
+    console.error('Error removing participant:', err);
+    res.status(500).json({ error: 'Failed to remove participant' });
+  }
+});
+
 // Update participant (seats, tier, price group)
 app.patch('/api/grouptabs/:id/participants/:participantId', (req, res) => {
   const tabId = parseInt(req.params.id);
@@ -7669,6 +8524,16 @@ app.patch('/api/grouptabs/:id/participants/:participantId', (req, res) => {
     if (customAmountCents !== undefined) { 
       updates.push('custom_amount_cents = ?'); 
       params.push(customAmountCents); 
+    }
+    
+    if (req.body.guest_name !== undefined) {
+      updates.push('guest_name = ?');
+      params.push(req.body.guest_name);
+    }
+    
+    if (req.body.hide_name !== undefined) {
+      updates.push('hide_name = ?');
+      params.push(req.body.hide_name ? 1 : 0);
     }
     
     if (updates.length > 0) {
@@ -8029,6 +8894,432 @@ app.post('/api/grouptabs/:id/simple-payment', (req, res) => {
   } catch (err) {
     console.error('[SIMPLE-PAYMENT ERROR]', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// =============================================
+// GROUPTAB PAYMENT REPORTS (Group Gift Only)
+// For tracking reported payments pending confirmation
+// =============================================
+
+// Report a payment (for participants in Group Gift tabs)
+app.post('/api/grouptabs/:id/payment-reports', uploadGrouptabs.single('proof'), (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const { reporterName, amountCents, method, paidAt, note, token, additionalNames } = req.body;
+  
+  try {
+    // Validate tab access via magic token OR invite_code (for invited guests)
+    let tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+    if (!tab) {
+      // Also try invite_code for invited guests
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND invite_code = ?`).get(tabId, token);
+    }
+    if (!tab) {
+      return res.status(403).json({ error: 'Access denied or tab not found' });
+    }
+    
+    // Validate required fields
+    if (!reporterName || !reporterName.trim()) {
+      return res.status(400).json({ error: 'Your name is required' });
+    }
+    if (!amountCents || parseInt(amountCents) <= 0) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+    if (!method) {
+      return res.status(400).json({ error: 'Payment method is required' });
+    }
+    if (!paidAt) {
+      return res.status(400).json({ error: 'Payment date is required' });
+    }
+    
+    // Find or create participant
+    let participantId = null;
+    let participant = null;
+    
+    if (req.user) {
+      participant = db.prepare(`
+        SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
+      `).get(tabId, req.user.id);
+    } else {
+      participant = getGuestParticipant(req, tabId);
+    }
+    
+    if (participant) {
+      participantId = participant.id;
+    }
+    
+    const createdAt = new Date().toISOString();
+    // Store path with leading slash for web access
+    const proofPath = req.file ? '/' + req.file.path.replace(/\\/g, '/') : null;
+    
+    // Parse additional names (JSON string from frontend)
+    let parsedAdditionalNames = null;
+    if (additionalNames) {
+      try {
+        parsedAdditionalNames = JSON.parse(additionalNames);
+        if (!Array.isArray(parsedAdditionalNames)) {
+          parsedAdditionalNames = null;
+        }
+      } catch (e) {
+        // Invalid JSON, ignore
+      }
+    }
+    
+    // Calculate fair share for new participants
+    const peopleCount = tab.people_count || 1;
+    const totalAmount = tab.total_amount_cents || 0;
+    const fairShareCents = Math.floor(totalAmount / peopleCount);
+    
+    // Create pending participant entries for additional names IMMEDIATELY
+    // They appear as pending until payment is confirmed
+    const additionalParticipantIds = [];
+    if (parsedAdditionalNames && parsedAdditionalNames.length > 0) {
+      for (const name of parsedAdditionalNames) {
+        if (name && name.trim()) {
+          // Create a new pending participant entry (total_paid_cents = 0, remaining = fairShare)
+          const insertResult = db.prepare(`
+            INSERT INTO group_tab_participants (
+              group_tab_id, guest_name, role, fair_share_cents, total_paid_cents, remaining_cents, joined_at
+            ) VALUES (?, ?, 'contributor', ?, 0, ?, ?)
+          `).run(
+            tabId,
+            name.trim(),
+            fairShareCents,
+            fairShareCents, // They still owe their share until payment is confirmed
+            createdAt
+          );
+          additionalParticipantIds.push(insertResult.lastInsertRowid);
+        }
+      }
+    }
+    
+    const result = db.prepare(`
+      INSERT INTO group_tab_payment_reports (
+        group_tab_id, participant_id, reporter_name, amount_cents, method, paid_at, proof_file_path, note, status, created_at, additional_names
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+    `).run(
+      tabId,
+      participantId,
+      reporterName.trim(),
+      parseInt(amountCents),
+      method,
+      paidAt,
+      proofPath,
+      note || null,
+      createdAt,
+      parsedAdditionalNames ? JSON.stringify(parsedAdditionalNames) : null
+    );
+    
+    // Notify the organizer
+    const organizer = db.prepare(`
+      SELECT user_id FROM group_tab_participants 
+      WHERE group_tab_id = ? AND role = 'organizer'
+    `).get(tabId);
+    
+    if (organizer && organizer.user_id) {
+      const formattedAmount = (parseInt(amountCents) / 100).toFixed(2);
+      const additionalInfo = parsedAdditionalNames && parsedAdditionalNames.length > 0 
+        ? ` (also paying for: ${parsedAdditionalNames.join(', ')})` 
+        : '';
+      db.prepare(`
+        INSERT INTO messages (user_id, tab_id, subject, body, created_at, event_type)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        organizer.user_id,
+        tabId,
+        'Payment Reported',
+        `${reporterName.trim()} reported a payment of €${formattedAmount}${additionalInfo} for "${tab.name}" - awaiting your confirmation`,
+        createdAt,
+        'GROUPTAB_PAYMENT_REPORTED'
+      );
+    }
+    
+    res.json({ 
+      success: true, 
+      report: { 
+        id: result.lastInsertRowid,
+        status: 'pending',
+        reporterName: reporterName.trim(),
+        amountCents: parseInt(amountCents),
+        method,
+        paidAt,
+        createdAt
+      }
+    });
+    
+  } catch (err) {
+    console.error('Error reporting payment:', err);
+    res.status(500).json({ error: 'Failed to report payment' });
+  }
+});
+
+// Get payment reports for a tab
+app.get('/api/grouptabs/:id/payment-reports', (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const { token } = req.query;
+  
+  try {
+    // Validate access - creator can see all, participants can see their own
+    let tab = null;
+    let isCreator = false;
+    
+    if (token) {
+      // Check owner_token first (creator access)
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
+      if (tab) isCreator = true;
+      
+      // Also check manage_code (short creator token)
+      if (!tab) {
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND manage_code = ?`).get(tabId, token);
+        if (tab) isCreator = true;
+      }
+      
+      // Check magic_token (viewer access)
+      if (!tab) {
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND magic_token = ?`).get(tabId, token);
+      }
+      
+      // Also try invite_code for invited guests
+      if (!tab) {
+        tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND invite_code = ?`).get(tabId, token);
+      }
+    }
+    
+    if (!tab && req.user) {
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ?`).get(tabId);
+      if (tab && tab.creator_user_id === req.user.id) {
+        isCreator = true;
+      }
+    }
+    
+    if (!tab) {
+      return res.status(404).json({ error: 'Tab not found' });
+    }
+    
+    let reports;
+    if (isCreator) {
+      // Creator sees all reports
+      reports = db.prepare(`
+        SELECT pr.*, u.full_name as reviewer_name
+        FROM group_tab_payment_reports pr
+        LEFT JOIN users u ON pr.reviewed_by = u.id
+        WHERE pr.group_tab_id = ?
+        ORDER BY pr.created_at DESC
+      `).all(tabId);
+    } else {
+      // Participant sees only their reports
+      let participantId = null;
+      if (req.user) {
+        const participant = db.prepare(`
+          SELECT id FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
+        `).get(tabId, req.user.id);
+        if (participant) participantId = participant.id;
+      } else {
+        const guest = getGuestParticipant(req, tabId);
+        if (guest) participantId = guest.id;
+      }
+      
+      if (participantId) {
+        reports = db.prepare(`
+          SELECT * FROM group_tab_payment_reports
+          WHERE group_tab_id = ? AND participant_id = ?
+          ORDER BY created_at DESC
+        `).all(tabId, participantId);
+      } else {
+        reports = [];
+      }
+    }
+    
+    res.json({ success: true, reports, isCreator });
+    
+  } catch (err) {
+    console.error('Error getting payment reports:', err);
+    res.status(500).json({ error: 'Failed to get payment reports' });
+  }
+});
+
+// Confirm a payment report (creator only)
+app.patch('/api/grouptabs/:id/payment-reports/:reportId/confirm', (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const reportId = parseInt(req.params.reportId);
+  const { token } = req.body;
+  
+  try {
+    // Validate creator access
+    let tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
+    let isCreator = !!tab;
+    
+    if (!tab && req.user) {
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND creator_user_id = ?`).get(tabId, req.user.id);
+      isCreator = !!tab;
+    }
+    
+    if (!tab || !isCreator) {
+      return res.status(403).json({ error: 'Only the tab creator can confirm payments' });
+    }
+    
+    const report = db.prepare(`
+      SELECT * FROM group_tab_payment_reports WHERE id = ? AND group_tab_id = ?
+    `).get(reportId, tabId);
+    
+    if (!report) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    
+    if (report.status !== 'pending') {
+      return res.status(400).json({ error: 'Report has already been processed' });
+    }
+    
+    const reviewedAt = new Date().toISOString();
+    const reviewerId = req.user ? req.user.id : null;
+    
+    // Update report status
+    db.prepare(`
+      UPDATE group_tab_payment_reports 
+      SET status = 'confirmed', reviewed_at = ?, reviewed_by = ?
+      WHERE id = ?
+    `).run(reviewedAt, reviewerId, reportId);
+    
+    // Calculate fair share for new participants
+    const peopleCount = tab.people_count || 1;
+    const totalAmount = tab.total_amount_cents || 0;
+    const fairShareCents = Math.floor(totalAmount / peopleCount);
+    
+    // Update participant's payment totals if participant exists
+    if (report.participant_id) {
+      const participant = db.prepare(`SELECT * FROM group_tab_participants WHERE id = ?`).get(report.participant_id);
+      if (participant) {
+        const newTotalPaid = (participant.total_paid_cents || 0) + report.amount_cents;
+        const fairShare = participant.fair_share_cents || 0;
+        const newRemaining = Math.max(0, fairShare - newTotalPaid);
+        
+        db.prepare(`
+          UPDATE group_tab_participants 
+          SET total_paid_cents = ?, remaining_cents = ?
+          WHERE id = ?
+        `).run(newTotalPaid, newRemaining, report.participant_id);
+      }
+    }
+    
+    // Update additional participants to mark them as fully paid (they were created as pending when report was submitted)
+    if (report.additional_names) {
+      try {
+        const additionalNames = JSON.parse(report.additional_names);
+        if (Array.isArray(additionalNames) && additionalNames.length > 0) {
+          for (const name of additionalNames) {
+            if (name && name.trim()) {
+              // Find the pending participant by name and update to fully paid
+              db.prepare(`
+                UPDATE group_tab_participants 
+                SET total_paid_cents = fair_share_cents, remaining_cents = 0
+                WHERE group_tab_id = ? AND guest_name = ? AND total_paid_cents = 0
+              `).run(tabId, name.trim());
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Payment Confirm] Error processing additional names:', e);
+        // Don't fail the confirmation, just log the error
+      }
+    }
+    
+    // Update tab's paid_up_cents and total_raised_cents for pot modes
+    if (tab.gift_mode === 'gift_pot_target' || tab.gift_mode === 'gift_pot_open') {
+      db.prepare(`
+        UPDATE group_tabs 
+        SET total_raised_cents = COALESCE(total_raised_cents, 0) + ?
+        WHERE id = ?
+      `).run(report.amount_cents, tabId);
+    } else {
+      // Debt mode - update paid_up_cents
+      db.prepare(`
+        UPDATE group_tabs 
+        SET paid_up_cents = COALESCE(paid_up_cents, 0) + ?
+        WHERE id = ?
+      `).run(report.amount_cents, tabId);
+    }
+    
+    // Also record as a proper payment for tracking
+    db.prepare(`
+      INSERT INTO group_tab_payments (
+        group_tab_id, from_participant_id, amount_cents, method, status, created_at, payment_type, note
+      ) VALUES (?, ?, ?, ?, 'confirmed', ?, 'reported', ?)
+    `).run(tabId, report.participant_id, report.amount_cents, report.method, reviewedAt, `Confirmed from report #${reportId}`);
+    
+    res.json({ success: true, message: 'Payment confirmed' });
+    
+  } catch (err) {
+    console.error('Error confirming payment:', err);
+    res.status(500).json({ error: 'Failed to confirm payment' });
+  }
+});
+
+// Reject a payment report (creator only)
+app.patch('/api/grouptabs/:id/payment-reports/:reportId/reject', (req, res) => {
+  const tabId = parseInt(req.params.id);
+  const reportId = parseInt(req.params.reportId);
+  const { token, reason } = req.body;
+  
+  try {
+    // Validate creator access
+    let tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND owner_token = ?`).get(tabId, token);
+    let isCreator = !!tab;
+    
+    if (!tab && req.user) {
+      tab = db.prepare(`SELECT * FROM group_tabs WHERE id = ? AND creator_user_id = ?`).get(tabId, req.user.id);
+      isCreator = !!tab;
+    }
+    
+    if (!tab || !isCreator) {
+      return res.status(403).json({ error: 'Only the tab creator can reject payments' });
+    }
+    
+    const report = db.prepare(`
+      SELECT * FROM group_tab_payment_reports WHERE id = ? AND group_tab_id = ?
+    `).get(reportId, tabId);
+    
+    if (!report) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    
+    if (report.status !== 'pending') {
+      return res.status(400).json({ error: 'Report has already been processed' });
+    }
+    
+    const reviewedAt = new Date().toISOString();
+    const reviewerId = req.user ? req.user.id : null;
+    
+    db.prepare(`
+      UPDATE group_tab_payment_reports 
+      SET status = 'rejected', reviewed_at = ?, reviewed_by = ?, note = COALESCE(note, '') || ?
+      WHERE id = ?
+    `).run(reviewedAt, reviewerId, reason ? ` [Rejected: ${reason}]` : '', reportId);
+    
+    // Remove pending participants that were created for additional names
+    if (report.additional_names) {
+      try {
+        const additionalNames = JSON.parse(report.additional_names);
+        if (Array.isArray(additionalNames) && additionalNames.length > 0) {
+          for (const name of additionalNames) {
+            if (name && name.trim()) {
+              // Delete the pending participant (only if still unpaid)
+              db.prepare(`
+                DELETE FROM group_tab_participants 
+                WHERE group_tab_id = ? AND guest_name = ? AND total_paid_cents = 0
+              `).run(tabId, name.trim());
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Payment Reject] Error removing additional participants:', e);
+      }
+    }
+    
+    res.json({ success: true, message: 'Payment report rejected' });
+    
+  } catch (err) {
+    console.error('Error rejecting payment:', err);
+    res.status(500).json({ error: 'Failed to reject payment' });
   }
 });
 
@@ -8413,7 +9704,12 @@ app.get('/api/grouptabs/:id/fairness', (req, res) => {
     // Calculate total
     let totalAmount = 0;
     if (tab.tab_type === 'one_bill') {
-      totalAmount = tab.total_amount_cents || 0;
+      // For gift pot modes, use amount_target instead of total_amount_cents
+      if (tab.gift_mode === 'gift_pot_target' || tab.gift_mode === 'gift_pot_open') {
+        totalAmount = tab.amount_target || 0;
+      } else {
+        totalAmount = tab.total_amount_cents || 0;
+      }
     } else {
       const expenseSum = db.prepare(`
         SELECT COALESCE(SUM(amount_cents), 0) as total FROM group_tab_expenses WHERE group_tab_id = ?
@@ -8607,42 +9903,41 @@ app.get('/grouptabs/:id/receipt', (req, res, next) => {
   }
 });
 
-// Magic link page (public access) - serve the view page with magic token
-app.get('/tab/:token', (req, res) => {
-  const { token } = req.params;
+// Tab page - handles both short codes (12 chars) and legacy long tokens (64 chars)
+// /tab/:code is the PRIMARY sharing URL
+app.get('/tab/:code', (req, res) => {
+  const { code } = req.params;
   
-  const tab = db.prepare(`SELECT id, status FROM group_tabs WHERE magic_token = ?`).get(token);
+  // Try short invite_code first (primary), then fall back to legacy magic_token
+  let tab = db.prepare(`SELECT id, status, magic_token, invite_code FROM group_tabs WHERE invite_code = ?`).get(code);
+  
+  if (!tab) {
+    // Try legacy long magic_token
+    tab = db.prepare(`SELECT id, status, magic_token, invite_code FROM group_tabs WHERE magic_token = ?`).get(code);
+    
+    // If found with long token but has short code, redirect to short URL
+    if (tab && tab.invite_code) {
+      return res.redirect(`/tab/${tab.invite_code}`);
+    }
+  }
   
   if (!tab) {
     return res.status(404).send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>Tab not found</h1><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
   }
   
   if (tab.status === 'closed') {
-    return res.send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>This tab has been closed</h1><p style="color:#a7b0bd">Only members can view closed tabs.</p><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
-  }
-  
-  // For logged-in users who are already participants, redirect to the main view
-  if (req.user) {
-    const participant = db.prepare(`
-      SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND user_id = ?
-    `).get(tab.id, req.user.id);
-    if (participant || tab.creator_user_id === req.user.id) {
-      return res.redirect(`/grouptabs/${tab.id}`);
+    // For closed tabs, still allow viewing if the user is logged in or has a guest session
+    const guestToken = req.cookies.grouptab_guest_session;
+    const hasAccess = req.user || (guestToken && db.prepare(`
+      SELECT 1 FROM group_tab_participants WHERE group_tab_id = ? AND guest_session_token = ?
+    `).get(tab.id, guestToken));
+    
+    if (!hasAccess) {
+      return res.send('<html><body style="font-family:system-ui;background:#0e1116;color:#e6eef6;text-align:center;padding:64px"><h1>This tab has been closed</h1><p style="color:#a7b0bd">Only members can view closed tabs.</p><a href="/" style="color:#3ddc97">Go to PayFriends</a></body></html>');
     }
   }
   
-  // Check for existing guest session
-  const guestToken = req.cookies.grouptab_guest_session;
-  if (guestToken) {
-    const guestParticipant = db.prepare(`
-      SELECT * FROM group_tab_participants WHERE group_tab_id = ? AND guest_session_token = ?
-    `).get(tab.id, guestToken);
-    if (guestParticipant) {
-      return res.redirect(`/grouptabs/${tab.id}`);
-    }
-  }
-  
-  // Serve the view page - it will detect the magic token in the URL and show join screen
+  // Serve the view page - it will detect the code in the URL and use the API
   res.sendFile(path.join(__dirname, 'public', 'grouptabs-view.html'));
 });
 

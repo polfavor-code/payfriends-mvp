@@ -5,8 +5,25 @@ data/*.db-shm
 data/*.db-wal
 .DS_Store
 
+# Environment files
+.env
+.env.local
+.env*.local
+
 # Playwright
 test-results/
 playwright-report/
 playwright/.cache/
 uploads/
+
+# Supabase
+.supabase/
+supabase/.temp/
+
+# Debug logs
+debug*.log
+.cursor/debug.log
+
+# Admin CMS
+admin/.next/
+admin/node_modules/

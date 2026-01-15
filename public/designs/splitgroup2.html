@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Split Redesign - Ticket + Social Grid</title>
+    <style>
+        :root {
+            --bg: #0e1116;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #3ddc97;
+            --danger: #f85149;
+            --pending: #f59e0b;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 100px;
+        }
+
+        .design-container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .design-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* --- TICKET BASE STYLE --- */
+        .ticket {
+            border: 1px dashed var(--pending);
+            background: rgba(245, 158, 11, 0.03);
+            border-radius: 24px;
+            position: relative;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        /* --- SOCIAL GRID STYLE --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .slot {
+            padding: 12px 8px;
+            border: 1px dashed #333;
+            border-radius: 16px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .slot.paid { border-color: #fff; color: #fff; border-style: solid; }
+        .slot.you { border-color: var(--pending); color: var(--pending); background: rgba(245,158,11,0.05); }
+        .slot.empty { opacity: 0.6; cursor: pointer; border-color: var(--border); }
+        .slot.empty:hover { opacity: 1; border-color: var(--muted); }
+
+        .avatar {
+            width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
+        }
+        .avatar.paid { background: #fff; color: #000; }
+        .avatar.you { border: 2px solid var(--pending); }
+        .avatar.empty { border: 1px dashed var(--muted); color: var(--muted); }
+
+        /* --- BUTTONS --- */
+        .btn-p {
+            background: var(--accent); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%;
+        }
+        .btn-s {
+            background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%;
+        }
+
+        /* --- HELPERS --- */
+        .price-big { font-size: 42px; font-weight: 800; margin: 10px 0; }
+        .sub-text { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+        .calc-text { font-size: 12px; color: var(--muted); margin-bottom: 15px; }
+        .red { color: var(--danger) !important; }
+        .orange { color: var(--pending) !important; }
+        .mt-15 { margin-top: 15px; }
+        .flex-row { display: flex; gap: 10px; }
+        .overpaid-small { font-size: 9px; font-weight: 800; margin-top: -2px; }
+        .fairshare-small { font-size: 9px; font-weight: 600; }
+
+    </style>
+</head>
+<body>
+
+    <!-- VERSION 1: THE INTEGRATED TICKET -->
+    <div class="design-container">
+        <div class="design-label">1. All-In-One Ticket</div>
+        <div class="ticket">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div class="sub-text orange">Your Group Tab</div>
+                    <div style="font-size: 20px; font-weight: 800;">Pino's Fair Share</div>
+                </div>
+                <div style="font-size: 24px;">🔔</div>
+            </div>
+            
+            <div class="price-big orange">€39,00</div>
+            <div class="calc-text">€234,00 total ÷ 6 participants</div>
+
+            <div style="border-top: 1px dashed var(--border); margin: 20px -24px; padding: 20px 24px;">
+                <div class="sub-text">WHO ELSE IS IN?</div>
+                <div class="grid">
+                    <div class="slot paid">
+                        <div class="avatar paid">PS</div>
+                        <span style="font-size: 10px; font-weight: 700;">Paul</span>
+                        <div class="fairshare-small">€39,00 share</div>
+                        <div class="overpaid-small red">€195,00 overpaid</div>
+                    </div>
+                    <div class="slot you">
+                        <div class="avatar you">You</div>
+                        <span style="font-size: 10px; font-weight: 700;">You</span>
+                        <div class="fairshare-small">€39,00 share</div>
+                    </div>
+                    <div class="slot empty">
+                        <div class="avatar empty">3</div>
+                        <span style="font-size: 10px; font-weight: 700;">Awaiting...</span>
+                        <div class="fairshare-small">€39,00 share</div>
+                    </div>
+                    <div class="slot empty">
+                        <div class="avatar empty">4</div>
+                        <span style="font-size: 10px; font-weight: 700;">Awaiting...</span>
+                        <div class="fairshare-small">€39,00 share</div>
+                    </div>
+                    <div class="slot empty">
+                        <div class="avatar empty">5</div>
+                        <span style="font-size: 10px; font-weight: 700;">Awaiting...</span>
+                        <div class="fairshare-small">€39,00 share</div>
+                    </div>
+                    <div class="slot empty">
+                        <div class="avatar empty">6</div>
+                        <span style="font-size: 10px; font-weight: 700;">Awaiting...</span>
+                        <div class="fairshare-small">€39,00 share</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-row">
+                <button class="btn-s">Payment details</button>
+                <button class="btn-p">I'VE PAID</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VERSION 2: THE LAYERED CARDS -->
+    <div class="design-container">
+        <div class="design-label">2. Layered Focus</div>
+        <div class="ticket" style="z-index: 2; margin-bottom: -30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div style="display: flex; justify-content: space-between;">
+                <div class="sub-text orange">PINO'S PART</div>
+                <div style="font-size: 20px;">🔔</div>
+            </div>
+            <div class="price-big orange">€39,00</div>
+            <div class="calc-text">Equal split of €234,00</div>
+            <button class="btn-p">REPORT MY PAYMENT</button>
+        </div>
+        <div class="ticket" style="border-color: #333; background: var(--card); padding-top: 50px;">
+            <div class="sub-text">COMMUNITY STATUS</div>
+            <div class="grid">
+                <div class="slot paid" style="background: rgba(61, 220, 151, 0.05);">
+                    <div class="avatar paid">PS</div>
+                    <span style="font-size: 10px; font-weight: 700;">Paul</span>
+                    <div class="overpaid-small red">€195 overpaid</div>
+                </div>
+                <div class="slot paid" style="opacity: 0.5;">
+                    <div class="avatar paid" style="background: #444;">?</div>
+                    <span style="font-size: 10px;">Waiting...</span>
+                </div>
+                <div class="slot empty"><div class="avatar empty">3</div></div>
+                <div class="slot empty"><div class="avatar empty">4</div></div>
+                <div class="slot empty"><div class="avatar empty">5</div></div>
+                <div class="slot empty"><div class="avatar empty">6</div></div>
+            </div>
+            <button class="btn-s">Payment details</button>
+        </div>
+    </div>
+
+    <!-- VERSION 3: THE MODERN SIDEBAR (GRID ON TOP) -->
+    <div class="design-container">
+        <div class="design-label">3. The Network Header</div>
+        <div style="padding: 15px; border: 1px solid var(--border); border-radius: 24px 24px 0 0; background: rgba(255,255,255,0.02);">
+            <div class="sub-text" style="margin-bottom: 10px;">THE SQUAD (1/6 PAID)</div>
+            <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px;">
+                <div style="min-width: 60px; text-align: center;">
+                    <div class="avatar paid" style="margin: 0 auto 5px auto;">PS</div>
+                    <div class="overpaid-small red">€195</div>
+                </div>
+                <div style="min-width: 60px; text-align: center;">
+                    <div class="avatar you" style="margin: 0 auto 5px auto; border-style: dashed;">?</div>
+                    <div class="overpaid-small orange">You</div>
+                </div>
+                <div class="avatar empty" style="min-width:32px; height:32px;">3</div>
+                <div class="avatar empty" style="min-width:32px; height:32px;">4</div>
+                <div class="avatar empty" style="min-width:32px; height:32px;">5</div>
+                <div class="avatar empty" style="min-width:32px; height:32px;">6</div>
+            </div>
+        </div>
+        <div class="ticket" style="border-radius: 0 0 24px 24px; margin-top: -1px; border-top: none;">
+            <div class="sub-text orange">YOUR SHARE</div>
+            <div class="price-big orange" style="font-size: 56px;">€39</div>
+            <div class="calc-text">(Equal split : €234 ÷ 6 participants)</div>
+            <div class="flex-row">
+                <button class="btn-s">Payment details</button>
+                <button class="btn-p">I'VE PAID</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VERSION 4: THE ACTION CARD -->
+    <div class="design-container">
+        <div class="design-label">4. The Action Focused</div>
+        <div class="ticket" style="border-style: solid; border-width: 1px; border-color: var(--border); background: var(--card);">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                <div class="avatar you" style="width: 50px; height: 50px; font-size: 16px;">You</div>
+                <div>
+                    <div class="sub-text orange">PINO, YOU OWE</div>
+                    <div class="price-big orange" style="margin: 0;">€39,00</div>
+                </div>
+            </div>
+            
+            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 16px; margin-bottom: 20px;">
+                <div class="sub-text" style="margin-bottom: 10px;">GROUP PROGRESS</div>
+                <div style="display: flex; gap: 8px;">
+                    <div class="avatar paid" title="Paul: €195 overpaid">PS</div>
+                    <div class="avatar you" style="opacity: 0.3;">?</div>
+                    <div class="avatar empty" onclick="alert('Link copied!')">3</div>
+                    <div class="avatar empty">4</div>
+                    <div class="avatar empty">5</div>
+                    <div class="avatar empty">6</div>
+                </div>
+                <div style="font-size: 10px; color: var(--muted); margin-top: 10px;">Paul is currently covering <span class="red">€195 extra</span></div>
+            </div>
+
+            <button class="btn-p" style="margin-bottom: 10px;">I'VE PAID MY PART</button>
+            <button class="btn-s" style="border: none;">Payment details</button>
+        </div>
+    </div>
+
+    <!-- VERSION 5: THE EMOTIONAL IMPACT -->
+    <div class="design-container">
+        <div class="design-label">5. Social Proof / Impact</div>
+        <div class="ticket">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 40px; margin-bottom: 10px;">🤝</div>
+                <div style="font-weight: 800; font-size: 18px;">Don't leave Paul hanging!</div>
+                <div class="sub-text" style="margin-top: 5px;">He paid the full <span style="color: #fff;">€234,00</span> for everyone.</div>
+            </div>
+
+            <div class="grid" style="grid-template-columns: 1fr 1fr; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 20px;">
+                <div style="text-align: left;">
+                    <div class="sub-text">YOUR SHARE</div>
+                    <div class="price-big orange" style="font-size: 28px; margin: 5px 0;">€39,00</div>
+                </div>
+                <div style="text-align: right; border-left: 1px solid #333; padding-left: 15px;">
+                    <div class="sub-text">PAUL IS DOWN</div>
+                    <div class="price-big red" style="font-size: 28px; margin: 5px 0;">€195</div>
+                </div>
+            </div>
+
+            <div class="sub-text" style="margin: 20px 0 10px 0;">REMAINING PARTICIPANTS</div>
+            <div style="display: flex; gap: 5px; margin-bottom: 25px;">
+                <div style="flex: 1; height: 4px; background: var(--accent); border-radius: 2px;"></div>
+                <div style="flex: 1; height: 4px; background: var(--pending); border-radius: 2px; opacity: 0.3;"></div>
+                <div style="flex: 1; height: 4px; background: #333; border-radius: 2px;"></div>
+                <div style="flex: 1; height: 4px; background: #333; border-radius: 2px;"></div>
+                <div style="flex: 1; height: 4px; background: #333; border-radius: 2px;"></div>
+                <div style="flex: 1; height: 4px; background: #333; border-radius: 2px;"></div>
+            </div>
+
+            <button class="btn-p">SETTLE MY SHARE</button>
+            <button class="btn-s mt-15">Payment details</button>
+        </div>
+    </div>
+
+    <!-- VERSION 6: THE MINIMAL TICKET GRID -->
+    <div class="design-container">
+        <div class="design-label">6. Minimalist Grid Ticket</div>
+        <div class="ticket" style="border-style: solid; border-color: var(--border); padding: 0;">
+            <div style="padding: 24px; text-align: center;">
+                <div class="sub-text orange">FAIR SHARE CALCULATION</div>
+                <div class="price-big orange">€39,00</div>
+                <div class="calc-text">€234,00 ÷ 6 participants</div>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 20px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;">
+                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(61, 220, 151, 0.1); padding: 6px 12px; border-radius: 100px; border: 1px solid var(--accent);">
+                        <div class="avatar paid" style="width: 20px; height: 20px; font-size: 8px;">PS</div>
+                        <span style="font-size: 11px; font-weight: 700; color: var(--accent);">Paul (+€195)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(245, 158, 11, 0.1); padding: 6px 12px; border-radius: 100px; border: 1px solid var(--pending);">
+                        <div class="avatar you" style="width: 20px; height: 20px; font-size: 8px;">YOU</div>
+                        <span style="font-size: 11px; font-weight: 700; color: var(--pending);">Pino</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 100px; border: 1px dashed var(--border); opacity: 0.5;">
+                        <span style="font-size: 11px; font-weight: 600;">Participant 3</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 100px; border: 1px dashed var(--border); opacity: 0.5;">
+                        <span style="font-size: 11px; font-weight: 600;">Participant 4</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="padding: 24px;">
+                <button class="btn-p">I'VE PAID MY PART</button>
+                <button class="btn-s mt-15" style="border:none;">Payment details</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+

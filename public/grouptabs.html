@@ -183,6 +183,14 @@
       margin-right: 8px;
     }
 
+    .tab-icon-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     /* --- TAB INFO (3-line layout) --- */
     .tab-info {
       flex: 1;
@@ -203,55 +211,22 @@
     }
 
     .tab-line-2 {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 2px;
-    }
-
-    .tab-line-2 .creator-you {
-      color: var(--text);
-    }
-
-    .tab-line-3 {
       font-size: 14px;
     }
 
     .tab-amount {
-      color: var(--accent);
+      color: #f59e0b;
       font-weight: 600;
     }
 
     .tab-amount.settled {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .tab-updated {
       color: var(--muted);
       font-weight: 400;
-    }
-
-    /* --- RECEIPT LINK ICON --- */
-    .receipt-link {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      font-size: 18px;
-      flex-shrink: 0;
-      transition: all 0.2s;
-      text-decoration: none;
-      opacity: 0.6;
-    }
-
-    .receipt-link:hover {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.2);
-      opacity: 1;
-      transform: scale(1.05);
-    }
-
-    .tab-card:hover .receipt-link {
-      opacity: 0.9;
     }
 
     /* --- PROGRESS RING --- */
@@ -300,6 +275,191 @@
 
     .progress-ring-text.settled {
       color: #818cf8;
+    }
+
+    /* --- MORE MENU --- */
+    .tab-more-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      padding: 8px;
+      position: relative;
+    }
+
+    .tab-more-btn:hover {
+      color: var(--text);
+    }
+
+    .more-dots {
+      font-size: 16px;
+      letter-spacing: 3px;
+      line-height: 1;
+    }
+
+    .tab-card.menu-open .tab-more-btn {
+      color: var(--text);
+    }
+
+    .tab-card.menu-open {
+      z-index: 50;
+    }
+
+    .tab-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: rgba(22, 25, 32, 0.98);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 8px;
+      min-width: 160px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      z-index: 200;
+      display: none;
+      animation: menuFadeIn 0.15s ease-out;
+    }
+
+    @keyframes menuFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .tab-menu.open {
+      display: block;
+    }
+
+    .tab-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .tab-menu-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .tab-menu-item.danger {
+      color: #f87171;
+    }
+
+    .tab-menu-item.danger:hover {
+      background: rgba(248, 113, 113, 0.15);
+      color: #fca5a5;
+    }
+
+    /* --- DELETE MODAL --- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-box {
+      background: #1a1d24;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+      transform: scale(0.95);
+      transition: transform 0.2s;
+    }
+
+    .modal-overlay.open .modal-box {
+      transform: scale(1);
+    }
+
+    .modal-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .modal-text {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .modal-text strong {
+      color: var(--text);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .modal-btn-cancel {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .modal-btn-cancel:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .modal-btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+
+    .modal-btn-danger:hover {
+      background: #b91c1c;
     }
 
     /* --- EMPTY STATE --- */
@@ -498,6 +658,22 @@
 
   </div>
 
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal-overlay" onclick="if(event.target === this) closeDeleteModal()">
+    <div class="modal-box">
+      <div class="modal-icon">🗑️</div>
+      <div class="modal-title">Delete GroupTab?</div>
+      <div class="modal-text">
+        This will permanently delete "<strong id="delete-tab-name"></strong>".<br>
+        This action cannot be undone.
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+        <button class="modal-btn modal-btn-danger" onclick="confirmDeleteTab()">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let allTabs = [];
     let currentFilter = 'all';
@@ -558,6 +734,27 @@
       renderTabs();
     }
 
+    // Helper to determine if a tab is settled (100% paid or status closed)
+    function isTabSettled(tab) {
+      if (tab.status === 'closed') return true;
+      
+      // Gift pot mode: check raised vs target
+      const isGiftPot = tab.gift_mode === 'gift_pot_target' || tab.gift_mode === 'gift_pot_open' || tab.is_open_pot === 1;
+      const isOpenPot = tab.is_open_pot === 1 || tab.gift_mode === 'gift_pot_open';
+      
+      if (isGiftPot) {
+        if (isOpenPot) return false; // Open pots are never auto-settled
+        const raisedCents = tab.paid_up_cents || tab.total_raised_cents || 0;
+        const targetCents = tab.amount_target || 0;
+        return targetCents > 0 && raisedCents >= targetCents;
+      }
+      
+      // Regular tab: check unpaid amount
+      const totalCents = tab.total_amount_cents || 0;
+      const paidCents = tab.paid_up_cents || 0;
+      return totalCents > 0 && paidCents >= totalCents;
+    }
+    
     function renderTabs() {
       const list = document.getElementById('tab-list');
       const emptyState = document.getElementById('empty-state');
@@ -565,9 +762,11 @@
       // Filter
       let filteredTabs = allTabs;
       if (currentFilter === 'open') {
-        filteredTabs = allTabs.filter(t => t.status === 'open');
+        // Active = not settled (still has unpaid amount and not closed)
+        filteredTabs = allTabs.filter(t => !isTabSettled(t));
       } else if (currentFilter === 'closed') {
-        filteredTabs = allTabs.filter(t => t.status === 'closed');
+        // Settled = 100% paid OR status is closed
+        filteredTabs = allTabs.filter(t => isTabSettled(t));
       }
 
       // Sort
@@ -593,6 +792,7 @@
       
       if (filteredTabs.length === 0) {
         list.innerHTML = '';
+        updateEmptyState();
         emptyState.style.display = 'block';
         return;
       }
@@ -604,60 +804,108 @@
 
     function renderTabCard(tab) {
       const emoji = getTabEmoji(tab);
+      
+      // Check for uploaded image (gift product image)
+      const uploadedImage = tab.about_image_path || tab.raising_for_image_path;
 
-      // Creator info - dynamic logic
-      const isCreatedByMe = tab.creator_user_id === currentUserId;
+      // Use short invite code for URLs (user-friendly)
+      const tabUrl = tab.invite_code ? `/tab/${tab.invite_code}` : `/grouptabs/${tab.id}`;
+
+      // Financial calculations - handle gift pot modes differently
+      const isGiftPot = tab.gift_mode === 'gift_pot_target' || tab.gift_mode === 'gift_pot_open' || tab.is_open_pot === 1;
+      const isOpenPot = tab.is_open_pot === 1 || tab.gift_mode === 'gift_pot_open';
       
-      // Always use numeric ID for main view URL
-      const tabUrl = `/grouptabs/${tab.id}`;
+      let isSettled, progressPercent, unpaidCents;
       
-      // Receipt URL
-      const receiptUrl = `/grouptabs/${tab.id}/receipt`;
-      
-      let creatorDisplay;
-      if (isCreatedByMe) {
-        creatorDisplay = `Created by <span class="creator-you">You</span>`;
+      if (isGiftPot) {
+        // Gift pot mode: use amount raised vs target (or just raised for open pots)
+        const raisedCents = tab.paid_up_cents || tab.total_raised_cents || 0;
+        const targetCents = tab.amount_target || 0;
+        
+        if (isOpenPot) {
+          // Open pot: never settled until closed, show 0% (no target to compare)
+          isSettled = tab.status === 'closed';
+          progressPercent = isSettled ? 100 : 0;
+          unpaidCents = 0; // Not applicable for open pots
+        } else {
+          // Target pot: settled when raised >= target
+          isSettled = tab.status === 'closed' || (targetCents > 0 && raisedCents >= targetCents);
+          progressPercent = isSettled ? 100 : (targetCents > 0 ? Math.min(100, Math.round((raisedCents / targetCents) * 100)) : 0);
+          unpaidCents = Math.max(0, targetCents - raisedCents);
+        }
       } else {
-        const creatorFirstName = tab.creator_first_name || tab.creator_name?.split(' ')[0] || 'Someone';
-        creatorDisplay = `Created by ${escapeHtml(creatorFirstName)}`;
+        // Regular tab / gift debt: use standard calculation
+        const totalCents = tab.total_amount_cents || 0;
+        const paidCents = tab.paid_up_cents || 0;
+        
+        // Check for pre-paid gift with contribution split
+        const isGiftDebt = tab.gift_mode === 'gift_debt';
+        const hasContributionSplit = isGiftDebt && tab.organizer_contribution !== null && tab.organizer_contribution !== undefined;
+        
+        if (hasContributionSplit) {
+          // For contribution split: progress is based on amount to raise, not total
+          const amountToRaise = totalCents - tab.organizer_contribution;
+          // The organizer's "payment" is their contribution, not collected from others
+          // So we need to calculate what's actually been collected from participants
+          // For now, assume paidCents includes organizer's contribution which shouldn't count
+          const collectedFromOthers = Math.max(0, paidCents - totalCents); // Only payments beyond organizer's initial payment
+          unpaidCents = amountToRaise - collectedFromOthers;
+          isSettled = tab.status === 'closed' || (amountToRaise > 0 && collectedFromOthers >= amountToRaise);
+          progressPercent = isSettled ? 100 : (amountToRaise > 0 ? Math.min(100, Math.round((collectedFromOthers / amountToRaise) * 100)) : 0);
+        } else {
+          unpaidCents = totalCents - paidCents;
+          isSettled = tab.status === 'closed' || (totalCents > 0 && unpaidCents <= 0);
+          progressPercent = isSettled ? 100 : (totalCents > 0 ? Math.min(100, Math.round((paidCents / totalCents) * 100)) : 0);
+        }
       }
-
-      // Financial calculations
-      const totalCents = tab.total_amount_cents || 0;
-      const paidCents = tab.paid_up_cents || 0;
-      const unpaidCents = totalCents - paidCents;
-      const isSettled = tab.status === 'closed' || unpaidCents <= 0;
-      
-      // Progress percentage (% paid)
-      const progressPercent = isSettled ? 100 : (totalCents > 0 ? Math.min(100, Math.round((paidCents / totalCents) * 100)) : 0);
       
       // Ring calculations (circumference = 2 * PI * radius)
       const radius = 26;
       const circumference = 2 * Math.PI * radius;
       const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
-      // Amount display: green "€X unpaid" or muted "Settled"
-      const amountDisplay = isSettled 
-        ? '<span class="tab-amount settled">Settled</span>'
-        : `<span class="tab-amount">${formatCurrency2(unpaidCents)} unpaid</span>`;
+      // Updated time: use last_payment_at, updated_at, or created_at
+      const updatedDate = new Date(tab.last_payment_at || tab.updated_at || tab.created_at);
+      const updatedText = getTimeAgo(updatedDate);
+
+      // Amount display: depends on tab type
+      let amountDisplay;
+      if (isSettled) {
+        amountDisplay = `<span class="tab-amount settled">Settled</span> · <span class="tab-updated">Updated ${updatedText}</span>`;
+      } else if (isGiftPot) {
+        // Gift pot: show amount raised
+        const raisedCents = tab.paid_up_cents || tab.total_raised_cents || 0;
+        const targetCents = tab.amount_target || 0;
+        if (isOpenPot) {
+          amountDisplay = `<span class="tab-amount">${formatCurrency2(raisedCents)} raised</span> · <span class="tab-updated">Updated ${updatedText}</span>`;
+        } else {
+          amountDisplay = `<span class="tab-amount">${formatCurrency2(raisedCents)} / ${formatCurrency2(targetCents)}</span> · <span class="tab-updated">Updated ${updatedText}</span>`;
+        }
+      } else {
+        // Regular tab: show unpaid amount
+        amountDisplay = `<span class="tab-amount">${formatCurrency2(unpaidCents)} unpaid</span> · <span class="tab-updated">Updated ${updatedText}</span>`;
+      }
+
+      // Icon: show uploaded image if available, otherwise emoji
+      const iconContent = uploadedImage 
+        ? `<img src="${uploadedImage}" alt="" class="tab-icon-img">`
+        : emoji;
+
+      // Only creators can delete
+      const isCreator = tab.creator_user_id === currentUserId;
 
       return `
         <div class="tab-card" onclick="window.location.href='${tabUrl}'">
-          <div class="tab-icon">${emoji}</div>
+          <div class="tab-icon">${iconContent}</div>
           
           <div class="tab-info">
             <div class="tab-line-1">
-              <span class="tab-title">${escapeHtml(tab.name)}</span>
+              <span class="tab-title">${escapeHtml(getDisplayTitle(tab))}</span>
             </div>
             <div class="tab-line-2">
-              ${creatorDisplay}
-            </div>
-            <div class="tab-line-3">
               ${amountDisplay}
             </div>
           </div>
-
-          <a href="${receiptUrl}" class="receipt-link" title="View Receipt" onclick="event.stopPropagation();">🧾</a>
 
           <div class="progress-ring-container ${isSettled ? 'glow-settled' : 'glow'}">
             <svg width="64" height="64">
@@ -672,12 +920,29 @@
             </svg>
             <span class="progress-ring-text ${isSettled ? 'settled' : ''}">${progressPercent}%</span>
           </div>
+
+          <button class="tab-more-btn" onclick="event.stopPropagation(); toggleTabMenu(this, ${tab.id}, '${escapeHtml(tab.name).replace(/'/g, "\\'")}')">
+            <span class="more-dots">•••</span>
+            <div class="tab-menu">
+              <div class="tab-menu-item" onclick="event.stopPropagation();"><span>✏️</span> Edit</div>
+              ${isCreator ? `<div class="tab-menu-item danger" onclick="event.stopPropagation(); openDeleteModal(${tab.id}, '${escapeHtml(tab.name).replace(/'/g, "\\'")}')"><span>🗑️</span> Delete</div>` : ''}
+            </div>
+          </button>
         </div>
       `;
     }
 
     function getTabEmoji(tab) {
-      // Use category if available, otherwise default based on type
+      // Check template first (gift, restaurant, trip)
+      if (tab.template === 'gift') {
+        // For pot modes, use money bag; for regular gift, use gift emoji
+        const isPotMode = tab.gift_mode === 'gift_pot_open' || tab.gift_mode === 'gift_pot_target' || tab.is_open_pot === 1;
+        return isPotMode ? '💰' : '🎁';
+      }
+      if (tab.template === 'restaurant') return '🍕';
+      if (tab.template === 'trip') return '✈️';
+      
+      // Use category if available
       const category = tab.category || '';
       const emojiMap = {
         'restaurant': '🍕',
@@ -708,6 +973,15 @@
       return tab.tab_type === 'one_bill' ? '🧾' : '✈️';
     }
 
+    function getDisplayTitle(tab) {
+      let title = tab.name || 'Untitled Tab';
+      const isPotMode = tab.gift_mode === 'gift_pot_open' || tab.gift_mode === 'gift_pot_target' || tab.is_open_pot === 1;
+      if (isPotMode && title.toLowerCase().startsWith('gift for')) {
+        title = 'Raising money for' + title.substring(8);
+      }
+      return title;
+    }
+
     function getTimeAgo(date) {
       const seconds = Math.floor((new Date() - date) / 1000);
       if (seconds < 60) return 'just now';
@@ -718,7 +992,38 @@
       const days = Math.floor(hours / 24);
       if (days < 7) return `${days}d ago`;
       if (days < 30) return `${Math.floor(days / 7)}w ago`;
-      return date.toLocaleDateString();
+      // Older than 30 days: show "12 Dec" format
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${date.getDate()} ${monthNames[date.getMonth()]}`;
+    }
+
+    function updateEmptyState() {
+      const iconEl = document.querySelector('.empty-state-icon');
+      const titleEl = document.querySelector('.empty-state-title');
+      const textEl = document.querySelector('.empty-state-text');
+      const btnEl = document.querySelector('.empty-state-btn');
+      
+      if (currentFilter === 'open') {
+        // Active filter - no active tabs
+        iconEl.textContent = '✨';
+        titleEl.textContent = 'All caught up!';
+        textEl.textContent = 'No active tabs right now. All your expenses are settled.';
+        btnEl.innerHTML = '<span>+</span> Start a new tab';
+        btnEl.style.display = 'inline-flex';
+      } else if (currentFilter === 'closed') {
+        // Settled filter - no settled tabs
+        iconEl.textContent = '📊';
+        titleEl.textContent = 'No settled tabs';
+        textEl.textContent = 'Tabs will appear here once they\'re fully paid or closed.';
+        btnEl.style.display = 'none';
+      } else {
+        // All filter - no tabs at all
+        iconEl.textContent = '📭';
+        titleEl.textContent = 'No tabs yet';
+        textEl.textContent = 'Start a new tab to split dinner, a trip, or any shared expense with friends.';
+        btnEl.innerHTML = '<span>+</span> Create your first tab';
+        btnEl.style.display = 'inline-flex';
+      }
     }
 
     function escapeHtml(str) {
@@ -729,6 +1034,85 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    // --- More Menu Functions ---
+    let activeMenu = null;
+    let activeCard = null;
+
+    function toggleTabMenu(btn, tabId, tabName) {
+      const menu = btn.querySelector('.tab-menu');
+      const card = btn.closest('.tab-card');
+      
+      // Close any other open menu
+      if (activeMenu && activeMenu !== menu) {
+        activeMenu.classList.remove('open');
+        if (activeCard) activeCard.classList.remove('menu-open');
+      }
+      
+      menu.classList.toggle('open');
+      card.classList.toggle('menu-open');
+      
+      if (menu.classList.contains('open')) {
+        activeMenu = menu;
+        activeCard = card;
+      } else {
+        activeMenu = null;
+        activeCard = null;
+      }
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', () => {
+      if (activeMenu) {
+        activeMenu.classList.remove('open');
+        if (activeCard) activeCard.classList.remove('menu-open');
+        activeMenu = null;
+        activeCard = null;
+      }
+    });
+
+    // --- Delete Modal Functions ---
+    let deleteTabId = null;
+
+    function openDeleteModal(tabId, tabName) {
+      deleteTabId = tabId;
+      document.getElementById('delete-tab-name').textContent = tabName;
+      document.getElementById('delete-modal').classList.add('open');
+      
+      // Close the menu
+      if (activeMenu) {
+        activeMenu.classList.remove('open');
+        activeMenu = null;
+      }
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('delete-modal').classList.remove('open');
+      deleteTabId = null;
+    }
+
+    async function confirmDeleteTab() {
+      if (!deleteTabId) return;
+      
+      try {
+        const response = await fetch(`/api/grouptabs/${deleteTabId}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to delete tab');
+        }
+        
+        // Remove from local array and re-render
+        allTabs = allTabs.filter(t => t.id !== deleteTabId);
+        renderTabs();
+        closeDeleteModal();
+      } catch (error) {
+        console.error('Error deleting tab:', error);
+        alert('Failed to delete tab: ' + error.message);
+      }
     }
 
     // Initialize

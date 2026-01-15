@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cleanup Proposals - Minimalistic Participant List</title>
+    <style>
+        :root {
+            --bg: #0f1419;
+            --card: #1a1f26;
+            --border: #2a3038;
+            --text: #e7e9ea;
+            --muted: #71767b;
+            --accent: #22c55e;
+            --danger: #ef4444;
+            --pending: #f59e0b;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+        
+        .proposals {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .proposal {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border);
+        }
+        
+        .proposal-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--pending);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .proposal-desc {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        /* ============================================
+           SHARED STYLES
+           ============================================ */
+        
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        
+        .badge {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .badge.host { background: rgba(255,255,255,0.1); color: var(--text); }
+        .badge.overpaid { color: var(--danger); }
+        .badge.pending { color: var(--pending); }
+        
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        
+        .btn-accent {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--accent);
+        }
+        
+        .btn-link {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 11px;
+            padding: 8px 12px;
+        }
+        
+        /* ============================================
+           PROPOSAL 1: Ultra Clean Lines
+           ============================================ */
+        
+        .p1-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .p1-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .p1-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .p1-stats {
+            font-size: 11px;
+            color: var(--muted);
+        }
+        
+        .p1-stats .green { color: var(--accent); }
+        .p1-stats .orange { color: var(--pending); }
+        
+        .p1-alert {
+            background: rgba(239, 68, 68, 0.08);
+            border-left: 3px solid var(--danger);
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: var(--danger);
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .p1-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .p1-row:last-child { border-bottom: none; }
+        
+        .p1-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .p1-name {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .p1-sub {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+        
+        .p1-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        
+        .p1-amount {
+            font-size: 14px;
+            font-weight: 700;
+        }
+        
+        .p1-amount.red { color: var(--danger); }
+        .p1-amount.orange { color: var(--pending); }
+        
+        .p1-status {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+        
+        /* My card in P1 */
+        .p1-my-card {
+            background: rgba(245, 158, 11, 0.05);
+            border: 1px dashed var(--pending);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        
+        .p1-my-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .p1-my-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--pending);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .p1-my-amount {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--pending);
+            margin: 4px 0;
+        }
+        
+        .p1-my-calc {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+        
+        .p1-my-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .p1-my-actions .btn { flex: 1; }
+        
+        /* Waiting in P1 */
+        .p1-row.waiting .avatar {
+            border: 1px dashed var(--border);
+            color: var(--muted);
+            font-size: 12px;
+        }
+        
+        .p1-row.waiting .p1-name {
+            color: var(--muted);
+            font-style: italic;
+            font-weight: 400;
+        }
+        
+        /* ============================================
+           PROPOSAL 2: Card Stack
+           ============================================ */
+        
+        .p2-summary {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .p2-summary-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+        
+        .p2-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        
+        .p2-dot.green { background: var(--accent); }
+        .p2-dot.orange { background: var(--pending); }
+        .p2-dot.red { background: var(--danger); }
+        
+        .p2-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .p2-card.highlight {
+            border-color: var(--danger);
+            border-width: 1px;
+        }
+        
+        .p2-card.pending {
+            border-color: var(--pending);
+            border-style: dashed;
+            background: rgba(245, 158, 11, 0.03);
+        }
+        
+        .p2-card-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .p2-card-info { flex: 1; }
+        
+        .p2-card-name {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .p2-card-meta {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+        
+        .p2-card-right {
+            text-align: right;
+        }
+        
+        .p2-card-badge {
+            font-size: 10px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        
+        .p2-card-amount {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        /* My card P2 */
+        .p2-my-section {
+            padding-top: 12px;
+            margin-top: 12px;
+            border-top: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        
+        .p2-my-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .p2-my-label {
+            font-size: 11px;
+            color: var(--pending);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .p2-my-amount {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--pending);
+        }
+        
+        .p2-my-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .p2-my-actions .btn {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        
+        /* Waiting P2 */
+        .p2-waiting {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            margin-bottom: 6px;
+        }
+        
+        .p2-waiting .avatar {
+            width: 32px;
+            height: 32px;
+            font-size: 11px;
+            border: 1px dashed var(--border);
+            color: var(--muted);
+        }
+        
+        .p2-waiting-text {
+            flex: 1;
+            font-size: 12px;
+            color: var(--muted);
+            font-style: italic;
+        }
+        
+        /* ============================================
+           PROPOSAL 3: Compact Table
+           ============================================ */
+        
+        .p3-alert {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 11px;
+            color: var(--danger);
+        }
+        
+        .p3-alert-icon {
+            font-size: 14px;
+        }
+        
+        .p3-table {
+            width: 100%;
+        }
+        
+        .p3-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 80px 70px;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+        
+        .p3-row:last-child { border-bottom: none; }
+        
+        .p3-row.header {
+            font-size: 10px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-bottom: 8px;
+        }
+        
+        .p3-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        
+        .p3-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .p3-avatar.initials {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            border: 1px solid var(--border);
+        }
+        
+        .p3-name {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .p3-name .badge {
+            font-size: 8px;
+            padding: 1px 4px;
+        }
+        
+        .p3-paid {
+            color: var(--muted);
+        }
+        
+        .p3-status {
+            text-align: right;
+            font-weight: 600;
+        }
+        
+        .p3-status.red { color: var(--danger); }
+        .p3-status.orange { color: var(--pending); }
+        .p3-status.green { color: var(--accent); }
+        
+        /* My section P3 */
+        .p3-my-section {
+            background: rgba(245, 158, 11, 0.05);
+            border: 1px dashed var(--pending);
+            border-radius: 10px;
+            padding: 14px;
+            margin: 12px 0;
+        }
+        
+        .p3-my-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .p3-my-left {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        
+        .p3-my-amount {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--pending);
+        }
+        
+        .p3-my-calc {
+            font-size: 10px;
+            color: var(--muted);
+        }
+        
+        .p3-my-actions {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .p3-my-actions .btn {
+            padding: 6px 12px;
+            font-size: 11px;
+        }
+        
+        /* Waiting P3 */
+        .p3-row.waiting {
+            color: var(--muted);
+            font-style: italic;
+        }
+        
+        .p3-row.waiting .p3-avatar {
+            border-style: dashed;
+        }
+        
+        /* ============================================
+           PROPOSAL 4: Minimal Cards
+           ============================================ */
+        
+        .p4-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        
+        .p4-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .p4-count {
+            font-size: 11px;
+            color: var(--muted);
+        }
+        
+        .p4-alert {
+            font-size: 11px;
+            color: var(--danger);
+            margin-bottom: 12px;
+            padding-left: 12px;
+            border-left: 2px solid var(--danger);
+        }
+        
+        .p4-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .p4-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+            border-left: 3px solid transparent;
+        }
+        
+        .p4-item.overpaid { border-left-color: var(--danger); }
+        .p4-item.pending { border-left-color: var(--pending); background: rgba(245, 158, 11, 0.03); }
+        .p4-item.waiting { opacity: 0.5; }
+        
+        .p4-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .p4-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .p4-avatar.initials {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+        
+        .p4-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .p4-name {
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .p4-meta {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+        
+        .p4-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        
+        .p4-amount {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .p4-amount.red { color: var(--danger); }
+        .p4-amount.orange { color: var(--pending); }
+        
+        .p4-label {
+            font-size: 9px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+        
+        /* My card P4 */
+        .p4-my-card {
+            border-left: 3px solid var(--pending);
+            background: rgba(245, 158, 11, 0.05);
+            padding: 14px;
+        }
+        
+        .p4-my-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .p4-my-amount {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--pending);
+        }
+        
+        .p4-my-calc {
+            font-size: 10px;
+            color: var(--muted);
+        }
+        
+        .p4-my-badge {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--pending);
+            text-transform: uppercase;
+        }
+        
+        .p4-my-actions {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .p4-my-actions .btn {
+            flex: 1;
+            padding: 8px 10px;
+            font-size: 11px;
+        }
+        
+        @media (max-width: 900px) {
+            .proposals {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="proposals">
+        
+        <!-- ============================================
+             PROPOSAL 1: Ultra Clean Lines
+             ============================================ -->
+        <div class="proposal">
+            <div class="proposal-title">Proposal 1: Clean Lines</div>
+            <div class="proposal-desc">Minimal borders, clean typography, subtle left-aligned alert. Focus on whitespace and hierarchy.</div>
+            
+            <div class="p1-header">
+                <div class="p1-header-left">
+                    <span class="p1-title">Participants</span>
+                    <span class="p1-stats"><span class="green">1 paid</span> · <span class="orange">5 unpaid</span></span>
+                </div>
+            </div>
+            
+            <div class="p1-alert">Paul covered most of the bill — please settle your share.</div>
+            
+            <div class="p1-row">
+                <div class="avatar" style="border: 2px solid var(--danger);">
+                    <img src="/uploads/profiles/profile-3-1735847089087.jpg" alt="">
+                </div>
+                <div class="p1-info">
+                    <div class="p1-name">Paul Somers <span class="badge host">Host</span></div>
+                    <div class="p1-sub">Paid € 234,00 · 2h ago</div>
+                </div>
+                <div class="p1-right">
+                    <div class="p1-amount red">+€ 195,00</div>
+                    <div class="p1-status">overpaid</div>
+                </div>
+            </div>
+            
+            <div class="p1-my-card">
+                <div class="p1-my-header">
+                    <div>
+                        <div class="p1-my-label">Your share to pay</div>
+                        <div class="p1-my-amount">€ 39,00</div>
+                        <div class="p1-my-calc">(€ 234,00 ÷ 6 participants)</div>
+                    </div>
+                    <span class="badge pending">Pending</span>
+                </div>
+                <div class="p1-my-actions">
+                    <button class="btn btn-outline">💳 Payment details</button>
+                    <button class="btn btn-accent">✓ I've paid</button>
+                </div>
+            </div>
+            
+            <div class="p1-row waiting">
+                <div class="avatar">3</div>
+                <div class="p1-info">
+                    <div class="p1-name">Waiting for participant 3...</div>
+                </div>
+                <button class="btn btn-link">🔗 Share</button>
+            </div>
+            
+            <div class="p1-row waiting">
+                <div class="avatar">4</div>
+                <div class="p1-info">
+                    <div class="p1-name">Waiting for participant 4...</div>
+                </div>
+                <button class="btn btn-link">🔗 Share</button>
+            </div>
+        </div>
+        
+        <!-- ============================================
+             PROPOSAL 2: Card Stack
+             ============================================ -->
+        <div class="proposal">
+            <div class="proposal-title">Proposal 2: Card Stack</div>
+            <div class="proposal-desc">Each participant is a distinct card. Your share integrated into your card. Compact summary at top.</div>
+            
+            <div class="p2-summary">
+                <div class="p2-summary-item"><span class="p2-dot green"></span> 1 Paid</div>
+                <div class="p2-summary-item"><span class="p2-dot orange"></span> 5 Unpaid</div>
+                <div class="p2-summary-item"><span class="p2-dot red"></span> Unbalanced</div>
+            </div>
+            
+            <div class="p2-card highlight">
+                <div class="p2-card-top">
+                    <div class="avatar" style="width: 38px; height: 38px;">
+                        <img src="/uploads/profiles/profile-3-1735847089087.jpg" alt="">
+                    </div>
+                    <div class="p2-card-info">
+                        <div class="p2-card-name">Paul Somers <span class="badge host">Host</span></div>
+                        <div class="p2-card-meta">Paid full bill € 234,00 · 2h ago</div>
+                    </div>
+                    <div class="p2-card-right">
+                        <div class="p2-card-badge" style="color: var(--danger);">OVERPAID</div>
+                        <div class="p2-card-amount" style="color: var(--danger);">+€ 195,00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p2-card pending">
+                <div class="p2-card-top">
+                    <div class="avatar" style="width: 38px; height: 38px; border: 2px solid var(--pending); color: var(--pending);">PI</div>
+                    <div class="p2-card-info">
+                        <div class="p2-card-name" style="color: var(--pending);">Pino (You)</div>
+                        <div class="p2-card-meta">Joined 1h ago</div>
+                    </div>
+                    <div class="p2-card-right">
+                        <div class="p2-card-badge" style="color: var(--pending);">PENDING</div>
+                    </div>
+                </div>
+                <div class="p2-my-section">
+                    <div class="p2-my-row">
+                        <div>
+                            <div class="p2-my-label">Your share</div>
+                            <div style="font-size: 10px; color: var(--muted);">(€ 234 ÷ 6)</div>
+                        </div>
+                        <div class="p2-my-amount">€ 39,00</div>
+                    </div>
+                    <div class="p2-my-actions">
+                        <button class="btn btn-outline">💳 Payment details</button>
+                        <button class="btn btn-accent">✓ I've paid</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p2-waiting">
+                <div class="avatar">3</div>
+                <div class="p2-waiting-text">Waiting for participant 3...</div>
+                <button class="btn btn-link" style="padding: 6px 10px;">Share</button>
+            </div>
+            
+            <div class="p2-waiting">
+                <div class="avatar">4</div>
+                <div class="p2-waiting-text">Waiting for participant 4...</div>
+                <button class="btn btn-link" style="padding: 6px 10px;">Share</button>
+            </div>
+        </div>
+        
+        <!-- ============================================
+             PROPOSAL 3: Compact Table
+             ============================================ -->
+        <div class="proposal">
+            <div class="proposal-title">Proposal 3: Compact Table</div>
+            <div class="proposal-desc">Dense information display. Grid-based layout. Your share as highlighted inline row.</div>
+            
+            <div class="p3-alert">
+                <span class="p3-alert-icon">⚠️</span>
+                Paul covered most of the bill — please settle your share.
+            </div>
+            
+            <div class="p3-table">
+                <div class="p3-row header">
+                    <div></div>
+                    <div>Participant</div>
+                    <div>Paid</div>
+                    <div style="text-align: right;">Status</div>
+                </div>
+                
+                <div class="p3-row">
+                    <div class="p3-avatar">
+                        <img src="/uploads/profiles/profile-3-1735847089087.jpg" alt="">
+                    </div>
+                    <div class="p3-name">Paul S. <span class="badge host">Host</span></div>
+                    <div class="p3-paid">€ 234,00</div>
+                    <div class="p3-status red">+€ 195</div>
+                </div>
+                
+                <div class="p3-my-section">
+                    <div class="p3-my-top">
+                        <div class="p3-my-left">
+                            <div class="p3-my-amount">€ 39,00</div>
+                            <div class="p3-my-calc">your share</div>
+                        </div>
+                        <div class="p3-my-actions">
+                            <button class="btn btn-outline">💳 Details</button>
+                            <button class="btn btn-accent">✓ Paid</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p3-row waiting">
+                    <div class="p3-avatar initials">3</div>
+                    <div class="p3-name">Waiting...</div>
+                    <div class="p3-paid">—</div>
+                    <div class="p3-status"><button class="btn btn-link" style="font-size: 10px; padding: 4px 8px;">Share</button></div>
+                </div>
+                
+                <div class="p3-row waiting">
+                    <div class="p3-avatar initials">4</div>
+                    <div class="p3-name">Waiting...</div>
+                    <div class="p3-paid">—</div>
+                    <div class="p3-status"><button class="btn btn-link" style="font-size: 10px; padding: 4px 8px;">Share</button></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ============================================
+             PROPOSAL 4: Minimal Cards
+             ============================================ -->
+        <div class="proposal">
+            <div class="proposal-title">Proposal 4: Minimal Strips</div>
+            <div class="proposal-desc">Thin horizontal cards with colored left border as status indicator. Quiet, elegant.</div>
+            
+            <div class="p4-header">
+                <span class="p4-title">6 Participants</span>
+                <span class="p4-count">1 paid · 5 unpaid</span>
+            </div>
+            
+            <div class="p4-alert">Paul covered most of the bill — settle your share</div>
+            
+            <div class="p4-list">
+                <div class="p4-item overpaid">
+                    <div class="p4-avatar">
+                        <img src="/uploads/profiles/profile-3-1735847089087.jpg" alt="">
+                    </div>
+                    <div class="p4-info">
+                        <div class="p4-name">Paul Somers <span class="badge host">Host</span></div>
+                        <div class="p4-meta">Paid € 234,00 · 2h ago</div>
+                    </div>
+                    <div class="p4-right">
+                        <div class="p4-amount red">+€ 195</div>
+                        <div class="p4-label">overpaid</div>
+                    </div>
+                </div>
+                
+                <div class="p4-item p4-my-card">
+                    <div class="p4-my-top">
+                        <div>
+                            <div class="p4-my-amount">€ 39,00</div>
+                            <div class="p4-my-calc">Your share (€ 234 ÷ 6)</div>
+                        </div>
+                        <div class="p4-my-badge">Pending</div>
+                    </div>
+                    <div class="p4-my-actions">
+                        <button class="btn btn-outline">💳 Payment details</button>
+                        <button class="btn btn-accent">✓ I've paid</button>
+                    </div>
+                </div>
+                
+                <div class="p4-item waiting">
+                    <div class="p4-avatar initials">3</div>
+                    <div class="p4-info">
+                        <div class="p4-name" style="color: var(--muted); font-style: italic;">Waiting...</div>
+                    </div>
+                    <button class="btn btn-link">Share</button>
+                </div>
+                
+                <div class="p4-item waiting">
+                    <div class="p4-avatar initials">4</div>
+                    <div class="p4-info">
+                        <div class="p4-name" style="color: var(--muted); font-style: italic;">Waiting...</div>
+                    </div>
+                    <button class="btn btn-link">Share</button>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</body>
+</html>
+

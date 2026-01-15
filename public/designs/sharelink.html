@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Link Button - 9 Designs</title>
+    <style>
+        :root {
+            --bg: #0f1419;
+            --card: #1a1f26;
+            --border: #2a3038;
+            --text: #e7e9ea;
+            --muted: #71767b;
+            --accent: #22c55e;
+            --accent-dim: rgba(34, 197, 94, 0.1);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--muted);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .preview {
+            background: var(--card);
+            padding: 30px 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+        }
+
+        /* Shared icon */
+        .icon {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* ============================================
+           V1: Pill Outline (Current)
+           ============================================ */
+        .v1 {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 50px;
+            border: 1px solid var(--accent);
+            background: var(--accent-dim);
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .v1:hover {
+            background: var(--accent);
+            color: #000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+
+        /* ============================================
+           V2: Minimal Text
+           ============================================ */
+        .v2 {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .v2:hover {
+            color: #fff;
+        }
+        .v2:hover .icon {
+            transform: rotate(-45deg);
+        }
+        .v2 .icon {
+            transition: transform 0.2s ease;
+        }
+
+        /* ============================================
+           V3: Soft Rounded
+           ============================================ */
+        .v3 {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 10px;
+            border: none;
+            background: rgba(255,255,255,0.06);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .v3:hover {
+            background: rgba(255,255,255,0.12);
+            transform: translateY(-1px);
+        }
+        .v3 .icon {
+            color: var(--accent);
+        }
+
+        /* ============================================
+           V4: Ghost Button
+           ============================================ */
+        .v4 {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .v4:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        /* ============================================
+           V5: Icon Only Circle
+           ============================================ */
+        .v5 {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .v5:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+            transform: scale(1.08);
+        }
+        .v5 .icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* ============================================
+           V6: Underline Effect
+           ============================================ */
+        .v6 {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 4px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: relative;
+        }
+        .v6::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.2s ease;
+        }
+        .v6:hover::after {
+            width: 100%;
+        }
+        .v6:hover {
+            color: var(--accent);
+        }
+
+        /* ============================================
+           V7: Filled Accent
+           ============================================ */
+        .v7 {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 8px;
+            border: none;
+            background: var(--accent);
+            color: #000;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .v7:hover {
+            background: #2ed573;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4);
+        }
+
+        /* ============================================
+           V8: Compact Badge
+           ============================================ */
+        .v8 {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 4px;
+            border: none;
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .v8:hover {
+            background: rgba(34, 197, 94, 0.25);
+        }
+        .v8 .icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* ============================================
+           V9: Modern Pill
+           ============================================ */
+        .v9 {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 50px;
+            border: none;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.05) 100%);
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .v9::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.4s ease;
+        }
+        .v9:hover::before {
+            left: 100%;
+        }
+        .v9:hover {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.1) 100%);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 700px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Share Link Button — 9 Designs</h1>
+
+    <div class="grid">
+        
+        <!-- V1 -->
+        <div class="item">
+            <div class="preview">
+                <button class="v1">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Share Link
+                </button>
+            </div>
+            <span class="label">V1: Pill Outline (Current)</span>
+        </div>
+
+        <!-- V2 -->
+        <div class="item">
+            <div class="preview">
+                <button class="v2">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Share Link
+                </button>
+            </div>
+            <span class="label">V2: Minimal Text</span>
+        </div>
+
+        <!-- V3 -->
+        <div class="item">
+            <div class="preview">
+                <button class="v3">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Share Link
+                </button>
+            </div>
+            <span class="label">V3: Soft Rounded</span>
+        </div>
+
+        <!-- V4 -->
+        <div class="item">
+            <div class="preview">
+                <button class="v4">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Share
+                </button>
+            </div>
+            <span class="label">V4: Ghost Button</span>
+        </div>
+
+        <!-- V5 -->
+        <div class="item">
+            <div class="preview">
+                <button class="v5" title="Share Link">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                </button>
+            </div>
+            <span class="label">V5: Icon Only Circle</span>
+        </div>
+
+        <!-- V6 -->
+        <div class="item">
+            <div class="preview">
+                <button class="v6">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Share Link
+                </button>
+            </div>
+            <span class="label">V6: Underline Effect</span>
+        </div>
+
+        <!-- V7 -->
+        <div class="item">
+            <div class="preview">
+                <button class="v7">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Share
+                </button>
+            </div>
+            <span class="label">V7: Filled Accent</span>
+        </div>
+
+        <!-- V8 -->
+        <div class="item">
+            <div class="preview">
+                <button class="v8">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Share
+                </button>
+            </div>
+            <span class="label">V8: Compact Badge</span>
+        </div>
+
+        <!-- V9 -->
+        <div class="item">
+            <div class="preview">
+                <button class="v9">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Share Link
+                </button>
+            </div>
+            <span class="label">V9: Modern Pill</span>
+        </div>
+
+    </div>
+
+</body>
+</html>
+
