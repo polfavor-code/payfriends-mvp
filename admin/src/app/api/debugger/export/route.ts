@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getAgreementById } from '@/lib/db-supabase';
 import { runCalculation, type CalculationInput } from '@/lib/calculator';
+import { requireAdmin } from '@/lib/auth';
 
 export async function GET(request: Request) {
+  try {
+    // Require admin authentication before exposing sensitive loan data
+    await requireAdmin();
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const loanId = searchParams.get('loan_id');
 

@@ -41,7 +41,9 @@ export default async function UserDetailPage({
           <p className="text-gray-400 font-mono text-sm mt-1">ID: {user.id}</p>
         </div>
         <div>
-          <span className="badge badge-active">Active</span>
+          <span className={user.is_disabled ? 'badge badge-disabled' : 'badge badge-active'}>
+            {user.is_disabled ? 'Disabled' : 'Active'}
+          </span>
         </div>
       </div>
 
@@ -97,6 +99,7 @@ export default async function UserDetailPage({
         <UserActions 
           userId={user.id} 
           hasFinancialHistory={stats.loansCreated > 0 || stats.grouptabsCreated > 0}
+          isDisabled={user.is_disabled}
         />
       </div>
 
