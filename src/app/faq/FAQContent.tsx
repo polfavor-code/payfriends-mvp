@@ -1,0 +1,226 @@
+'use client';
+
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+
+interface FAQSection {
+  title: string;
+  items: { question: string; answer: string }[];
+}
+
+const faqSections: FAQSection[] = [
+  {
+    title: 'Getting started',
+    items: [
+      {
+        question: 'What is PayFriends?',
+        answer: 'PayFriends is a simple tool to create clear money agreements between friends. You agree on who owes what, when it should be paid back, and optional interest. PayFriends then keeps track and reminds people so nobody has to nag.',
+      },
+      {
+        question: 'Do I need an account to use PayFriends?',
+        answer: 'The person who creates an agreement or GroupTab needs an account. People who receive an invite can first view the agreement from the link, and then create a profile to manage their side and keep everything in one place.',
+      },
+      {
+        question: 'Who is PayFriends for?',
+        answer: 'PayFriends is made for friends, family, room mates, trip buddies, and small groups who want fair and transparent money agreements without feeling like a bank.',
+      },
+      {
+        question: 'Is PayFriends a bank or lending company?',
+        answer: 'No. PayFriends does not lend money and does not handle payments. It only helps you track agreements and remind people what was agreed.',
+      },
+    ],
+  },
+  {
+    title: 'Agreements basics',
+    items: [
+      {
+        question: 'What is an agreement in PayFriends?',
+        answer: 'An agreement is a clear deal between two people. For example: "Paul lent 200 euro to Alex, full repayment in 3 months, interest 0 percent, monthly payments on the 1st."',
+      },
+      {
+        question: 'Who can create an agreement?',
+        answer: 'Anyone with an account can create an agreement. You pick who borrowed, who lent, the amount, due dates, and any interest or extra terms.',
+      },
+      {
+        question: 'Do both sides need to confirm the agreement?',
+        answer: 'Yes, the ideal flow is that the borrower opens the link and confirms the agreement details. This helps avoid misunderstandings later.',
+      },
+      {
+        question: 'Can I change an agreement after it is created?',
+        answer: 'You can edit some parts of an agreement if both sides agree. Bigger changes like amount or due date should be clearly documented in the comments or by creating a new agreement, depending on how you prefer to keep history.',
+      },
+      {
+        question: 'Can I cancel or delete an agreement?',
+        answer: 'If an agreement was created by mistake, or both sides agree it should be cancelled, you can mark it as cancelled or fully settled. For legal or proof reasons, it is usually better to avoid hard deletes and instead mark the correct status.',
+      },
+    ],
+  },
+  {
+    title: 'Payments and repayments',
+    items: [
+      {
+        question: 'How do I record that someone has paid?',
+        answer: 'Inside each agreement you can add a repayment. You enter how much was paid and the date. The remaining balance updates automatically.',
+      },
+      {
+        question: 'Does PayFriends move real money between bank accounts?',
+        answer: 'No. PayFriends does not touch your money. You still pay each other by bank transfer, cash, Revolut, Bizum, or anything you like. PayFriends only tracks who already paid and what is still open.',
+      },
+      {
+        question: 'What is the repayment schedule?',
+        answer: 'The repayment schedule is a list of planned payments and due dates for a loan. For example 3 monthly installments or 1 full repayment date. It helps both sides see what is expected.',
+      },
+      {
+        question: 'What happens if someone pays earlier or later than planned?',
+        answer: 'You can log repayments on the actual date they are made. The remaining schedule and balance will update. You can still see the original planned dates for reference.',
+      },
+      {
+        question: 'Can I mark an agreement as fully repaid?',
+        answer: 'Yes. Once all payments are recorded and the balance is zero, you can mark the agreement as fully repaid. It will stay visible as history.',
+      },
+    ],
+  },
+  {
+    title: 'Interest and currencies',
+    items: [
+      {
+        question: 'Do I have to charge interest?',
+        answer: 'No. Many agreements between friends are interest free. You can choose 0 percent interest if you want to keep it very friendly.',
+      },
+      {
+        question: 'When does interest make sense between friends?',
+        answer: 'Interest can make sense for larger amounts, longer periods, or when you want to make sure the loan is taken seriously. You should always agree on something that feels fair and comfortable to both sides.',
+      },
+      {
+        question: 'Does PayFriends charge any fees on loans?',
+        answer: 'No. PayFriends does not take a fee from your loans. If we ever add optional premium features in the future, we will clearly explain it.',
+      },
+      {
+        question: 'What currency can I use?',
+        answer: 'The default is euro, but the concept works for any currency as long as both sides understand what is used. In future versions we may support more explicit multi currency options.',
+      },
+    ],
+  },
+  {
+    title: 'GroupTabs',
+    items: [
+      {
+        question: 'What is a GroupTab?',
+        answer: 'A GroupTab is a shared tab for group expenses. For example a holiday trip, a festival weekend, or shared house costs. Multiple people can add their expenses and everyone can see who should pay what.',
+      },
+      {
+        question: 'How is a GroupTab different from a normal agreement?',
+        answer: 'A normal agreement is between two people. A GroupTab is for a group. Many people can add payments and many people can owe money. PayFriends then calculates a fair way to settle up.',
+      },
+      {
+        question: 'Who can add expenses in a GroupTab?',
+        answer: 'The GroupTab owner can add expenses and can allow other participants to add their own bills too. This works well when everyone pays some parts of the trip or event.',
+      },
+      {
+        question: 'How do people settle what they owe in a GroupTab?',
+        answer: 'PayFriends can calculate who owes who and how much. You then settle by your usual payment methods outside PayFriends and mark debts as paid inside the GroupTab.',
+      },
+    ],
+  },
+  {
+    title: 'Reminders and notifications',
+    items: [
+      {
+        question: 'How do reminders work?',
+        answer: 'PayFriends can send friendly reminders before and after due dates. The idea is to keep the agreement visible so people do not forget, without anyone having to nag personally.',
+      },
+      {
+        question: 'Who receives reminders?',
+        answer: 'By default the borrower receives reminders about upcoming or overdue payments. The lender may receive summary updates, depending on your notification settings.',
+      },
+      {
+        question: 'Can I turn reminders on or off?',
+        answer: 'Yes. For each agreement and GroupTab there will be options to adjust reminder timing or turn them off completely if you both prefer a more relaxed approach.',
+      },
+      {
+        question: 'Will reminders be aggressive or spammy?',
+        answer: 'No. PayFriends is built to keep friendships healthy, not to stress people. The tone stays friendly and the frequency reasonable.',
+      },
+    ],
+  },
+  {
+    title: 'Security and privacy',
+    items: [
+      {
+        question: 'Who can see my agreements?',
+        answer: 'Each agreement is visible only to the people involved and to your own account. PayFriends does not make your agreements public.',
+      },
+      {
+        question: 'Does PayFriends see or store my bank details?',
+        answer: 'No. PayFriends focuses on tracking agreements and repayments. Payments happen outside the app through your usual banking or payment apps.',
+      },
+      {
+        question: 'How do you protect my data?',
+        answer: 'We use modern best practices for encryption in transit, secure passwords and restricted access on the server side. The Security page in the app explains the most important measures and tips.',
+      },
+      {
+        question: 'What can I do to keep my account safe?',
+        answer: 'Use a strong, unique password and do not share it with anyone. When two step verification becomes available, enable it for extra protection.',
+      },
+    ],
+  },
+];
+
+export function FAQContent() {
+  const [openItem, setOpenItem] = useState<string | null>(null);
+
+  const toggleItem = (id: string) => {
+    setOpenItem(openItem === id ? null : id);
+  };
+
+  return (
+    <>
+      {faqSections.map((section, sectionIndex) => (
+        <div key={section.title} className="mb-10 last:mb-0">
+          <h2 className="text-xl font-semibold mb-5 pb-2 border-b border-pf-card-border">
+            {section.title}
+          </h2>
+
+          {section.items.map((item, itemIndex) => {
+            const itemId = `${sectionIndex}-${itemIndex}`;
+            const isOpen = openItem === itemId;
+
+            return (
+              <div
+                key={itemId}
+                className="border-b border-pf-card-border/30 last:border-b-0"
+              >
+                <button
+                  onClick={() => toggleItem(itemId)}
+                  className="flex items-center gap-3 w-full py-3 text-left bg-transparent border-0 cursor-pointer group"
+                >
+                  <span
+                    className={cn(
+                      'text-pf-accent text-[1.4rem] w-6 text-center transition-transform duration-150',
+                      isOpen && 'rotate-90'
+                    )}
+                  >
+                    ▸
+                  </span>
+                  <span className="flex-1 text-[15px] font-medium text-pf-text group-hover:opacity-90">
+                    {item.question}
+                  </span>
+                </button>
+                <div
+                  className={cn(
+                    'overflow-hidden transition-all duration-300',
+                    isOpen ? 'max-h-[500px]' : 'max-h-0'
+                  )}
+                >
+                  <div className="pl-7 pb-4 text-pf-muted text-sm leading-relaxed">
+                    {item.answer}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </>
+  );
+}
