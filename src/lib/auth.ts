@@ -4,7 +4,7 @@
  */
 
 import { cookies } from 'next/headers';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { getUserById, getUserByEmail, getSessionById, createSession, deleteSession, createUser, type User } from './supabase/db';
 
