@@ -1,10 +1,1 @@
-{
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/profile/picture/route": "app/api/profile/picture/route.js",
-  "/api/profile/route": "app/api/profile/route.js",
-  "/api/profile/picture/[userId]/route": "app/api/profile/picture/[userId]/route.js",
-  "/tab/[code]/page": "app/tab/[code]/page.js",
-  "/(app)/dashboard/page": "app/(app)/dashboard/page.js",
-  "/(app)/profile/page": "app/(app)/profile/page.js",
-  "/(app)/grouptabs/page": "app/(app)/grouptabs/page.js"
-}
+{}
