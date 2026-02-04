@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { formatCurrency2 } from '@/lib/formatters';
 
@@ -28,6 +28,7 @@ interface GroupTab {
   is_open_pot: boolean;
   payment_methods_json: string | null;
   creator_name?: string;
+  creator_user_id?: number;
 }
 
 interface Participant {
@@ -51,6 +52,7 @@ interface PaymentMethod {
 
 export default function PublicTabPage() {
   const params = useParams();
+  const router = useRouter();
   const inviteCode = params.code as string;
   
   const [tab, setTab] = useState<GroupTab | null>(null);
@@ -83,6 +85,21 @@ export default function PublicTabPage() {
         return;
       }
 
+      // Check if current user is the organizer - redirect to management view
+      try {
+        const userResponse = await fetch('/api/user');
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          if (userData.id === data.tab.creator_user_id) {
+            // Organizer should go to the management view
+            router.push(`/grouptabs/${data.tab.id}`);
+            return;
+          }
+        }
+      } catch {
+        // Not logged in or error - continue as guest
+      }
+
       setTab(data.tab);
       setParticipants(data.participants || []);
       
@@ -103,7 +120,7 @@ export default function PublicTabPage() {
       setError('Failed to load tab');
       setLoading(false);
     }
-  }, [inviteCode]);
+  }, [inviteCode, router]);
 
   useEffect(() => {
     fetchTab();
@@ -282,27 +299,6 @@ export default function PublicTabPage() {
               </div>
             </label>
           </div>
-
-          {/* Amount info */}
-          {perPersonAmount > 0 && (
-            <div className="mb-12">
-              <div className="flex justify-between items-baseline mb-5">
-                <span className="text-[15px] font-semibold text-white">Your share</span>
-                <span className="text-sm text-pf-muted">{tab.split_mode} split</span>
-              </div>
-              <div className="bg-white/[0.025] border border-white/[0.06] rounded-[20px] p-[18px] flex items-center gap-4">
-                <div className="w-[52px] h-[52px] bg-black/30 rounded-[14px] flex items-center justify-center text-[28px]">
-                  💵
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-base font-semibold text-white mb-1">{formatCurrency2(perPersonAmount)}</h3>
-                  <p className="text-[13px] text-pf-muted">
-                    {tab.people_count} people · {formatCurrency2(totalCents)} total
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Join button */}
           {joinError && (

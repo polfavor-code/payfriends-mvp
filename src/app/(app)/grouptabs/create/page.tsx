@@ -48,6 +48,12 @@ interface Message {
   historyIndex: number;
 }
 
+interface CreatedTab {
+  id: number;
+  invite_code: string | null;
+  name: string;
+}
+
 interface HistoryEntry {
   state: WizardState;
   index: number;
@@ -118,6 +124,7 @@ export default function CreateGroupTabWizard() {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [activeCard, setActiveCard] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [createdTab, setCreatedTab] = useState<CreatedTab | null>(null);
 
   // Scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -545,14 +552,11 @@ export default function CreateGroupTabWizard() {
 
       const result = await response.json();
       
-      // Show success and redirect
-      addBotMessage('GroupTab created! 🎉');
-      setActiveCard('success');
-      
-      setTimeout(() => {
-        const tabUrl = result.tab.invite_code ? `/tab/${result.tab.invite_code}` : `/grouptabs/${result.tab.id}`;
-        router.push(tabUrl);
-      }, 1500);
+      // Store created tab and show share card
+      setCreatedTab(result.tab);
+      addBotMessage('GroupTab created! 🎉 Share it with your friends!');
+      setActiveCard('share');
+      setIsCreating(false);
     } catch (error) {
       console.error('Error creating GroupTab:', error);
       addBotMessage('Oops! Something went wrong. Please try again.');
@@ -672,6 +676,16 @@ export default function CreateGroupTabWizard() {
             <div className="text-5xl mb-2">🎉</div>
             <div className="text-pf-accent font-semibold">Redirecting...</div>
           </div>
+        )}
+
+        {activeCard === 'share' && createdTab && (
+          <ShareCard 
+            tab={createdTab} 
+            totalCents={state.data.totalCents + state.data.tipCents}
+            amountTarget={state.data.amountTarget}
+            giftMode={state.data.giftMode}
+            peopleCount={state.data.people}
+          />
         )}
       </div>
 
@@ -1296,6 +1310,129 @@ function PaymentMethodsCard({ onConfirm }: PaymentMethodsCardProps) {
             {methods.length > 0 ? 'Continue' : 'Create Tab'}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Share Card - shown after GroupTab creation
+interface ShareCardProps {
+  tab: CreatedTab;
+  totalCents: number;
+  amountTarget: number;
+  giftMode: string | null;
+  peopleCount: number;
+}
+
+function ShareCard({ tab, totalCents, amountTarget, giftMode, peopleCount }: ShareCardProps) {
+  const router = useRouter();
+  const [copied, setCopied] = useState(false);
+  
+  const isPotMode = giftMode === 'gift_pot_open' || giftMode === 'gift_pot_target';
+  const displayAmount = isPotMode ? amountTarget : totalCents;
+  const shareUrl = tab.invite_code 
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/tab/${tab.invite_code}`
+    : '';
+  
+  const qrCodeUrl = shareUrl 
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=140x140&bgcolor=0e1116&color=00D68F&data=${encodeURIComponent(shareUrl)}`
+    : '';
+
+  const copyShareLink = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback
+      prompt('Copy this link:', shareUrl);
+    }
+  };
+
+  const handleShare = async () => {
+    if ('share' in navigator && shareUrl) {
+      try {
+        await navigator.share({
+          title: tab.name,
+          text: `Join my GroupTab: ${tab.name}`,
+          url: shareUrl,
+        });
+      } catch {
+        // User cancelled or share failed - fall back to copy
+        copyShareLink();
+      }
+    } else {
+      copyShareLink();
+    }
+  };
+
+  return (
+    <div className="self-center max-w-[420px] w-full animate-[slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)]">
+      <div className="bg-[#1c212b] rounded-2xl p-6 border border-white/[0.08] text-center">
+        {/* Success icon */}
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-pf-accent/20 flex items-center justify-center">
+          <span className="text-3xl">🚀</span>
+        </div>
+        
+        {/* Tab name */}
+        <h2 className="text-xl font-bold text-white mb-1">{tab.name}</h2>
+        
+        {/* Amount */}
+        {displayAmount > 0 && (
+          <div className="text-2xl font-bold text-pf-accent mb-1">
+            {formatCurrency2(displayAmount)}
+          </div>
+        )}
+        
+        {/* People count */}
+        {peopleCount > 0 && !isPotMode && (
+          <div className="text-sm text-pf-muted mb-6">
+            {peopleCount} people · {formatCurrency2(Math.round(displayAmount / peopleCount))} each
+          </div>
+        )}
+        {isPotMode && (
+          <div className="text-sm text-pf-muted mb-6">Target amount</div>
+        )}
+        
+        {/* QR Code */}
+        {qrCodeUrl && (
+          <div className="bg-[#0e1116] rounded-xl p-4 mb-6 inline-block">
+            <img 
+              src={qrCodeUrl} 
+              alt="QR Code" 
+              className="w-[140px] h-[140px] mx-auto"
+            />
+          </div>
+        )}
+        
+        {/* Share URL preview */}
+        {shareUrl && (
+          <div className="bg-black/30 rounded-lg px-4 py-2.5 mb-6 text-sm text-pf-muted truncate">
+            {shareUrl}
+          </div>
+        )}
+        
+        {/* Action buttons */}
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={handleShare}
+            className="w-full py-4 bg-pf-accent text-pf-bg rounded-xl font-bold text-base flex items-center justify-center gap-2 hover:brightness-110 transition-all"
+          >
+            {copied ? '✓ Copied!' : '📋 Copy Share Link'}
+          </button>
+          
+          <button
+            onClick={() => router.push(`/grouptabs/${tab.id}`)}
+            className="w-full py-4 bg-white/10 text-white rounded-xl font-semibold text-base flex items-center justify-center gap-2 hover:bg-white/15 transition-all"
+          >
+            👀 View GroupTab
+          </button>
+        </div>
+        
+        <p className="text-xs text-pf-muted mt-4">
+          Share this link with friends to let them join and pay their share
+        </p>
       </div>
     </div>
   );
